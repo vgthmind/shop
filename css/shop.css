@@ -1,8 +1,30 @@
+/*
+  Palette et polices reprises du vrai code du site BigCartel (Head/Body
+  recuperes et verifies dans cette session — pas devine) :
+  - fond crème #f4f2ec (confirme, valeur en dur dans le <head> BigCartel)
+  - accent bleu #3a4de8 utilise en glow/accent, jamais en aplat plein
+  - Space Grotesk (titres/labels), Inter (texte courant), IBM Plex Mono
+    (petites capitales/labels), tous confirmes dans le Body BigCartel
+  - langage "verre" : fond translucide + backdrop-filter blur + bordure fine,
+    jamais de cadre dur (direction donnee explicitement par le proprietaire)
+
+  Ce que je N'AI PAS (donc approxime ici, a corriger facilement si besoin) :
+  le detail exact des styles de bouton "Add to cart" / badge "piece unique"
+  vit dans le champ Custom CSS de BigCartel, jamais recupere dans cette
+  session — uniquement la direction generale ci-dessus, appliquee du mieux
+  possible.
+*/
+
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500&family=IBM+Plex+Mono:wght@400;500&display=swap');
+
 :root {
-  --bg: #0b0b0c;
-  --fg: #f4f2ec;
+  --bg: #f4f2ec;
+  --fg: #1c1d1f;
   --muted: #8d929a;
+  --muted-dark: #4a4d52;
   --accent: #3a4de8;
+  --glass-bg: rgba(255, 255, 255, 0.55);
+  --glass-border: rgba(28, 29, 31, 0.1);
 }
 
 * { box-sizing: border-box; }
@@ -11,39 +33,58 @@ body {
   margin: 0;
   background: var(--bg);
   color: var(--fg);
+  font-family: 'Inter', sans-serif;
+}
+
+a { color: inherit; }
+
+.shop-notice {
+  background: var(--glass-bg);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border-bottom: 1px solid var(--glass-border);
+  color: var(--muted-dark);
+  padding: 10px 32px;
   font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px;
+  letter-spacing: 0.03em;
+  text-align: center;
 }
 
 .shop-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 24px 32px;
-  border-bottom: 1px solid rgba(255,255,255,0.08);
+  padding: 20px 32px;
+  background: var(--glass-bg);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  position: sticky;
+  top: 0;
+  z-index: 10;
 }
 
 .shop-header a {
   color: var(--fg);
   text-decoration: none;
+  font-family: 'Space Grotesk', sans-serif;
   font-weight: 600;
   letter-spacing: 0.05em;
   text-transform: uppercase;
+  font-size: 14px;
+  transition: transform 0.2s cubic-bezier(.34,1.56,.64,1);
+  display: inline-block;
 }
 
-.shop-notice {
-  background: rgba(58,77,232,0.12);
-  border-bottom: 1px solid rgba(58,77,232,0.3);
-  color: var(--fg);
-  padding: 10px 32px;
-  font-size: 12px;
-  text-align: center;
+.shop-header a:hover {
+  transform: scale(1.08) rotate(-2deg);
 }
 
 .product-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-  gap: 24px;
-  padding: 32px;
+  gap: 28px;
+  padding: 40px 32px;
   max-width: 1200px;
   margin: 0 auto;
 }
@@ -52,29 +93,30 @@ body {
   display: block;
   text-decoration: none;
   color: var(--fg);
-  border: 1px solid rgba(255,255,255,0.08);
-  border-radius: 4px;
+  border-radius: 2px;
   overflow: hidden;
-  transition: border-color 0.2s ease;
-}
-
-.product-card:hover {
-  border-color: rgba(255,255,255,0.25);
 }
 
 .product-card .thumb {
   width: 100%;
   aspect-ratio: 1/1;
-  background: #1a1a1c;
+  background: rgba(28, 29, 31, 0.04);
   background-size: cover;
   background-position: center;
+  border-radius: 2px;
+  transition: transform 0.4s cubic-bezier(.34,1.56,.64,1);
+}
+
+.product-card:hover .thumb {
+  transform: scale(1.03) rotate(-1deg);
 }
 
 .product-card .info {
-  padding: 12px 14px;
+  padding: 12px 2px;
 }
 
 .product-card .name {
+  font-family: 'Space Grotesk', sans-serif;
   font-size: 13px;
   font-weight: 600;
   text-transform: uppercase;
@@ -82,6 +124,7 @@ body {
 }
 
 .product-card .price {
+  font-family: 'IBM Plex Mono', monospace;
   font-size: 12px;
   color: var(--muted);
   margin-top: 4px;
@@ -89,6 +132,7 @@ body {
 
 .product-card .sold-out {
   color: #b3315c;
+  font-family: 'IBM Plex Mono', monospace;
   font-size: 11px;
   text-transform: uppercase;
   margin-top: 4px;
@@ -98,15 +142,17 @@ body {
   text-align: center;
   padding: 96px 32px;
   color: var(--muted);
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 13px;
 }
 
 .product-detail {
   max-width: 900px;
   margin: 0 auto;
-  padding: 32px;
+  padding: 40px 32px;
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 32px;
+  gap: 40px;
 }
 
 @media (max-width: 700px) {
@@ -117,10 +163,12 @@ body {
   width: 100%;
   display: block;
   margin-bottom: 12px;
-  border-radius: 4px;
+  border-radius: 2px;
 }
 
 .product-detail h1 {
+  font-family: 'Space Grotesk', sans-serif;
+  font-weight: 700;
   font-size: 20px;
   text-transform: uppercase;
   letter-spacing: 0.05em;
@@ -128,39 +176,59 @@ body {
 }
 
 .product-detail .price {
-  font-size: 18px;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 16px;
+  color: var(--muted-dark);
   margin-bottom: 24px;
 }
 
 .product-detail .description {
-  line-height: 1.6;
-  color: #cfcfcf;
+  line-height: 1.7;
+  color: var(--muted-dark);
   margin-bottom: 32px;
   white-space: pre-wrap;
 }
 
 .buy-button {
   display: inline-block;
-  background: var(--accent);
-  color: #fff;
+  background: var(--glass-bg);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid var(--glass-border);
+  box-shadow: 0 0 0 1px rgba(58, 77, 232, 0.15), 0 4px 18px rgba(58, 77, 232, 0.18);
+  color: var(--accent);
   padding: 14px 28px;
   text-decoration: none;
+  font-family: 'Space Grotesk', sans-serif;
+  font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.05em;
   font-size: 13px;
   border-radius: 2px;
+  transition: transform 0.5s cubic-bezier(.34,1.56,.64,1), box-shadow 0.3s ease;
+}
+
+.buy-button:hover {
+  transform: scale(1.08) rotate(-2deg);
+  box-shadow: 0 0 0 1px rgba(58, 77, 232, 0.3), 0 8px 28px rgba(58, 77, 232, 0.28);
 }
 
 .sold-out-notice {
   color: #b3315c;
+  font-family: 'IBM Plex Mono', monospace;
   text-transform: uppercase;
   font-size: 13px;
 }
 
 .back-link {
   color: var(--muted);
-  font-size: 12px;
-  text-decoration: none;
-  text-transform: uppercase;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px;
   letter-spacing: 0.05em;
+  text-transform: uppercase;
+  text-decoration: none;
+}
+
+.back-link:hover {
+  color: var(--accent);
 }
