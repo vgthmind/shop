@@ -1,0 +1,13 @@
+{
+  "name": "vgthmind-decap-oauth-worker",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Passerelle d'authentification GitHub OAuth pour Decap CMS, deployee en Cloudflare Worker. Base sur decap-cms-github-oauth-provider-cloudflare (MIT, Ott Martens).",
+  "main": "index.ts",
+  "scripts": {
+    "deploy": "wrangler deploy"
+  },
+  "devDependencies": {
+    "wrangler": "^3"
+  }
+}

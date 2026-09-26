@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>vgthmind — piece (prototype)</title>
+  <!-- A ENLEVER quand la boutique sera prete a etre publique et connectee au domaine ! Voir README.md. -->
+  <meta name="robots" content="noindex, nofollow" />
+  <link rel="stylesheet" href="css/shop.css" />
+</head>
+<body>
+  <div class="shop-notice">
+    Prototype de boutique hors BigCartel — en cours de test, pas encore la boutique officielle.
+  </div>
+  <header class="shop-header">
+    <a href="index.html">vgthmind</a>
+    <a href="admin/index.html">Gerer les pieces</a>
+  </header>
+
+  <main class="product-detail" id="product-detail">
+    <div class="empty-state">Chargement...</div>
+  </main>
+
+  <script src="js/shop.js"></script>
+  <script>
+    var params = new URLSearchParams(window.location.search);
+    var slug = params.get('slug');
+    vgFetchProducts().then(function (products) {
+      var product = products.find(function (p) { return p.slug === slug; });
+      vgRenderDetail(product, document.getElementById('product-detail'));
+    });
+  </script>
+</body>
+</html>
