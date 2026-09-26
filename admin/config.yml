@@ -1,0 +1,44 @@
+backend:
+  name: github
+  repo: vgthmind/shop
+  branch: main
+  # Pas de base_url/auth_endpoint ici : avec Sveltia CMS et un usage solo,
+  # la connexion se fait via un jeton GitHub "fine-grained" (bouton
+  # "Sign in with token" sur l'ecran de connexion), limite a CE depot
+  # uniquement. Pas de serveur OAuth a deployer. Voir README.md,
+  # section "Securite" / "Connexion".
+
+media_folder: "data/uploads"
+public_folder: "/data/uploads"
+
+collections:
+  - name: "products"
+    label: "Pieces"
+    label_singular: "Piece"
+    folder: "data/products"
+    create: true
+    extension: "json"
+    format: "json"
+    slug: "{{slug}}"
+    identifier_field: name
+    summary: "{{name}} — {{price}} EUR"
+    fields:
+      - { label: "Nom", name: "name", widget: "string" }
+      - { label: "Slug (URL, sans espaces)", name: "slug", widget: "string", hint: "ex: pantalon-denim-bleu" }
+      - { label: "Prix (EUR)", name: "price", widget: "number", value_type: "float" }
+      - { label: "Description", name: "description", widget: "text" }
+      - label: "Photos"
+        name: "images"
+        widget: "list"
+        field: { label: "Image", name: "image", widget: "image" }
+      - { label: "Categorie", name: "category", widget: "string", required: false }
+      - { label: "Piece unique", name: "unique", widget: "boolean", default: true }
+      - { label: "Couleur (nom)", name: "couleur_nom", widget: "string", required: false }
+      - { label: "Couleur (hex)", name: "couleur_hex", widget: "color", required: false }
+      - { label: "Lien Instagram (reel)", name: "reel_url", widget: "string", required: false }
+      - label: "Lien de paiement Stripe"
+        name: "stripe_payment_link"
+        widget: "string"
+        required: false
+        hint: "Cree depuis le dashboard Stripe > Payment Links, colle l'URL ici"
+      - { label: "En stock", name: "in_stock", widget: "boolean", default: true }

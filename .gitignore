@@ -1,0 +1,16 @@
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# editor / local tooling
+.vscode/
+.idea/
+.claude/
+*.bak
+*.tmp
+
+# oauth-worker (Cloudflare Worker tooling, optionnel)
+oauth-worker/node_modules/
+oauth-worker/.wrangler/
+oauth-worker/dist/

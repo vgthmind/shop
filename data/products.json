@@ -1,0 +1,19 @@
+[
+  {
+    "name": "[EXEMPLE A MODIFIER] Sacoche",
+    "slug": "exemple-sacoche",
+    "price": 0,
+    "description": "Ceci est une entree d'exemple creee pour tester le prototype de boutique (affichage liste + fiche produit + bouton d'achat). A modifier ou supprimer via l'interface de gestion (admin/) une fois l'authentification configuree. Le prix a 0 et le lien de paiement vide sont volontaires.",
+    "images": [
+      "https://vgthmind.github.io/assets/petites/sacoche1.png",
+      "https://vgthmind.github.io/assets/petites/sacoche2.png"
+    ],
+    "category": "petites-pieces",
+    "unique": true,
+    "couleur_nom": "",
+    "couleur_hex": "",
+    "reel_url": "",
+    "stripe_payment_link": "",
+    "in_stock": true
+  }
+]

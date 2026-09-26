@@ -1,0 +1,24 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="robots" content="noindex, nofollow" />
+    <title>vgthmind — gestion des pieces</title>
+  </head>
+  <body>
+    <!--
+      Sveltia CMS : successeur actif de Decap/Netlify CMS, meme principe
+      (interface web -> commit git), mais authentification plus sure pour un
+      usage solo : un jeton GitHub "fine-grained" limite a CE depot uniquement
+      (permission Contents en lecture/ecriture, rien d'autre), au lieu d'un
+      jeton OAuth classique qui donnerait acces a tous tes depots GitHub.
+      Voir README.md, section "Securite".
+
+      Le noindex sur cette page (admin/) est permanent, contrairement a
+      celui de index.html/product.html : l'interface de gestion ne doit
+      jamais etre indexee, meme une fois la boutique en ligne.
+    -->
+    <script src="https://unpkg.com/@sveltia/cms/dist/sveltia-cms.js"></script>
+  </body>
+</html>

@@ -1,0 +1,9 @@
+name = "vgthmind-decap-oauth"
+main = "index.ts"
+
+compatibility_date = "2023-11-11"
+
+# Remplace par ton propre account_id Cloudflare (obtenu via `wrangler whoami`
+# apres `wrangler login`). Voir shop/README.md pour la procedure complete.
+account_id = "COLLE_TON_ACCOUNT_ID_ICI"
+workers_dev = true
