@@ -177,6 +177,12 @@ function main() {
     fs.cpSync(productImagesSrc, path.join(OUT_DIR, 'assets', 'products'), { recursive: true });
   }
 
+  // robots.txt at the repo root is never served by GitHub Pages - only
+  // docs/ (the configured publish root) is. Without this copy the
+  // Disallow: / this repo's README documents as "already in place" simply
+  // isn't, on the actual live site.
+  fs.copyFileSync(path.join(ROOT, 'robots.txt'), path.join(OUT_DIR, 'robots.txt'));
+
   console.log(`\nBuilt ${catalog.products.length} products, ${catalog.categories.length} categories into ${OUT_DIR}`);
 }
 
