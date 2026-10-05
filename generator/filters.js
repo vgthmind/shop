@@ -15,11 +15,15 @@ function escapeHtml(s) {
     .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
 }
 
+// theme.money_format of the store is "code" -> "84,00 EUR", as on the draft
+// ("sign" -> "84,00 €", "none" -> "84,00").
 function money(amount, format) {
   const n = Number(amount || 0);
-  const formatted = n.toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  const formatted = n.toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).replace(/ | /g, ' ');
   if (format && format.includes('{{amount}}')) return format.replace('{{amount}}', formatted);
-  return formatted + ' €';
+  if (format === 'none') return formatted;
+  if (format === 'sign') return formatted + ' €';
+  return formatted + ' EUR';
 }
 
 // Rewrites a BigCartel product-image URL (…/product_images/…?w=&h=…) to our
@@ -37,7 +41,9 @@ function productImageUrl(image, imageMap) {
 function constrain(url, width) {
   if (!url) return '';
   try {
-    if (url.startsWith('/')) return `${url}?w=${Math.round(width)}`;
+    // Local copies are static files: the width parameter would be ignored
+    // (and `constrain: '', height` - the logo - would give w=NaN).
+    if (url.startsWith('/')) return url;
     const u = new URL(url);
     u.searchParams.set('w', Math.round(width));
     if (u.searchParams.has('h')) u.searchParams.set('h', Math.round(width));
@@ -47,10 +53,10 @@ function constrain(url, width) {
   }
 }
 
-function productPrice(product) {
+function productPrice(product, format) {
   if (!product) return '';
-  if (product.price_suffix && product.variable_pricing) return money(product.default_price) + '+';
-  return money(product.default_price != null ? product.default_price : product.price);
+  if (product.price_suffix && product.variable_pricing) return money(product.default_price, format) + '+';
+  return money(product.default_price != null ? product.default_price : product.price, format);
 }
 
 // Our own DOM-compatible "Add to cart" control: keeps the same class names
@@ -85,7 +91,12 @@ function defaultPagination() {
 }
 
 function themeCssUrl() { return '/assets/theme.css'; }
-function themeJsUrl() { return '/assets/theme.js'; }
+// {{ theme | theme_js_url }} -> theme.js, {{ 'api' | theme_js_url }} -> api.js:
+// BigCartel's own scripts, URLs set by build.js (loaded from BigCartel's CDN,
+// as on the draft).
+let THEME_JS_URLS = { theme: '/assets/theme.js', api: '/assets/api.js' };
+function setThemeJsUrls(u) { THEME_JS_URLS = Object.assign({}, THEME_JS_URLS, u); }
+function themeJsUrl(v) { return v === 'api' ? THEME_JS_URLS.api : THEME_JS_URLS.theme; }
 
 function fontFamily(name) {
   return name || 'inherit';
@@ -104,6 +115,9 @@ function linkTo(value, url) {
 
 function paragraphs(text) {
   if (!text) return '';
+  // Page contents (Info & Terms, Contact, Studio) are already HTML: BigCartel
+  // leaves them as they are. Only plain text gets <p>/<br>.
+  if (/<\/?(p|div|h[1-6]|ul|ol|br|span|strong|a)\b/i.test(String(text))) return String(text);
   return String(text).split(/\r?\n\r?\n/).map((p) => `<p>${escapeHtml(p).replace(/\r?\n/g, '<br>')}</p>`).join('\n');
 }
 
@@ -112,6 +126,7 @@ function pluralize(n, singular, plural) {
 }
 
 module.exports = {
+  setThemeJsUrls,
   default: (v, d) => (v === undefined || v === null || v === '' ? d : v),
   escape: (v) => escapeHtml(v),
   strip: (v) => String(v == null ? '' : v).trim(),
@@ -126,13 +141,13 @@ module.exports = {
   link_to: (v, url) => linkTo(v, url),
   product_image_url: (v, imageMap) => productImageUrl(v, imageMap),
   constrain: (v, w) => constrain(v, w),
-  product_price: (v, fmt) => productPrice(v),
+  product_price: (v, fmt) => productPrice(v, fmt),
   hidden_option_input: (v) => hiddenOptionInput(v),
   instant_checkout_button: () => instantCheckoutButton(),
   contact_input: (v) => contactInput(v),
   default_pagination: () => defaultPagination(),
   theme_css_url: () => themeCssUrl(),
-  theme_js_url: () => themeJsUrl(),
+  theme_js_url: (v) => themeJsUrl(v),
   font_family: (v) => fontFamily(v),
   age: () => '',
   photoswipe: (v) => v,

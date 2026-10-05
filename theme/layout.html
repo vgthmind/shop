@@ -20,8 +20,19 @@
   <head>
 <!-- VGTHMIND TRANSITION START -->
 <style>html,body{background-color:#f4f2ec !important;}@view-transition{navigation:auto;}::view-transition-group(root),::view-transition-old(root),::view-transition-new(root){animation:none !important;mix-blend-mode:normal !important;opacity:1 !important;}</style>
-<link rel="preload" as="script" href="https://vgthmind.github.io/assets/bigcartel/vg-transitions-dev.js?v=2026-09-26-2">
-<link rel="stylesheet" href="https://vgthmind.github.io/assets/bigcartel/vg-transitions-dev.css?v=2026-09-26-1">
+<link rel="preload" as="script" href="https://vgthmind.github.io/assets/bigcartel/vg-transitions-dev.js?v=2026-10-05-1">
+<link rel="stylesheet" href="https://vgthmind.github.io/assets/bigcartel/vg-transitions-dev.css?v=2026-09-29-14">
+<!-- SECTION 6 POINT 4 (ajout) : indique au navigateur de commencer a charger
+     theme.js (qui embarque lazysizes) en parallele du reste du <head>, au
+     lieu d'attendre que le parseur atteigne le <script src> pres de
+     </body> (apres jQuery + api.js, tous bloquants). Sur Products (grille
+     dense d'images), ca laisse les vignettes affichees plus longtemps dans
+     leur etat blur-up (placeholder reel mais flou/petit, PAS une image
+     blanche/vide -- verifie sur le HTML reel de /products) avant que
+     lazysizes puisse les promouvoir en pleine resolution : c'est le "flou/
+     delave a l'arrivee" deja connu (point 4). Le preload ne change aucun
+     comportement, juste le moment ou le telechargement commence. -->
+<link rel="preload" as="script" href="{{ theme | theme_js_url }}">
 <style>
 #vg-transition-boot{position:fixed;inset:0;z-index:2147483646;background:#f4f2ec;pointer-events:none;transition:opacity .35s ease;}
 #vg-transition-boot.vg-boot-out{opacity:0;}
@@ -70,7 +81,31 @@
       overlay.appendChild(img);
     }
     document.documentElement.appendChild(overlay);
-    window.__vgBoot = { overlay: overlay, data: t, liveAngle: liveAngle, speed: speed };
+    window.__vgBoot = { overlay: overlay, data: t, liveAngle: liveAngle, speed: speed, early: true };
+    // [2026-09-29 finale] La nouvelle page s'affiche TOUT DE SUITE sous l'icone
+    // qui tourne (fondu sur place de 320 ms, voir html.vg-arriving dans
+    // vg-transitions-dev.css), sans attendre les scripts du theme (jQuery,
+    // api.js, theme.js) ni les images : fond de l'overlay transparent, classe
+    // .preloader du theme (opacity:0 sur toute la page) retiree des que <body>
+    // existe. L'icone retrecit et s'efface EN DERNIER, a la fin du fondu.
+    window.__vgTransitioning = true;
+    overlay.style.background = 'transparent';
+    document.documentElement.classList.add('vg-arriving');
+    var vgShrunk = false;
+    var vgShrink = function () {
+      if (vgShrunk) return; vgShrunk = true;
+      var im = overlay.querySelector('img');
+      if (im) { im.style.transition = 'scale .18s ease-in, opacity .18s ease-in'; im.style.scale = '0'; im.style.opacity = '0'; }
+      setTimeout(function () { if (overlay.parentNode) overlay.remove(); document.documentElement.classList.remove('vg-arriving'); window.__vgTransitioning = false; }, 200);
+    };
+    var vgBody = function () {
+      var b = document.body; if (!b) return false;
+      b.classList.remove('preloader');
+      b.addEventListener('animationend', function (e) { if (e.target === b && e.animationName === 'vg-arrive-fade') vgShrink(); });
+      setTimeout(vgShrink, 1200);
+      return true;
+    };
+    if (!vgBody()) { var vgMo = new MutationObserver(function () { if (vgBody()) vgMo.disconnect(); }); vgMo.observe(document.documentElement, { childList: true }); }
     setTimeout(function () {
       var o = document.getElementById('vg-transition-boot');
       if (!o) return;
@@ -85,10 +120,15 @@
 <!-- VGTHMIND TRANSITION END -->
 
     <title>{{ page_title }}</title>
-    {% comment %} A ENLEVER au lancement officiel (voir README.md / robots.txt) - double protection tant que ce n'est pas la boutique officielle. {% endcomment %}
-    <meta name="robots" content="noindex, nofollow">
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
+    {% comment %} Partage de liens (accueil, Studio, autres pages) ; les fiches produit ont deja les leurs (BigCartel) {% endcomment %}
+    {% unless page.permalink == 'product' %}{% if page.permalink == 'studio' %}{% assign vg_desc = "Inside the vgthmind studio: every piece is designed, patterned, cut, sewn and finished by hand. L'atelier vgthmind : chaque pièce est dessinée, patronnée, coupée, cousue et finie à la main." %}{% else %}{% assign vg_desc = "vgthmind: one-of-a-kind pieces designed, patterned and hand-sewn in France. Pièces uniques conçues, patronnées et cousues à la main en France." %}{% endif %}
+    <meta name="description" content="{{ vg_desc }}">
+    <meta property="og:description" content="{{ vg_desc }}">
+    <meta property="og:image" content="https://assets.bigcartel.com/theme_images/142638069/Cover.png?auto=format&fit=max&w=1200">
+    <meta name="twitter:description" content="{{ vg_desc }}">
+    <meta name="twitter:image" content="https://assets.bigcartel.com/theme_images/142638069/Cover.png?auto=format&fit=max&w=1200">{% endunless %}
     <link href="{{ theme | theme_css_url }}" media="screen" rel="stylesheet" type="text/css">
     {{ head_content }}
     <style>.preloader * { opacity: 0; }.transition-preloader * { transition: none !important }</style>
@@ -691,19 +731,32 @@
       }
     </script>
   {% endif %}
-  {% comment %}
-    REMPLACE ICI (pas un oubli) : le thème BigCartel chargeait jQuery +
-    api.js + theme.js + un appel Product.find() qui parlent tous au backend
-    e-commerce natif de BigCartel (panier AJAX, infos produit live) -- backend
-    qu'on n'a plus. Remplacé par assets/site.js (le nôtre, pas de dépendance
-    BigCartel) qui reprend SEULEMENT ce que theme.js faisait et qu'on utilise
-    encore réellement : retirer .preloader/.transition-preloader (sinon la
-    page entière reste à opacity:0 pour toujours, bug trouvé en testant en
-    local) et lazysizes (bibliothèque libre, pas du code BigCartel) pour les
-    <img class="lazyload" data-srcset="..."> déjà présentes dans ce gabarit.
-    Le panier (étape 3, pas encore fait) ajoutera son propre script ici.
-  {% endcomment %}
-  <script src="//cdnjs.cloudflare.com/ajax/libs/lazysizes/5.3.2/lazysizes.min.js" async></script>
-  <script src="/assets/site.js"></script>
+  <script src="//cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+  <script src="{{ 'api' | theme_js_url }}"></script>
+  <script type="text/javascript">
+    window.bigcartel = window.bigcartel || {};
+    window.bigcartel.account = window.bigcartel.account || {};
+    window.bigcartel.account.currency = window.bigcartel.account.currency || "{{ store.currency.code }}";
+    window.bigcartel.account.moneyFormat = "{{ theme.money_format }}";
+  </script>
+  <script src="{{ theme | theme_js_url }}"></script>
+  {% if page.full_url contains '/product/' %}
+    <script>
+      // Detect if this is back/forward navigation
+      var navEntry = performance.getEntriesByType('navigation')[0];
+      var isBackForward = navEntry && navEntry.type === 'back_forward';
+
+      if (isBackForward) {
+        // Always fetch fresh data on back/forward to handle browser restoration timing
+        Product.find('{{ product.permalink }}', processProduct);
+      } else if (window.bigcartel?.product) {
+        // Normal page load with cached data (optimization)
+        processProduct(window.bigcartel.product);
+      } else {
+        // Fallback: no cached data available
+        Product.find('{{ product.permalink }}', processProduct);
+      }
+    </script>
+  {% endif %}
 </body>
 </html>

@@ -220,6 +220,10 @@ function resolvePath(path, ctx) {
   let rest = [];
   if (bracketMatch) {
     root = bracketMatch[1];
+    // t['navigation.products']: the whole string is ONE key (flat
+    // translation table), not a path - try it as-is first.
+    const obj = lookupVar(root, ctx);
+    if (obj && Object.prototype.hasOwnProperty.call(obj, bracketMatch[3])) return obj[bracketMatch[3]];
     rest = bracketMatch[3].split('.');
   } else {
     const segs = path.split('.');
@@ -449,8 +453,11 @@ function renderNode(node, ctx, filters, out) {
       let reversed = false;
       if (/\breversed\b/.test(rest)) { reversed = true; rest = rest.replace(/\breversed\b/, '').trim(); }
       let limit = null, offset = 0;
-      rest = rest.replace(/\blimit:\s*(\d+)/, (mm, n) => { limit = parseInt(n, 10); return ''; });
-      rest = rest.replace(/\boffset:\s*(\d+)/, (mm, n) => { offset = parseInt(n, 10); return ''; });
+      // limit:/offset: take a number OR a variable (real templates use
+      // e.g. `limit: theme.nav_items`).
+      const num = (v) => (/^\d+$/.test(v) ? parseInt(v, 10) : parseInt(resolvePath(v, ctx), 10));
+      rest = rest.replace(/\blimit:\s*([\w.]+)/, (mm, n) => { limit = num(n); if (isNaN(limit)) limit = null; return ''; });
+      rest = rest.replace(/\boffset:\s*([\w.]+)/, (mm, n) => { offset = num(n) || 0; return ''; });
       const collExpr = rest.trim();
       let coll = resolvePath(collExpr, ctx);
       if (!Array.isArray(coll)) coll = [];

@@ -1,0 +1,1348 @@
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=Inter:wght@400;500&family=IBM+Plex+Mono:wght@400;500&display=swap');
+
+:root{
+  --ink:#171717;
+  --steel:#6c6c6c;
+  --bg:#f4f2ec;
+  --line:rgba(0,0,0,0.12);
+  --accent:#2f3fd1;
+  --glass-fill:linear-gradient(160deg, rgba(0,0,0,0.05), rgba(0,0,0,0.015));
+  --glass-border:rgba(0,0,0,0.14);
+}
+
+body{font-family:'Inter',sans-serif !important;background:var(--bg) !important;color:var(--ink) !important;}
+html{background:var(--bg) !important;}
+
+.header{padding-top:22px !important;padding-bottom:22px !important;background:var(--bg) !important;}
+.logo img{max-height:34px !important;width:auto !important;}
+nav.sections .navigation a,
+nav.footernav a{
+  font-family:'IBM Plex Mono',monospace !important;
+  font-size:11px !important;letter-spacing:0.08em !important;text-transform:uppercase !important;
+  color:var(--steel) !important;border-bottom:1px solid transparent !important;
+  transition:color .15s ease,border-color .15s ease !important;
+}
+
+nav.utility a.cart-link{
+  font-family:'IBM Plex Mono',monospace !important;font-size:11px !important;letter-spacing:0.05em !important;
+}
+
+
+.announcement-message__text{
+  font-family:'IBM Plex Mono',monospace !important;font-size:10.5px !important;
+  letter-spacing:0.12em !important;font-weight:500 !important;color:var(--ink) !important;
+}
+
+h1,h2,h3,.product-container h1{
+  font-family:'Space Grotesk',sans-serif !important;font-weight:700 !important;
+  letter-spacing:-0.01em !important;color:var(--ink) !important;
+}
+main h1{font-size:clamp(26px,3vw,38px) !important;}
+
+.product-list-container{gap:22px !important;}
+
+.product-list-image-container{border-radius:0 !important;overflow:hidden !important;box-shadow:none !important;}
+.product-list-thumb-name{font-family:'Space Grotesk',sans-serif !important;font-weight:500 !important;color:var(--ink) !important;margin-top:12px !important;}
+.product-list-thumb-price{font-family:'IBM Plex Mono',monospace !important;color:var(--steel) !important;letter-spacing:0.02em !important;}
+
+.product-container .product-subheader{
+  font-family:'IBM Plex Mono',monospace !important;font-size:15px !important;color:#1c1d1f !important;
+}
+.product-images{border-radius:2px !important;min-height:320px !important;}
+.product-description{
+  font-family:'Inter',sans-serif !important;font-size:14.5px !important;line-height:1.7 !important;
+  color:#1c1d1f !important;padding-top:20px !important;margin-top:20px !important;
+}
+
+.unique-badge{
+  position:absolute !important;
+  top:14px !important; left:14px !important;
+  z-index:6 !important;
+  display:flex !important; align-items:center !important; justify-content:center !important;
+  width:150px !important; height:52px !important;
+  padding:4px 14px !important;
+  font-family:'IBM Plex Mono',monospace !important; font-size:17px !important; line-height:1.25 !important;
+  letter-spacing:0.02em !important; font-weight:700 !important; text-transform:uppercase !important; text-align:center !important; white-space:nowrap !important;
+  color:#3d4045 !important; text-shadow:0 1px 0 rgba(255,255,255,0.5) !important;
+  border-radius:9px !important;
+  overflow:visible !important;
+  background:linear-gradient(155deg, #eef0f2 0%, #c7cbd0 24%, #8f939a 50%, #d8dbde 68%, #6f7379 100%) !important;
+  border:none !important;
+  box-shadow:0 4px 10px rgba(0,0,0,0.28), inset 0 1px 0 rgba(255,255,255,0.5) !important;
+}
+.unique-badge::before{
+  content:'' !important;
+  position:absolute !important;
+  left:9px !important; top:50% !important;
+  width:6px !important; height:6px !important;
+  border-radius:50% !important;
+  background:rgba(0,0,0,0.4) !important;
+  box-shadow:inset 0 1px 1px rgba(0,0,0,0.5) !important;
+  transform:translateY(-50%) !important;
+  z-index:1 !important;
+}
+.unique-badge::after{
+  content:'' !important;
+  position:absolute !important;
+  left:-9px !important; top:50% !important;
+  width:16px !important; height:16px !important;
+  border-radius:50% !important;
+  border:2.5px solid #b7bbc0 !important;
+  box-shadow:0 1px 2px rgba(0,0,0,0.3), inset 0 -1px 1px rgba(0,0,0,0.2) !important;
+  transform:translateY(-50%) !important;
+  background:transparent !important;
+  z-index:0 !important;
+}
+
+button.add-to-cart-button{font-family:'IBM Plex Mono',monospace !important;font-size:12px !important;letter-spacing:0.08em !important;text-transform:uppercase !important;backdrop-filter:blur(20px) saturate(180%) !important;-webkit-backdrop-filter:blur(20px) saturate(180%) !important;padding:16px 28px !important;}
+button.add-to-cart-button:hover{border-color:var(--accent) !important;}
+
+.ig-reel-embed{margin-top:24px !important;border:1px solid var(--line) !important;backdrop-filter:blur(8px) !important;-webkit-backdrop-filter:blur(8px) !important;}
+.ig-reel-label{font-family:'IBM Plex Mono',monospace !important;letter-spacing:0.08em !important;text-transform:uppercase !important;margin:0 0 12px !important;}
+
+
+
+
+/* === DYNAMISME & MICRO-INTERACTIONS (ajout) === */
+html{scroll-behavior:smooth;}
+
+@media (prefers-reduced-motion: no-preference){
+  html:not(.vg-managed) body{animation:vg-fade-in .6s ease both;}
+  @keyframes vg-fade-in{from{opacity:0;}to{opacity:1;}}
+}
+
+.product-list-image-container{
+  background:linear-gradient(160deg, rgba(255,255,255,0.05), rgba(255,255,255,0.01)) !important;
+  position:relative !important;
+  isolation:isolate !important;
+}
+
+
+
+
+
+
+button[type="submit"], .add-to-cart, a.button, button.button{
+  transition:transform .2s cubic-bezier(.34,1.56,.64,1), box-shadow .25s ease !important;
+}
+button[type="submit"]:hover, .add-to-cart:hover, a.button:hover, button.button:hover{
+  transform:translateY(-2px) scale(1.02) !important;
+  box-shadow:0 8px 24px rgba(58,77,232,0.35) !important;
+}
+button[type="submit"]:active, .add-to-cart:active, a.button:active, button.button:active{
+  transform:translateY(0) scale(0.98) !important;
+}
+
+@media (max-width:640px){
+  .welcome_image{height:auto !important;min-height:60vh !important;max-height:100vh !important;max-height:100dvh !important;}
+  .welcome_image img{object-fit:contain !important;background:var(--bg) !important;}
+}
+
+.vg-reveal{opacity:0;transform:translateY(24px);transition:opacity .6s ease,transform .6s cubic-bezier(.2,.7,.2,1);}
+.vg-reveal.vg-visible{opacity:1;transform:translateY(0);}
+
+/* === SCROLLBAR CUSTOM (ajout) === */
+::-webkit-scrollbar{width:10px !important;}
+::-webkit-scrollbar-track{background:var(--bg) !important;}
+::-webkit-scrollbar-thumb{background:var(--glass-fill) !important;border:1px solid var(--glass-border) !important;border-radius:100px !important;}
+html{scrollbar-color:rgba(0,0,0,0.28) var(--bg) !important;}
+
+/* === HEADER AU SCROLL, NAV & PANIER DYNAMIQUES (ajout) === */
+.header{
+  transition:padding .35s cubic-bezier(.2,.7,.2,1), background .35s ease, backdrop-filter .35s ease, box-shadow .35s ease !important;
+}
+.header.vg-scrolled{
+  padding-top:10px !important;padding-bottom:10px !important;
+  background:rgba(244,242,236,0.82) !important;
+  backdrop-filter:blur(14px) saturate(160%) !important;
+  -webkit-backdrop-filter:blur(14px) saturate(160%) !important;
+  box-shadow:0 8px 24px rgba(0,0,0,0.35) !important;
+}
+
+
+
+
+@keyframes vg-cart-bump{
+  0%{transform:scale(1) rotate(0);}
+  30%{transform:scale(1.35) rotate(-8deg);}
+  60%{transform:scale(0.92) rotate(4deg);}
+  100%{transform:scale(1) rotate(0);}
+}
+nav.utility a.cart-link.vg-bump{
+  animation:vg-cart-bump .5s cubic-bezier(.34,1.56,.64,1) !important;
+  display:inline-block !important;
+}
+
+.vg-toast{
+  position:fixed !important;left:50% !important;bottom:28px !important;
+  transform:translate(-50%, 20px) !important;
+  opacity:0 !important;pointer-events:none !important;
+  z-index:10001 !important;
+  font-family:'IBM Plex Mono',monospace !important;
+  font-size:11px !important;letter-spacing:0.08em !important;text-transform:uppercase !important;
+  color:var(--ink) !important;
+  background:rgba(244,242,236,0.92) !important;
+  border:1px solid var(--glass-border) !important;
+  backdrop-filter:blur(12px) !important;
+  -webkit-backdrop-filter:blur(12px) !important;
+  padding:12px 22px !important;border-radius:100px !important;
+  box-shadow:0 12px 32px rgba(0,0,0,0.4) !important;
+  transition:opacity .35s ease, transform .35s cubic-bezier(.2,.7,.2,1) !important;
+}
+.vg-toast.vg-show{
+  opacity:1 !important;transform:translate(-50%, 0) !important;
+}
+
+/* === HERO INTERACTIF : BRAISES + PARALLAXE (ajout) === */
+.welcome_image{position:relative !important;overflow:hidden !important;}
+.vg-embers{
+  position:absolute !important;inset:0 !important;
+  width:100% !important;height:100% !important;
+  pointer-events:none !important;
+  z-index:3 !important;
+  mix-blend-mode:screen !important;
+}
+.welcome_image img{
+  transition:transform .2s ease-out !important;
+}
+
+/* === GLITCH TITRES + PHOTO PRODUIT DETAIL (ajout) === */
+h1, .product-list-thumb-name{
+  transition:transform .1s ease !important;
+}
+h1:hover, .product-list-link:hover .product-list-thumb-name{
+  animation:vg-title-pop .4s cubic-bezier(.34,1.56,.64,1) 1 !important;
+}
+@keyframes vg-title-pop{
+  0%{transform:scale(1);}
+  45%{transform:scale(1.05);}
+  100%{transform:scale(1);}
+}
+
+.product-images{
+  position:relative !important;
+  isolation:isolate !important;
+}
+
+
+/* === COHERENCE DES TAILLES : HERO + GRILLE PRODUITS (ajout) === */
+
+.product-list-image-container{
+  aspect-ratio:4/5 !important;
+  display:flex !important;
+  align-items:center !important;
+  justify-content:center !important;
+  background:transparent !important;
+}
+.product-list-image-container img{width:100% !important;height:100% !important;}
+
+
+.product-images img{
+  width:100% !important;height:100% !important;
+  object-fit:contain !important;
+}
+
+
+.product-list-thumb-name{font-size:14px !important;}
+.product-list-thumb-price{font-size:12px !important;}
+
+/* === CONFIANCE EDITORIALE : ESPACEMENTS + TYPO (ajout) === */
+nav.sections .navigation a, nav.footernav a{
+  letter-spacing:0.1em !important;
+  font-weight:500 !important;
+}
+
+.page-container, main .content-container, .product-container{
+  padding-top:56px !important;
+  padding-bottom:56px !important;
+}
+
+h1{
+  position:relative !important;
+  padding-bottom:18px !important;
+  margin-bottom:32px !important;
+}
+main[style], .content{
+  text-align:left !important;
+}
+
+footer{
+  padding-top:48px !important;
+  padding-bottom:48px !important;
+}
+footer nav.footernav ul{
+  display:flex !important;
+  flex-wrap:wrap !important;
+  gap:24px !important;
+}
+footer nav.footernav a{
+  font-size:11px !important;
+  color:var(--steel) !important;
+}
+footer nav.footernav a:hover{
+  color:var(--ink) !important;
+}
+
+.product-list-container{
+  row-gap:48px !important;
+}
+
+/* === LISIBILITE BADGE PIECE UNIQUE + REELS (ajout) === */
+
+
+
+.ig-reel-embed{
+  max-width:400px !important;
+  margin-left:auto !important;
+  margin-right:auto !important;
+}
+
+.ig-reel-embed blockquote{
+  margin:0 auto !important;
+  width:100% !important;
+}
+.ig-reel-label{
+  font-size:12px !important;
+  color:var(--ink) !important;
+  font-weight:500 !important;
+}
+
+/* === MENTION LEGALE DISCRETE (ajout) === */
+.vg-legal-footer{
+  margin-top:32px !important;
+  padding-top:16px !important;
+  border-top:1px solid var(--line) !important;
+  font-size:11px !important;
+  color:var(--steel) !important;
+  line-height:1.5 !important;
+}
+
+/* === FILTRES CATEGORIE, FORMULAIRES, RESEAUX SOCIAUX (ajout) === */
+ul.categories{
+  gap:10px !important;
+  flex-wrap:wrap !important;
+}
+ul.categories li.page a{
+  display:inline-block !important;
+  padding:8px 16px !important;
+  border:1px solid var(--line) !important;
+  border-radius:100px !important;
+  font-family:'IBM Plex Mono',monospace !important;
+  font-size:11px !important;
+  letter-spacing:0.06em !important;
+  text-transform:uppercase !important;
+  color:var(--steel) !important;
+  transition:all .25s cubic-bezier(.2,.7,.2,1) !important;
+}
+ul.categories li.page a:hover{border-color:var(--accent) !important;}
+ul.categories li.page.current a, ul.categories li.page a.current{background:var(--accent) !important;border-color:var(--accent) !important;}
+
+select, input[type="number"]{
+  background:rgba(255,255,255,0.05) !important;
+  border:1px solid var(--line) !important;
+  border-radius:8px !important;
+  color:var(--ink) !important;
+  font-family:'Inter',sans-serif !important;
+  padding:8px 12px !important;
+  transition:border-color .2s ease !important;
+}
+.product-form input[type="text"]{
+  background:rgba(255,255,255,0.05) !important;
+  border:1px solid var(--line) !important;
+  border-radius:8px !important;
+  color:var(--ink) !important;
+  font-family:'Inter',sans-serif !important;
+  padding:8px 12px !important;
+  transition:border-color .2s ease !important;
+}
+select:focus, .product-form input:focus{
+  border-color:var(--accent) !important;
+  outline:none !important;
+}
+
+ul.social_icons a{
+  transition:transform .25s cubic-bezier(.34,1.56,.64,1), color .2s ease !important;
+  color:var(--steel) !important;
+  display:inline-flex !important;
+}
+ul.social_icons a:hover{
+  transform:translateY(-3px) scale(1.15) !important;
+  color:var(--accent) !important;
+}
+
+
+
+/* === CURSEUR CUSTOM + STAGGER + MAGNETISME (ajout) === */
+@media (hover:hover) and (pointer:fine){
+  
+}
+@media (hover:none), (pointer:coarse){
+}
+
+.vg-reveal{transition-delay:var(--vg-delay,0s) !important;}
+
+button.button, .add-to-cart-button, a.button{
+  will-change:transform !important;
+}
+
+/* === HERO PLUS COMPACT (ajout) === */
+@media (min-width:641px){
+  .welcome_image{
+    max-height:60vh !important;
+    overflow:hidden !important;
+  }
+  .welcome_image,
+  .welcome_image .splide,
+  .welcome_image .splide__track,
+  .welcome_image .splide__list,
+  .welcome_image .splide__slide,
+  .welcome_image .splide__slide img,
+  .welcome_image .welcome_overlay,
+  .welcome_image picture,
+  .welcome_image > img{
+    height:100% !important;
+    max-height:60vh !important;
+  }
+  
+}
+
+/* === FORCER LE FOND CLAIR PARTOUT (ajout) === */
+html, body, main, .content, #main, .page-container{
+  background:var(--bg) !important;
+}
+footer{
+  background:var(--bg) !important;
+}
+
+/* === NOUVEAU HERO TYPOGRAPHIQUE (ajout) === */
+.welcome_image{
+  height:auto !important;
+  min-height:64vh !important;
+  max-height:none !important;
+  display:flex !important;
+  flex-direction:column !important;
+  align-items:center !important;
+  justify-content:center !important;
+  background:var(--bg) !important;
+  overflow:visible !important;
+  padding:64px 24px !important;
+}
+.welcome_image .splide,
+.welcome_image .welcome_overlay{
+  display:none !important;
+}
+.vg-hero-logo{font-family:'Space Grotesk', sans-serif !important;font-weight:700 !important;color:var(--ink) !important;line-height:0.95 !important;text-align:center !important;}
+.vg-hero-tagline{font-family:'IBM Plex Mono', monospace !important;font-size:12px !important;letter-spacing:0.18em !important;text-transform:uppercase !important;color:var(--steel) !important;text-align:center !important;}
+.welcome_text{
+  position:relative !important;
+  inset:auto !important;
+  top:auto !important;
+  left:auto !important;
+  right:auto !important;
+  bottom:auto !important;
+  transform:none !important;
+  margin-top:36px !important;
+}
+
+/* === MARQUEE BANNIERE + CONFETTIS PANIER (ajout) === */
+.announcement-message__text{
+  overflow:hidden !important;
+  white-space:nowrap !important;
+  width:100% !important;
+}
+
+.vg-marquee-track span{
+  padding-right:56px !important;
+  flex-shrink:0 !important;
+}
+@keyframes vg-marquee-scroll{
+  from{transform:translateX(0);}
+  to{transform:translateX(-50%);}
+}
+@media (prefers-reduced-motion: reduce){
+  .vg-marquee-track{animation:none !important;}
+}
+
+.vg-confetti{
+  position:fixed !important;
+  width:6px !important;height:6px !important;
+  border-radius:2px !important;
+  pointer-events:none !important;
+  z-index:100000 !important;
+  animation:vg-confetti-burst .8s cubic-bezier(.2,.7,.2,1) forwards !important;
+}
+@keyframes vg-confetti-burst{
+  0%{transform:translate(0,0) rotate(0deg); opacity:1;}
+  100%{transform:translate(var(--dx),var(--dy)) rotate(180deg); opacity:0;}
+}
+
+/* === HERO PHOTO INTEGREE (override, ajout) === */
+.welcome_image{
+  display:block !important;
+  position:relative !important;
+  overflow:hidden !important;
+  min-height:0 !important;
+  height:auto !important;
+  padding:0 !important;
+}
+.welcome_text{
+  display:none !important;
+}
+.welcome_image .splide{
+  display:block !important;
+  position:relative !important;
+  width:100% !important;
+  height:62vh !important;
+  min-height:340px !important;
+  max-height:640px !important;
+  z-index:0 !important;
+}
+.welcome_image .splide__track,
+.welcome_image .splide__list,
+.welcome_image .splide__slide{
+  height:100% !important;
+}
+.welcome_image .splide__slide img{
+  width:100% !important;
+  height:100% !important;
+  object-fit:cover !important;
+  object-position:center !important;
+}
+.vg-hero-text{
+  position:relative !important;
+  z-index:2 !important;
+  display:flex !important;
+  flex-direction:column !important;
+  align-items:center !important;
+  text-align:center !important;
+  padding:40px 24px 8px !important;
+}
+
+
+
+/* === ORDRE PHOTO AVANT TEXTE (ajout) === */
+.welcome_image{
+  display:flex !important;
+  flex-direction:column !important;
+}
+.welcome_image .splide{
+  order:1 !important;
+}
+.vg-hero-text{
+  order:2 !important;
+}
+
+/* === PASTILLES COULEUR PRODUIT (ajout) === */
+.vg-color-dot{
+  display:inline-block !important;
+  width:10px !important;
+  height:10px !important;
+  border-radius:50% !important;
+  margin-left:8px !important;
+  vertical-align:middle !important;
+  box-shadow:0 0 0 1px rgba(0,0,0,0.18) inset, 0 1px 2px rgba(0,0,0,0.15) !important;
+}
+
+
+/* === PASTILLES COULEUR STYLE GLOSSY (override, ajout) === */
+.vg-color-dot{
+  width:18px !important;
+  height:18px !important;
+  margin-left:10px !important;
+  border-radius:50% !important;
+  box-shadow:
+    inset -3px -3px 5px rgba(0,0,0,0.35),
+    inset 2px 3px 4px rgba(255,255,255,0.65),
+    0 2px 3px rgba(0,0,0,0.2) !important;
+  position:relative !important;
+}
+.vg-color-dot::after{
+  content:"";
+  position:absolute;
+  top:2px;
+  left:3px;
+  width:38%;
+  height:32%;
+  border-radius:50%;
+  background:rgba(255,255,255,0.9);
+  filter:blur(0.5px);
+}
+
+
+
+/* === LIENS MAGNETIQUES (ajout) === */
+.header nav.utility, .header nav:not(.utility) a, ul.categories li.page a{
+  transition:transform .2s ease !important;
+  display:inline-block !important;
+}
+
+/* === COMPTEUR RETRO PIED DE PAGE (ajout) === */
+.vg-counter-wrap{
+  display:inline-flex !important;
+  align-items:center !important;
+  gap:8px !important;
+  margin-top:18px !important;
+}
+.vg-counter-label{
+  font-family:'IBM Plex Mono',monospace !important;
+  font-size:10px !important;
+  letter-spacing:0.12em !important;
+  text-transform:uppercase !important;
+  color:var(--steel) !important;
+}
+.vg-counter{
+  display:inline-flex !important;
+  gap:3px !important;
+  background:var(--ink) !important;
+  padding:5px 9px !important;
+  border-radius:4px !important;
+  box-shadow:inset 0 2px 4px rgba(0,0,0,0.4), inset 0 -1px 2px rgba(255,255,255,0.08) !important;
+}
+.vg-counter span{
+  font-family:'IBM Plex Mono',monospace !important;
+  font-size:13px !important;
+  letter-spacing:0.05em !important;
+  color:var(--accent) !important;
+  text-shadow:0 0 6px rgba(58,79,222,0.6) !important;
+}
+
+/* === BANDEAU ANNONCE : NETTOYAGE REPETITION (correction, ajout) === */
+.vg-marquee-track{
+  animation:none !important;
+  display:inline-flex !important;
+}
+.vg-marquee-track span:not(:first-child){
+  display:none !important;
+}
+
+/* === HEADER VERRE DEPOLI TRANSPARENT (correction, ajout) === */
+.header{
+  background:rgba(255,255,255,0.5) !important;
+  backdrop-filter:blur(16px) saturate(160%) !important;
+  -webkit-backdrop-filter:blur(16px) saturate(160%) !important;
+}
+
+/* === PASTILLES FORME LIBRE (correction, ajout) === */
+
+.vg-color-dot::after{
+  border-radius:60% 40% 55% 45% / 55% 45% 65% 35% !important;
+}
+
+/* === PHOTOS PRODUIT : PLUS DE CROP, PLUS DE CADRE (correction, ajout) === */
+.product-list-image-container{
+  position:relative !important;
+  overflow:visible !important;
+}
+.product-list-image-container img{
+  object-fit:contain !important;
+  position:relative !important;
+  z-index:1 !important;
+}
+.product-images{
+  overflow:hidden !important;
+}
+
+
+
+/* === REEL INSTAGRAM : CORRECTION TAILLE (correction, ajout) === */
+.ig-reel-embed, .ig-reel-embed blockquote{
+  width:100% !important;
+  max-width:400px !important;
+  margin-left:auto !important;
+  margin-right:auto !important;
+}
+.ig-reel-embed iframe{
+  width:100% !important;
+  max-width:100% !important;
+  height:620px !important;
+  border:none !important;
+  border-radius:8px !important;
+}
+
+/* === HOVER PHOTO PRODUIT : POP CARTOON + FOCUS (ajout) === */
+.product-list-container{
+  isolation:isolate !important;
+}
+.product-list-link{
+  position:relative !important;
+  transition:opacity .3s ease, filter .3s ease !important;
+}
+.product-list-container:has(.product-list-link:hover) .product-list-link:not(:hover){
+  opacity:0.35 !important;
+  filter:blur(1.5px) saturate(70%) !important;
+}
+
+/* === HOVER PASTILLES CATEGORIE : SPOTLIGHT (ajout) === */
+ul.categories{
+  isolation:isolate !important;
+}
+
+ul.categories:has(li.page a:hover) li.page a:not(:hover){
+  opacity:0.4 !important;
+}
+ul.categories li.page a:hover{background:var(--ink) !important;color:var(--bg) !important;z-index:5 !important;}
+
+/* === SUPPRESSION TOTALE DES CADRES PHOTOS PRODUIT, PARTOUT (correction, ajout) === */
+.product-list-image-container,
+.product-images{
+  border:none !important;
+  box-shadow:none !important;
+  background:transparent !important;
+  outline:none !important;
+}
+/* === PASTILLES EN ETOILE (correction, ajout) === */
+.vg-color
+.vg-color-dot::after{
+  clip-path:none !important;
+  border-radius:0 !important;
+  top:15% !important;
+  left:15% !important;
+  width:45% !important;
+  height:45% !important;
+}
+
+/* === CURSEUR ETOILE 3D ANNEES 2000 (correction, ajout) === */
+@media (hover:hover) and (pointer:fine){
+}
+
+
+
+/* === LISIBILITE PAGES DE CONTENU (INFOS/CGV/CONTACT) (correction, ajout) === */
+.content.custom-content,
+.content.custom-content p,
+.content.custom-content li,
+.content.custom-content span,
+.content.custom-content strong,
+.content.custom-content a,
+.content.custom-content h1,
+.content.custom-content h2,
+.content.custom-content h3{
+  color:var(--ink) !important;
+}
+.content.custom-content a{
+  text-decoration:underline !important;
+}
+
+/* === LOGO + ICONES HEADER TOUJOURS VISIBLES SUR PHOTO (correction, ajout) === */
+.header .logo img,
+.header .logo svg,
+.header nav.utility svg{
+  filter:drop-shadow(0 1px 3px rgba(255,255,255,0.9)) drop-shadow(0 0 6px rgba(255,255,255,0.7)) !important;
+}
+
+
+/* === LISIBILITE PAGE PANIER (correction, ajout) === */
+.cart-wrapper,
+.cart-wrapper td,
+.cart-wrapper th,
+.cart-wrapper span,
+.cart-wrapper a,
+.cart-wrapper label,
+.cart,
+.cart td,
+.cart th,
+.cart span,
+.cart a,
+.cart label,
+table.cart-table,
+table.cart-table td,
+table.cart-table th{
+  color:var(--ink) !important;
+}
+.cart-wrapper input,
+.cart input,
+table.cart-table input{
+  border-color:var(--line) !important;
+  color:var(--ink) !important;
+}
+
+/* === RETRAIT BRAISES HERO (correction, ajout) === */
+.vg-embers{
+  display:none !important;
+}
+
+/* === HERO TEXTE EN OVERLAY EPURE, STYLE ROHAN (correction, ajout) === */
+.vg-hero-text{
+  position:absolute !important;
+  left:50% !important;
+  right:auto !important;
+  bottom:36px !important;
+  top:auto !important;
+  transform:translateX(-50%) !important;
+  z-index:3 !important;
+  pointer-events:none !important;
+}
+.vg-hero-logo{
+  font-size:clamp(18px,2.6vw,28px) !important;
+  letter-spacing:0.12em !important;
+  margin:0 !important;
+}
+.vg-hero-tagline{
+  margin-top:6px !important;
+}
+
+/* === LISIBILITE TEXTE HERO SUR PHOTO (correction, ajout) === */
+.welcome_image::after{
+  content:"";
+  position:absolute;
+  left:0;
+  right:0;
+  bottom:0;
+  height:40%;
+  background:linear-gradient(to top, rgba(255,255,255,0.9), rgba(255,255,255,0));
+  pointer-events:none;
+  z-index:2;
+}
+.vg-hero-logo,
+.vg-hero-tagline{
+  text-shadow:0 1px 2px rgba(255,255,255,0.8), 0 0 10px rgba(255,255,255,0.6) !important;
+}
+
+/* === RETRAIT BANDEAU ANNONCE (juge nul) === */
+.announcement-message, .announcement-bar, .announcement{
+  display:none !important;
+}
+
+/* === RETRAIT COMPTEUR PIECES UNIQUES (juge nul) === */
+.vg-counter-wrap{
+  display:none !important;
+}
+
+
+/* === TOUCHE SIMPLE 3D (curseur orange/jaune + pastilles + bouton) === */
+@media (hover:hover) and (pointer:fine){
+}
+
+.vg-color-dot{
+  position:relative !important;
+  filter:drop-shadow(0 2px 4px rgba(0,0,0,0.4)) !important;
+}
+.vg-color-dot::before{content:"";position:absolute !important;pointer-events:none !important;z-index:2 !important;}
+
+
+/* === FIX LISIBILITE PANIER (lien Remove rate par le fix precedent) === */
+.cart-wrapper a, .cart-wrapper button,
+.cart a, .cart button,
+table.cart-table a, table.cart-table button,
+.cart-item a, .cart-item button,
+.line-item a, .line-item button{
+  color:var(--ink) !important;
+  opacity:1 !important;
+}
+
+/* === FIX SPECIFICITE .vg-hover (cause du 'retour a l'ancien style' au survol des liens) === */
+@media (hover:hover) and (pointer:fine){
+}
+
+/* === FIX curseur natif qui reste visible sur photos/liens + GROS + STYLE JEU VIDEO 90/2000 === */
+@media (hover:hover) and (pointer:fine){
+  html, body, a, button, img, div, section, span, svg, li, ul, nav, header, footer, main, p, h1, h2, h3,
+  .product-list-link, .product-list-image-container, .product-images,
+  button.add-to-cart-button, .vg-color-dot{
+    cursor:none !important;
+  }
+}
+
+@media (hover:hover) and (pointer:fine){
+}
+
+
+.vg-color-dot::before{
+  top:14% !important; left:24% !important;
+  width:18% !important; height:13% !important;
+  border-radius:50% !important;
+  background:#ffffff !important;
+}
+
+/* === CURSEUR VRAIMENT 3D (degrade lisse, pas de bandes) + POUSSIERE D'ETOILES === */
+@media (hover:hover) and (pointer:fine){
+}
+
+.vg-cursor-spark{
+  position:fixed !important;
+      top:0;  left:0;
+  width:7px !important; height:7px !important;
+  pointer-events:none !important;
+  z-index:2147483647 !important;
+  border-radius:50% !important;
+  clip-path:polygon(50% 0%, 61% 40%, 100% 50%, 61% 60%, 50% 100%, 39% 60%, 0% 50%, 39% 40%) !important;
+  background:radial-gradient(circle, #ffe27a 0%, #ffa726 55%, transparent 100%) !important;
+  animation:vg-spark-fade 0.7s ease-out forwards !important;
+  will-change:transform, opacity !important;
+}
+@keyframes vg-spark-fade{
+  0%{ opacity:1; transform:translate(-50%,-50%) scale(1) rotate(0deg); }
+  100%{ opacity:0; transform:translate(-50%,-50%) scale(0.15) translateY(-16px) rotate(110deg); }
+}
+
+/* === FIX DEFINITIF ANIMATION (le transform de centrage bloquait le transform de l'animation) === */
+
+
+
+@media (hover:hover) and (pointer:fine){
+}
+
+/* === POUSSIERE PLUS VISIBLE (plus grosse, plus longue, plus dense) === */
+.vg-cursor-spark{
+  width:16px !important;
+  height:16px !important;
+  animation:vg-spark-fade 1.3s ease-out forwards !important;
+}
+@keyframes vg-spark-fade{
+  0%{ opacity:1; transform:translate(-50%,-50%) scale(1) rotate(0deg); }
+  100%{ opacity:0; transform:translate(-50%,-50%) scale(0.1) translateY(-26px) rotate(160deg); }
+}
+
+
+/* Corrige les pastilles minuscules (12px) dans les listings produits, oubliees par un ancien reglage */
+.product-subheader .vg-color-dot{
+  width:22px !important;
+  height:22px !important;
+  margin-left:8px !important;
+}
+
+/* === CURSEUR FINAL : la bague (ring) est l'etoile visible et animee, le dot etait invisible donc masque === */
+@media (hover:hover) and (pointer:fine){
+}
+
+
+/* === PASTILLES PLUS PETITES SUR MOBILE (trop grosses signalees) === */
+@media (max-width:480px){
+  .vg-color-dot{ width:15px !important; height:15px !important; }
+  .product-subheader .vg-color-dot{ width:13px !important; height:13px !important; margin-left:6px !important; }
+}
+
+/* === TIGES PLUS EPAISSES + ROTATION PILOTEE PAR LE MOUVEMENT DE SOURIS (var CSS, fiable) === */
+
+@media (hover:hover) and (pointer:fine){
+}
+@keyframes vg-click-burst{
+  0%{ transform:rotate(var(--vg-rot,0deg)) scale(1) !important; }
+  40%{ transform:rotate(var(--vg-rot,0deg)) scale(1.7) !important; filter:drop-shadow(0 4px 6px rgba(0,0,0,0.4)) brightness(1.35) !important; }
+  100%{ transform:rotate(var(--vg-rot,0deg)) scale(1) !important; }
+}
+.vg-cursor-spark.vg-burst{
+  width:10px !important; height:10px !important;
+  animation:vg-spark-fade 0.9s ease-out forwards !important;
+}
+
+/* === PLUS DE VOLUME (contraste renforce, ombre plus marquee) === */
+@media (hover:hover) and (pointer:fine){
+}
+
+/* === PANIER EN OBJET 3D (icone reelle, libre de droits, CC0 3dicons.co) === */
+.cart-link svg{ display:none !important; }
+.cart-link::before{content:'';display:inline-block !important;margin-right:6px !important;background-image:url("https://vgthmind.github.io/assets/bigcartel/cart-icon.png") !important;background-size:contain !important;background-repeat:no-repeat !important;background-position:center !important;filter:drop-shadow(1px 3px 2px rgba(0,0,0,0.4)) !important;}
+
+/* === PANIER : animation idle 3D + BOUTON ADD TO CART EN RELIEF 3D === */
+@keyframes vg-cart-spin{
+  from{ transform:rotateY(0deg); }
+  to{ transform:rotateY(360deg); }
+}
+.cart-link{
+  perspective:600px !important;
+  display:inline-block !important;
+}
+.cart-link::before{
+  animation:vg-cart-spin 3.5s linear infinite !important;
+  transform-origin:50% 50% !important;
+  backface-visibility:visible !important;
+}
+button.add-to-cart-button{
+  background:linear-gradient(180deg, #2c2d2f 0%, #1c1d1f 100%) !important;
+  border:1px solid #141416 !important;
+  border-radius:3px !important;
+  box-shadow:0 5px 0 #101012, 0 7px 10px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.12) !important;
+  color:#d8d9da !important;
+  text-shadow:0 1px 0 rgba(0,0,0,0.6) !important;
+  transition:transform 0.08s linear, box-shadow 0.08s linear !important;
+}
+
+
+
+.vg-trail-streak{
+  position:fixed !important; top:0; left:0;
+  width:110px !important; height:14px !important;
+  border-radius:50% !important;
+  background:linear-gradient(90deg, transparent, rgba(255,180,40,0.85) 30%, rgba(255,210,90,1) 100%) !important;
+  pointer-events:none !important; z-index:2147483647 !important;
+  filter:blur(1px) !important;
+  transform-origin:right center !important;
+  opacity:0;
+}
+.vg-trail-node{
+  position:fixed !important; top:0; left:0;
+  pointer-events:none !important; z-index:2147483647 !important;
+  opacity:0 !important;
+  transition:opacity 0.15s ease !important;
+}
+.vg-trail-node.vg-trail-visible{
+  opacity:1 !important;
+}
+.vg-trail-sparkle{
+  width:26px !important; height:26px !important;
+  background:radial-gradient(circle, #ffe27a 0%, #ffa726 55%, transparent 100%) !important;
+  clip-path:polygon(50% 0%, 61% 40%, 100% 50%, 61% 60%, 50% 100%, 39% 60%, 0% 50%, 39% 40%) !important;
+  filter:drop-shadow(0 0 1px rgba(150,90,10,0.45)) !important;
+}
+.vg-trail-bubble{
+  width:18px !important; height:18px !important;
+  border-radius:50% !important;
+  background:radial-gradient(circle at 35% 30%, #fff3d6 0%, #ffd98a 40%, rgba(255,190,60,0.5) 75%, transparent 100%) !important;
+  box-shadow:0 0 0 1px rgba(150,95,10,0.3), 0 0 6px rgba(255,200,100,0.7) !important;
+}
+
+.vg-splash-logo{height:auto !important;margin-bottom:18px !important;}
+
+.vg-color-dot{ width:8px !important; height:8px !important; border-radius:50% !important; }
+
+.vg-low-stock, [class*="stock-message"], [class*="low-stock"], [class*="quantity-message"], [class*="inventory-message"], [class*="low-inventory"]{
+  display:inline-block !important;
+  background:linear-gradient(155deg, #e0483e 0%, #b8241c 100%) !important;
+  color:#fff !important;
+  padding:4px 10px !important;
+  border-radius:3px !important;
+  font-family:'IBM Plex Mono',monospace !important;
+  font-size:11px !important;
+  letter-spacing:0.05em !important;
+  text-transform:uppercase !important;
+  transform:rotate(-1.5deg) !important;
+  box-shadow:0 2px 4px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.25) !important;
+  text-shadow:0 1px 1px rgba(0,0,0,0.3) !important;
+}
+
+.vg-splash{
+  position:fixed !important; inset:0 !important;
+  z-index:2147483000 !important;
+  background:#0e0e10 !important;
+  display:flex !important; flex-direction:column !important;
+  align-items:center !important; justify-content:center !important;
+  cursor:none !important;
+  transition:opacity 0.6s ease, transform 0.6s ease !important;
+}
+.vg-splash h1{
+  font-family:'Space Grotesk',sans-serif !important;
+  color:#f5f5f5 !important;
+  font-size:clamp(40px,8vw,90px) !important;
+  letter-spacing:0.05em !important;
+  margin:0 !important;
+}
+.vg-splash p{
+  font-family:'IBM Plex Mono',monospace !important;
+  color:#9c9284 !important;
+  font-size:13px !important;
+  letter-spacing:0.15em !important;
+  text-transform:uppercase !important;
+  margin:14px 0 40px !important;
+}
+.vg-splash .vg-enter{font-family:'IBM Plex Mono',monospace !important;letter-spacing:0.08em !important;text-transform:uppercase !important;}
+@keyframes vg-splash-pulse{
+  0%,100%{ opacity:0.6; }
+  50%{ opacity:1; }
+}
+.vg-splash.vg-splash-out{
+  opacity:0 !important;
+  transform:scale(1.15) !important;
+  pointer-events:none !important;
+}
+
+
+
+/* ===== PUCK METAL BUTTON BACKGROUND (override, ref AVIF bezel) ===== */
+ul.categories li.page a{
+  position:relative !important;
+  z-index:0 !important;
+  padding:10px 20px !important;
+  border:none !important;
+  border-radius:14px !important;
+  background:linear-gradient(155deg, #eef0f2 0%, #c7cbd0 24%, #8f939a 50%, #d8dbde 68%, #6f7379 100%) !important;
+  box-shadow:0 3px 6px rgba(0,0,0,0.28), 0 1px 0 rgba(255,255,255,0.5) inset !important;
+  color:#3d4045 !important;
+  transition:transform .15s ease, box-shadow .15s ease !important;
+}
+ul.categories li.page a::before{
+  content:'' !important;
+  position:absolute !important;
+  z-index:-1 !important;
+  inset:3px !important;
+  border-radius:11px !important;
+  background:linear-gradient(165deg, #ffffff 0%, #f2f2f1 55%, #dfdfdd 100%) !important;
+  box-shadow:0 1px 2px rgba(0,0,0,0.12), 0 -1px 1px rgba(255,255,255,0.9) inset !important;
+}
+ul.categories li.page a:hover{
+  transform:translateY(-1px) !important;
+  box-shadow:0 5px 8px rgba(0,0,0,0.3), 0 1px 0 rgba(255,255,255,0.6) inset !important;
+}
+ul.categories li.page a:active{
+  transform:translateY(1px) !important;
+  box-shadow:0 1px 2px rgba(0,0,0,0.25), 0 1px 0 rgba(255,255,255,0.4) inset !important;
+}
+ul.categories li.page.current a, ul.categories li.page a.current{
+  color:#fff !important;
+}
+ul.categories li.page.current a::before, ul.categories li.page a.current::before{
+  background:linear-gradient(165deg, #5c6cf0 0%, var(--accent) 55%, #2a37b8 100%) !important;
+  box-shadow:0 1px 2px rgba(0,0,0,0.25), 0 -1px 1px rgba(255,255,255,0.35) inset !important;
+}
+
+.vg-footer-dup-contact{ display:none !important; }
+
+/* ===== FOOTER EXTRA NAV (theme bug leak, restyled) ===== */
+.vg-footer-extra-nav{
+  display:flex !important;
+  flex-wrap:wrap !important;
+  gap:14px 20px !important;
+  justify-content:center !important;
+  list-style:none !important;
+  padding:20px 0 0 !important;
+  margin:0 !important;
+  border-top:1px solid var(--line) !important;
+}
+.vg-footer-extra-nav li{ list-style:none !important; margin:0 !important; }
+.vg-footer-extra-nav a{
+  font-family:'IBM Plex Mono',monospace !important;
+  font-size:10.5px !important;
+  letter-spacing:0.08em !important;
+  text-transform:uppercase !important;
+  color:var(--steel) !important;
+  text-decoration:none !important;
+  transition:color .2s ease !important;
+}
+.vg-footer-extra-nav a:hover{ color:var(--accent) !important; }
+/* ===== UNIQUE PIECE CART QTY LOCK NOTE ===== */
+.vg-unique-qty-note{
+  font-family:'IBM Plex Mono',monospace !important;
+  font-size:10px !important;
+  letter-spacing:0.04em !important;
+  text-transform:uppercase !important;
+  color:var(--steel) !important;
+  margin-top:6px !important;
+}
+/* ===== ADD TO CART PUCK FRAME (matches category pills) ===== */
+button.add-to-cart-button{
+  position:relative !important;
+  z-index:0 !important;
+  border-radius:14px !important;
+  background:linear-gradient(155deg, #eef0f2 0%, #c7cbd0 24%, #8f939a 50%, #d8dbde 68%, #6f7379 100%) !important;
+  border:none !important;
+  box-shadow:0 5px 0 #6f7379, 0 7px 10px rgba(0,0,0,0.4), 0 1px 0 rgba(255,255,255,0.5) inset !important;
+  color:#3d4045 !important;
+  text-shadow:0 1px 0 rgba(255,255,255,0.5) !important;
+}
+button.add-to-cart-button::before{
+  content:'' !important;
+  position:absolute !important;
+  z-index:-1 !important;
+  inset:3px !important;
+  border-radius:11px !important;
+  background:linear-gradient(165deg, #ffffff 0%, #f2f2f1 55%, #dfdfdd 100%) !important;
+  box-shadow:0 1px 2px rgba(0,0,0,0.12), 0 -1px 1px rgba(255,255,255,0.9) inset !important;
+}
+button.add-to-cart-button:hover{
+  transform:translateY(-1px) !important;
+  box-shadow:0 6px 0 #6f7379, 0 9px 12px rgba(0,0,0,0.35), 0 1px 0 rgba(255,255,255,0.6) inset !important;
+}
+button.add-to-cart-button:active{
+  transform:translateY(5px) !important;
+  box-shadow:0 0 0 #6f7379, 0 1px 2px rgba(0,0,0,0.3), 0 1px 0 rgba(255,255,255,0.3) inset !important;
+}
+
+/* ===== PUCK STYLE ON ALL ACTION BUTTONS ===== */
+button.button--checkout, button.search-button, a.button.view-all-products, .vg-splash .vg-enter{
+  position:relative !important;
+  z-index:0 !important;
+  border-radius:12px !important;
+  background:linear-gradient(155deg, #eef0f2 0%, #c7cbd0 24%, #8f939a 50%, #d8dbde 68%, #6f7379 100%) !important;
+  border:none !important;
+  box-shadow:0 4px 0 #6f7379, 0 6px 9px rgba(0,0,0,0.35), 0 1px 0 rgba(255,255,255,0.5) inset !important;
+  color:#3d4045 !important;
+  text-shadow:0 1px 0 rgba(255,255,255,0.5) !important;
+  animation:none !important;
+}
+button.button--checkout::before, button.search-button::before, a.button.view-all-products::before, .vg-splash .vg-enter::before{
+  content:'' !important;
+  position:absolute !important;
+  z-index:-1 !important;
+  inset:3px !important;
+  border-radius:9px !important;
+  background:linear-gradient(165deg, #ffffff 0%, #f2f2f1 55%, #dfdfdd 100%) !important;
+  box-shadow:0 1px 2px rgba(0,0,0,0.12), 0 -1px 1px rgba(255,255,255,0.9) inset !important;
+}
+button.button--checkout:hover, button.search-button:hover, a.button.view-all-products:hover, .vg-splash .vg-enter:hover{
+  transform:translateY(-1px) !important;
+  box-shadow:0 5px 0 #6f7379, 0 8px 11px rgba(0,0,0,0.3), 0 1px 0 rgba(255,255,255,0.6) inset !important;
+}
+button.button--checkout:active, button.search-button:active, a.button.view-all-products:active, .vg-splash .vg-enter:active{
+  transform:translateY(3px) !important;
+  box-shadow:0 0 0 #6f7379, 0 1px 2px rgba(0,0,0,0.25), 0 1px 0 rgba(255,255,255,0.3) inset !important;
+}
+button.search-button svg{ color:#3d4045 !important; }
+
+/* ===== UNIQUE BADGE: never cover the product, all screens ===== */
+.unique-badge{
+  max-width:min(78%, 300px) !important;
+  padding:8px 14px 8px 13px !important;
+  font-size:15px !important;
+}
+@media (max-width:480px){
+  .unique-badge{
+    top:8px !important; left:8px !important;
+    max-width:74% !important;
+    font-size:14px !important;
+    padding:7px 12px 7px 11px !important;
+    letter-spacing:0.03em !important;
+    white-space:normal !important;
+    line-height:1.3 !important;
+  }
+}
+
+/* ===== BIG BATCH: nav puck, sizes, titles, reels, cart polish ===== */
+.logo img{ max-height:46px !important; }
+.cart-link::before{ width:32px !important; height:32px !important; }
+.announcement-message{
+  background:var(--bg) !important;
+  backdrop-filter:none !important; -webkit-backdrop-filter:none !important;
+  border-bottom:none !important; box-shadow:none !important;
+}
+nav.sections .navigation a{
+  position:relative !important; z-index:0 !important;
+  display:inline-flex !important; align-items:center !important; justify-content:center !important;
+  padding:8px 16px !important;
+  border:none !important; border-bottom:none !important;
+  border-radius:10px !important;
+  background:linear-gradient(155deg, #eef0f2 0%, #c7cbd0 24%, #8f939a 50%, #d8dbde 68%, #6f7379 100%) !important;
+  box-shadow:0 3px 0 #6f7379, 0 5px 7px rgba(0,0,0,0.3), 0 1px 0 rgba(255,255,255,0.5) inset !important;
+  color:#3d4045 !important; text-shadow:0 1px 0 rgba(255,255,255,0.5) !important;
+}
+nav.sections .navigation a::before{
+  content:'' !important; position:absolute !important; z-index:-1 !important; inset:2px !important;
+  border-radius:8px !important;
+  background:linear-gradient(165deg, #ffffff 0%, #f2f2f1 55%, #dfdfdd 100%) !important;
+  box-shadow:0 1px 2px rgba(0,0,0,0.1), 0 -1px 1px rgba(255,255,255,0.9) inset !important;
+}
+nav.sections .navigation a:hover{ transform:translateY(-1px) !important; border-bottom:none !important; color:#3d4045 !important; }
+button.add-to-cart-button, button.button--checkout, button.search-button, a.button.view-all-products, .vg-splash .vg-enter{
+  display:flex !important; align-items:center !important; justify-content:center !important;
+  line-height:normal !important;
+}
+h1{
+  background:linear-gradient(155deg, #1c1d1f 0%, #3d4045 22%, #6f7379 42%, #babdc1 52%, #4a4d52 68%, #141516 100%) !important;
+  -webkit-background-clip:text !important; background-clip:text !important;
+  color:transparent !important;
+  -webkit-text-fill-color:transparent !important;
+  text-shadow:none !important;
+  filter:drop-shadow(0 1px 0 rgba(255,255,255,0.3)) !important;
+}
+.ig-reel-embed{
+  border-radius:14px !important;
+  padding:3px !important;
+  background:linear-gradient(155deg, #eef0f2 0%, #c7cbd0 24%, #8f939a 50%, #d8dbde 68%, #6f7379 100%) !important;
+  box-shadow:0 4px 10px rgba(0,0,0,0.25) !important;
+}
+.ig-reel-embed > *{ border-radius:11px !important; overflow:hidden !important; }
+.cart-remove-item{
+  display:inline-flex !important; align-items:center !important;
+  padding:5px 12px !important;
+  border-radius:8px !important;
+  background:linear-gradient(155deg, #f2f2f1 0%, #dfdfdd 100%) !important;
+  box-shadow:0 1px 3px rgba(0,0,0,0.15) !important;
+  color:#6f7379 !important; font-size:11px !important;
+}
+.qty-holder{
+  border:none !important;
+  border-radius:10px !important;
+  background:linear-gradient(155deg, #eef0f2 0%, #dfdfdd 100%) !important;
+  box-shadow:0 1px 3px rgba(0,0,0,0.15), 0 1px 0 rgba(255,255,255,0.5) inset !important;
+  padding:4px !important;
+}
+.product-quantity{
+  border:none !important; background:#ffffff !important;
+  border-radius:6px !important;
+  box-shadow:inset 0 1px 3px rgba(0,0,0,0.1) !important;
+}
+.vg-unique-qty-note{
+  background:linear-gradient(155deg, #eef0f2 0%, #dfdfdd 100%) !important;
+  border-radius:6px !important;
+  padding:4px 8px !important;
+  box-shadow:0 1px 2px rgba(0,0,0,0.1) !important;
+}
+.open-search-button{
+  color:#3d4045 !important;
+  opacity:1 !important;
+}
+.open-search-button svg{ color:#3d4045 !important; fill:#3d4045 !important; opacity:1 !important; }
+.cart-item, .cart-item:first-child, ul.cart-items, .cart-items{ border:none !important; }
+
+/* ===== remove thin lines, bigger splash logo/button ===== */
+header, .header, nav.sections, nav.sections .navigation{ border:none !important; box-shadow:none !important; }
+.vg-splash-logo{ max-width:min(78vw, 520px) !important; }
+.vg-splash .vg-enter{ padding:18px 44px !important; font-size:20px !important; font-weight:700 !important; }
+
+
+.product-list-image img, .product-images img, .product-list-image-container img{ box-shadow:none !important; }
+button.add-to-cart-button:focus, button.add-to-cart-button:focus-visible, button.button--checkout:focus, button.button--checkout:focus-visible, button.search-button:focus, button.search-button:focus-visible, a.button.view-all-products:focus, nav.sections .navigation a:focus{ outline:none !important; }
+button.add-to-cart-button, button.button--checkout, button.search-button, button.button, button[type="submit"]{ appearance:none !important; -webkit-appearance:none !important; -moz-appearance:none !important; }
+button.add-to-cart-button:hover{ background:linear-gradient(155deg, #eef0f2 0%, #c7cbd0 24%, #8f939a 50%, #d8dbde 68%, #6f7379 100%) !important; }
+/* === TRANSITION VIDEO SPLASH (ajout) === */
+.vg-splash-video{
+  position:absolute !important;
+  inset:0 !important;
+  width:100% !important;
+  height:100% !important;
+  object-fit:cover !important;
+  z-index:1 !important;
+  opacity:0 !important;
+  pointer-events:none !important;
+  transition:opacity .4s ease !important;
+}
+.vg-splash-playing .vg-splash-video{
+  opacity:1 !important;
+}
+.vg-splash-playing .vg-splash-logo,
+.vg-splash-playing .vg-enter{
+  opacity:0 !important;
+  transition:opacity .3s ease !important;
+}
+/* === S'ASSURE QUE LES BOUTONS DE LA VISIONNEUSE RESTENT CLIQUABLES (ajout) === */
+.pswp__button,
+.pswp__top-bar{
+  pointer-events:auto !important;
+  z-index:100000 !important;
+}
+/* === VISIONNEUSE PHOTO CUSTOM (remplace le lightbox natif, plus fiable) === */
+.vg-lightbox{position:fixed !important;inset:0 !important;z-index:999999 !important;background:rgba(15,14,12,0.55) !important;backdrop-filter:blur(26px) saturate(140%) !important;-webkit-backdrop-filter:blur(26px) saturate(140%) !important;display:flex !important;align-items:center !important;justify-content:center !important;padding:48px !important;box-sizing:border-box !important;cursor:default !important;animation:vg-lightbox-in 0.2s ease !important;overflow:hidden !important;}
+@keyframes vg-lightbox-in{from{opacity:0;}to{opacity:1;}}
+.vg-lightbox-img{max-width:100% !important;max-height:100% !important;object-fit:contain !important;border-radius:0 !important;box-shadow:none !important;border:none !important;outline:none !important;pointer-events:none !important;position:relative !important;z-index:2 !important;}
+.vg-lightbox-close,.vg-lightbox-nav{position:fixed !important;display:flex !important;align-items:center !important;justify-content:center !important;border-radius:50% !important;border:none !important;background:linear-gradient(155deg, #eef0f2 0%, #c7cbd0 24%, #8f939a 50%, #d8dbde 68%, #6f7379 100%) !important;box-shadow:0 3px 0 #6f7379, 0 5px 8px rgba(0,0,0,0.35), 0 1px 0 rgba(255,255,255,0.5) inset !important;color:#3d4045 !important;text-shadow:0 1px 0 rgba(255,255,255,0.5) !important;line-height:1 !important;cursor:pointer !important;z-index:1000000 !important;font-family:'IBM Plex Mono',monospace !important;transition:transform 0.15s ease !important;}
+.vg-lightbox-close:hover{transform:scale(1.08) !important;}
+.vg-lightbox-nav:hover{transform:translateY(-50%) scale(1.08) !important;}
+.vg-lightbox-close:active{transform:scale(0.94) !important;}
+.vg-lightbox-nav:active{transform:translateY(-50%) scale(0.94) !important;}
+.vg-lightbox-close{top:20px !important;right:24px !important;width:44px !important;height:44px !important;font-size:22px !important;}
+.vg-lightbox-nav{top:50% !important;transform:translateY(-50%) !important;width:48px !important;height:48px !important;font-size:24px !important;}
+.vg-lightbox-prev{left:20px !important;}
+.vg-lightbox-next{right:20px !important;}
+html.vg-lightbox-open{overflow:hidden !important;}
+html.vg-lightbox-open .vg-trail-node,html.vg-lightbox-open .vg-trail-streak{display:none !important;}
+/* === MINI CONTOUR SUR LES ICONES HEADER (recherche + panier) === */
+.open-search-button{display:inline-flex !important;align-items:center !important;justify-content:center !important;width:36px !important;height:36px !important;border:1px solid var(--line) !important;border-radius:50% !important;transition:border-color 0.2s ease, background 0.2s ease !important;}
+a.cart-link{display:inline-flex !important;align-items:center !important;gap:6px !important;padding:8px 14px !important;border:1px solid var(--line) !important;border-radius:20px !important;transition:border-color 0.2s ease, background 0.2s ease !important;}
+a.cart-link:hover{background:rgba(0,0,0,0.03) !important;}
+/* === REEL EMBED CLIQUABLE (lecture directe sur le site) === */
+.ig-reel-embed:not(.ig-reel-embed-active){cursor:pointer !important;}
+.ig-reel-embed-active{padding:3px 3px 0 !important;}
+.ig-reel-embed iframe{display:block !important;}
+.ig-reel-extlink{display:block !important;text-align:center !important;padding:10px 6px !important;font-family:'IBM Plex Mono',monospace !important;font-size:11px !important;letter-spacing:0.06em !important;text-transform:uppercase !important;color:var(--steel) !important;text-decoration:none !important;background:var(--bg) !important;transition:color 0.2s ease !important;}
+.ig-reel-extlink:hover{color:var(--accent) !important;}
+
+ul.categories li.page a:hover{color:#3d4045 !important;background:transparent !important;}
+
+/* === CURSEUR AU-DESSUS DU SPLASH (ajout) === */
+@media (hover:hover) and (pointer:fine){
+}
+
+/* === SUPPRIME TOUT CONTOUR BLEU AU FOCUS PARTOUT DANS LE HEADER (correction, ajout) === */
+.header *:focus,.header *:focus-visible,.header *:focus-within,nav.utility *:focus,nav.utility *:focus-visible{outline:none !important;box-shadow:none !important;border-color:transparent !important;}
+
+/* === SUPPRIME LE FLASH BLEU TACTILE (webkit-tap-highlight) (ajout) === */
+*{-webkit-tap-highlight-color:transparent !important;}
