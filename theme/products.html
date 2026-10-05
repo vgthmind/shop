@@ -1,0 +1,219 @@
+{% comment %}
+  Use page name from Custo if it's been customized, otherwise use the localized default.
+{% endcomment %}
+{% assign page_title = t['navigation.products'] %}
+{% if page.full_url contains "search=" %}
+  {% assign page_title = t['products.search_results'] %}
+{% elsif page.name == 'Products' and theme.collections %}
+  {% assign page_title = t['navigation.categories'] %}
+{% elsif page.name != 'Products' %}
+  {% assign page_title = page.name %}
+{% endif %}
+
+<h1 {% if page.full_url contains "search=" or theme.collections and page.full_url contains '/products' %}class="bottom-margin"{% endif %}>
+  {{ page_title }}
+</h1>
+{% if page.full_url contains "search=" or theme.collections != true or page.full_url contains '/category' %}
+  {% unless page.full_url contains "search=" %}
+    <div class="subheader">
+      <ul class="categories">
+        {% if theme.show_categories_sub_navigation %}
+          {% for category in categories.active %}
+            <li class="page{% if page.full_url contains category.url %} selected{% endif %}">{{ category | link_to }}</li>
+          {% endfor %}
+        {% endif %}
+      </ul>
+    </div>
+  {% endunless %}
+  {% paginate products from products.current by theme.products_per_page %}
+    {% if products != blank %}
+      <div class="product-list-container">
+        <div class="product-list {% if products.size < 3 %}justify-center{% endif %}">
+          {% for product in products %}
+            {% assign image_width = product.image.width | times: 1.0 %}
+            {% assign image_height = product.image.height | times: 1.0 %}
+            {% assign aspect_ratio = image_width | divided_by: image_height %}
+            {% assign product_status = '' %}
+            {% case product.status %}
+              {% when 'active' %}
+                {% if product.on_sale %}
+                  {% assign product_status = t['products.on_sale'] %}
+                {% endif %}
+              {% when 'sold-out' %}
+                {% assign product_status = t['products.sold_out'] %}
+              {% when 'coming-soon' %}
+                {% assign product_status = t['products.coming_soon'] %}
+            {% endcase %}
+            {% capture image_class %}
+              {% if product.image.height > product.image.width %}
+                image-tall
+              {% elsif product.image.height < product.image.width %}
+                image-wide
+              {% else %}
+                image-square
+              {% endif %}
+            {% endcapture %}
+            {% capture status_class %}{% if product.status == 'active' and product.on_sale %}status-primary{% else %}status-secondary{% endif %}{% endcapture %}
+            <div class="product-list-thumb {{ product.css_class }}">
+              <a class="product-list-link" href="{{ product.url }}" title="{{ product.name | escape }}">
+                <div class="product-list-image-container product-list-image-container-{{ theme.grid_image_style }}">
+                  <img
+                    alt=""
+                    class="blur-up product-list-image lazyload grid-{{ theme.grid_image_style }}"
+                    src="{{ product.image | product_image_url | constrain: 20 }}"
+                    {% unless theme.grid_image_style == 'default' %}data-aspectratio="{{ aspect_ratio }}"{% endunless %}
+                    data-srcset="
+                      {{ product.image | product_image_url | constrain: 240 }} 240w,
+                      {{ product.image | product_image_url | constrain: 320 }} 320w,
+                      {{ product.image | product_image_url | constrain: 400 }} 400w,
+                      {{ product.image | product_image_url | constrain: 540 }} 540w,
+                      {{ product.image | product_image_url | constrain: 600 }} 600w,
+                      {{ product.image | product_image_url | constrain: 800 }} 800w,
+                      {{ product.image | product_image_url | constrain: 960 }} 960w
+                    "
+                    data-sizes="auto"
+                  >
+                </div>
+                <div class="product-list-thumb-info">
+                  <div class="product-list-thumb-name">{{ product.name }}</div>
+                  <div class="product-list-thumb-price">
+                    {% assign hide_price = false %}
+                    {% if product.status == 'sold-out' and theme.show_sold_out_product_prices == false %}
+                      {% assign hide_price = true %}
+                    {% endif -%}
+                    {% if product.status == 'coming-soon' and theme.show_coming_soon_product_prices == false %}
+                      {% assign hide_price = true %}
+                    {% endif %}
+                    {% if product.has_password_protection and theme.show_password_protected_product_prices == false %}
+                      {% assign hide_price = true %}
+                    {% endif %}
+
+                    {% unless hide_price %}
+                      {{ product | product_price: theme.money_format, theme.product_variable_pricing_display_format }}
+
+                      {% if product.price_suffix != blank %}
+                        {% assign variable_price_shown = true %}
+                        {% if theme.product_variable_pricing_display_format == "min_only" or theme.product_variable_pricing_display_format == "max_only" %}
+                          {% assign variable_price_shown = false %}
+                        {% endif %}
+
+                        {% if product.variable_pricing and variable_price_shown %}
+                          {% assign formatted_suffix = '(' | append: product.price_suffix | append: ')' %}
+                        {% else %}
+                          {% assign formatted_suffix = product.price_suffix %}
+                        {% endif %}
+                        <span class="price-suffix">{{ formatted_suffix }}</span>
+                      {% endif %}
+                    {% endunless %}
+                  </div>
+                  {% unless hide_price %}
+                    {% if product.options.size > 1 and theme.show_product_variant_count_in_grid %}
+                      <div class="product-list-thumb-options-description">
+                        {{ product.options.size }} {{ t['products.variants'] }}
+                      </div>
+                    {% endif %}
+                  {% endunless %}
+                  {% if product_status != blank %}
+                    <div class="product-list-thumb-status {{ status_class }}">{{ product_status }}</div>
+                  {% endif %}
+                </div>
+              </a>
+            </div>
+          {% endfor %}
+        </div>
+      </div>
+      {% if paginate.pages > 1 %}
+        <nav class="pagination" aria-label="Pagination">
+          {% if paginate.previous.is_link %}
+            <a aria-label="Go to previous page" class="page-link previous-page-link" href="{{ paginate.previous.url }}">
+              <svg aria-hidden="true" height="16" width="16" viewBox="0 0 7.6 15" enable-background="new 0 0 7.6 15"><path d="M1.1 0l6.5 7.5-6.3 7.5-1.2-1 5.5-6.5-5.6-6.5z"/></svg>
+              <span>{{ t['navigation.previous'] }}</span>
+            </a>
+          {% else %}
+            <span class="page-link previous-page-link disabled">
+              <svg aria-hidden="true" height="16" width="16" viewBox="0 0 7.6 15" enable-background="new 0 0 7.6 15"><path d="M1.1 0l6.5 7.5-6.3 7.5-1.2-1 5.5-6.5-5.6-6.5z"/></svg>
+              <span>{{ t['navigation.previous'] }}</span>
+            </span>
+          {% endif %}
+          {{ paginate | default_pagination, 'page-numbers', 'page-numbers' }}
+          <div class="pagination-caption">Page {{ paginate.current_page }} of {{ paginate.pages }}</div>
+          {% if paginate.next.is_link %}
+            <a aria-label="Go to next page" class="page-link next-page-link" href="{{ paginate.next.url }}">
+              <span>{{ t['navigation.next'] }}</span>
+              <svg aria-hidden="true" height="16" width="16" viewBox="0 0 7.6 15" enable-background="new 0 0 7.6 15"><path d="M1.1 0l6.5 7.5-6.3 7.5-1.2-1 5.5-6.5-5.6-6.5z"/></svg>
+            </a>
+          {% else %}
+            <span class="page-link next-page-link disabled">
+              <span>{{ t['navigation.next'] }}</span>
+              <svg aria-hidden="true" height="16" width="16" viewBox="0 0 7.6 15" enable-background="new 0 0 7.6 15"><path d="M1.1 0l6.5 7.5-6.3 7.5-1.2-1 5.5-6.5-5.6-6.5z"/></svg>
+            </span>
+          {% endif %}
+        </nav>
+      {% endif %}
+    {% else %}
+      <p class="no_results">{{ t['products.no_products'] }}</p>
+    {% endif %}
+  {% endpaginate %}
+{% else %}
+  {% if categories.active != blank %}
+    <div class="product-list-container collections-list-container">
+      <div class="product-list {% if categories.active.size < 3 %}justify-center{% endif %}">
+        {% for category in categories.active %}
+          <div class="product-list-thumb">
+            <a class="product-list-link" href="{{ category.url }}" title="{{ category.name | escape }}">
+              {% for product in category.products limit:1 %}
+                {% assign image_width = product.image.width | times: 1.0 %}
+                {% assign image_height = product.image.height | times: 1.0 %}
+                {% assign aspect_ratio = image_width | divided_by: image_height %}
+                {% assign product_status = '' %}
+                {% case product.status %}
+                  {% when 'active' %}
+                    {% if product.on_sale %}
+                      {% assign product_status = t['products.on_sale'] %}
+                    {% endif %}
+                  {% when 'sold-out' %}
+                    {% assign product_status = t['products.sold_out'] %}
+                  {% when 'coming-soon' %}
+                    {% assign product_status = t['products.coming_soon'] %}
+                {% endcase %}
+                {% capture image_class %}
+                  {% if product.image.height > product.image.width %}
+                    image-tall
+                  {% elsif product.image.height < product.image.width %}
+                    image-wide
+                  {% else %}
+                    image-square
+                  {% endif %}
+                {% endcapture %}
+
+                <div class="product-list-image-container product-list-image-container-{{ theme.grid_image_style }}">
+                  <img
+                    alt=""
+                    class="blur-up product-list-image lazyload grid-{{ theme.grid_image_style }}"
+                    src="{{ product.image | product_image_url | constrain: 20 }}"
+                    {% unless theme.grid_image_style == 'default' %}data-aspectratio="{{ aspect_ratio }}"{% endunless %}
+                    data-srcset="
+                      {{ product.image | product_image_url | constrain: 240 }} 240w,
+                      {{ product.image | product_image_url | constrain: 320 }} 320w,
+                      {{ product.image | product_image_url | constrain: 400 }} 400w,
+                      {{ product.image | product_image_url | constrain: 540 }} 540w,
+                      {{ product.image | product_image_url | constrain: 600 }} 600w,
+                      {{ product.image | product_image_url | constrain: 800 }} 800w,
+                      {{ product.image | product_image_url | constrain: 960 }} 960w
+                    "
+                    data-sizes="auto"
+                  >
+                </div>
+                <div class="product-list-thumb-info">
+                  <div class="product-list-thumb-name">{{ category.name }}</div>
+                </div>
+              {% endfor %}
+            </a>
+          </div>
+        {% endfor %}
+      </div>
+    </div>
+  {% else %}
+    <p class="no_results">{{ t['products.no_products'] }}</p>
+  {% endif %}
+{% endif %}
