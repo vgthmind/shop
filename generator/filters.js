@@ -28,9 +28,9 @@ function money(amount, format) {
 // (import-catalog.js not yet run against a real network) - the generator
 // still renders end-to-end even without images, just with broken <img>s the
 // browser reports individually rather than a build failure.
-function productImageUrl(image, ctx) {
+function productImageUrl(image, imageMap) {
   if (!image || !image.url) return '';
-  const local = ctx && ctx.__imageMap && ctx.__imageMap[image.url];
+  const local = imageMap && imageMap[image.url];
   return local || image.url;
 }
 
@@ -124,7 +124,7 @@ module.exports = {
   paragraphs: (v) => paragraphs(v),
   money: (v, fmt) => money(v, fmt),
   link_to: (v, url) => linkTo(v, url),
-  product_image_url: (v, ctx) => productImageUrl(v, ctx),
+  product_image_url: (v, imageMap) => productImageUrl(v, imageMap),
   constrain: (v, w) => constrain(v, w),
   product_price: (v, fmt) => productPrice(v),
   hidden_option_input: (v) => hiddenOptionInput(v),

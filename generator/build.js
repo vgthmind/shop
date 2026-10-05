@@ -23,6 +23,31 @@ const THEME_DIR = path.join(ROOT, 'theme');
 const DATA_DIR = path.join(ROOT, 'data');
 const OUT_DIR = path.join(ROOT, 'docs');
 
+// The real BigCartel templates hardcode root-absolute links (/, /products,
+// /contact, /cart, /assets/site.js, {{ product.url }} -> /product/<slug>...)
+// because BigCartel always serves a store from its domain root. This site is
+// deployed as a GitHub Pages PROJECT page instead (vgthmind.github.io/shop/,
+// not the repo root), so every one of those needs a /shop prefix to resolve.
+// Kept as a build-time constant (not baked into theme/*.html, which stays a
+// faithful copy of the real templates) so a future move to a dedicated
+// domain is just BASE_PATH = '' and a rebuild. Override with env BASE_PATH.
+const BASE_PATH = process.env.BASE_PATH !== undefined ? process.env.BASE_PATH : '/shop';
+
+function withBasePath(html) {
+  if (!BASE_PATH) return html;
+  // Pass 1: every root-relative URL quoted right after a " or ' - covers
+  // href="/...", src="/...", action="/...", a srcset's first URL, and
+  // JSON-literal entries like data-image-urls='["/assets/..."]'. "//"
+  // (protocol-relative CDN URLs, e.g. cdnjs) is left alone by the
+  // lookahead.
+  html = html.replace(/(["'])(\s*)\/(?!\/)/g, (m, q, ws) => `${q}${ws}${BASE_PATH}/`);
+  // Pass 2: a srcset's later comma-separated URLs aren't preceded by a
+  // quote (one attribute value, bare "url Nw" entries joined by ", "), so
+  // they need their own rewrite, scoped to inside srcset="..." only.
+  html = html.replace(/srcset="[^"]*/g, (m) => m.replace(/,(\s*)\/(?!\/)/g, (mm, sp) => `,${sp}${BASE_PATH}/`));
+  return html;
+}
+
 function readTheme(name) {
   return fs.readFileSync(path.join(THEME_DIR, name), 'utf8');
 }
@@ -74,7 +99,7 @@ function renderPage(templateName, pageCtx, layoutSrc, pageTemplateSrc) {
 function write(relPath, html) {
   const dest = path.join(OUT_DIR, relPath);
   fs.mkdirSync(path.dirname(dest), { recursive: true });
-  fs.writeFileSync(dest, html);
+  fs.writeFileSync(dest, withBasePath(html));
   console.log('  wrote', relPath);
 }
 
@@ -138,13 +163,19 @@ function main() {
     write('contact/index.html', renderPage('contact', ctx, layoutSrc, contactSrc));
   }
 
-  // data/catalog.json's imageMap covers what import-catalog.js downloaded.
   // theme.css is copied through as-is for now (see README); assets/site.js
   // is OUR OWN script (not from BigCartel), copied from the repo's own
-  // assets/ source dir, not the theme/ one.
+  // assets/ source dir, not the theme/ one. assets/products/ is what
+  // import-catalog.js downloaded - OUT_DIR (docs/) is the actual GitHub
+  // Pages publish root, so the generated pages' image URLs only resolve
+  // once the photos are copied into it too, not just left at the repo root.
   fs.mkdirSync(path.join(OUT_DIR, 'assets'), { recursive: true });
   fs.copyFileSync(path.join(THEME_DIR, 'theme.css'), path.join(OUT_DIR, 'assets', 'theme.css'));
   fs.copyFileSync(path.join(ROOT, 'assets', 'site.js'), path.join(OUT_DIR, 'assets', 'site.js'));
+  const productImagesSrc = path.join(ROOT, 'assets', 'products');
+  if (fs.existsSync(productImagesSrc)) {
+    fs.cpSync(productImagesSrc, path.join(OUT_DIR, 'assets', 'products'), { recursive: true });
+  }
 
   console.log(`\nBuilt ${catalog.products.length} products, ${catalog.categories.length} categories into ${OUT_DIR}`);
 }

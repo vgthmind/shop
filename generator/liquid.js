@@ -255,19 +255,24 @@ function evalFilterArgExpr(s, ctx) {
   return resolvePath(s, ctx);
 }
 
-// Filters that need the render context (currently just product_image_url,
-// to look up locally-downloaded image paths) declare it explicitly here
-// instead of every filter silently receiving ctx as a trailing positional
-// arg - that bit a 0-arg filter like `{{ category | link_to }}` once
-// already (ctx landed in link_to's optional `url` parameter instead of
-// `undefined`, see generator/README.md).
-const FILTERS_WANTING_CTX = new Set(['product_image_url']);
+// Filters that need a value from the render context (currently just
+// product_image_url, to look up locally-downloaded image paths) declare the
+// variable they need here, resolved through lookupVar/scopes like any other
+// path, instead of every filter silently receiving the internal {scopes}
+// context object as a trailing positional arg - that bit a 0-arg filter
+// like `{{ category | link_to }}` once already (the raw ctx landed in
+// link_to's optional `url` parameter instead of `undefined`, see
+// generator/README.md), and bit product_image_url itself a second time
+// (ctx.__imageMap is undefined on the {scopes} wrapper - the actual value
+// lives in one of ctx.scopes - so the lookup always silently missed and
+// every image fell back to its remote BigCartel URL).
+const FILTERS_WANTING_CTX = { product_image_url: '__imageMap' };
 
 function applyFilter(value, name, argsStr, ctx, filters) {
   const fn = filters[name];
   const args = argsStr ? splitArgs(argsStr).map((a) => evalFilterArgExpr(a, ctx)) : [];
   if (!fn) return value; // unknown filter: passthrough
-  if (FILTERS_WANTING_CTX.has(name)) return fn(value, ...args, ctx);
+  if (FILTERS_WANTING_CTX[name]) return fn(value, ...args, lookupVar(FILTERS_WANTING_CTX[name], ctx));
   return fn(value, ...args);
 }
 
