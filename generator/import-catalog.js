@@ -3,19 +3,14 @@
 // every product image into assets/products/<permalink>/, and writes
 // data/catalog.json in the shape generator/build.js expects.
 //
-// NOT RUN YET from the cloud session that wrote this file: this sandbox's
-// network egress proxy blocks vgthmind.bigcartel.com and
-// assets.bigcartel.com outright (org policy, confirmed via two independent
-// paths - see the chat message this was reported in). Run this from an
-// environment that can actually reach BigCartel (vgthmind' local machine, or a
-// cloud session with that host allow-listed in its network settings).
-//
 // Usage: node generator/import-catalog.js [--store-url https://vgthmind.bigcartel.com]
 
 'use strict';
 const fs = require('fs');
 const path = require('path');
+const http = require('http');
 const https = require('https');
+const tls = require('tls');
 
 const STORE_URL = (process.argv.find((a) => a.startsWith('--store-url=')) || '').split('=')[1]
   || 'https://vgthmind.bigcartel.com';
@@ -24,9 +19,41 @@ const ROOT = path.join(__dirname, '..');
 const IMAGES_DIR = path.join(ROOT, 'assets', 'products');
 const CATALOG_PATH = path.join(ROOT, 'data', 'catalog.json');
 
+// Node's https module does not honor HTTPS_PROXY on its own (unlike curl),
+// and this sandbox requires outbound HTTPS to go through its local proxy.
+// This Agent tunnels TLS connections through that proxy via HTTP CONNECT.
+const PROXY_URL = process.env.HTTPS_PROXY || process.env.https_proxy || null;
+
+class ConnectProxyAgent extends https.Agent {
+  constructor(proxyUrl, options) {
+    super(options);
+    this.proxyUrl = new URL(proxyUrl);
+  }
+  createConnection(options, callback) {
+    const proxyReq = http.request({
+      host: this.proxyUrl.hostname,
+      port: this.proxyUrl.port || 80,
+      method: 'CONNECT',
+      path: `${options.host}:${options.port || 443}`,
+    });
+    proxyReq.on('connect', (res, socket) => {
+      if (res.statusCode !== 200) {
+        callback(new Error(`Proxy CONNECT to ${options.host} failed: HTTP ${res.statusCode}`));
+        return;
+      }
+      const tlsSocket = tls.connect({ socket, servername: options.servername || options.host }, () => callback(null, tlsSocket));
+      tlsSocket.on('error', callback);
+    });
+    proxyReq.on('error', callback);
+    proxyReq.end();
+  }
+}
+
+const proxyAgent = PROXY_URL ? new ConnectProxyAgent(PROXY_URL) : undefined;
+
 function fetchJson(url) {
   return new Promise((resolve, reject) => {
-    https.get(url, { headers: { 'User-Agent': 'vgthmind-shop-importer/1.0' } }, (res) => {
+    https.get(url, { agent: proxyAgent, headers: { 'User-Agent': 'vgthmind-shop-importer/1.0' } }, (res) => {
       if (res.statusCode !== 200) { reject(new Error(`${url} -> HTTP ${res.statusCode}`)); res.resume(); return; }
       let data = '';
       res.on('data', (c) => (data += c));
@@ -39,7 +66,7 @@ function downloadFile(url, destPath) {
   return new Promise((resolve, reject) => {
     fs.mkdirSync(path.dirname(destPath), { recursive: true });
     const file = fs.createWriteStream(destPath);
-    https.get(url, { headers: { 'User-Agent': 'vgthmind-shop-importer/1.0' } }, (res) => {
+    https.get(url, { agent: proxyAgent, headers: { 'User-Agent': 'vgthmind-shop-importer/1.0' } }, (res) => {
       if (res.statusCode !== 200) { reject(new Error(`${url} -> HTTP ${res.statusCode}`)); res.resume(); return; }
       res.pipe(file);
       file.on('finish', () => file.close(resolve));
