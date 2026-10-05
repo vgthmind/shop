@@ -482,12 +482,17 @@ function renderNode(node, ctx, filters, out) {
     case 'paginate': {
       // raw: "<var> from <collExpr> by <n>" - static site, so we bind <var>
       // to the FULL collection (no real pagination) and render one page.
-      const m = node.raw.match(/^(\w+)\s+from\s+([\s\S]+?)\s+by\s+/);
+      const m = node.raw.match(/^(\w+)\s+from\s+([\s\S]+?)\s+by\s+([\w.]+)/);
       const scope = { paginate: { pages: 1, current_page: 1, previous_page: null, next_page: null } };
       if (m) {
         const varName = m[1];
         const collExpr = m[2].trim();
-        scope[varName] = resolvePath(collExpr, ctx);
+        let coll = resolvePath(collExpr, ctx);
+        // "by N" (number or variable, e.g. theme.featured_products on the
+        // home page): BigCartel shows the first N - first page only here.
+        const per = /^\d+$/.test(m[3]) ? parseInt(m[3], 10) : parseInt(resolvePath(m[3], ctx), 10);
+        if (Array.isArray(coll) && per > 0) coll = coll.slice(0, per);
+        scope[varName] = coll;
       }
       ctx.scopes.push(scope);
       renderNodes(node.body, ctx, filters, out);

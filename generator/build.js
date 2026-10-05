@@ -244,7 +244,8 @@ async function main() {
 
   page('index.html', src.home, Object.assign({}, base, {
     page: { name: 'Home', permalink: 'home', category: 'home', full_url: '/' },
-    featured_products: catalog.products.slice(0, 8),
+    // home.html: {% paginate products from products.current by theme.featured_products %}
+    products: { current: catalog.products },
   }));
   page('products/index.html', src.products, Object.assign({}, base, {
     page: { name: 'Products', permalink: 'products', category: 'products', full_url: '/products' },
