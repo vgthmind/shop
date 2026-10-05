@@ -4,6 +4,9 @@ Prototype autonome, gratuit, testé en parallèle — **rien n'est encore publi�
 ni connecté au domaine vgthmind.org.** Rien ici n'affecte
 vgthmind.bigcartel.com, qui reste la vraie boutique en ligne pour l'instant.
 
+**Aperçu en ligne (non indexé, `noindex` + `robots.txt` actifs) :**
+https://vgthmind.github.io/shop/
+
 **[2026-10-05] Nouveau plan, décidé par vgthmind : reproduire le site BigCartel
 À L'IDENTIQUE** (pas une approximation visuelle) en rendant les vrais
 gabarits Liquid du thème avec le vrai catalogue, pour que
@@ -14,6 +17,25 @@ JS écrit à la main) est **abandonné et retiré**, remplacé par ce qui suit.
 `admin/` (Sveltia CMS) et `oauth-worker/` restent — toujours prévus pour
 l'étape 4 (ajout/modif de pièces), pas encore reliés au nouveau schéma de
 catalogue (voir "Suite" plus bas).
+
+**[2026-10-05, même jour] Import réel fait, aperçu en ligne vérifié.**
+L'accès réseau vers `vgthmind.bigcartel.com`/`assets.bigcartel.com` et vers
+`vgthmind.github.io` a été ouvert pour cette session, et GitHub Pages activé
+sur ce dépôt (`main` / `docs` → `vgthmind.github.io/shop/`). `node
+generator/import-catalog.js` a tourné pour de vrai contre le catalogue
+BigCartel (27 produits, 93 photos téléchargées), `docs/` régénéré, poussé,
+et l'aperçu vérifié en ligne page par page. **4 bugs réels trouvés et
+corrigés pendant cette vérification** (pas supposés corrects - voir
+"Vérifié" plus bas) : le filtre `product_image_url` ne trouvait jamais
+l'image locale (toutes les images restaient en hotlink vers le CDN
+BigCartel), tous les liens internes et les photos 404aient (gabarits
+BigCartel écrits pour un domaine racine, ce site est une project page
+GitHub Pages sous `/shop/`), les photos téléchargées n'étaient jamais
+copiées dans `docs/` (racine effective publiée), et `robots.txt` n'était
+jamais servi en ligne (même raison). Les deux blocages listés plus bas sont
+donc **partiellement caducs** : le blocage réseau est levé ; le blocage sur
+les gabarits (stale depuis le 2026-09-26) reste entier, aucun nouvel export
+de thème n'a été fourni.
 
 ## Architecture (étapes 1 et 2 du plan)
 
@@ -32,7 +54,8 @@ generator/    moteur + générateur de site statique (Node, zéro dépendance)
   normalize-catalog.js - transforme un /products.json brut en catalogue
                          exploitable par le générateur
   import-catalog.js    - importe le catalogue EN LIGNE (télécharge aussi
-                         les images) - voir "Bloqué" ci-dessous
+                         les images), à relancer manuellement - voir
+                         "Catalogue actuel" plus bas
   build.js              - rend theme/*.html + data/catalog.json -> docs/
 assets/site.js   notre propre script (pas de BigCartel) - voir plus bas
 data/catalog.json  catalogue actuellement utilisé par le générateur
@@ -45,46 +68,59 @@ Pour reconstruire le site après un changement (thème ou catalogue) :
 node generator/build.js
 ```
 
-## 🔴 Deux blocages réels, pas contournables depuis cette session
+## 🔴 Ce qui diffère encore du vrai site BigCartel
 
-**1. Catalogue et images : réseau bloqué.** Cette session cloud ne peut pas
-du tout atteindre `vgthmind.bigcartel.com` ni `assets.bigcartel.com` (403
-"policy denial" du proxy réseau du bac à sable, confirmé par deux chemins
-indépendants - `curl` direct et l'outil de fetch web). `generator/import-catalog.js`
-est écrit et prêt (schéma vérifié contre un vrai `/products.json`), mais
-**n'a jamais tourné contre le catalogue réel**. Pour le lancer pour de vrai,
-il faut soit l'exécuter depuis un environnement qui atteint BigCartel (ta
-session locale, par exemple), soit élargir l'accès réseau de cet
-environnement cloud (menu de l'environnement dans la barre de titre de la
-session -> Edit -> ajouter `vgthmind.bigcartel.com` et `assets.bigcartel.com`
-aux domaines autorisés) puis relancer `node generator/import-catalog.js`
-depuis ici.
+**1. Catalogue et images : résolu.** Le réseau est ouvert depuis le
+2026-10-05, `node generator/import-catalog.js` a tourné pour de vrai contre
+`vgthmind.bigcartel.com/products.json` (27 produits, 93 photos). Les données
+produit (prix, descriptions, options) sont identiques à l'ancienne fixture :
+le catalogue live n'a pas changé depuis le 2026-09-26, seules les photos
+sont maintenant réellement téléchargées et servies localement (plus de
+hotlink vers `assets.bigcartel.com`). À relancer après chaque changement
+réel du catalogue (nouvelle pièce, prix, stock) : ni l'import ni le build
+ne tournent automatiquement, personne ne surveille le catalogue BigCartel
+pour relancer `import-catalog.js` tout seul.
 
-**2. Les gabarits du thème datent du 2026-09-26.** C'est le dernier export
-complet (Custom CSS + Body + Layout + Head + zip officiel du thème) présent
-dans `vgthmind-chantier/chantier/snapshots/`. Depuis cette date, `ETAT.md` du
-dépôt privé documente une refonte quasi complète déjà appliquée au brouillon
-réel (page Studio, nouveau panneau de recherche, nouveaux systèmes de survol
-sections 4/5, nouvelle Section 3, nouveau curseur, arrivée de page changée...)
-- le site que ce générateur produit reproduit donc le brouillon tel qu'il
-était **il y a plusieurs semaines de travail**, pas tel qu'il est aujourd'hui.
-Pour une vraie fidélité, il faut un export frais et complet (Custom CSS +
-Body + Layout + Head) déposé dans `vgthmind-chantier/chantier/snapshots/`,
-ou me dire explicitement de continuer avec cette base en attendant.
+**2. Les gabarits du thème datent toujours du 2026-09-26.** C'est le dernier
+export complet (Custom CSS + Body + Layout + Head + zip officiel du thème)
+présent dans `vgthmind-chantier/chantier/snapshots/`. Depuis cette date,
+`ETAT.md` du dépôt privé documente une refonte quasi complète déjà appliquée
+au brouillon réel (page Studio, nouveau panneau de recherche, nouveaux
+systèmes de survol sections 4/5, nouvelle Section 3, nouveau curseur,
+arrivée de page changée...) - le site que ce générateur produit reproduit
+donc le brouillon tel qu'il était **il y a plusieurs semaines de travail**,
+pas tel qu'il est aujourd'hui. Pour une vraie fidélité, il faut un export
+frais et complet (Custom CSS + Body + Layout + Head) déposé dans
+`vgthmind-chantier/chantier/snapshots/`, ou me dire explicitement de
+continuer avec cette base en attendant. Concrètement, absents de ce site
+généré : la page Studio, le panneau de recherche repensé, le panier (gabarit
+`cart.html` présent mais pas branché au générateur), et toute vérification
+que `vg-transitions-dev.js`/`.css` (chargés tels quels, mêmes fichiers que
+le brouillon réel) rendent correctement contre ce DOM plus ancien.
+
+**3. Pas de panier ni de paiement.** Étape 3 du plan, pas commencée :
+`hidden_option_input`/`instant_checkout_button` sont stubbés (voir "Écarts
+volontaires" plus bas), pas de Stripe Checkout, pas de Cloudflare Worker.
 
 ## Catalogue actuel (`data/catalog.json`)
 
-**Ce n'est pas un import réel** (bloqué, voir ci-dessus) : c'est une
-conversion du `/products.json` du 2026-09-26 déjà présent dans le dépôt privé
-(`chantier/snapshots/2026-09-26-1430/vgthmind-pages-en-ligne-2026-09-26-1435.json`,
-qui lui-même documente être une copie du site **EN LIGNE d'alors**, donc déjà
-l'ancien design, pas le brouillon). Vérifié avant utilisation : cette copie
-ne contient aucune donnée personnelle (pas de panier, pas de jeton de
-session - juste les 27 produits publics : nom, prix, description, photos,
-catégories). Sert uniquement à prouver que le moteur de rendu fonctionne de
-bout en bout. `catalog.json.source`/`.fetched_at` documentent cette
-provenance. **À remplacer par un vrai `node generator/import-catalog.js`**
-dès que le blocage réseau est levé.
+**Import réel**, fait le 2026-10-05 : `node generator/import-catalog.js`
+contre `https://vgthmind.bigcartel.com/products.json` (27 produits, 7
+catégories). `catalog.json.source`/`.fetched_at` documentent cette
+provenance. Les 93 photos produit sont téléchargées dans
+`assets/products/<permalink>/<n>.<ext>` (34 Mo) et copiées par
+`generator/build.js` dans `docs/assets/products/` à chaque génération, qui
+est la racine réellement servie par GitHub Pages - le dépôt duplique donc
+ces photos en deux endroits (~68 Mo au total), accepté comme compromis
+simple plutôt qu'un symlink non portable en Git. Vérifié avant l'import :
+le `/products.json` public ne contient aucune donnée personnelle (pas de
+panier, pas de jeton de session - juste les produits publics : nom, prix,
+description, photos, catégories). Node ne suit pas `HTTPS_PROXY`
+nativement (contrairement à `curl`) ; `import-catalog.js` tunnelle donc ses
+requêtes HTTPS via un `CONNECT` manuel vers le proxy de sortie du
+bac-à-sable - voir le commentaire en tête du fichier si ça change
+d'environnement. **À relancer manuellement après tout changement du
+catalogue réel** (voir "Ce qui diffère" ci-dessus).
 
 ## Écarts volontaires avec les vrais gabarits BigCartel
 
@@ -106,10 +142,20 @@ BigCartel - certains filtres/scripts ont donc été réécrits, pas juste copié
 - **`hidden_option_input`** (ajout au panier natif) : rendu avec
   `data-vg-todo="cart-wiring-step-3"` - le vrai panier/Stripe Checkout est
   l'étape 3 du plan, pas commencée.
-- **`product_image_url`** : pointe vers une image locale téléchargée une
-  fois `import-catalog.js` exécuté pour de vrai ; en attendant, retombe sur
-  l'URL `assets.bigcartel.com` d'origine (cassée dans ce bac à sable, réseau
-  bloqué - voir plus haut).
+- **`product_image_url`** : pointe vers l'image locale téléchargée par
+  `import-catalog.js` (`data/catalog.json.imageMap`), retombe sur l'URL
+  `assets.bigcartel.com` d'origine seulement si une image n'a pas de copie
+  locale enregistrée.
+- **Tous les liens racine** (`/`, `/products`, `/category/*`, `/contact`,
+  `/cart`, `/assets/*`, et `{{ produit/categorie | ... }}.url`) viennent des
+  vrais gabarits BigCartel, écrits pour un site servi depuis la racine d'un
+  domaine. Ce site est une *project page* GitHub Pages
+  (`vgthmind.github.io/shop/`, pas la racine) : `generator/build.js`
+  applique donc un préfixe `/shop` en post-traitement du HTML rendu (une
+  constante `BASE_PATH`, pas touché dans `theme/*.html` qui reste fidèle
+  aux vrais exports BigCartel). À remettre à `''` (variable d'env
+  `BASE_PATH`) le jour où ce site est déployé sur un domaine dédié plutôt
+  que sous `/shop/`.
 
 ## Pages déjà générées par `node generator/build.js`
 
@@ -123,29 +169,51 @@ chargé pour de vrai, pas vérifié ici), le splash d'accueil (script du Body,
 pas dans l'export de thème), le panier (gabarit `cart.html` présent mais pas
 encore branché au générateur).
 
-## Vérifié localement (serveur HTTP + Playwright, dans ce bac à sable)
+## Vérifié (serveur HTTP local + aperçu en ligne réel)
 
 Les 27 produits sont bien dans le DOM généré (grille Products, fiches
 produit, pages catégorie), navigation/sous-catégories/footer (réseaux
 sociaux filtrés aux comptes réellement configurés)/panier/recherche (icône)
-s'affichent correctement, aucune erreur JS bloquante. **3 bugs réels trouvés
-et corrigés en testant** (pas juste supposés corrects) :
+s'affichent correctement, aucune erreur JS bloquante. **7 bugs réels
+trouvés et corrigés en testant** (pas juste supposés corrects) :
 1. Classes `preloader`/`transition-preloader` jamais retirées -> page
    invisible pour toujours (voir "Écarts volontaires" ci-dessus).
 2. `{{ categorie | link_to }}` (forme à 1 argument, un objet) rendait
-   `[object Object]` : mon moteur ajoutait silencieusement le contexte de
+   `[object Object]` : le moteur ajoutait silencieusement le contexte de
    rendu comme argument supplémentaire à CHAQUE filtre, même ceux appelés
    sans argument explicite - corrigé (seuls les filtres qui en ont
-   réellement besoin le reçoivent désormais).
+   réellement besoin le reçoivent désormais, et reçoivent la vraie valeur
+   dont ils ont besoin, pas l'objet de contexte interne - voir bug 5).
 3. `theme.images.logo_image != blank` était vrai même avec `logo_image`
-   à `null` (mon moteur comparait `null` à la chaîne vide littérale au lieu
+   à `null` (le moteur comparait `null` à la chaîne vide littérale au lieu
    de reconnaître `blank`/`empty` comme une vraie notion de "rien") -
    corrigé, le logo texte s'affiche correctement.
+4. (2026-10-05, après le vrai import) **Toutes les images produit
+   restaient en hotlink vers `assets.bigcartel.com`** malgré l'import et le
+   téléchargement réussis : `product_image_url` recevait l'objet interne
+   `{scopes}` du moteur Liquid au lieu de la valeur `__imageMap` elle-même,
+   donc le lookup échouait toujours en silence - corrigé dans `liquid.js`
+   (résolution explicite de la variable demandée par le filtre).
+5. **Tous les liens internes et les photos 404aient en ligne** : les vrais
+   gabarits BigCartel écrivent des liens racine (`/products`, `/cart`,
+   `/assets/site.js`...) qui supposent un site servi depuis la racine d'un
+   domaine, pas depuis une *project page* GitHub Pages (`/shop/`) - corrigé
+   par un préfixe `/shop` appliqué en post-traitement du HTML dans
+   `build.js` (voir "Écarts volontaires").
+6. **Les photos produit 404aient en ligne** même après la correction du
+   bug 5 : `import-catalog.js` les télécharge à la racine du dépôt
+   (`assets/products/`), jamais copiées dans `docs/` qui est la racine
+   effective publiée par GitHub Pages - corrigé, `build.js` copie
+   maintenant ce dossier à chaque build.
+7. **`robots.txt` n'était jamais servi en ligne** (`Disallow: /`, requis
+   tant que ce n'est pas la boutique officielle) : même cause que le bug 6,
+   le fichier restait à la racine du dépôt au lieu de `docs/` - corrigé.
 
-**Pas vérifiable dans ce bac à sable** (réseau bloqué, voir plus haut) :
-chargement réel de `vg-transitions-dev.js`/`.css` contre ce DOM généré, donc
-aucune des transitions/survols/recherche n'a pu être testée en conditions
-réelles - seule la structure HTML/CSS statique est vérifiée.
+**Pas encore vérifiable** : chargement réel de `vg-transitions-dev.js`/`.css`
+contre ce DOM généré (le script est chargé en ligne sur l'aperçu, mais les
+transitions/survols/recherche n'ont pas été testés visuellement dans un
+navigateur depuis cette session) - seule la structure HTML/CSS statique et
+la résolution des liens/images sont vérifiées par requêtes HTTP directes.
 
 ## Suite (pas commencée)
 
@@ -157,9 +225,9 @@ réelles - seule la structure HTML/CSS statique est vérifiée.
   catalogue (`data/catalog.json`, pas `data/products/*.json`) - décision à
   prendre sur comment fusionner les ajouts manuels avec les imports
   automatiques.
-- Robots/indexation : `robots.txt` + `noindex` sur les pages générées
-  restent à vérifier/porter dans `theme/layout.html` - pas encore fait sur
-  cette nouvelle base.
+- Robots/indexation : `robots.txt` + `noindex` sont en place et confirmés
+  servis sur l'aperçu en ligne (voir "Durcissement déjà en place" plus bas)
+  - à repasser en indexable au lancement officiel seulement, pas avant.
 
 ---
 
@@ -200,7 +268,9 @@ affiliation).
 ### Durcissement déjà en place
 
 - `robots.txt` : `Disallow: /` (tout bloqué tant que ce n'est pas la
-  boutique officielle).
+  boutique officielle), copié dans `docs/` par `build.js` pour être
+  réellement servi par GitHub Pages (racine du dépôt non servie - voir
+  "Vérifié" ci-dessus, bug 7) - confirmé en ligne sur l'aperçu actuel.
 - Contenu texte toujours inséré via `textContent`/échappement HTML
   (`generator/filters.js`), jamais via une concaténation HTML brute avec des
   données variables - empêche l'injection de code HTML/script depuis un
