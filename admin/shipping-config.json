@@ -1,0 +1,31 @@
+{
+  "_ATTENTION": "À REMPLACER PAR MES VRAIS TARIFS — tous les montants, poids et seuils ci-dessous sont des EXEMPLES inventés.",
+  "version": 1,
+  "currency": "EUR",
+  "free_shipping": { "enabled": false, "threshold": 150, "zones": ["FR"], "_note": "À REMPLACER PAR MES VRAIS TARIFS : livraison offerte dès ce montant de pièces (avant remise). zones vide = partout." },
+  "max_pieces_per_parcel": 4,
+  "max_weight_g_per_parcel": 2000,
+  "parcel_tare_g": 80,
+  "default_size": "moyen",
+  "sizes": {
+    "petit": { "weight_g": 150, "slots": 1 },
+    "moyen": { "weight_g": 500, "slots": 1 },
+    "gros":  { "weight_g": 1500, "slots": 3 }
+  },
+  "zones": [
+    { "id": "FR", "name": "France (À REMPLACER PAR MES VRAIS TARIFS)", "countries": ["FR", "MC"],
+      "brackets": [ { "max_g": 250, "price": 4.5 }, { "max_g": 500, "price": 6 }, { "max_g": 1000, "price": 8 }, { "max_g": 2000, "price": 11 } ], "extra_per_kg": 3 },
+    { "id": "UE", "name": "Union européenne (À REMPLACER PAR MES VRAIS TARIFS)",
+      "countries": ["AT","BE","BG","HR","CY","CZ","DK","EE","FI","DE","GR","HU","IE","IT","LV","LT","LU","MT","NL","PL","PT","RO","SK","SI","ES","SE"],
+      "brackets": [ { "max_g": 250, "price": 8 }, { "max_g": 500, "price": 11 }, { "max_g": 1000, "price": 15 }, { "max_g": 2000, "price": 20 } ], "extra_per_kg": 6 },
+    { "id": "CA", "name": "Canada (À REMPLACER PAR MES VRAIS TARIFS)", "countries": ["CA"],
+      "brackets": [ { "max_g": 250, "price": 14 }, { "max_g": 500, "price": 18 }, { "max_g": 1000, "price": 25 }, { "max_g": 2000, "price": 35 } ], "extra_per_kg": 12 },
+    { "id": "EU-HORS-UE", "name": "Europe hors UE (À REMPLACER PAR MES VRAIS TARIFS)", "countries": ["GB","CH","NO","IS","LI"],
+      "brackets": [ { "max_g": 250, "price": 10 }, { "max_g": 500, "price": 14 }, { "max_g": 1000, "price": 19 }, { "max_g": 2000, "price": 26 } ], "extra_per_kg": 8 },
+    { "id": "MONDE", "name": "Reste du monde (À REMPLACER PAR MES VRAIS TARIFS)", "countries": ["*"],
+      "brackets": [ { "max_g": 250, "price": 16 }, { "max_g": 500, "price": 22 }, { "max_g": 1000, "price": 30 }, { "max_g": 2000, "price": 42 } ], "extra_per_kg": 15 }
+  ],
+  "items": {
+    "_exemple-slug": { "size": "petit", "weight_g": 120 }
+  }
+}
