@@ -7,3 +7,5 @@
 - Tâche floue ou grosse : poser les questions d'abord, proposer un plan court, attendre mon OK, puis exécuter.
 - Ne jamais lire node_modules, dist, build, .git, lockfiles, vidéos.
 - En fin de tâche : mettre à jour ETAT.md (racine) en 5 lignes max, puis me dire de faire /clear.
+
+Après toute modification de admin/ ou theme/, lancer node generator/build.js avant de commiter, sinon docs/ (le site publié) n'est pas à jour.
