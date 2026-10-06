@@ -72,7 +72,7 @@ const STRIPE_COUNTRIES = (
 type JsonFn = (data: unknown, status?: number) => Response;
 
 export default {
-  async fetch(request: Request, env: Env): Promise<Response> {
+  async fetch(request: Request, env: Env, ctx: any): Promise<Response> {
     const cors = {
       'Access-Control-Allow-Origin': env.ALLOWED_ORIGIN,
       'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
@@ -84,16 +84,26 @@ export default {
 
     if (request.method === 'OPTIONS') return new Response(null, { headers: cors });
 
-    const key = env.STRIPE_SECRET_KEY || '';
+    // Espaces / retours a la ligne colles avec la cle par erreur : ignores.
+    const rawKey = env.STRIPE_SECRET_KEY || '';
+    // + 1 a 3 lettres tapees avant le collage (ex. « y » repondu a une
+    // question de wrangler, vu le 2026-10-06) devant sk_/rk_test_.
+    const key = rawKey.replace(/[\s​-‍﻿"'`]/g, '').replace(/^[a-z]{1,3}(?=(sk|rk)_test_)/, '');
     if (!key) return json({ error: 'Paiement pas encore configuré.' }, 503);
-    if (!key.startsWith('sk_test_') && env.LIVE_MODE !== '1') {
-      return json({ error: 'Paiement en mode test uniquement pour le moment.' }, 503);
+    // Cle secrete (sk_) ou restreinte (rk_) de TEST seulement, tant que
+    // LIVE_MODE != "1". Le message donne le type de cle recue (prefixe,
+    // jamais la valeur) pour corriger sans deviner.
+    if (!/^(sk|rk)_test_/.test(key) && env.LIVE_MODE !== '1') {
+      const known = (key.match(/^[a-z]{2,5}_(test|live)_/) || [''])[0].replace(/_$/, '');
+      // Sans reveler la cle : longueur et position d'un eventuel « _test_ ».
+      const kind = known || `format inconnu, ${rawKey.length} caractères, « _test_ » ${key.indexOf('_test_') >= 0 ? 'à la position ' + key.indexOf('_test_') : 'absent'}, début : ${/^[a-z]/.test(key) ? 'lettre' : 'autre caractère (code ' + key.charCodeAt(0) + ')'}`;
+      return json({ error: `Paiement en mode test uniquement pour le moment (clé reçue : ${kind}).` }, 503);
     }
 
     const path = new URL(request.url).pathname;
     try {
       if (path === '/checkout' && request.method === 'POST') return await checkout(request, env, key, json);
-      if (path === '/session' && request.method === 'GET') return await session(request, key, json);
+      if (path === '/session' && request.method === 'GET') return await session(request, env, key, json, ctx);
       if (path === '/release' && request.method === 'POST') return await release(request, env, key, json);
       if (path === '/webhook' && request.method === 'POST') return await webhook(request, env, json);
       if (path === '/orders' && request.method === 'GET') return await listOrders(request, env, key, json);
@@ -183,7 +193,10 @@ async function checkout(request: Request, env: Env, key: string, json: JsonFn): 
     const img = p.images && p.images[0] && p.images[0].url;
     if (img) params.set(`line_items[${i}][price_data][product_data][images][0]`, origin + encodeURI(img));
   });
-  const countries = region === 'fr' ? ['FR'] : STRIPE_COUNTRIES;
+  // Stripe preselectionne le 1er pays de la liste quand celui du client n'y
+  // est pas : le Canada et les voisins d'abord (sinon « Île de l'Ascension »).
+  const FIRST = ['CA', 'BE', 'CH', 'LU', 'DE', 'GB', 'US'];
+  const countries = region === 'fr' ? ['FR'] : [...FIRST, ...STRIPE_COUNTRIES.filter((c) => !FIRST.includes(c))];
   countries.forEach((c, i) => params.set(`shipping_address_collection[allowed_countries][${i}]`, c));
   params.set('shipping_options[0][shipping_rate_data][type]', 'fixed_amount');
   params.set('shipping_options[0][shipping_rate_data][display_name]', region === 'fr' ? 'Livraison France' : 'Livraison internationale');
@@ -200,12 +213,15 @@ async function checkout(request: Request, env: Env, key: string, json: JsonFn): 
   return json({ url: stripe.data.url });
 }
 
-async function session(request: Request, key: string, json: JsonFn): Promise<Response> {
+async function session(request: Request, env: Env, key: string, json: JsonFn, ctx: any): Promise<Response> {
   const id = new URL(request.url).searchParams.get('id') || '';
   if (!isSessionId(id)) return json({ error: 'Identifiant invalide.' }, 400);
   const stripe = await stripeCall(key, 'GET', `/v1/checkout/sessions/${id}?expand[]=line_items`);
   if (!stripe.ok) return json({ error: 'Commande introuvable.' }, 404);
   const s = stripe.data;
+  // Filet de securite si le webhook tarde ou n'est pas encore configure
+  // (la session vient de Stripe, pas du navigateur : pas de falsification).
+  if (s.payment_status === 'paid') ctx.waitUntil(processPaid(env, s).catch(() => {}));
   return json({
     paid: s.payment_status === 'paid',
     total: s.amount_total / 100,
@@ -255,7 +271,16 @@ async function webhook(request: Request, env: Env, json: JsonFn): Promise<Respon
     return json({ received: true });
   }
   if (s.payment_status !== 'paid') return json({ received: true });
+  // Une erreur ici renvoie 500 : Stripe reessaie le webhook plus tard.
+  await processPaid(env, s);
+  return json({ received: true });
+}
 
+// Commande payee -> pieces bloquees tout de suite, trace, stock decompte
+// (commit GitHub). Appelee par le webhook ET par /session (page Merci),
+// en filet de securite : idempotent (cles done:<session>:<slug>, et le PUT
+// GitHub echoue si deux appels se croisent sur la meme version du fichier).
+async function processPaid(env: Env, s: any) {
   const meta = s.metadata || {};
   const sold: { slug: string; qty: number }[] = meta.items
     ? String(meta.items).split(',').filter(Boolean).map((x: string) => {
@@ -289,7 +314,6 @@ async function webhook(request: Request, env: Env, json: JsonFn): Promise<Respon
       await env.HOLDS.put(done, '1', { expirationTtl: 30 * 86400 });
     }
   }
-  return json({ received: true });
 }
 
 async function decrementStock(env: Env, slug: string, qty: number, sessionId: string) {
