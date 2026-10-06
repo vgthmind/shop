@@ -13,7 +13,8 @@ export type MailItem = {
   name: string;
   size?: string; // ex. "M"
   qty: number;
-  amount: string; // deja formate
+  amount: string; // total de la ligne (prix x quantite), deja formate
+  unit?: string; // prix unitaire formate, seulement si quantite > 1
   image?: string; // URL publique absolue
 };
 
@@ -30,13 +31,19 @@ export type OrderData = {
   test: boolean;
   stripeUrl: string;
   cgvUrl: string;
-  orderUrl: string; // page « Merci » de la commande
+  orderUrl: string; // page « Suivre ma commande » (/suivi, numero prerempli)
 };
 
 export function esc(t: any) {
   return String(t ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c] as string));
 }
 
+// Nom du pays en toutes lettres (« France », « Canada ») dans la langue voulue.
+export function countryName(code: string, lang: string): string {
+  const c = String(code || '').toUpperCase();
+  if (!c) return '';
+  try { return new Intl.DisplayNames([lang], { type: 'region' }).of(c) || c; } catch (e) { return c; }
+}
 export const langFor = (country: string) => (String(country).toUpperCase() === 'FR' ? 'fr' : 'en');
 
 const T = {
@@ -52,6 +59,7 @@ const T = {
     order: 'Ta commande',
     size: 'Taille',
     qty: 'Qté',
+    each: "l'unité",
     shipping: 'Livraison',
     total: 'Total',
     shipTo: 'Livraison à',
@@ -77,6 +85,7 @@ const T = {
     order: 'Your order',
     size: 'Size',
     qty: 'Qty',
+    each: 'each',
     shipping: 'Shipping',
     total: 'Total',
     shipTo: 'Shipping to',
@@ -116,9 +125,9 @@ function shell(lang: string, title: string, inner: string) {
 // Lignes d'articles : miniature de taille fixe + nom, taille, quantite, prix.
 function itemRows(items: MailItem[], t: (typeof T)['fr']) {
   return items.map((i) => {
-    const meta = [i.size ? `${t.size} ${esc(i.size)}` : '', `${t.qty} ${esc(i.qty)}`].filter(Boolean).join(' · ');
+    const meta = [i.size ? `${t.size} ${esc(i.size)}` : '', `${t.qty} ${esc(i.qty)}${i.unit ? ` (${esc(i.unit)} ${t.each})` : ''}`].filter(Boolean).join(' · ');
     const img = i.image
-      ? `<img src="${esc(i.image)}" alt="${esc(i.name)}" width="72" height="76" style="display:block;width:72px;height:76px;border:0;background:${BG}">`
+      ? `<table role="presentation" width="72" height="76" cellpadding="0" cellspacing="0" style="width:72px;height:76px;background:${BG}"><tr><td align="center" valign="middle" width="72" height="76" style="width:72px;height:76px;line-height:0;font-size:0"><img src="${esc(i.image)}" alt="${esc(i.name)}" style="display:inline-block;max-width:72px;max-height:76px;width:auto;height:auto;border:0"></td></tr></table>`
       : `<div style="width:72px;height:76px;background:${BG}"></div>`;
     return `<tr><td width="72" valign="top" style="padding:10px 14px 10px 0;border-bottom:1px solid ${LINE}">${img}</td>`
       + `<td valign="top" style="padding:10px 0;border-bottom:1px solid ${LINE};font:15px/1.4 ${FONT};color:${INK}"><b>${esc(i.name)}</b><br><span style="color:${MUTED};font-size:13px">${meta}</span></td>`
@@ -135,7 +144,7 @@ function itemsTable(o: OrderData, t: (typeof T)['fr'], withTotals: boolean) {
 }
 
 const itemLines = (o: OrderData, t: (typeof T)['fr']) =>
-  o.items.map((i) => `- ${i.name}${i.size ? ` (${t.size} ${i.size})` : ''} · ${t.qty} ${i.qty} · ${i.amount}`);
+  o.items.map((i) => `- ${i.name}${i.size ? ` (${t.size} ${i.size})` : ''} · ${t.qty} ${i.qty}${i.unit ? ` (${i.unit} ${t.each})` : ''} · ${i.amount}`);
 
 function signature(t: (typeof T)['fr']) {
   return para('vgthmind', 'margin:22px 0 4px;font-weight:bold')
@@ -201,7 +210,8 @@ export function shippedEmail(o: OrderData, tracking: string) {
 
 export function sellerEmail(o: OrderData) {
   const t = T.fr;
-  const subject = `${o.test ? '[TEST] ' : ''}Nouvelle commande ${o.total} — ${o.country} (réf. ${o.ref})`;
+  const pays = countryName(o.country, 'fr');
+  const subject = `${o.test ? '[TEST] ' : ''}Nouvelle commande ${o.total} — ${pays} (réf. ${o.ref})`;
   const row = (k: string, v: string) => `<tr><td valign="top" style="padding:6px 14px 6px 0;font:14px/1.45 ${FONT};color:${MUTED};white-space:nowrap">${k}</td><td valign="top" style="padding:6px 0;font:15px/1.45 ${FONT};color:${INK}">${v}</td></tr>`;
   const html = shell('fr', subject,
     `<p style="margin:0 0 6px;font:bold 12px ${FONT};letter-spacing:2px;text-transform:uppercase;color:${MUTED}">Nouvelle commande payée${o.test ? ' · mode TEST' : ''}</p>`
@@ -212,7 +222,7 @@ export function sellerEmail(o: OrderData) {
     + `<table role="presentation" cellpadding="0" cellspacing="0">`
     + row('Client', `${esc(o.name)}<br>${link('mailto:' + o.email, esc(o.email))}${o.phone ? '<br>' + esc(o.phone) : ''}`)
     + row('Livrer à', o.address.map(esc).join('<br>'))
-    + row('Pays', esc(o.country))
+    + row('Pays', esc(pays))
     + row('Frais de port', esc(o.shipping))
     + row('Langue du mail client', langFor(o.country).toUpperCase())
     + `</table><div style="margin-top:20px">${button(o.stripeUrl, 'Ouvrir la commande dans Stripe')}</div>`);
@@ -221,7 +231,7 @@ export function sellerEmail(o: OrderData) {
     'Articles :', ...itemLines(o, t),
     `Frais de port : ${o.shipping}`, `Total : ${o.total}`, '',
     `Client : ${o.name} / ${o.email}${o.phone ? ' / ' + o.phone : ''}`,
-    'Livrer à :', ...o.address.map((x) => '  ' + x), `Pays : ${o.country}`, '',
+    'Livrer à :', ...o.address.map((x) => '  ' + x), `Pays : ${pays}`, '',
     `Stripe : ${o.stripeUrl}`,
   ].join('\n');
   return { subject, html, text };

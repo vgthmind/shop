@@ -98,7 +98,9 @@
     }
 
     var w = opts.w || 280, h = opts.h || 280;
-    var axis = opts.axis === 'y' ? 'y' : 'z';
+    // 'zt' = rotation a plat (z) vue de trois quarts : le plan entier est incline
+    // une fois pour toutes (overlay), l'icone tourne dedans.
+    var axis = opts.axis === 'y' ? 'y' : (opts.axis === 'zt' ? 'zt' : 'z');
     var persp = opts.persp || 1200;
     var popStart = Date.now();
     // SECTION 3 : x/y (px viewport) = point d'origine du clic. Absents pour
@@ -136,6 +138,10 @@
     img.style.animationIterationCount = '1, infinite';
     img.style.animationFillMode = 'forwards, none';
     overlay.appendChild(img);
+    if (axis === 'zt') {
+      overlay.style.setProperty('transform-origin', (hasOrigin ? opts.x + 'px ' + opts.y + 'px' : '50% 50%'), 'important');
+      overlay.style.setProperty('transform', 'perspective(' + persp + 'px) rotateX(16deg) rotateY(-14deg)', 'important');
+    }
     document.documentElement.appendChild(overlay);
 
     vgLog('pop start', opts);
@@ -295,12 +301,17 @@
     // Page Studio : le logo vgthmind en version CHROMEE (distinct du logo
     // plat de l'accueil, qui garde sa propre transition).
     else if (href.indexOf('/studio') !== -1) icon = 'https://vgthmind.github.io/assets/bigcartel/studio-icon.png';
+    // Page « Suivre ma commande » (lien discret du footer) : cube metal aux t-shirts.
+    else if (href.indexOf('/suivi') !== -1) icon = 'https://vgthmind.github.io/assets/bigcartel/suivi-icon.png';
     if (!icon) return;
     e.preventDefault();
     if (window.__vgTransitioning) return;
     vgClearSelection();
     if (location.pathname === href) { vgBounce(link); return; }
-    window.pageTransition({ icon: icon, href: href, w: 280, h: 280, axis: 'y', persp: 1200 });
+    // Le cube de /suivi tourne a plat (axe z, comme les resultats de recherche) :
+    // en culbute il s'aplatit en carte et ne se reconnait plus.
+    var flat = href.indexOf('/suivi') !== -1;
+    window.pageTransition({ icon: icon, href: href, w: 280, h: 280, axis: flat ? 'zt' : 'y', persp: flat ? 1000 : 1200 });
   }, true);
 
   function stripHeaderTitles() {

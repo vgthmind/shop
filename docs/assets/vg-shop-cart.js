@@ -450,12 +450,147 @@
       .catch(function () {});
   }
 
+  // --- Page /suivi : numero + e-mail -> statut, articles, adresse, colis.
+  // Le Worker (POST /track) ne repond que pour le bon couple ; echec = message neutre.
+  var TRACK_TEXT = {
+    fr: {
+      title: 'Suivre ma commande', intro: 'Entre ton numéro de commande (dans ton e-mail de confirmation) et l\'adresse e-mail utilisée pour la commande.',
+      ref: 'Numéro de commande', email: 'E-mail', submit: 'Suivre ma commande', loading: 'Recherche…',
+      missing: 'Renseigne ton numéro de commande et ton e-mail.',
+      notfound: 'Nous n\'avons pas trouvé de commande avec ces informations. Vérifie le numéro et l\'e-mail, puis réessaie.',
+      rate: 'Trop de tentatives. Réessaie dans quelques minutes.', error: 'Un problème est survenu. Réessaie dans un instant.',
+      order: 'Commande', placed: 'passée le', steps: ['Reçue', 'En préparation', 'Expédiée'],
+      s_received: 'Ta commande est bien reçue.', s_preparing: 'Ta commande est en cours de préparation.', s_shipped: 'Ta commande est partie.',
+      items: 'Articles', size: 'Taille', qty: 'Qté', each: 'l\'unité', shipping: 'Livraison', total: 'Total', address: 'Adresse de livraison',
+      parcel: 'Numéro de suivi', trackBtn: 'Suivre mon colis', noTracking: 'Le numéro de suivi n\'est pas encore disponible.', again: 'Suivre une autre commande',
+    },
+    en: {
+      title: 'Track my order', intro: 'Enter your order number (in your confirmation email) and the email address used for the order.',
+      ref: 'Order number', email: 'Email', submit: 'Track my order', loading: 'Looking up…',
+      missing: 'Enter your order number and your email.',
+      notfound: 'We couldn\'t find an order with these details. Check the number and email, then try again.',
+      rate: 'Too many attempts. Please try again in a few minutes.', error: 'Something went wrong. Please try again in a moment.',
+      order: 'Order', placed: 'placed on', steps: ['Received', 'Being prepared', 'Shipped'],
+      s_received: 'Your order has been received.', s_preparing: 'Your order is being prepared.', s_shipped: 'Your order is on its way.',
+      items: 'Items', size: 'Size', qty: 'Qty', each: 'each', shipping: 'Shipping', total: 'Total', address: 'Delivery address',
+      parcel: 'Tracking number', trackBtn: 'Track my parcel', noTracking: 'The tracking number isn\'t available yet.', again: 'Track another order',
+    },
+  };
+
+  function renderTracking() {
+    var root = document.querySelector('[data-vg-track]');
+    if (!root) return;
+    var q = (loc.search || '');
+    var fromUrl = function (k) { var m = q.match(new RegExp('[?&]' + k + '=([^&]*)')); return m ? decodeURIComponent(m[1].replace(/\+/g, ' ')) : ''; };
+    var lang = fromUrl('l') === 'fr' || fromUrl('l') === 'en' ? fromUrl('l')
+      : (/^fr/i.test(navigator.language || '') ? 'fr' : 'en');
+    try { var saved = localStorage.getItem('vg-track-lang'); if (!fromUrl('l') && (saved === 'fr' || saved === 'en')) lang = saved; } catch (e) {}
+    var form = root.querySelector('form');
+    var refInput = root.querySelector('#vg-track-ref');
+    var emailInput = root.querySelector('#vg-track-email');
+    var submit = root.querySelector('.vg-track-submit');
+    var msg = root.querySelector('.vg-track-msg');
+    var lookup = root.querySelector('.vg-track-lookup');
+    var result = root.querySelector('.vg-track-result');
+    var t;
+
+    function applyLang(l) {
+      lang = l; t = TRACK_TEXT[l];
+      try { localStorage.setItem('vg-track-lang', l); } catch (e) {}
+      document.documentElement.setAttribute('lang', l);
+      root.querySelectorAll('[data-t]').forEach(function (el) { el.textContent = t[el.getAttribute('data-t')]; });
+      root.querySelectorAll('[data-lang]').forEach(function (a) { a.setAttribute('aria-current', String(a.getAttribute('data-lang') === l)); });
+      var h1 = document.querySelector('main h1'); if (h1) h1.textContent = t.title;
+      document.title = t.title + ' | vgthmind';
+      if (result.__data) drawResult(result.__data);
+    }
+    function countryLabel(code) {
+      if (!code) return '';
+      try { return new Intl.DisplayNames([lang], { type: 'region' }).of(String(code).toUpperCase()) || code; } catch (e) { return code; }
+    }
+    function showMsg(text) { msg.textContent = text; msg.hidden = !text; }
+    function fmtDate(sec) {
+      try { return new Date(sec * 1000).toLocaleDateString(lang === 'fr' ? 'fr-FR' : 'en-GB', { day: 'numeric', month: 'long', year: 'numeric' }); }
+      catch (e) { return ''; }
+    }
+
+    function drawResult(d) {
+      result.__data = d;
+      var idx = d.status === 'shipped' ? 2 : d.status === 'preparing' ? 1 : 0;
+      var steps = t.steps.map(function (label, i) {
+        var cls = i < idx ? 'is-done' : i === idx ? 'is-done is-current' : '';
+        var sub = i === 2 && d.shippedAt ? '<small>' + esc(fmtDate(d.shippedAt)) + '</small>' : (i === 0 && d.created ? '<small>' + esc(fmtDate(d.created)) + '</small>' : '');
+        return '<li class="' + cls + '"' + (i === idx ? ' aria-current="step"' : '') + '>' + esc(label) + sub + '</li>';
+      }).join('');
+      var items = (d.items || []).map(function (it) {
+        return '<li class="cart-item">'
+          + '<div class="cart-item-image-holder"><span class="cart-item-image-link">' + (it.image ? '<img src="' + esc(it.image) + '" alt="' + esc(it.name) + '" decoding="async">' : '') + '</span></div>'
+          + '<div class="cart-item-detail"><div class="product-name">' + esc(it.name) + '</div>'
+          + '<div class="option-name">' + (it.size ? esc(t.size) + ' ' + esc(it.size) + ' · ' : '') + esc(t.qty) + ' ' + esc(it.qty || 1) + '</div>'
+          + (it.unit ? '<div class="vg-track-unit">' + money(it.unit) + ' ' + esc(t.each) + '</div>' : '') + '</div>'
+          + '<div class="cart-item-price"><span>' + money(it.amount) + '</span></div></li>';
+      }).join('');
+      var parcel = '';
+      if (d.status === 'shipped') {
+        var okUrl = d.trackUrl && d.trackUrl.indexOf('https://www.laposte.fr/') === 0;
+        parcel = '<div class="vg-track-parcel">'
+          + (d.tracking ? '<p>' + esc(t.parcel) + '<br><strong>' + esc(d.tracking) + '</strong></p>' : '<p>' + esc(t.noTracking) + '</p>')
+          + (okUrl ? '<a class="button view-all-products" href="' + esc(d.trackUrl) + '" target="_blank" rel="noopener noreferrer">' + esc(t.trackBtn) + '</a>' : '')
+          + '</div>';
+      }
+      result.innerHTML =
+        '<div class="vg-track-head"><span class="vg-track-ref">' + esc(d.ref) + '</span>' + (d.created ? '<span class="vg-track-date">' + esc(t.placed) + ' ' + esc(fmtDate(d.created)) + '</span>' : '') + '</div>'
+        + '<ol class="vg-track-steps">' + steps + '</ol>'
+        + '<p class="vg-track-status">' + esc(t['s_' + d.status]) + '</p>'
+        + '<h2 class="vg-track-h">' + esc(t.items) + '</h2>'
+        + '<ul class="cart-items">' + items + '</ul>'
+        + '<div class="cart-footer">'
+        + '<div class="cart-subtotal vg-cart-line"><span class="cart-subtotal__label">' + esc(t.shipping) + ':</span><span class="cart-subtotal__amount">' + money(d.shipping) + '</span></div>'
+        + '<div class="cart-subtotal vg-cart-line vg-cart-total"><span class="cart-subtotal__label">' + esc(t.total) + ':</span><span class="cart-subtotal__amount">' + money(d.total) + '</span></div></div>'
+        + '<h2 class="vg-track-h">' + esc(t.address) + '</h2>'
+        + '<p class="vg-track-address">' + esc((d.address || []).concat(countryLabel(d.country)).filter(Boolean).join('\n')) + '</p>'
+        + parcel
+        + '<p class="vg-track-again"><button type="button" class="button button--checkout vg-track-back">' + esc(t.again) + '</button></p>';
+      lookup.hidden = true; result.hidden = false;
+    }
+
+    root.querySelectorAll('[data-lang]').forEach(function (a) {
+      a.addEventListener('click', function (e) { e.preventDefault(); applyLang(a.getAttribute('data-lang')); });
+    });
+    result.addEventListener('click', function (e) {
+      if (!e.target.closest || !e.target.closest('.vg-track-back')) return;
+      result.hidden = true; result.innerHTML = ''; result.__data = null; lookup.hidden = false;
+      emailInput.value = ''; showMsg(''); refInput.focus();
+    });
+    form.addEventListener('submit', function (e) {
+      e.preventDefault();
+      var ref = refInput.value.trim(), email = emailInput.value.trim();
+      if (!ref || !email) { showMsg(t.missing); return; }
+      if (!ENDPOINT) { showMsg(t.error); return; }
+      showMsg(''); submit.setAttribute('aria-busy', 'true'); submit.disabled = true; submit.textContent = t.loading;
+      fetch(ENDPOINT + '/track', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ref: ref, email: email }) })
+        .then(function (r) { return r.json().catch(function () { return {}; }).then(function (d) { return { status: r.status, d: d }; }); })
+        .then(function (res) {
+          if (res.d && res.d.ok) { drawResult(res.d); window.scrollTo(0, 0); return; }
+          showMsg(res.status === 429 ? t.rate : res.status === 404 ? t.notfound : t.error);
+        })
+        .catch(function () { showMsg(t.error); })
+        .then(function () { submit.removeAttribute('aria-busy'); submit.disabled = false; submit.textContent = t.submit; });
+    });
+
+    var pre = fromUrl('o'); if (pre) refInput.value = pre.slice(0, 14);
+    applyLang(lang);
+    // Numero deja rempli (lien du mail) : on va droit a l'e-mail.
+    if (pre) emailInput.focus();
+  }
+
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', onReady);
   else onReady();
   function onReady() {
     updateBadges();
     renderCart();
     renderOrderResult();
+    renderTracking();
     stockReady.then(applyStock);
   }
 })();

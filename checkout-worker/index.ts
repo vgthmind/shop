@@ -22,15 +22,16 @@
 //   GET  /stock             { stock: { slug: quantite } } (affichage du site)
 //   GET  /auth, /callback   connexion GitHub (OAuth) de l'admin
 //   GET  /status            controle de la configuration (sans les secrets)
+//   POST /track             page /suivi : { ref, email } -> statut de la commande (limite d'essais)
 // Routes admin (en-tete Authorization: Bearer <session signee par SESSION_SECRET>) :
 //   POST /admin/renew       nouvelle session de 30 jours
 //   GET/POST /admin/stock   lire / regler les quantites
 //   GET  /admin/backups     liste des sauvegardes ; GET /admin/backup?key=…
 //   POST /admin/backup      sauvegarde immediate
-//   GET  /orders ; POST /orders/shipped ; POST /orders/shipped-mail
+//   GET  /orders ; POST /orders/preparing ; POST /orders/shipped ; POST /orders/shipped-mail
 
 import { DurableObject } from 'cloudflare:workers';
-import { customerEmail, sellerEmail, shippedEmail, REPLY_TO, type MailItem, type OrderData } from './emails';
+import { customerEmail, sellerEmail, shippedEmail, REPLY_TO, langFor, countryName, type MailItem, type OrderData } from './emails';
 
 interface KV {
   get(key: string): Promise<string | null>;
@@ -234,6 +235,8 @@ export default {
       if (path === '/release' && request.method === 'POST') return await release(request, env, key.value, json);
       if (path === '/webhook' && request.method === 'POST') return await webhook(request, env, json);
       if (path === '/orders' && request.method === 'GET') return await listOrders(request, env, key.value, json);
+      if (path === '/track' && request.method === 'POST') return await trackOrder(request, env, key.value, json);
+      if (path === '/orders/preparing' && request.method === 'POST') return await markPreparing(request, env, json);
       if (path === '/orders/shipped' && request.method === 'POST') return await markShipped(request, env, json);
       if (path === '/orders/shipped-mail' && request.method === 'POST') return await sendShippedMail(request, env, key.value, json);
     } catch (e: any) {
@@ -487,12 +490,13 @@ async function mailItems(env: Env, lineItems: any[], money: (c: number) => strin
   return lineItems.map((li: any) => {
     const prod = typeof li.price?.product === 'object' ? li.price.product : null;
     const p = catalog.find((c) => c.permalink === prod?.metadata?.slug);
-    const size = /\b(?:size|taille)\s+([A-Za-z0-9./-]+)/i.exec(p?.description || '');
+    const size = /\b(?:[Ss]ize|[Tt]aille|SIZE|TAILLE)\s+([A-Z]{1,4}|\d{1,3}(?:[./-]\d{1,3})?)\b/.exec(p?.description || '');
     return {
       name: String(li.description),
       size: size ? size[1] : '',
       qty: li.quantity,
       amount: money(li.amount_total),
+      ...(li.quantity > 1 ? { unit: money(Math.round(li.amount_total / li.quantity)) } : {}),
       image: (prod && prod.images && prod.images[0]) || '',
     };
   });
@@ -502,20 +506,21 @@ async function buildOrder(env: Env, o: any): Promise<OrderData> {
   const ship = (o.collected_information && o.collected_information.shipping_details) || o.shipping_details || {};
   const a = ship.address || {};
   const money = (c: number) => (c / 100).toFixed(2).replace('.', ',') + ' ' + String(o.currency || 'eur').toUpperCase();
+  const ref = await assignRef(env, String(o.id));
   return {
-    ref: String(o.id).slice(-8).toUpperCase(),
+    ref,
     name: ship.name || o.customer_details?.name || '',
     email: o.customer_details?.email || '',
     phone: o.customer_details?.phone || '',
     country: a.country || o.customer_details?.address?.country || '',
-    address: [ship.name || o.customer_details?.name, a.line1, a.line2, [a.postal_code, a.city].filter(Boolean).join(' '), a.state, a.country].filter(Boolean),
+    address: [ship.name || o.customer_details?.name, a.line1, a.line2, [a.postal_code, a.city].filter(Boolean).join(' '), a.state, countryName(a.country, langFor(a.country || o.customer_details?.address?.country || ''))].filter(Boolean),
     items: await mailItems(env, o.line_items?.data || [], money),
     shipping: money(o.shipping_cost?.amount_total || 0),
     total: money(o.amount_total),
     test: !o.livemode,
     stripeUrl: `https://dashboard.stripe.com/${o.livemode ? '' : 'test/'}payments/${typeof o.payment_intent === 'string' ? o.payment_intent : ''}`,
     cgvUrl: `${env.SITE_BASE}/infos-conditions-generales`,
-    orderUrl: `${env.SITE_BASE}/merci/?session_id=${o.id}`,
+    orderUrl: `${env.SITE_BASE}/suivi/?o=${encodeURIComponent(ref)}&l=${langFor(a.country || o.customer_details?.address?.country || '')}`,
   };
 }
 
@@ -701,9 +706,10 @@ async function listOrders(request: Request, env: Env, key: string, json: JsonFn)
   for (const s of stripe.data.data || []) {
     if (s.payment_status !== 'paid') continue;
     const ship = (s.collected_information && s.collected_information.shipping_details) || s.shipping_details || {};
-    const shipped = await env.HOLDS.get('shipped:' + s.id);
+    const [shipped, preparing, ref] = await Promise.all([env.HOLDS.get('shipped:' + s.id), env.HOLDS.get('preparing:' + s.id), assignRef(env, s.id)]);
     orders.push({
       id: s.id,
+      ref,
       created: s.created,
       livemode: !!s.livemode,
       total: s.amount_total / 100,
@@ -713,8 +719,9 @@ async function listOrders(request: Request, env: Env, key: string, json: JsonFn)
       phone: s.customer_details?.phone || '',
       name: ship.name || s.customer_details?.name || '',
       address: ship.address || null,
-      items: (await mailItems(env, s.line_items?.data || [], (c) => String(c / 100), catalog)).map((i) => ({ ...i, amount: Number(i.amount) })),
+      items: (await mailItems(env, s.line_items?.data || [], (c) => String(c / 100), catalog)).map((i) => ({ ...i, amount: Number(i.amount), unit: i.unit ? Number(i.unit) : 0 })),
       shipped: shipped ? JSON.parse(shipped) : null,
+      preparing: preparing ? JSON.parse(preparing) : null,
     });
   }
   return json({ orders });
@@ -732,6 +739,108 @@ async function markShipped(request: Request, env: Env, json: JsonFn): Promise<Re
   const value = { at: Math.floor(Date.now() / 1000), tracking: String(body.tracking || '').trim().slice(0, 100) };
   await env.HOLDS.put('shipped:' + body.id, JSON.stringify(value));
   return json({ ok: true, shipped: value });
+}
+
+// « En preparation » : pose a la main depuis l'admin (bouton a cote de « expediee »).
+async function markPreparing(request: Request, env: Env, json: JsonFn): Promise<Response> {
+  if (!(await isAdmin(request, env))) return json({ error: 'Non autorisé.' }, 401);
+  let body: any = {};
+  try { body = await request.json(); } catch (e) {}
+  if (!isSessionId(String(body.id || ''))) return json({ error: 'Identifiant invalide.' }, 400);
+  if (body.undo) {
+    await env.HOLDS.delete('preparing:' + body.id);
+    return json({ ok: true });
+  }
+  const value = { at: Math.floor(Date.now() / 1000) };
+  await env.HOLDS.put('preparing:' + body.id, JSON.stringify(value));
+  return json({ ok: true, preparing: value });
+}
+
+// --- Numero de commande court (VG-K7M4QX) + page de suivi ---------------------
+// Alphabet sans 0/O, 1/I/L : se dicte et se recopie sans erreur (31^6 = 887 M).
+const REF_CHARS = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
+
+async function refCandidate(sessionId: string, salt: number): Promise<string> {
+  const h = new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(salt + ':' + sessionId)));
+  let out = '';
+  for (let i = 0; i < 6; i++) out += REF_CHARS[h[i] % REF_CHARS.length];
+  return 'VG-' + out;
+}
+
+// Numero stable d'une commande. Index KV ref:<numero> -> session et
+// sref:<session> -> numero. Si le numero est deja pris par UNE AUTRE commande
+// (tres rare), on genere une variante au lieu d'ecraser l'ancienne.
+async function assignRef(env: Env, sessionId: string): Promise<string> {
+  const have = await env.HOLDS.get('sref:' + sessionId);
+  if (have) return have;
+  for (let salt = 0; salt < 25; salt++) {
+    const cand = await refCandidate(sessionId, salt);
+    const owner = await env.HOLDS.get('ref:' + cand);
+    if (owner && owner !== sessionId) continue;
+    await env.HOLDS.put('ref:' + cand, sessionId);
+    await env.HOLDS.put('sref:' + sessionId, cand);
+    return cand;
+  }
+  throw new Error('Numéro de commande indisponible.');
+}
+
+// Accepte « VG-k7m4qx », « k7m4qx », « VG K7M4QX »… -> « VG-K7M4QX » (ou '').
+function normalizeRef(raw: string): string {
+  const t = String(raw || '').toUpperCase().replace(/[^A-Z0-9]/g, '').replace(/^VG/, '');
+  return /^[A-Z0-9]{6}$/.test(t) ? 'VG-' + t : '';
+}
+
+const TRACK_WINDOW = 15 * 60; // secondes
+const TRACK_MAX_PER_IP = 15; // tentatives par IP et par fenetre
+const TRACK_MAX_FAILS_PER_REF = 5; // echecs par numero et par fenetre
+async function bump(env: Env, key: string): Promise<number> {
+  const n = (Number(await env.HOLDS.get(key)) || 0) + 1;
+  await env.HOLDS.put(key, String(n), { expirationTtl: TRACK_WINDOW });
+  return n;
+}
+
+// Page /suivi : ne renvoie rien sans le bon couple numero + e-mail. Tous les
+// echecs (numero inconnu, e-mail faux, commande non payee) donnent la meme reponse.
+async function trackOrder(request: Request, env: Env, key: string, json: JsonFn): Promise<Response> {
+  let body: any = {};
+  try { body = await request.json(); } catch (e) {}
+  const ip = request.headers.get('CF-Connecting-IP') || 'inconnue';
+  const email = String(body.email || '').trim().toLowerCase().slice(0, 254);
+  const ref = normalizeRef(body.ref);
+  const tooMany = () => json({ ok: false, error: 'rate' }, 429);
+  const neutral = () => json({ ok: false }, 404);
+  if ((await bump(env, 'rl:ip:' + ip)) > TRACK_MAX_PER_IP) return tooMany();
+  if (!ref || !email) return neutral();
+  if ((Number(await env.HOLDS.get('rl:ref:' + ref)) || 0) >= TRACK_MAX_FAILS_PER_REF) return tooMany();
+  const fail = async () => { await bump(env, 'rl:ref:' + ref); return neutral(); };
+
+  const sessionId = await env.HOLDS.get('ref:' + ref);
+  if (!sessionId || !isSessionId(sessionId)) return fail();
+  const full = await stripeCall(key, 'GET', `/v1/checkout/sessions/${sessionId}?${SESSION_EXPAND}`);
+  const s = full.data;
+  if (!full.ok || s.payment_status !== 'paid') return fail();
+  if (String(s.customer_details?.email || '').trim().toLowerCase() !== email) return fail();
+
+  const [shippedRaw, preparingRaw] = await Promise.all([env.HOLDS.get('shipped:' + sessionId), env.HOLDS.get('preparing:' + sessionId)]);
+  const shipped = shippedRaw ? JSON.parse(shippedRaw) : null;
+  const ship = (s.collected_information && s.collected_information.shipping_details) || s.shipping_details || {};
+  const a = ship.address || {};
+  const tracking = shipped ? String(shipped.tracking || '').trim() : '';
+  return json({
+    ok: true,
+    ref,
+    status: shipped ? 'shipped' : preparingRaw ? 'preparing' : 'received',
+    created: s.created,
+    shippedAt: shipped ? shipped.at : null,
+    currency: String(s.currency || 'eur').toUpperCase(),
+    items: (await mailItems(env, s.line_items?.data || [], (c) => String(c / 100))).map((i) => ({ ...i, amount: Number(i.amount), unit: i.unit ? Number(i.unit) : 0 })),
+    address: [ship.name || s.customer_details?.name, a.line1, a.line2, [a.postal_code, a.city].filter(Boolean).join(' '), a.state].filter(Boolean),
+    country: a.country || '',
+    shipping: (s.shipping_cost?.amount_total || 0) / 100,
+    total: s.amount_total / 100,
+    tracking,
+    trackUrl: tracking ? 'https://www.laposte.fr/outils/suivre-vos-envois?code=' + encodeURIComponent(tracking) : '',
+  });
 }
 
 // Mail « expediee » HTML envoye au client (bouton admin), une fois par clic.

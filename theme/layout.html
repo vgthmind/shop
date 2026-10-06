@@ -83,6 +83,10 @@
       img.style.animationDelay = (-(liveAngle / 360) * period) + 's';
       overlay.appendChild(img);
     }
+    if (t.axis === 'zt') {
+      overlay.style.transformOrigin = (t.x != null && t.y != null) ? t.x + 'px ' + t.y + 'px' : '50% 50%';
+      overlay.style.transform = 'perspective(' + (t.persp || 1000) + 'px) rotateX(16deg) rotateY(-14deg)';
+    }
     document.documentElement.appendChild(overlay);
     window.__vgBoot = { overlay: overlay, data: t, liveAngle: liveAngle, speed: speed, early: true };
     // [2026-09-29 finale] La nouvelle page s'affiche TOUT DE SUITE sous l'icone
@@ -542,7 +546,7 @@
           {% endif %}
           {% if pages.required_pages.size > 0 %}
             {% for required_page in pages.required_pages %}
-              <li>{{ required_page | link_to }}</li>
+              {% unless required_page.permalink == 'suivi' %}<li>{{ required_page | link_to }}</li>{% endunless %}
             {% endfor %}
           {% endif %}
         </ul>
