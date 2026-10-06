@@ -5,7 +5,9 @@ workers_dev = true
 
 # Pas d'account_id ici : wrangler prend le compte de `wrangler login`.
 # Aucun secret dans ce fichier (npx.cmd wrangler secret put …) :
-#   STRIPE_SECRET_KEY, STRIPE_WEBHOOK_SECRET, GITHUB_CLIENT_SECRET
+#   STRIPE_SECRET_KEY, STRIPE_WEBHOOK_SECRET, GITHUB_CLIENT_SECRET,
+#   RESEND_API_KEY, ALERT_EMAIL (adresse perso : jamais dans le depot)
+# Emails client : variable MAIL_FROM (domaine verifie dans Resend), vide = alerte seule.
 [vars]
 ALLOWED_ORIGIN = "https://vgthmind.github.io"
 SITE_BASE = "https://vgthmind.github.io/shop"
@@ -13,9 +15,11 @@ SITE_BASE = "https://vgthmind.github.io/shop"
 # toute cle sk_live_ est refusee.
 LIVE_MODE = "0"
 ADMIN_GITHUB_LOGIN = "vgthmind"
+# Expediteur des emails (domaine verifie dans Resend). Public, pas un secret.
+MAIL_FROM = "vgthmind <commande@vgthmind.org>"
 # Identifiant (public) de l'OAuth App GitHub de l'admin ; son secret est un
 # secret Cloudflare (GITHUB_CLIENT_SECRET).
-GITHUB_CLIENT_ID = ""
+GITHUB_CLIENT_ID = "Ov23liAh57fi8Xa7RNNg"
 
 # Commandes expediees, sauvegardes du stock, etats OAuth (identifiant de
 # stockage, pas un secret).

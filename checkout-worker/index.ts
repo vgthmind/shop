@@ -22,7 +22,8 @@
 //   GET  /stock             { stock: { slug: quantite } } (affichage du site)
 //   GET  /auth, /callback   connexion GitHub (OAuth) de l'admin
 //   GET  /status            controle de la configuration (sans les secrets)
-// Routes admin (en-tete Authorization: Bearer <jeton GitHub de ADMIN_GITHUB_LOGIN>) :
+// Routes admin (en-tete Authorization: Bearer <session signee par SESSION_SECRET>) :
+//   POST /admin/renew       nouvelle session de 30 jours
 //   GET/POST /admin/stock   lire / regler les quantites
 //   GET  /admin/backups     liste des sauvegardes ; GET /admin/backup?key=…
 //   POST /admin/backup      sauvegarde immediate
@@ -42,6 +43,10 @@ interface Env {
   STRIPE_WEBHOOK_SECRET?: string;
   GITHUB_CLIENT_ID?: string; // OAuth App (public)
   GITHUB_CLIENT_SECRET?: string; // OAuth App (secret)
+  SESSION_SECRET?: string; // signe les sessions admin (30 jours)
+  RESEND_API_KEY?: string; // secret : cle Resend
+  ALERT_EMAIL?: string; // secret : adresse qui recoit l'alerte de commande
+  MAIL_FROM?: string; // expediteur sur domaine verifie ; vide = pas d'email client
   GITHUB_TOKEN?: string; // ancien systeme : n'est plus utilise, a supprimer
   ALLOWED_ORIGIN: string; // https://vgthmind.github.io
   SITE_BASE: string; // https://vgthmind.github.io/shop
@@ -197,6 +202,7 @@ export default {
       if (path === '/callback') return await oauthCallback(request, env);
       if (path.startsWith('/admin/')) {
         if (!(await isAdmin(request, env))) return json({ error: 'Non autorisé.' }, 401);
+        if (path === '/admin/renew' && request.method === 'POST') return json({ session: await makeSession(env) });
         if (path === '/admin/stock' && request.method === 'GET') return json(await adminStock(env));
         if (path === '/admin/stock' && request.method === 'POST') {
           const body: any = await request.json().catch(() => ({}));
@@ -452,6 +458,67 @@ async function processPaid(env: Env, s: any) {
     : String(meta.slugs || '').split(',').filter(Boolean).map((slug: string) => ({ slug, qty: 1 }));
   const catalog = await loadCatalog(env);
   await stockStub(env).confirm(s.id, meta.cart_id || '', items, catalogDefaults(catalog));
+  await sendOrderEmails(env, s).catch(() => {}); // un echec d'email ne bloque jamais la commande
+}
+
+// --- Emails de commande (Resend) ---------------------------------------------
+// Alerte pour l'admin (ALERT_EMAIL) ; confirmation au client seulement si un
+// domaine verifie est configure (MAIL_FROM). Une seule fois par commande.
+function esc(t: any) {
+  return String(t ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c] as string));
+}
+
+async function resendSend(env: Env, from: string, to: string, subject: string, html: string) {
+  const res = await fetch('https://api.resend.com/emails', {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${env.RESEND_API_KEY}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ from, to: [to], subject, html }),
+  });
+  return res.ok;
+}
+
+async function sendOrderEmails(env: Env, s: any) {
+  if (!env.RESEND_API_KEY || !env.STRIPE_SECRET_KEY) return;
+  const alertTo = (env.ALERT_EMAIL || '').trim();
+  const customerFrom = (env.MAIL_FROM || '').trim(); // ex. "vgthmind <commande@mondomaine.com>"
+  const doneKey = 'mailed:' + s.id;
+  const done = JSON.parse((await env.HOLDS.get(doneKey)) || '{}');
+  const needAlert = !!alertTo && !done.alert;
+  const needClient = !!customerFrom && !done.client;
+  if (!needAlert && !needClient) return;
+
+  const full = await stripeCall(env.STRIPE_SECRET_KEY, 'GET', `/v1/checkout/sessions/${s.id}?expand[]=line_items`);
+  if (!full.ok) return;
+  const o = full.data;
+  const ship = (o.collected_information && o.collected_information.shipping_details) || o.shipping_details || {};
+  const a = ship.address || {};
+  const name = ship.name || o.customer_details?.name || '';
+  const email = o.customer_details?.email || '';
+  const money = (c: number) => (c / 100).toFixed(2).replace('.', ',') + ' ' + String(o.currency || 'eur').toUpperCase();
+  const rows = (o.line_items?.data || [])
+    .map((li: any) => `<tr><td>${esc(li.description)} × ${esc(li.quantity)}</td><td align="right">${money(li.amount_total)}</td></tr>`)
+    .join('');
+  const table = `<table cellpadding="4" style="border-collapse:collapse">${rows}`
+    + `<tr><td>Livraison</td><td align="right">${money(o.shipping_cost?.amount_total || 0)}</td></tr>`
+    + `<tr><td><b>Total</b></td><td align="right"><b>${money(o.amount_total)}</b></td></tr></table>`;
+  const address = [name, a.line1, a.line2, [a.postal_code, a.city].filter(Boolean).join(' '), a.country].filter(Boolean).map(esc).join('<br>');
+  const ref = esc(String(o.id).slice(-8).toUpperCase());
+
+  if (needAlert) {
+    const ok = await resendSend(env, customerFrom || 'vgthmind <onboarding@resend.dev>', alertTo,
+      `Nouvelle commande ${money(o.amount_total)} (${ref})`,
+      `<p>Nouvelle commande payée${o.livemode ? '' : ' (mode TEST)'}.</p>${table}<p><b>Livrer à :</b><br>${address}</p>`
+      + `<p>Email client : ${esc(email)}${o.customer_details?.phone ? '<br>Tél : ' + esc(o.customer_details.phone) : ''}</p>`);
+    if (ok) done.alert = 1;
+  }
+  if (needClient && email) {
+    const ok = await resendSend(env, customerFrom, email, `Confirmation de commande (${ref})`,
+      `<p>Merci${name ? ' ' + esc(name) : ''} ! Ta commande est bien payée.</p>${table}`
+      + `<p><b>Adresse de livraison :</b><br>${address}</p><p>Tu recevras un message dès l'expédition.</p>`
+      + `<p style="color:#666;font-size:13px">Pense à vérifier tes spams (courriers indésirables) si tu ne vois pas nos mails.</p>`);
+    if (ok) done.client = 1;
+  }
+  await env.HOLDS.put(doneKey, JSON.stringify(done), { expirationTtl: 60 * 60 * 24 * 90 });
 }
 
 // --- OAuth GitHub (connexion admin, protocole Decap/Sveltia) ----------------
@@ -508,7 +575,9 @@ async function oauthCallback(request: Request, env: Env): Promise<Response> {
   if (String(user.login || '').toLowerCase() !== String(env.ADMIN_GITHUB_LOGIN).toLowerCase()) {
     return page('error', { message: 'Ce compte GitHub n\'a pas accès à cet admin.' });
   }
-  return page('success', { token: data.access_token, provider: 'github' });
+  // `token` reste pour Sveltia (il en a besoin pour publier sur GitHub) ; les
+  // pages Stock/Commandes n'utilisent que `session`.
+  return page('success', { token: data.access_token, provider: 'github', session: await makeSession(env) });
 }
 
 // --- /status -----------------------------------------------------------------
@@ -568,15 +637,32 @@ function timingSafeEqual(a: string, b: string) {
   return diff === 0;
 }
 
+// Session admin : « vgs.<expiration>.<signature> », signée par SESSION_SECRET,
+// valable 30 jours, renouvelée via /admin/renew. Le navigateur la garde en
+// localStorage et l'envoie en Authorization (pas de cookie tiers : Safari les bloque).
+const SESSION_TTL = 60 * 60 * 24 * 30;
+
+async function sessionSig(env: Env, exp: number): Promise<string> {
+  const key = await crypto.subtle.importKey('raw', new TextEncoder().encode(env.SESSION_SECRET || ''), { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']);
+  const data = new TextEncoder().encode(`vgs.${exp}.${String(env.ADMIN_GITHUB_LOGIN).toLowerCase()}`);
+  const sig = new Uint8Array(await crypto.subtle.sign('HMAC', key, data));
+  let s = '';
+  for (const b of sig) s += String.fromCharCode(b);
+  return btoa(s).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+}
+
+async function makeSession(env: Env): Promise<string> {
+  const exp = Math.floor(Date.now() / 1000) + SESSION_TTL;
+  return `vgs.${exp}.${await sessionSig(env, exp)}`;
+}
+
 async function isAdmin(request: Request, env: Env): Promise<boolean> {
-  const auth = request.headers.get('authorization') || '';
-  if (!/^Bearer [A-Za-z0-9_]+$/.test(auth)) return false;
-  const res = await fetch('https://api.github.com/user', {
-    headers: { Authorization: auth, Accept: 'application/vnd.github+json', 'User-Agent': 'vgthmind-shop-checkout' },
-  });
-  if (!res.ok) return false;
-  const user: any = await res.json();
-  return String(user.login || '').toLowerCase() === String(env.ADMIN_GITHUB_LOGIN || '').toLowerCase();
+  if (!env.SESSION_SECRET) return false;
+  const m = /^Bearer vgs\.(\d{1,12})\.([A-Za-z0-9_-]{43})$/.exec(request.headers.get('authorization') || '');
+  if (!m) return false;
+  const exp = Number(m[1]);
+  if (exp < Date.now() / 1000) return false;
+  return timingSafeEqual(m[2], await sessionSig(env, exp));
 }
 
 async function listOrders(request: Request, env: Env, key: string, json: JsonFn): Promise<Response> {
