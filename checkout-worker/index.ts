@@ -416,12 +416,15 @@ async function release(request: Request, env: Env, key: string, json: JsonFn): P
 }
 
 async function webhook(request: Request, env: Env, json: JsonFn): Promise<Response> {
-  const secret = (env.STRIPE_WEBHOOK_SECRET || '').trim();
+  const secret = cleanWebhookSecret(env);
   if (!secret) return json({ error: 'Webhook pas encore configuré.' }, 503);
   const payload = await request.text();
+  const stamp = new Date().toISOString().slice(0, 16).replace('T', ' ') + ' UTC';
   if (!(await verifyStripeSignature(payload, request.headers.get('stripe-signature') || '', secret))) {
+    await env.HOLDS.put('webhook:last', `${stamp} — signature refusée (secret whsec_ à reposer)`);
     return json({ error: 'Signature invalide.' }, 400);
   }
+  await env.HOLDS.put('webhook:last', `${stamp} — OK`);
   const event = JSON.parse(payload);
   const s = event.data && event.data.object;
   if (!s) return json({ received: true });
@@ -524,8 +527,12 @@ async function status(env: Env): Promise<Response> {
       lines.push(`${ok(r.ok)}clé acceptée par Stripe${r.ok ? '' : ` (HTTP ${r.status})`}`);
     } catch (e) { lines.push('-- clé : Stripe injoignable'); }
   }
-  const wh = (env.STRIPE_WEBHOOK_SECRET || '').trim();
-  lines.push(`${ok(/^whsec_/.test(wh))}STRIPE_WEBHOOK_SECRET posée${wh && !/^whsec_/.test(wh) ? ' mais ne commence pas par whsec_ : à reposer' : ''}`);
+  const wh = cleanWebhookSecret(env);
+  const whRaw = env.STRIPE_WEBHOOK_SECRET || '';
+  lines.push(`${ok(/^whsec_/.test(wh))}STRIPE_WEBHOOK_SECRET posée${wh && !/^whsec_/.test(wh) ? ' mais ne commence pas par whsec_ : à reposer' : ''}`
+    + (whRaw ? ` (${wh.length} caractères${whRaw.length !== wh.length ? `, ${whRaw.length - wh.length} en trop ignorés : à reposer proprement` : ''})` : ''));
+  const lastWh = await env.HOLDS.get('webhook:last');
+  if (lastWh) lines.push(`   dernier appel du webhook : ${lastWh}`);
   lines.push(`${ok(!!env.GITHUB_CLIENT_ID)}GITHUB_CLIENT_ID (OAuth App) renseigné`);
   lines.push(`${ok(!!env.GITHUB_CLIENT_SECRET)}GITHUB_CLIENT_SECRET (OAuth App) posé`);
   if (env.GITHUB_TOKEN) lines.push('-- GITHUB_TOKEN encore posé : plus utilisé, à supprimer');
@@ -630,4 +637,16 @@ function frLine(p: Product) {
 }
 function intlLine(p: Product) {
   return (p.shipping || []).find((s) => !s.country);
+}
+
+// Secret de webhook : espaces, guillemets, caracteres invisibles et lettres
+// tapees avant « whsec_ » ignores (meme souci que la cle, vu le 2026-10-06).
+function cleanWebhookSecret(env: Env) {
+  const raw = (env.STRIPE_WEBHOOK_SECRET || '').replace(/[\s​-‍﻿"'`]/g, '');
+  const i = raw.indexOf('whsec_');
+  const s = i > 0 && i <= 3 ? raw.slice(i) : raw;
+  // Collé deux fois (vu le 2026-10-06 : 76 caractères = 2 × 38).
+  const half = s.length / 2;
+  if (s.length % 2 === 0 && s.slice(0, half) === s.slice(half) && s.startsWith('whsec_')) return s.slice(0, half);
+  return s;
 }
