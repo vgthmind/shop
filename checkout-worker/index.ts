@@ -83,6 +83,7 @@ export default {
       new Response(JSON.stringify(data), { status, headers: { 'Content-Type': 'application/json', ...cors } });
 
     if (request.method === 'OPTIONS') return new Response(null, { headers: cors });
+    if (new URL(request.url).pathname === '/status') return status(env);
 
     // Espaces / retours a la ligne colles avec la cle par erreur : ignores.
     const rawKey = env.STRIPE_SECRET_KEY || '';
@@ -230,6 +231,41 @@ async function session(request: Request, env: Env, key: string, json: JsonFn, ct
     items: (s.line_items?.data || []).map((li: any) => ({ name: li.description, amount: li.amount_total / 100 })),
     slugs: (s.metadata?.slugs || '').split(',').filter(Boolean),
   });
+}
+
+// /status : page de controle pour Jules (texte simple). Dit quels secrets
+// sont poses et s'ils marchent, sans jamais afficher leur valeur.
+async function status(env: Env): Promise<Response> {
+  const lines: string[] = [];
+  const ok = (b: boolean) => (b ? 'OK ' : '-- ');
+  const raw = env.STRIPE_SECRET_KEY || '';
+  const key = raw.replace(/[\s​-‍﻿"'`]/g, '');
+  const clean = /^(sk|rk)_(test|live)_/.test(key);
+  lines.push(`${ok(!!raw)}STRIPE_SECRET_KEY posée`);
+  if (raw) {
+    lines.push(`${ok(clean)}format de la clé${clean ? ` (${key.slice(0, 7)}…)` : ' : caractères en trop avant/après, à reposer (le paiement marche quand même si c\'est une lettre devant sk_test_)'}`);
+    try {
+      const fixed = key.replace(/^[a-z]{1,3}(?=(sk|rk)_test_)/, '');
+      const r = await fetch('https://api.stripe.com/v1/balance', { headers: { Authorization: `Bearer ${fixed}` } });
+      lines.push(`${ok(r.ok)}clé acceptée par Stripe${r.ok ? '' : ` (HTTP ${r.status})`}`);
+    } catch (e) { lines.push('-- clé : Stripe injoignable'); }
+  }
+  const wh = env.STRIPE_WEBHOOK_SECRET || '';
+  lines.push(`${ok(/^whsec_/.test(wh.trim()))}STRIPE_WEBHOOK_SECRET posée${wh && !/^whsec_/.test(wh.trim()) ? ' mais ne commence pas par whsec_ : à reposer' : ''}`);
+  const gh = (env.GITHUB_TOKEN || '').trim();
+  lines.push(`${ok(!!gh)}GITHUB_TOKEN posé`);
+  if (gh) {
+    try {
+      const r = await fetch(`https://api.github.com/repos/${env.GITHUB_REPO}/contents/data/products`, {
+        headers: { Authorization: `Bearer ${gh}`, Accept: 'application/vnd.github+json', 'User-Agent': 'vgthmind-shop-checkout' },
+      });
+      const exp = r.headers.get('github-authentication-token-expiration');
+      lines.push(`${ok(r.ok)}jeton GitHub accepté sur ${env.GITHUB_REPO}${r.ok ? '' : ` (refusé, HTTP ${r.status})`}${exp ? ` — expire le ${exp}` : ' — pas de date d\'expiration lue'}`);
+      lines.push('   (l\'écriture se vérifie à la 1re commande test : commit « Vendu : … » dans le dépôt)');
+    } catch (e) { lines.push('-- jeton GitHub : GitHub injoignable'); }
+  }
+  lines.push(`   mode : ${env.LIVE_MODE === '1' ? 'LIVE' : 'test uniquement'}`);
+  return new Response(lines.join('\n') + '\n', { headers: { 'Content-Type': 'text/plain; charset=utf-8', 'Cache-Control': 'no-store' } });
 }
 
 // Retour « annuler » de Stripe : la session est expiree tout de suite pour
