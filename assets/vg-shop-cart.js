@@ -39,6 +39,61 @@
     return id;
   }
 
+  // --- Stock réel (Durable Object du Worker) : les pages sont générées avec
+  // toutes les pièces disponibles ; ici on pose « Sold out » d'après le
+  // stock réel. Worker injoignable (2,5 s max) : rien ne change, et le
+  // paiement reste la vérification finale.
+  var stockReady = (function () {
+    if (!ENDPOINT || !window.fetch) return Promise.resolve(null);
+    var timeout = new Promise(function (resolve) { setTimeout(function () { resolve(null); }, 2500); });
+    var request = fetch(ENDPOINT + '/stock')
+      .then(function (r) { return r.ok ? r.json() : null; })
+      .then(function (d) { return d && d.stock ? d.stock : null; })
+      .catch(function () { return null; });
+    return Promise.race([request, timeout]);
+  })();
+  window.__vgStock = stockReady;
+
+  function slugFromHref(href) {
+    var m = /\/product\/([^\/?#]+)/.exec(href || '');
+    if (!m) return '';
+    try { return decodeURIComponent(m[1]); } catch (e) { return m[1]; }
+  }
+
+  function applyStock(stock) {
+    // Fiche produit.
+    var slug = /\/product\//.test(loc.pathname || '') ? slugFromHref(loc.pathname) : '';
+    if (slug && stock && stock[slug] !== undefined && stock[slug] <= 0) {
+      var form = document.getElementById('add-to-cart-form');
+      if (form) form.style.display = 'none';
+      var sub = document.querySelector('.product-subheader');
+      if (sub && !sub.querySelector('.product-status')) {
+        var tag = document.createElement('span');
+        tag.className = 'product-status status-secondary';
+        tag.textContent = 'Sold out';
+        sub.appendChild(tag);
+      }
+      document.documentElement.classList.add('vg-product-sold-out');
+    }
+    // Grilles (accueil, Products, catégories) : même étiquette que le thème.
+    if (stock) {
+      document.querySelectorAll('.product-list-thumb').forEach(function (thumb) {
+        var a = thumb.querySelector('a.product-list-link');
+        var s = a && slugFromHref(a.getAttribute('href'));
+        if (!s || stock[s] === undefined || stock[s] > 0) return;
+        thumb.classList.add('vg-sold-out');
+        var info = thumb.querySelector('.product-list-thumb-info');
+        if (info && !info.querySelector('.product-list-thumb-status')) {
+          var d = document.createElement('div');
+          d.className = 'product-list-thumb-status status-secondary';
+          d.textContent = 'Sold out';
+          info.appendChild(d);
+        }
+      });
+    }
+    document.documentElement.classList.remove('vg-stock-pending');
+  }
+
   function readCart() {
     try { return JSON.parse(localStorage.getItem(STORAGE_KEY)) || []; } catch (e) { return []; }
   }
@@ -122,9 +177,13 @@
     e.preventDefault();
     var slug = decodeURIComponent((loc.pathname || '').split('/').filter(Boolean).pop() || '');
     if (!slug) return;
-    fetch('/product/' + slug + '.js')
-      .then(function (r) { return r.json(); })
-      .then(function (product) {
+    Promise.all([fetch('/product/' + slug + '.js').then(function (r) { return r.json(); }), stockReady])
+      .then(function (res) {
+        var product = res[0], stock = res[1];
+        if (stock && stock[product.permalink] !== undefined) {
+          if (stock[product.permalink] <= 0) { applyStock(stock); return; }
+          product.quantity = stock[product.permalink];
+        }
         addItem(product);
         setTimeout(function () { loc.href = '/cart'; }, 200);
       })
@@ -315,23 +374,26 @@
     wrapper.appendChild(root);
 
     // Pièces vendues / retirées depuis l'ajout au panier : retirées dès
-    // l'ouverture du panier (catalogue publié), comme le fait BigCartel.
-    fetch('/products.json', { cache: 'no-store' })
-      .then(function (r) { return r.ok ? r.json() : null; })
-      .then(function (catalog) {
+    // l'ouverture du panier (catalogue publié + stock réel), comme BigCartel.
+    Promise.all([
+      fetch('/products.json', { cache: 'no-store' }).then(function (r) { return r.ok ? r.json() : null; }).catch(function () { return null; }),
+      stockReady,
+    ])
+      .then(function (res) {
+        var catalog = res[0], stock = res[1];
         if (!catalog) return;
         var live = {};
         catalog.forEach(function (p) { live[p.permalink] = p; });
+        var left = function (slug) { return stock && stock[slug] !== undefined ? stock[slug] : null; };
         var gone = items.filter(function (it) {
-          var p = live[it.slug];
-          return !p || p.status !== 'active';
+          return !live[it.slug] || left(it.slug) === 0;
         });
-        // Stock d'une petite série : quantité ramenée au stock restant.
+        // Petite série : quantité ramenée au stock restant.
         items.forEach(function (it) {
-          var p = live[it.slug];
-          if (p && p.quantity && it.max !== p.quantity) {
+          var n = left(it.slug);
+          if (n && it.max !== n) {
             var cart = readCart();
-            cart.forEach(function (c) { if (c.slug === it.slug) { c.max = Math.max(1, p.quantity); c.qty = Math.min(qty(c), c.max); } });
+            cart.forEach(function (c) { if (c.slug === it.slug) { c.max = Math.max(1, n); c.qty = Math.min(qty(c), c.max); } });
             writeCart(cart);
           }
         });
@@ -393,5 +455,6 @@
     updateBadges();
     renderCart();
     renderOrderResult();
+    stockReady.then(applyStock);
   }
 })();

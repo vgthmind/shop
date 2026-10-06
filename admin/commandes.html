@@ -32,14 +32,13 @@
 </head>
 <body>
 <main>
-  <nav><a href="./">← Pièces (admin)</a></nav>
+  <nav><a href="./">← Pièces (admin)</a> <a href="stock.html">Stock</a></nav>
   <h1>Commandes</h1>
-  <p class="muted">Paiements reçus via Stripe (100 derniers). Connexion : le même jeton GitHub que l'admin des pièces.</p>
+  <p class="muted">Paiements reçus via Stripe (100 derniers).</p>
 
-  <form class="bar" id="login" hidden>
-    <input type="password" id="token" placeholder="Jeton GitHub (github_pat_…)" autocomplete="off">
-    <button type="submit">Se connecter</button>
-  </form>
+  <div class="bar" id="login" hidden>
+    <button type="button" id="login-btn">Se connecter avec GitHub</button>
+  </div>
 
   <div class="bar filters" id="filters" hidden>
     <button type="button" data-f="todo" aria-pressed="true">À expédier</button>
@@ -53,24 +52,14 @@
   <p id="msg" role="status" aria-live="polite"></p>
   <div id="orders"></div>
 </main>
+<script src="vg-admin-auth.js"></script>
 <script>
 (function () {
   'use strict';
-  var ENDPOINT = 'https://vgthmind-shop-checkout.vgthm66.workers.dev';
   var orders = [];
   var filter = 'todo';
   var $ = function (id) { return document.getElementById(id); };
-
-  // Jeton : celui de l'admin Sveltia s'il est déjà connecté, sinon saisi ici.
-  function token() {
-    try {
-      var own = localStorage.getItem('vg-admin-token');
-      if (own) return own;
-      var sveltia = JSON.parse(localStorage.getItem('sveltia-cms.user') || 'null');
-      if (sveltia && sveltia.token) return sveltia.token;
-    } catch (e) {}
-    return '';
-  }
+  var token = window.vgAdminToken;
 
   function esc(s) {
     return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
@@ -84,13 +73,7 @@
     return [a.line1, a.line2, [a.postal_code, a.city].filter(Boolean).join(' '), a.state, a.country].filter(Boolean).map(esc).join('<br>');
   }
 
-  function api(path, opts) {
-    opts = opts || {};
-    opts.headers = Object.assign({ Authorization: 'Bearer ' + token(), 'Content-Type': 'application/json' }, opts.headers || {});
-    return fetch(ENDPOINT + path, opts).then(function (r) {
-      return r.json().then(function (d) { if (!r.ok) { var e = new Error(d.error || r.status); e.status = r.status; throw e; } return d; });
-    });
-  }
+  var api = window.vgAdminApi;
 
   function load() {
     if (!token()) { $('login').hidden = false; $('filters').hidden = true; return; }
@@ -103,9 +86,8 @@
       draw();
     }).catch(function (e) {
       if (e.status === 401) {
-        try { localStorage.removeItem('vg-admin-token'); } catch (err) {}
         $('login').hidden = false;
-        $('msg').textContent = 'Jeton refusé (il doit appartenir au compte GitHub vgthmind).';
+        $('msg').textContent = 'Connexion expirée ou refusée : reconnecte-toi (compte GitHub vgthmind).';
       } else {
         $('msg').textContent = 'Erreur : ' + e.message;
       }
@@ -212,16 +194,11 @@
   });
   $('refresh').addEventListener('click', load);
   $('logout').addEventListener('click', function () {
-    try { localStorage.removeItem('vg-admin-token'); } catch (e) {}
+    window.vgAdminLogout();
     orders = []; draw(); $('login').hidden = false; $('filters').hidden = true;
   });
-  $('login').addEventListener('submit', function (e) {
-    e.preventDefault();
-    var t = $('token').value.trim();
-    if (!t) return;
-    try { localStorage.setItem('vg-admin-token', t); } catch (err) {}
-    $('token').value = '';
-    load();
+  $('login-btn').addEventListener('click', function () {
+    window.vgAdminLogin().then(load).catch(function (e) { $('msg').textContent = e.message; });
   });
 
   load();
