@@ -171,53 +171,57 @@
     function draw() {
       root.innerHTML = '';
       var blocked = franceOnly();
+      // Même balisage que le gabarit panier BigCartel (cart.html) : le
+      // thème et le Custom CSS déjà validés le stylent tel quel. Pas de
+      // data-item-id ni de .qty-button : theme.js n'y branche rien.
       var list = document.createElement('ul');
-      list.className = 'vg-cart-items';
+      list.className = 'cart-items';
       items.forEach(function (it) {
         var li = document.createElement('li');
-        li.className = 'vg-cart-item';
-        var img = it.image ? '<img src="' + esc(it.image) + '" alt="" width="64" height="64">' : '';
-        var extra = '';
+        li.className = 'cart-item';
+        var note = '';
         if (blocked.indexOf(it) !== -1) {
-          extra = '<span class="vg-cart-unavailable">France only / livraison en France uniquement</span>';
+          note = '<div class="vg-cart-unavailable">France only / livraison en France uniquement</div>';
         } else if (!ENDPOINT && it.stripe_payment_link) {
-          extra = '<a class="button minimal-button" href="' + esc(it.stripe_payment_link) + '" target="_blank" rel="noopener">Payer cette pièce</a>';
+          note = '<a class="button minimal-button" href="' + esc(it.stripe_payment_link) + '" target="_blank" rel="noopener">Payer cette pièce</a>';
         }
-        li.innerHTML = img
-          + '<span class="vg-cart-item-name"><a href="' + esc(it.url) + '">' + esc(it.name) + '</a></span>'
-          + '<span class="vg-cart-item-price">' + money(lineTotal(it))
-          + ((it.max || 1) > 1
-            ? ' <select class="vg-cart-qty" data-slug="' + esc(it.slug) + '" aria-label="Quantity / Quantité">'
-              + Array.apply(null, Array(Math.min(it.max, 10))).map(function (_, i) {
-                return '<option value="' + (i + 1) + '"' + (qty(it) === i + 1 ? ' selected' : '') + '>× ' + (i + 1) + '</option>';
-              }).join('') + '</select>'
-            : '')
-          + '</span>'
-          + extra
-          + '<button type="button" class="vg-cart-remove" data-slug="' + esc(it.slug) + '" aria-label="Remove / Retirer">×</button>';
+        var qtySelect = (it.max || 1) > 1
+          ? '<select class="vg-cart-qty" data-slug="' + esc(it.slug) + '" aria-label="Quantity / Quantité">'
+            + Array.apply(null, Array(Math.min(it.max, 10))).map(function (_, i) {
+              return '<option value="' + (i + 1) + '"' + (qty(it) === i + 1 ? ' selected' : '') + '>' + (i + 1) + '</option>';
+            }).join('') + '</select>'
+          : '';
+        li.innerHTML =
+          '<div class="cart-item-image-holder"><a class="cart-item-image-link" href="' + esc(it.url) + '">'
+          + (it.image ? '<img src="' + esc(it.image) + '" alt="' + esc(it.name) + '">' : '') + '</a></div>'
+          + '<div class="cart-item-detail"><a href="' + esc(it.url) + '"><div class="product-name">' + esc(it.name) + '</div></a>'
+          + '<div class="option-name"><div class="cart-item-unit-price">' + money(it.price) + '</div></div>' + note + '</div>'
+          + '<div class="cart-qty">' + qtySelect
+          + '<button type="button" class="vg-cart-remove cart-remove-item--link button minimal-button" data-slug="' + esc(it.slug) + '">Remove<span class="visually-hidden"> ' + esc(it.name) + '</span></button></div>'
+          + '<div class="cart-item-price"><span>' + money(lineTotal(it)) + '</span></div>';
         list.appendChild(li);
       });
       root.appendChild(list);
 
       var footer = document.createElement('div');
-      footer.className = 'vg-cart-footer';
+      footer.className = 'cart-footer';
       footer.innerHTML =
-        '<label class="vg-cart-region">Shipping / Livraison : '
+        '<label class="vg-cart-region">Shipping / Livraison '
         + '<select class="vg-cart-region-select">'
         + '<option value="fr"' + (region === 'fr' ? ' selected' : '') + '>France</option>'
         + '<option value="intl"' + (region === 'intl' ? ' selected' : '') + '>International</option>'
         + '</select></label>'
-        + '<div class="vg-cart-line"><span>Subtotal / Sous-total</span><span>' + money(subtotal()) + '</span></div>'
-        + '<div class="vg-cart-line"><span>Shipping / Livraison</span><span>' + money(shippingTotal()) + '</span></div>'
-        + '<div class="vg-cart-line vg-cart-total"><span>Total</span><span>' + money(subtotal() + shippingTotal()) + '</span></div>'
+        + '<div class="cart-subtotal vg-cart-line"><span class="cart-subtotal__label">Subtotal:</span><span class="cart-subtotal__amount">' + money(subtotal()) + '</span></div>'
+        + '<div class="cart-subtotal vg-cart-line"><span class="cart-subtotal__label">Shipping:</span><span class="cart-subtotal__amount">' + money(shippingTotal()) + '</span></div>'
+        + '<div class="cart-subtotal vg-cart-line vg-cart-total" aria-live="polite"><span class="cart-subtotal__label">Total:</span><span class="cart-subtotal__amount">' + money(subtotal() + shippingTotal()) + '</span></div>'
         + (ENDPOINT
-            ? '<button type="button" class="button vg-cart-checkout-all"' + (blocked.length ? ' disabled' : '') + '>Checkout / Payer</button>'
+            ? '<div class="cart-submit"><button type="button" class="button button--checkout vg-cart-checkout-all"' + (blocked.length ? ' disabled' : '') + '>Checkout</button></div>'
             : '')
         + '<p class="vg-cart-msg" role="status" aria-live="polite"' + (message ? '' : ' hidden') + '>' + esc(message) + '</p>'
         + (blocked.length
             ? '<p class="vg-cart-note">Remove the France-only pieces to ship abroad. / Retire les pièces livrables en France uniquement pour une livraison à l\'étranger.</p>'
             : '')
-        + '<p class="vg-cart-note">Secure payment by Stripe (card, Apple Pay, Google Pay). / Paiement sécurisé par Stripe.</p>';
+        + '<p class="vg-cart-note">Secure payment by Stripe. / Paiement sécurisé par Stripe.</p>';
       root.appendChild(footer);
 
       root.querySelectorAll('.vg-cart-remove').forEach(function (btn) {
@@ -295,6 +299,8 @@
     draw();
     var native = wrapper.querySelector('form.cart-form, .alert-message');
     if (native) native.style.display = 'none';
+    var header = wrapper.querySelector('.cart-header');
+    if (header) header.classList.remove('cart-empty');
     wrapper.appendChild(root);
   }
 
