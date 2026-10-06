@@ -1,0 +1,23 @@
+{
+  "name": "Pantalon GP_0002  collection « VGTHM »",
+  "slug": "gp_0002",
+  "price": 315,
+  "description": "Black duchess satin\r\nWide-cut pants with pik detailing from the \"VGTHM\" collection\r\nSize EU42/44 (≈86cm waist circumference)\r\nPocket fabric: white duchess satin\r\n\r\nSatin duchesse noir\r\nPantalon coupe large à pik de la collection \"VGTHM\"\r\nTaille EU42/44 (≈86cm de tour de taille)\r\nTissu de poche : Satin duchesse blanc",
+  "images": [
+    "/assets/products/gp_0002/0.png",
+    "/assets/products/gp_0002/1.png",
+    "/assets/products/gp_0002/2.png",
+    "/assets/products/gp_0002/3.png"
+  ],
+  "categories": [
+    "pantsshorts"
+  ],
+  "latest_drop": false,
+  "unique": true,
+  "in_stock": true,
+  "position": 21,
+  "created_at": "2024-03-29T14:09:22.000Z",
+  "stripe_payment_link": "",
+  "shipping_fr": 0,
+  "shipping_intl": 8.45
+}

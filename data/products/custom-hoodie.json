@@ -1,0 +1,22 @@
+{
+  "name": "Custom Hoodie",
+  "slug": "custom-hoodie",
+  "price": 120,
+  "description": "Airbrushed custom hoodie\r\nNavy blue\r\n100% cotton / Ribbing: 97% cotton, 3% spandex\r\nSize L\r\n\r\nHoodie customisé à l'aérographe\r\nBleu marine\r\n100% coton/ Bord côte: 97% coton 3% Élasthanne\r\nSize L",
+  "images": [
+    "/assets/products/custom-hoodie/0.png",
+    "/assets/products/custom-hoodie/1.png"
+  ],
+  "categories": [
+    "tops",
+    "customsupcycling"
+  ],
+  "latest_drop": true,
+  "unique": true,
+  "in_stock": false,
+  "position": 23,
+  "created_at": "2026-06-21T11:22:04.000Z",
+  "stripe_payment_link": "",
+  "shipping_fr": 5,
+  "shipping_intl": 9
+}

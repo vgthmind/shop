@@ -1,0 +1,23 @@
+{
+  "name": "Pantalon DD001",
+  "slug": "pantalon-dd001",
+  "price": 210.7,
+  "description": "50% Wool, 50% Cotton\r\nPockets in 100% white silk satin\r\nSize EU44/46 (≈93cm waist circumference)\r\nThe model is approximately 6'0\" (1.83m) tall\r\nThick\r\n\r\n50% Laine 50% Coton\r\nPoches 100% satin de soie blanc\r\nTaille EU44/46 (≈93cm de tour de ceinture)\r\nLe mannequin fait environ 1m83\r\nEpais",
+  "images": [
+    "/assets/products/pantalon-dd001/0.png",
+    "/assets/products/pantalon-dd001/1.png",
+    "/assets/products/pantalon-dd001/2.png",
+    "/assets/products/pantalon-dd001/3.png"
+  ],
+  "categories": [
+    "pantsshorts"
+  ],
+  "latest_drop": true,
+  "unique": true,
+  "in_stock": true,
+  "position": 16,
+  "created_at": "2025-09-25T16:25:13.000Z",
+  "stripe_payment_link": "",
+  "shipping_fr": 0,
+  "shipping_intl": 10.2
+}

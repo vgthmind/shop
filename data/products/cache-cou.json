@@ -1,0 +1,24 @@
+{
+  "name": "Cache-cou",
+  "slug": "cache-cou",
+  "price": 30,
+  "description": "White fleece neck warmer\r\nOne size\r\nOne-of-a-kind airbrushed design\r\nSurprise design at time of order!\r\n\r\nCache-cou en molleton blanc\r\nTaille Unique\r\nDesign unique fait à l'aérographe\r\nDesign surprise lors de la commande !",
+  "images": [
+    "/assets/products/cache-cou/0.png",
+    "/assets/products/cache-cou/1.png",
+    "/assets/products/cache-cou/2.png",
+    "/assets/products/cache-cou/3.png",
+    "/assets/products/cache-cou/4.png"
+  ],
+  "categories": [
+    "accessories"
+  ],
+  "latest_drop": true,
+  "unique": true,
+  "in_stock": false,
+  "position": 25,
+  "created_at": "2025-11-30T14:17:42.000Z",
+  "stripe_payment_link": "",
+  "shipping_fr": 4,
+  "shipping_intl": 8
+}

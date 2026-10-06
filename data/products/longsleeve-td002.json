@@ -1,0 +1,23 @@
+{
+  "name": "Longsleeve TD002",
+  "slug": "longsleeve-td002",
+  "price": 210,
+  "description": "100% Polyester\r\nHooded longsleeve with burnt, textured overlay\r\nSize M/L\r\nThe model is approximately 6'0\" (1.83m) tall\r\nLightweight\r\n\r\n100% Polyester\r\nLongsleeve à capuche avec surcouche brûlée et texturée\r\nTaille M/L\r\nLe mannequin fait environ 1m83\r\nLéger",
+  "images": [
+    "/assets/products/longsleeve-td002/0.png",
+    "/assets/products/longsleeve-td002/1.png",
+    "/assets/products/longsleeve-td002/2.png",
+    "/assets/products/longsleeve-td002/3.png"
+  ],
+  "categories": [
+    "tops"
+  ],
+  "latest_drop": true,
+  "unique": true,
+  "in_stock": true,
+  "position": 13,
+  "created_at": "2025-09-25T16:33:00.000Z",
+  "stripe_payment_link": "",
+  "shipping_fr": 0,
+  "shipping_intl": 9.8
+}

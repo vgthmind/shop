@@ -1,0 +1,24 @@
+{
+  "name": "Pantalon Denim Bleu",
+  "slug": "pantalon-denim-bleu",
+  "price": 170,
+  "description": "Thick Blue Denim\r\n100% cotton\r\nStraight cut\r\nSize EU42\r\n\r\nDenim Bleu Épais\r\n100% coton\r\nCoupe droite\r\nTaille 42EU",
+  "images": [
+    "/assets/products/pantalon-denim-bleu/0.png",
+    "/assets/products/pantalon-denim-bleu/1.png",
+    "/assets/products/pantalon-denim-bleu/2.png",
+    "/assets/products/pantalon-denim-bleu/3.png",
+    "/assets/products/pantalon-denim-bleu/4.png"
+  ],
+  "categories": [
+    "pantsshorts"
+  ],
+  "latest_drop": true,
+  "unique": true,
+  "in_stock": true,
+  "position": 12,
+  "created_at": "2025-12-03T16:33:49.000Z",
+  "stripe_payment_link": "",
+  "shipping_fr": 5.5,
+  "shipping_intl": 15
+}

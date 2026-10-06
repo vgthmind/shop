@@ -1,0 +1,24 @@
+{
+  "name": "Pantalon rouge framboise ",
+  "slug": "pantalon-rouge-framboise",
+  "price": 200,
+  "description": "Jean-style pants\r\nStraight cut\r\n100% cotton\r\nSize EU42/43\r\nRaspberry Red\r\n\r\nPantalon type jeans\r\nCoupe droite\r\n100% coton\r\nTaille 42/43EU\r\nRouge Framboise",
+  "images": [
+    "/assets/products/pantalon-rouge-framboise/0.png",
+    "/assets/products/pantalon-rouge-framboise/1.png",
+    "/assets/products/pantalon-rouge-framboise/2.png",
+    "/assets/products/pantalon-rouge-framboise/3.png",
+    "/assets/products/pantalon-rouge-framboise/4.png"
+  ],
+  "categories": [
+    "pantsshorts"
+  ],
+  "latest_drop": true,
+  "unique": true,
+  "in_stock": true,
+  "position": 11,
+  "created_at": "2025-12-14T17:32:30.000Z",
+  "stripe_payment_link": "",
+  "shipping_fr": 5,
+  "shipping_intl": 10
+}

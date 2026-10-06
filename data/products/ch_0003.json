@@ -1,0 +1,22 @@
+{
+  "name": "CH_0003",
+  "slug": "ch_0003",
+  "price": 84,
+  "description": "Airbrushed Custom Hoodie\r\nHand-dyed khaki using natural pigments\r\n50% cotton, 50% polyester\r\nSize S\r\n\r\nHoodie customisé à l'aérographe\r\nTeinture kaki à la main aux pigments naturels\r\n50% coton 50% polyester\r\nSize S",
+  "images": [
+    "/assets/products/ch_0003/0.png",
+    "/assets/products/ch_0003/1.png"
+  ],
+  "categories": [
+    "tops",
+    "customsupcycling"
+  ],
+  "latest_drop": true,
+  "unique": true,
+  "in_stock": true,
+  "position": 5,
+  "created_at": "2026-07-22T12:20:29.000Z",
+  "stripe_payment_link": "",
+  "shipping_fr": 5,
+  "shipping_intl": 25
+}

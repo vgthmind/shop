@@ -24,22 +24,57 @@ theme/            gabarits RÉELS du brouillon, copiés à l'octet près depuis
 theme/custom/     custom-css.css, head.html, body.html (éditeur BigCartel)
 theme/pages/      contenu des pages Info & Terms, Contact, Studio
 generator/        moteur Liquid + générateur (Node, zéro dépendance)
-  import-catalog.js   importe le catalogue EN LIGNE + télécharge les photos
+  build-catalog.js    data/products/*.json (admin) -> data/catalog.json
   build.js            rend theme/ + data/catalog.json -> docs/
+  migrate-to-admin-products.js  outil ponctuel (déjà utilisé une fois, voir plus bas)
+  import-catalog.js   outil ponctuel de RE-SEED depuis le catalogue BigCartel
+                       EN LIGNE (jamais lancé automatiquement, voir plus bas)
+admin/            interface de gestion (Sveltia CMS) - ajouter/modifier/
+                  retirer une pièce sans toucher au code, voir "Admin" ci-dessous
+data/products/    UNE PIÈCE = UN FICHIER JSON - la vraie source du catalogue,
+                  éditée par admin/ (ou à la main)
+data/categories.json  les 7 catégories (id/nom/URL stables), pas éditable par l'admin
 assets/vg-shop-shim.js  shim "sous-dossier" (voir plus bas)
 assets/theme/     logo + photo d'accueil du thème (images du brouillon)
-assets/products/  photos produit téléchargées par import-catalog.js
-data/catalog.json catalogue importé
+assets/products/  photos produit (pièces migrées depuis BigCartel le 2026-10-05 ;
+                   les nouvelles pièces ajoutées par l'admin vont dans data/uploads/)
+data/catalog.json catalogue généré (par build-catalog.js) - NE PAS éditer à la main
 docs/             site généré (servi par GitHub Pages : main / docs)
 ```
 
-Mettre à jour :
+## Admin — ajouter/modifier/retirer une pièce sans toucher au code
+
+Ouvrir `/shop/admin/` (Sveltia CMS), se connecter avec un jeton GitHub
+"fine-grained" limité à ce dépôt (voir "Sécurité" plus bas), puis créer/
+éditer/supprimer une fiche dans "Pièces". Chaque sauvegarde est un commit
+direct sur `main` dans `data/products/<slug>.json` ; le `GitHub Action`
+`.github/workflows/build-shop.yml` reconstruit alors automatiquement
+`data/catalog.json` puis tout `docs/` et pousse le résultat — le site en
+ligne se met à jour seul, en 1-2 minutes, sans qu'il soit nécessaire de
+relancer quoi que ce soit à la main.
+
+Pour reconstruire en local (pour vérifier avant de pousser, par exemple) :
 ```
-node generator/import-catalog.js   # catalogue + photos depuis vgthmind.bigcartel.com
-node generator/build.js            # régénère docs/
+node generator/build-catalog.js   # data/products/*.json -> data/catalog.json
+node generator/build.js           # -> docs/
 ```
 (Node n'est pas installé sur le PC : celui fourni avec Playwright convient,
 `...\Python312\Lib\site-packages\playwright\driver\node.exe`.)
+
+**`generator/import-catalog.js` n'est plus utilisé par le build normal.**
+Le catalogue réel de BigCartel (27 pièces, importées le 2026-10-05) a été
+migré une fois vers `data/products/*.json` par
+`generator/migrate-to-admin-products.js` (déjà fait, pas à refaire) :
+`data/products/*.json` est maintenant la seule source de vérité, modifiable
+depuis `admin/` sans jamais retoucher au catalogue BigCartel en ligne. Si un
+jour il faut re-synchroniser depuis BigCartel (ex. après une grosse mise à
+jour faite là-bas), relancer `import-catalog.js` puis
+`migrate-to-admin-products.js data/catalog.json` RÉÉCRIT entièrement les
+fichiers `data/products/*.json` à partir de ce qui est en ligne sur
+BigCartel — donc aussi les éditions faites depuis `admin/` entre-temps
+(stock, prix, nouvelles pièces ajoutées à la main). À ne faire qu'à la
+main, en ayant conscience de cet écrasement (comparer `git diff` avant de
+pousser), jamais automatiquement.
 
 Mettre à jour les gabarits : recopier un nouvel instantané du brouillon
 (dépôt privé `vgthmind-chantier/chantier/snapshots/<date>-brouillon/`) dans

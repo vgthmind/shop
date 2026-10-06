@@ -1,0 +1,23 @@
+{
+  "name": "Short GE001",
+  "slug": "short-ge0001",
+  "price": 115,
+  "description": "Cotton poplin topstitched with black fabric scraps for a Ghillie effect\r\nSize EU42 (≈84cm waist circumference)\r\n58cm length from waistband to hem\r\n80cm leg opening\r\nThick\r\n\r\nPopeline de Coton Surpiquées de chutes de tissus noirs pour un effet Ghillie.\r\nTaille EU42 (≈84cm de tour de ceinture)\r\n58cm de longueur du haut de la ceinture au bas de la jambe.\r\n80cm d'ouverture de jambe.\r\nÉpais",
+  "images": [
+    "/assets/products/short-ge0001/0.png",
+    "/assets/products/short-ge0001/1.png",
+    "/assets/products/short-ge0001/2.png",
+    "/assets/products/short-ge0001/3.png"
+  ],
+  "categories": [
+    "pantsshorts"
+  ],
+  "latest_drop": true,
+  "unique": true,
+  "in_stock": true,
+  "position": 17,
+  "created_at": "2025-09-25T16:19:45.000Z",
+  "stripe_payment_link": "",
+  "shipping_fr": 0,
+  "shipping_intl": 8.45
+}
