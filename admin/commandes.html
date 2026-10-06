@@ -34,7 +34,7 @@
 <main>
   <nav><a href="./">← Pièces (admin)</a></nav>
   <h1>Commandes</h1>
-  <p class="muted">Paiements reçus via Stripe (50 derniers). Connexion : le même jeton GitHub que l'admin des pièces.</p>
+  <p class="muted">Paiements reçus via Stripe (100 derniers). Connexion : le même jeton GitHub que l'admin des pièces.</p>
 
   <form class="bar" id="login" hidden>
     <input type="password" id="token" placeholder="Jeton GitHub (github_pat_…)" autocomplete="off">
@@ -45,6 +45,7 @@
     <button type="button" data-f="todo" aria-pressed="true">À expédier</button>
     <button type="button" data-f="done" aria-pressed="false">Expédiées</button>
     <button type="button" data-f="all" aria-pressed="false">Toutes</button>
+    <button type="button" data-f="stats" aria-pressed="false">Stats</button>
     <button type="button" id="refresh">Actualiser</button>
     <button type="button" id="logout">Se déconnecter</button>
   </div>
@@ -123,7 +124,41 @@
       + '&body=' + encodeURIComponent(body);
   }
 
+  // Stats de ventes (comme l'onglet Stats de BigCartel) : calculées sur les
+  // commandes payées listées, en séparant test et réel. Les visites sont
+  // dans Cloudflare Web Analytics.
+  function drawStats() {
+    var live = orders.filter(function (o) { return o.livemode; });
+    var set = live.length ? live : orders;
+    var label = live.length ? 'Ventes réelles' : 'Ventes de TEST (aucune vente réelle pour l\'instant)';
+    var sum = function (arr, f) { return arr.reduce(function (s, o) { return s + f(o); }, 0); };
+    var total = sum(set, function (o) { return o.total; });
+    var ship = sum(set, function (o) { return o.shipping; });
+    var months = {};
+    var pieces = {};
+    set.forEach(function (o) {
+      var m = new Date(o.created * 1000).toLocaleDateString('fr-FR', { year: 'numeric', month: 'long' });
+      months[m] = months[m] || { n: 0, total: 0 };
+      months[m].n++; months[m].total += o.total;
+      o.items.forEach(function (it) { pieces[it.name] = (pieces[it.name] || 0) + it.amount; });
+    });
+    var top = Object.keys(pieces).sort(function (a, b) { return pieces[b] - pieces[a]; }).slice(0, 10);
+    $('orders').innerHTML = '<article class="order"><header><strong>' + esc(label) + '</strong></header><ul>'
+      + '<li>Commandes : <strong>' + set.length + '</strong></li>'
+      + '<li>Chiffre d\'affaires (port compris) : <strong>' + money(total) + '</strong></li>'
+      + '<li>Dont livraison : ' + money(ship) + ' · Panier moyen : ' + money(set.length ? total / set.length : 0) + '</li>'
+      + '<li>À expédier : ' + set.filter(function (o) { return !o.shipped; }).length + '</li></ul></article>'
+      + '<article class="order"><header><strong>Par mois</strong></header><ul>'
+      + Object.keys(months).map(function (m) { return '<li>' + esc(m) + ' — ' + months[m].n + ' commande(s), ' + money(months[m].total) + '</li>'; }).join('')
+      + '</ul></article>'
+      + '<article class="order"><header><strong>Pièces qui rapportent le plus</strong></header><ul>'
+      + top.map(function (p) { return '<li>' + esc(p) + ' — ' + money(pieces[p]) + '</li>'; }).join('')
+      + '</ul></article>'
+      + '<p class="muted">Sur les 100 derniers paiements. Détail complet : tableau de bord Stripe (Paiements, Rapports). Visites : Cloudflare Web Analytics.</p>';
+  }
+
   function draw() {
+    if (filter === 'stats') { drawStats(); return; }
     var list = orders.filter(function (o) {
       return filter === 'all' || (filter === 'todo' ? !o.shipped : !!o.shipped);
     });

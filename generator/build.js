@@ -271,6 +271,12 @@ function injectAround(html, parts, product) {
   // Favicon : les memes fichiers que vgthmind.bigcartel.com (copies dans
   // assets/theme/ ; BigCartel les sert hors gabarit).
   html = html.replace(/<\/head>/i, (m) => `${FAVICON_LINKS}\n${m}`);
+  // Cloudflare Web Analytics (sans cookie) : actif dès que le jeton public
+  // est renseigné dans data/shop-settings.json (cf_analytics_token).
+  const cfToken = String(SHOP_SETTINGS.cf_analytics_token || '').trim();
+  if (/^[a-f0-9]{32}$/i.test(cfToken)) {
+    html = html.replace(/<\/body>/i, (m) => `<script defer src="https://static.cloudflareinsights.com/beacon.min.js" data-cf-beacon='{"token": "${cfToken}"}'></script>\n${m}`);
+  }
   // See headContent()/PRODUCT_META_OVERRIDES above: a product page already
   // got its real description/og/twitter tags from {{ head_content }}
   // (rendered into `html` by layout.html before this function runs) -
