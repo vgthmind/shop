@@ -18,6 +18,9 @@
 //   GET  /session?id=cs_…  -> resume d'une session payee (page /shop/merci/)
 //   POST /release   { id: "cs_…" } -> expire la session (page /shop/paiement-annule/)
 //   POST /webhook   evenements Stripe (signature verifiee)
+//   GET  /orders           (admin) commandes payees, depuis Stripe
+//   POST /orders/shipped   (admin) { id, tracking } -> marque expediee
+//   Admin = en-tete Authorization: Bearer <jeton GitHub> du compte ADMIN_GITHUB_LOGIN.
 
 interface KV {
   get(key: string): Promise<string | null>;
@@ -33,6 +36,7 @@ interface Env {
   ALLOWED_ORIGIN: string; // https://vgthmind.github.io
   SITE_BASE: string; // https://vgthmind.github.io/shop
   LIVE_MODE?: string; // "1" seulement le jour du passage en live
+  ADMIN_GITHUB_LOGIN: string; // seul compte GitHub autorise a lire les commandes
   HOLDS: KV; // reservations des pieces pendant un paiement + commandes
 }
 
@@ -72,7 +76,7 @@ export default {
     const cors = {
       'Access-Control-Allow-Origin': env.ALLOWED_ORIGIN,
       'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-      'Access-Control-Allow-Headers': 'content-type',
+      'Access-Control-Allow-Headers': 'content-type, authorization',
       Vary: 'Origin',
     };
     const json: JsonFn = (data, status = 200) =>
@@ -92,6 +96,8 @@ export default {
       if (path === '/session' && request.method === 'GET') return await session(request, key, json);
       if (path === '/release' && request.method === 'POST') return await release(request, env, key, json);
       if (path === '/webhook' && request.method === 'POST') return await webhook(request, env, json);
+      if (path === '/orders' && request.method === 'GET') return await listOrders(request, env, key, json);
+      if (path === '/orders/shipped' && request.method === 'POST') return await markShipped(request, env, json);
     } catch (e: any) {
       return json({ error: 'Erreur interne : ' + (e && e.message ? e.message : e) }, 500);
     }
@@ -151,6 +157,10 @@ async function checkout(request: Request, env: Env, key: string, json: JsonFn): 
   // Session valable 30 min : borne la reservation d'une piece unique.
   params.set('expires_at', String(Math.floor(Date.now() / 1000) + SESSION_MINUTES * 60 + 30));
   params.set('phone_number_collection[enabled]', 'true');
+  // Codes promo crees par Jules dans Stripe (Produits > Coupons) : champ au checkout.
+  params.set('allow_promotion_codes', 'true');
+  params.set('custom_text[submit][message]',
+    `En payant, tu acceptes les conditions de vente : ${env.SITE_BASE}/infos-conditions-generales — By paying you accept our terms.`);
   params.set('metadata[slugs]', slugList);
   params.set('metadata[region]', region);
   params.set('metadata[cart_id]', cartId);
@@ -305,6 +315,59 @@ function toBase64(text: string) {
   let bin = '';
   new TextEncoder().encode(text).forEach((b) => { bin += String.fromCharCode(b); });
   return btoa(bin);
+}
+
+// --- Admin : commandes ---------------------------------------------------
+async function isAdmin(request: Request, env: Env): Promise<boolean> {
+  const auth = request.headers.get('authorization') || '';
+  if (!/^Bearer [A-Za-z0-9_]+$/.test(auth)) return false;
+  const res = await fetch('https://api.github.com/user', {
+    headers: { Authorization: auth, Accept: 'application/vnd.github+json', 'User-Agent': 'vgthmind-shop-checkout' },
+  });
+  if (!res.ok) return false;
+  const user: any = await res.json();
+  return String(user.login || '').toLowerCase() === String(env.ADMIN_GITHUB_LOGIN || '').toLowerCase();
+}
+
+async function listOrders(request: Request, env: Env, key: string, json: JsonFn): Promise<Response> {
+  if (!(await isAdmin(request, env))) return json({ error: 'Non autorisé.' }, 401);
+  const stripe = await stripeCall(key, 'GET', '/v1/checkout/sessions?status=complete&limit=50&expand[]=data.line_items');
+  if (!stripe.ok) return json({ error: stripe.data.error?.message || 'Erreur Stripe' }, 502);
+  const orders = [];
+  for (const s of stripe.data.data || []) {
+    if (s.payment_status !== 'paid') continue;
+    const ship = (s.collected_information && s.collected_information.shipping_details) || s.shipping_details || {};
+    const shipped = await env.HOLDS.get('shipped:' + s.id);
+    orders.push({
+      id: s.id,
+      created: s.created,
+      livemode: !!s.livemode,
+      total: s.amount_total / 100,
+      shipping: (s.shipping_cost?.amount_total || 0) / 100,
+      discount: (s.total_details?.amount_discount || 0) / 100,
+      email: s.customer_details?.email || '',
+      phone: s.customer_details?.phone || '',
+      name: ship.name || s.customer_details?.name || '',
+      address: ship.address || null,
+      items: (s.line_items?.data || []).map((li: any) => ({ name: li.description, amount: li.amount_total / 100 })),
+      shipped: shipped ? JSON.parse(shipped) : null,
+    });
+  }
+  return json({ orders });
+}
+
+async function markShipped(request: Request, env: Env, json: JsonFn): Promise<Response> {
+  if (!(await isAdmin(request, env))) return json({ error: 'Non autorisé.' }, 401);
+  let body: any = {};
+  try { body = await request.json(); } catch (e) {}
+  if (!isSessionId(String(body.id || ''))) return json({ error: 'Identifiant invalide.' }, 400);
+  if (body.undo) {
+    await env.HOLDS.delete('shipped:' + body.id);
+    return json({ ok: true });
+  }
+  const value = { at: Math.floor(Date.now() / 1000), tracking: String(body.tracking || '').slice(0, 100) };
+  await env.HOLDS.put('shipped:' + body.id, JSON.stringify(value));
+  return json({ ok: true, shipped: value });
 }
 
 async function stripeCall(key: string, method: string, path: string, params?: URLSearchParams) {

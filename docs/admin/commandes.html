@@ -1,0 +1,195 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex, nofollow">
+  <title>vgthmind — commandes</title>
+  <style>
+    :root { --bg: #f4f2ec; --ink: #171717; --muted: #6b6860; --line: rgba(0,0,0,.12); --card: rgba(255,255,255,.6); --ok: #2f7d4a; }
+    * { box-sizing: border-box; }
+    body { margin: 0; background: var(--bg); color: var(--ink); font: 15px/1.45 system-ui, -apple-system, "Segoe UI", sans-serif; }
+    main { max-width: 860px; margin: 0 auto; padding: 24px 16px 64px; }
+    h1 { font-size: 22px; letter-spacing: .04em; text-transform: uppercase; margin: 0 0 4px; }
+    nav a { color: var(--muted); font-size: 13px; }
+    .bar { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin: 16px 0; }
+    input[type=password], input[type=text] { flex: 1 1 260px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 10px; background: #fff; font: inherit; }
+    button, .btn { padding: 9px 14px; border-radius: 999px; border: 1px solid var(--line); background: #fff; color: var(--ink); font: inherit; cursor: pointer; text-decoration: none; display: inline-block; }
+    button:hover, .btn:hover { border-color: var(--ink); }
+    .filters button[aria-pressed=true] { background: var(--ink); color: #fff; }
+    .order { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 14px 16px; margin: 12px 0; }
+    .order header { display: flex; justify-content: space-between; gap: 8px; flex-wrap: wrap; }
+    .order .total { font-weight: 600; }
+    .muted { color: var(--muted); font-size: 13px; }
+    .tag { font-size: 12px; padding: 2px 8px; border-radius: 999px; border: 1px solid var(--line); }
+    .tag.ok { color: var(--ok); border-color: var(--ok); }
+    .tag.test { color: #8a5a00; border-color: #8a5a00; }
+    ul { margin: 8px 0; padding-left: 18px; }
+    .actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
+    #msg { min-height: 1.4em; }
+  </style>
+</head>
+<body>
+<main>
+  <nav><a href="./">← Pièces (admin)</a></nav>
+  <h1>Commandes</h1>
+  <p class="muted">Paiements reçus via Stripe (50 derniers). Connexion : le même jeton GitHub que l'admin des pièces.</p>
+
+  <form class="bar" id="login" hidden>
+    <input type="password" id="token" placeholder="Jeton GitHub (github_pat_…)" autocomplete="off">
+    <button type="submit">Se connecter</button>
+  </form>
+
+  <div class="bar filters" id="filters" hidden>
+    <button type="button" data-f="todo" aria-pressed="true">À expédier</button>
+    <button type="button" data-f="done" aria-pressed="false">Expédiées</button>
+    <button type="button" data-f="all" aria-pressed="false">Toutes</button>
+    <button type="button" id="refresh">Actualiser</button>
+    <button type="button" id="logout">Se déconnecter</button>
+  </div>
+
+  <p id="msg" role="status" aria-live="polite"></p>
+  <div id="orders"></div>
+</main>
+<script>
+(function () {
+  'use strict';
+  var ENDPOINT = 'https://vgthmind-shop-checkout.vgthm66.workers.dev';
+  var orders = [];
+  var filter = 'todo';
+  var $ = function (id) { return document.getElementById(id); };
+
+  // Jeton : celui de l'admin Sveltia s'il est déjà connecté, sinon saisi ici.
+  function token() {
+    try {
+      var own = localStorage.getItem('vg-admin-token');
+      if (own) return own;
+      var sveltia = JSON.parse(localStorage.getItem('sveltia-cms.user') || 'null');
+      if (sveltia && sveltia.token) return sveltia.token;
+    } catch (e) {}
+    return '';
+  }
+
+  function esc(s) {
+    return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+    });
+  }
+  function money(n) { return (Math.round((n || 0) * 100) / 100).toFixed(2).replace('.', ',') + ' €'; }
+  function date(ts) { return new Date(ts * 1000).toLocaleString('fr-FR', { dateStyle: 'medium', timeStyle: 'short' }); }
+  function address(a) {
+    if (!a) return '';
+    return [a.line1, a.line2, [a.postal_code, a.city].filter(Boolean).join(' '), a.state, a.country].filter(Boolean).map(esc).join('<br>');
+  }
+
+  function api(path, opts) {
+    opts = opts || {};
+    opts.headers = Object.assign({ Authorization: 'Bearer ' + token(), 'Content-Type': 'application/json' }, opts.headers || {});
+    return fetch(ENDPOINT + path, opts).then(function (r) {
+      return r.json().then(function (d) { if (!r.ok) { var e = new Error(d.error || r.status); e.status = r.status; throw e; } return d; });
+    });
+  }
+
+  function load() {
+    if (!token()) { $('login').hidden = false; $('filters').hidden = true; return; }
+    $('msg').textContent = 'Chargement…';
+    api('/orders').then(function (d) {
+      orders = d.orders || [];
+      $('login').hidden = true;
+      $('filters').hidden = false;
+      $('msg').textContent = '';
+      draw();
+    }).catch(function (e) {
+      if (e.status === 401) {
+        try { localStorage.removeItem('vg-admin-token'); } catch (err) {}
+        $('login').hidden = false;
+        $('msg').textContent = 'Jeton refusé (il doit appartenir au compte GitHub vgthmind).';
+      } else {
+        $('msg').textContent = 'Erreur : ' + e.message;
+      }
+    });
+  }
+
+  function shippedMail(o, tracking) {
+    var first = (o.name || '').split(' ')[0];
+    var body = 'Hi ' + first + ',\n\nYour order has shipped!'
+      + (tracking ? '\nTracking number: ' + tracking : '')
+      + '\n\nThanks for your support,\nvgthmind\n\n—\n\nSalut ' + first + ',\n\nTa commande est partie !'
+      + (tracking ? '\nNuméro de suivi : ' + tracking : '')
+      + '\n\nMerci pour ton soutien,\nvgthmind';
+    return 'mailto:' + encodeURIComponent(o.email)
+      + '?subject=' + encodeURIComponent('vgthmind — your order has shipped / ta commande est partie')
+      + '&body=' + encodeURIComponent(body);
+  }
+
+  function draw() {
+    var list = orders.filter(function (o) {
+      return filter === 'all' || (filter === 'todo' ? !o.shipped : !!o.shipped);
+    });
+    $('orders').innerHTML = list.length ? list.map(function (o) {
+      return '<article class="order" data-id="' + esc(o.id) + '">'
+        + '<header><div><strong>' + esc(o.name || o.email) + '</strong> '
+        + (o.livemode ? '' : '<span class="tag test">test</span> ')
+        + (o.shipped ? '<span class="tag ok">expédiée le ' + esc(date(o.shipped.at)) + (o.shipped.tracking ? ' · ' + esc(o.shipped.tracking) : '') + '</span>' : '')
+        + '<div class="muted">' + esc(date(o.created)) + ' · ' + esc(o.email) + (o.phone ? ' · ' + esc(o.phone) : '') + '</div></div>'
+        + '<div class="total">' + money(o.total) + '</div></header>'
+        + '<ul>' + o.items.map(function (it) { return '<li>' + esc(it.name) + ' — ' + money(it.amount) + '</li>'; }).join('')
+        + '<li class="muted">Livraison ' + money(o.shipping) + (o.discount ? ' · remise −' + money(o.discount) : '') + '</li></ul>'
+        + '<div class="muted">' + address(o.address) + '</div>'
+        + '<div class="actions">'
+        + (o.shipped
+          ? '<a class="btn" href="' + esc(shippedMail(o, o.shipped.tracking)) + '">E-mail « expédiée »</a><button type="button" data-undo>Annuler « expédiée »</button>'
+          : '<button type="button" data-ship>Marquer expédiée…</button>')
+        + '<a class="btn" target="_blank" rel="noopener" href="https://dashboard.stripe.com/' + (o.livemode ? '' : 'test/') + 'checkout/sessions/' + esc(o.id) + '">Voir dans Stripe</a>'
+        + '</div></article>';
+    }).join('') : '<p class="muted">Aucune commande ici.</p>';
+  }
+
+  $('orders').addEventListener('click', function (e) {
+    var card = e.target.closest('.order');
+    if (!card) return;
+    var o = orders.filter(function (x) { return x.id === card.getAttribute('data-id'); })[0];
+    if (e.target.hasAttribute('data-ship')) {
+      var tracking = window.prompt('Numéro de suivi (laisser vide s\'il n\'y en a pas) :', '');
+      if (tracking === null) return;
+      api('/orders/shipped', { method: 'POST', body: JSON.stringify({ id: o.id, tracking: tracking.trim() }) })
+        .then(function (d) {
+          o.shipped = d.shipped;
+          draw();
+          $('msg').textContent = 'Marquée expédiée. Clique « E-mail « expédiée » » pour prévenir le client.';
+        })
+        .catch(function (err) { $('msg').textContent = 'Erreur : ' + err.message; });
+    }
+    if (e.target.hasAttribute('data-undo')) {
+      api('/orders/shipped', { method: 'POST', body: JSON.stringify({ id: o.id, undo: true }) })
+        .then(function () { o.shipped = null; draw(); })
+        .catch(function (err) { $('msg').textContent = 'Erreur : ' + err.message; });
+    }
+  });
+
+  $('filters').addEventListener('click', function (e) {
+    var f = e.target.getAttribute('data-f');
+    if (!f) return;
+    filter = f;
+    document.querySelectorAll('[data-f]').forEach(function (b) { b.setAttribute('aria-pressed', String(b === e.target)); });
+    draw();
+  });
+  $('refresh').addEventListener('click', load);
+  $('logout').addEventListener('click', function () {
+    try { localStorage.removeItem('vg-admin-token'); } catch (e) {}
+    orders = []; draw(); $('login').hidden = false; $('filters').hidden = true;
+  });
+  $('login').addEventListener('submit', function (e) {
+    e.preventDefault();
+    var t = $('token').value.trim();
+    if (!t) return;
+    try { localStorage.setItem('vg-admin-token', t); } catch (err) {}
+    $('token').value = '';
+    load();
+  });
+
+  load();
+})();
+</script>
+</body>
+</html>
