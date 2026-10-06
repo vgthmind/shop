@@ -136,6 +136,14 @@ function main() {
   catalog.categories = CATEGORIES.filter((c) => used.has(c.permalink));
   catalog.imageMap = imageMap;
 
+  // Same catalog as last time: keep its date, so a rebuild with nothing new
+  // (GitHub Action after every push) changes no file and makes no commit.
+  try {
+    const prev = JSON.parse(fs.readFileSync(CATALOG_PATH, 'utf8'));
+    const same = JSON.stringify(Object.assign({}, prev, { fetched_at: '' })) === JSON.stringify(Object.assign({}, catalog, { fetched_at: '' }));
+    if (same) catalog.fetched_at = prev.fetched_at;
+  } catch (e) { /* first build */ }
+
   fs.writeFileSync(CATALOG_PATH, JSON.stringify(catalog, null, 2));
   console.log(`Wrote ${CATALOG_PATH} (${catalog.products.length} produits, ${catalog.categories.length} categories) depuis ${files.length} fichier(s) admin.`);
 }
