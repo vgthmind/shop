@@ -4,19 +4,34 @@ compatibility_date = "2025-01-01"
 workers_dev = true
 
 # Pas d'account_id ici : wrangler prend le compte de `wrangler login`.
-# Aucun secret dans ce fichier : STRIPE_SECRET_KEY se saisit avec
-#   npx wrangler secret put STRIPE_SECRET_KEY
+# Aucun secret dans ce fichier (npx.cmd wrangler secret put …) :
+#   STRIPE_SECRET_KEY, STRIPE_WEBHOOK_SECRET, GITHUB_CLIENT_SECRET
 [vars]
 ALLOWED_ORIGIN = "https://vgthmind.github.io"
 SITE_BASE = "https://vgthmind.github.io/shop"
 # "1" seulement le jour du passage en live (voir README) : tant que c'est "0",
 # toute cle sk_live_ est refusee.
 LIVE_MODE = "0"
-GITHUB_REPO = "vgthmind/shop"
 ADMIN_GITHUB_LOGIN = "vgthmind"
+# Identifiant (public) de l'OAuth App GitHub de l'admin ; son secret est un
+# secret Cloudflare (GITHUB_CLIENT_SECRET).
+GITHUB_CLIENT_ID = ""
 
-# Reservations des pieces pendant un paiement (30 min) + trace des commandes.
-# (identifiant de stockage, pas un secret)
+# Commandes expediees, sauvegardes du stock, etats OAuth (identifiant de
+# stockage, pas un secret).
 [[kv_namespaces]]
 binding = "HOLDS"
 id = "de2360d770d64089b018c6f56d48bb85"
+
+# Stock + reservations : Durable Object (stockage SQLite, plan gratuit).
+[[durable_objects.bindings]]
+name = "STOCK"
+class_name = "StockDO"
+
+[[migrations]]
+tag = "v1"
+new_sqlite_classes = ["StockDO"]
+
+# Sauvegarde du stock chaque jour a 03:30 UTC (KV backup:<date>, 180 jours).
+[triggers]
+crons = ["30 3 * * *"]

@@ -251,6 +251,7 @@
 <link rel="icon" href="/shop/assets/theme/favicon.ico" type="image/x-icon">
 <link rel="apple-touch-icon" href="/shop/assets/theme/apple-touch-icon.png">
 <meta name="robots" content="noindex, nofollow">
+<script>(function(d){d.classList.add("vg-stock-pending");setTimeout(function(){d.classList.remove("vg-stock-pending")},2600)})(document.documentElement)</script><style>.vg-stock-pending #add-to-cart-form{visibility:hidden}</style>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=Inter:wght@400;500&family=IBM+Plex+Mono:wght@400;500&display=swap');
 
@@ -1703,12 +1704,13 @@ ul.categories li.page a:hover{color:#3d4045 !important;background:transparent !i
   
   
     <div class="product-subheader">
-      <div class="product-detail__price">
+      
     120,00 EUR
-  </div>
-      <span class="product-status status-secondary">
-        Sold out
-      </span>
+  
+
+      
+
+      
     </div>
   
   
@@ -1830,6 +1832,17 @@ ul.categories li.page a:hover{color:#3d4045 !important;background:transparent !i
 
   <section class="product-details">
     
+      <form id="add-to-cart-form" method="post" class="product-form show-sold-out" action="/shop/cart" accept-charset="utf8">
+        <input type="hidden" name="utf8" value='✓'>
+        
+          
+        
+        <button id="add-to-cart-button" class="button add-to-cart-button" type="submit" data-add-title="Add to cart" data-sold-title="Sold out">Add to cart</button>
+        
+        <div class="inventory-status-message" data-inventory-message></div>
+        
+      </form>
+    
     
     
       <div class="product-description"><p>Airbrushed custom hoodie<br>Navy blue<br>100% cotton / Ribbing: 97% cotton, 3% spandex<br>Size L</p>
@@ -1838,6 +1851,8 @@ ul.categories li.page a:hover{color:#3d4045 !important;background:transparent !i
 
     
 
+    
+      
     
   </section>
 </div>

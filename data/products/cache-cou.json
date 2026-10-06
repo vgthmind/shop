@@ -20,5 +20,6 @@
   "created_at": "2025-11-30T14:17:42.000Z",
   "stripe_payment_link": "",
   "shipping_fr": 4,
-  "shipping_intl": 8
+  "shipping_intl": 8,
+  "quantity": 0
 }

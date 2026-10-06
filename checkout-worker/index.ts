@@ -1,43 +1,54 @@
-// Checkout Worker : cree une session Stripe Checkout pour TOUT le panier de
-// /shop/ (plusieurs pieces payees en une fois, frais de port compris), puis
-// traite le retour de Stripe (webhook) : piece vendue -> in_stock:false dans
-// data/products/ (commit GitHub, l'Action reconstruit le site).
+// Checkout Worker de /shop/ :
+//  - paiement : une session Stripe Checkout pour TOUT le panier (frais de
+//    port compris) ; prix et port relus dans le catalogue publie
+//    (SITE_BASE/products.json), jamais crus sur parole ;
+//  - stock : un Durable Object (StockDO) garde la quantite de chaque piece et
+//    les reservations en cours ; reserver / vendre est atomique (une seule
+//    instance traite les demandes une par une) : pas de double vente ;
+//  - admin : connexion GitHub (OAuth, ce Worker sert de relais), page Stock,
+//    commandes, sauvegarde quotidienne du stock dans le KV.
 //
-// Le navigateur n'envoie que des slugs + la zone de livraison : prix, stock
-// et frais de port sont relus ici dans le catalogue publie
-// (SITE_BASE/products.json), jamais crus sur parole.
+// Mode test uniquement tant que LIVE_MODE != "1" (wrangler.toml). Aucun
+// secret dans le depot (npx.cmd wrangler secret put …) :
+//   STRIPE_SECRET_KEY      cle sk_test_
+//   STRIPE_WEBHOOK_SECRET  whsec_ du webhook Stripe
+//   GITHUB_CLIENT_SECRET   secret de l'OAuth App GitHub (connexion admin)
 //
-// Mode test uniquement tant que LIVE_MODE != "1" (wrangler.toml) : une cle
-// sk_live_ est refusee. Aucun secret dans le depot (wrangler secret put) :
-//   STRIPE_SECRET_KEY      cle sk_test_ (obligatoire)
-//   STRIPE_WEBHOOK_SECRET  whsec_ du webhook Stripe (pour /webhook)
-//   GITHUB_TOKEN           jeton fine-grained, Contents RW sur vgthmind/shop
-//
-// Routes :
-//   POST /checkout  { items: ["ch_0002", ...], region: "fr"|"intl", cart_id } -> { url }
-//   GET  /session?id=cs_…  -> resume d'une session payee (page /shop/merci/)
-//   POST /release   { id: "cs_…" } -> expire la session (page /shop/paiement-annule/)
-//   POST /webhook   evenements Stripe (signature verifiee)
-//   GET  /orders           (admin) commandes payees, depuis Stripe
-//   POST /orders/shipped   (admin) { id, tracking } -> marque expediee
-//   Admin = en-tete Authorization: Bearer <jeton GitHub> du compte ADMIN_GITHUB_LOGIN.
+// Routes publiques :
+//   POST /checkout  { items: [{slug, qty}], region: "fr"|"intl", cart_id } -> { url }
+//   GET  /session?id=cs_…   resume d'une commande payee (page Merci)
+//   POST /release   { id }  annulation : rend les pieces reservees
+//   POST /webhook           evenements Stripe (signature verifiee)
+//   GET  /stock             { stock: { slug: quantite } } (affichage du site)
+//   GET  /auth, /callback   connexion GitHub (OAuth) de l'admin
+//   GET  /status            controle de la configuration (sans les secrets)
+// Routes admin (en-tete Authorization: Bearer <jeton GitHub de ADMIN_GITHUB_LOGIN>) :
+//   GET/POST /admin/stock   lire / regler les quantites
+//   GET  /admin/backups     liste des sauvegardes ; GET /admin/backup?key=…
+//   POST /admin/backup      sauvegarde immediate
+//   GET  /orders ; POST /orders/shipped
+
+import { DurableObject } from 'cloudflare:workers';
 
 interface KV {
   get(key: string): Promise<string | null>;
   put(key: string, value: string, opts?: { expirationTtl?: number }): Promise<void>;
   delete(key: string): Promise<void>;
+  list(opts?: { prefix?: string; limit?: number }): Promise<{ keys: { name: string }[] }>;
 }
 
 interface Env {
   STRIPE_SECRET_KEY?: string;
   STRIPE_WEBHOOK_SECRET?: string;
-  GITHUB_TOKEN?: string;
-  GITHUB_REPO: string; // vgthmind/shop
+  GITHUB_CLIENT_ID?: string; // OAuth App (public)
+  GITHUB_CLIENT_SECRET?: string; // OAuth App (secret)
+  GITHUB_TOKEN?: string; // ancien systeme : n'est plus utilise, a supprimer
   ALLOWED_ORIGIN: string; // https://vgthmind.github.io
   SITE_BASE: string; // https://vgthmind.github.io/shop
   LIVE_MODE?: string; // "1" seulement le jour du passage en live
-  ADMIN_GITHUB_LOGIN: string; // seul compte GitHub autorise a lire les commandes
-  HOLDS: KV; // reservations des pieces pendant un paiement + commandes
+  ADMIN_GITHUB_LOGIN: string; // seul compte GitHub admin
+  HOLDS: KV; // commandes expediees, sauvegardes du stock, etats OAuth
+  STOCK: any; // DurableObjectNamespace<StockDO>
 }
 
 interface ShippingLine { amount_alone: number; country?: { code: string } }
@@ -45,17 +56,18 @@ interface Product {
   permalink: string;
   name: string;
   price: number;
-  status: string;
   url: string;
+  quantity?: number;
   images: { url: string }[];
-  options: { sold_out: boolean }[];
   shipping: ShippingLine[];
 }
+interface Item { slug: string; qty: number }
+interface Hold { items: Item[]; expires: number }
 
 const MAX_ITEMS = 20;
 const SESSION_MINUTES = 30; // minimum Stripe
-const HOLD_TTL = (SESSION_MINUTES + 2) * 60;
-const SOLD_TTL = 6 * 3600; // le temps que le site reconstruit affiche « Sold out »
+const HOLD_MS = (SESSION_MINUTES + 2) * 60 * 1000;
+const BACKUP_DAYS = 180;
 
 // Pays proposes pour « International » : tous ceux qu'accepte Stripe pour
 // une adresse de livraison, sauf la France (decision de Jules, 2026-10-06).
@@ -69,7 +81,99 @@ const STRIPE_COUNTRIES = (
   + 'VA VC VE VG VN VU WF WS XK YE YT ZA ZM ZW ZZ'
 ).split(' ');
 
+// ---------------------------------------------------------------------------
+// Durable Object : stock + reservations. Une seule instance (« main ») ; ses
+// methodes s'executent une par une, donc lire-verifier-ecrire est atomique.
+// Stockage : q:<slug> = quantite reglee (absente : quantite du catalogue),
+// h:<cart_id> = reservation en cours, d:<session> = commande deja comptee.
+export class StockDO extends DurableObject {
+  private async state() {
+    const storage = (this as any).ctx.storage;
+    const q: Map<string, number> = await storage.list({ prefix: 'q:' });
+    const h: Map<string, Hold> = await storage.list({ prefix: 'h:' });
+    const now = Date.now();
+    const stock = new Map<string, number>();
+    for (const [k, v] of q) stock.set(k.slice(2), v);
+    const holds = new Map<string, Hold>();
+    for (const [k, v] of h) {
+      if (v.expires < now) await storage.delete(k);
+      else holds.set(k.slice(2), v);
+    }
+    return { storage, stock, holds };
+  }
+
+  // Quantites pour l'affichage du site (et la sauvegarde).
+  async snapshot(defaults: Record<string, number>) {
+    const { stock } = await this.state();
+    const out: Record<string, number> = {};
+    for (const slug of Object.keys(defaults)) out[slug] = stock.has(slug) ? stock.get(slug)! : defaults[slug];
+    for (const [slug, n] of stock) if (!(slug in out)) out[slug] = n;
+    return out;
+  }
+
+  // Vue admin : quantite, si elle a ete reglee/vendue (sinon catalogue),
+  // et ce qui est reserve par des paiements en cours.
+  async adminView(defaults: Record<string, number>) {
+    const { stock, holds } = await this.state();
+    const held: Record<string, number> = {};
+    for (const h of holds.values()) for (const it of h.items) held[it.slug] = (held[it.slug] || 0) + it.qty;
+    const out: Record<string, { stock: number; fromCatalog: boolean; held: number }> = {};
+    for (const slug of new Set([...Object.keys(defaults), ...stock.keys()])) {
+      out[slug] = { stock: stock.has(slug) ? stock.get(slug)! : (defaults[slug] ?? 0), fromCatalog: !stock.has(slug), held: held[slug] || 0 };
+    }
+    return out;
+  }
+
+  async reserve(cartId: string, items: Item[], defaults: Record<string, number>) {
+    const { storage, stock, holds } = await this.state();
+    const problems: { slug: string; reason: string; available?: number }[] = [];
+    for (const it of items) {
+      const s = stock.has(it.slug) ? stock.get(it.slug)! : (defaults[it.slug] ?? 0);
+      let others = 0;
+      for (const [cart, h] of holds) if (cart !== cartId) for (const x of h.items) if (x.slug === it.slug) others += x.qty;
+      if (s <= 0) problems.push({ slug: it.slug, reason: 'vendue' });
+      else if (it.qty > s - others) {
+        problems.push(others > 0 && it.qty <= s
+          ? { slug: it.slug, reason: 'reservee' }
+          : { slug: it.slug, reason: 'stock', available: Math.max(0, s - others) });
+      }
+    }
+    if (problems.length) return { ok: false, problems };
+    await storage.put('h:' + cartId, { items, expires: Date.now() + HOLD_MS });
+    return { ok: true, problems };
+  }
+
+  async release(cartId: string) {
+    await (this as any).ctx.storage.delete('h:' + cartId);
+  }
+
+  // Commande payee : stock decompte une seule fois par session Stripe.
+  async confirm(sessionId: string, cartId: string, items: Item[], defaults: Record<string, number>) {
+    const { storage, stock } = await this.state();
+    if (await storage.get('d:' + sessionId)) return { already: true };
+    for (const it of items) {
+      const s = stock.has(it.slug) ? stock.get(it.slug)! : (defaults[it.slug] ?? 0);
+      await storage.put('q:' + it.slug, Math.max(0, s - it.qty));
+    }
+    if (cartId) await storage.delete('h:' + cartId);
+    await storage.put('d:' + sessionId, Date.now());
+    return { already: false };
+  }
+
+  async setStock(values: Record<string, number>) {
+    const storage = (this as any).ctx.storage;
+    for (const [slug, n] of Object.entries(values)) {
+      if (!/^[^\s]{1,100}$/.test(slug) || !Number.isFinite(Number(n))) continue;
+      await storage.put('q:' + slug, Math.max(0, Math.min(9999, Math.floor(Number(n)))));
+    }
+  }
+}
+
 type JsonFn = (data: unknown, status?: number) => Response;
+
+function stockStub(env: Env) {
+  return env.STOCK.get(env.STOCK.idFromName('main'));
+}
 
 export default {
   async fetch(request: Request, env: Env, ctx: any): Promise<Response> {
@@ -80,42 +184,114 @@ export default {
       Vary: 'Origin',
     };
     const json: JsonFn = (data, status = 200) =>
-      new Response(JSON.stringify(data), { status, headers: { 'Content-Type': 'application/json', ...cors } });
+      new Response(JSON.stringify(data), { status, headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store', ...cors } });
 
     if (request.method === 'OPTIONS') return new Response(null, { headers: cors });
-    if (new URL(request.url).pathname === '/status') return status(env);
-
-    // Espaces / retours a la ligne colles avec la cle par erreur : ignores.
-    const rawKey = env.STRIPE_SECRET_KEY || '';
-    // + 1 a 3 lettres tapees avant le collage (ex. « y » repondu a une
-    // question de wrangler, vu le 2026-10-06) devant sk_/rk_test_.
-    const key = rawKey.replace(/[\s​-‍﻿"'`]/g, '').replace(/^[a-z]{1,3}(?=(sk|rk)_test_)/, '');
-    if (!key) return json({ error: 'Paiement pas encore configuré.' }, 503);
-    // Cle secrete (sk_) ou restreinte (rk_) de TEST seulement, tant que
-    // LIVE_MODE != "1". Le message donne le type de cle recue (prefixe,
-    // jamais la valeur) pour corriger sans deviner.
-    if (!/^(sk|rk)_test_/.test(key) && env.LIVE_MODE !== '1') {
-      const known = (key.match(/^[a-z]{2,5}_(test|live)_/) || [''])[0].replace(/_$/, '');
-      // Sans reveler la cle : longueur et position d'un eventuel « _test_ ».
-      const kind = known || `format inconnu, ${rawKey.length} caractères, « _test_ » ${key.indexOf('_test_') >= 0 ? 'à la position ' + key.indexOf('_test_') : 'absent'}, début : ${/^[a-z]/.test(key) ? 'lettre' : 'autre caractère (code ' + key.charCodeAt(0) + ')'}`;
-      return json({ error: `Paiement en mode test uniquement pour le moment (clé reçue : ${kind}).` }, 503);
-    }
-
     const path = new URL(request.url).pathname;
+
     try {
-      if (path === '/checkout' && request.method === 'POST') return await checkout(request, env, key, json);
-      if (path === '/session' && request.method === 'GET') return await session(request, env, key, json, ctx);
-      if (path === '/release' && request.method === 'POST') return await release(request, env, key, json);
+      // Sans cle Stripe.
+      if (path === '/status') return await status(env);
+      if (path === '/stock' && request.method === 'GET') return await publicStock(env, cors);
+      if (path === '/auth') return await oauthStart(request, env);
+      if (path === '/callback') return await oauthCallback(request, env);
+      if (path.startsWith('/admin/')) {
+        if (!(await isAdmin(request, env))) return json({ error: 'Non autorisé.' }, 401);
+        if (path === '/admin/stock' && request.method === 'GET') return json(await adminStock(env));
+        if (path === '/admin/stock' && request.method === 'POST') {
+          const body: any = await request.json().catch(() => ({}));
+          if (!body || typeof body.stock !== 'object') return json({ error: 'Requête invalide.' }, 400);
+          await stockStub(env).setStock(body.stock);
+          return json(await adminStock(env));
+        }
+        if (path === '/admin/backups' && request.method === 'GET') {
+          const list = await env.HOLDS.list({ prefix: 'backup:' });
+          return json({ backups: list.keys.map((k) => k.name).sort().reverse() });
+        }
+        if (path === '/admin/backup' && request.method === 'GET') {
+          const k = new URL(request.url).searchParams.get('key') || 'backup:latest';
+          if (!/^backup:[\w-]+$/.test(k)) return json({ error: 'Clé invalide.' }, 400);
+          const v = await env.HOLDS.get(k);
+          return v ? new Response(v, { headers: { 'Content-Type': 'application/json', 'Content-Disposition': `attachment; filename="stock-${k.slice(7)}.json"`, ...cors } }) : json({ error: 'Introuvable.' }, 404);
+        }
+        if (path === '/admin/backup' && request.method === 'POST') return json(await backupStock(env));
+        return json({ error: 'Not found' }, 404);
+      }
+
+      // Avec cle Stripe.
+      const key = stripeKey(env);
+      if (!key.ok) return json({ error: key.error }, 503);
+      if (path === '/checkout' && request.method === 'POST') return await checkout(request, env, key.value, json);
+      if (path === '/session' && request.method === 'GET') return await session(request, env, key.value, json, ctx);
+      if (path === '/release' && request.method === 'POST') return await release(request, env, key.value, json);
       if (path === '/webhook' && request.method === 'POST') return await webhook(request, env, json);
-      if (path === '/orders' && request.method === 'GET') return await listOrders(request, env, key, json);
+      if (path === '/orders' && request.method === 'GET') return await listOrders(request, env, key.value, json);
       if (path === '/orders/shipped' && request.method === 'POST') return await markShipped(request, env, json);
     } catch (e: any) {
       return json({ error: 'Erreur interne : ' + (e && e.message ? e.message : e) }, 500);
     }
     return json({ error: 'Not found' }, 404);
   },
+
+  // Sauvegarde quotidienne du stock (cron dans wrangler.toml).
+  async scheduled(_event: any, env: Env, ctx: any) {
+    ctx.waitUntil(backupStock(env));
+  },
 };
 
+function stripeKey(env: Env): { ok: true; value: string } | { ok: false; error: string } {
+  const rawKey = env.STRIPE_SECRET_KEY || '';
+  // Espaces, guillemets et 1 a 3 lettres tapees avant le collage (« y »
+  // repondu a npx, vu le 2026-10-06) ignores.
+  const key = rawKey.replace(/[\s​-‍﻿"'`]/g, '').replace(/^[a-z]{1,3}(?=(sk|rk)_test_)/, '');
+  if (!key) return { ok: false, error: 'Paiement pas encore configuré.' };
+  if (!/^(sk|rk)_test_/.test(key) && env.LIVE_MODE !== '1') {
+    const known = (key.match(/^[a-z]{2,5}_(test|live)_/) || [''])[0].replace(/_$/, '');
+    return { ok: false, error: `Paiement en mode test uniquement pour le moment (clé reçue : ${known || 'format inconnu'}).` };
+  }
+  return { ok: true, value: key };
+}
+
+// --- Catalogue -------------------------------------------------------------
+async function loadCatalog(env: Env): Promise<Product[]> {
+  const res = await fetch(`${env.SITE_BASE}/products.json`, { cf: { cacheTtl: 60, cacheEverything: true } } as any);
+  if (!res.ok) throw new Error('Catalogue indisponible');
+  return res.json();
+}
+function catalogDefaults(catalog: Product[]): Record<string, number> {
+  const d: Record<string, number> = {};
+  for (const p of catalog) d[p.permalink] = Number.isInteger(p.quantity) ? (p.quantity as number) : 1;
+  return d;
+}
+
+async function publicStock(env: Env, cors: Record<string, string>): Promise<Response> {
+  const catalog = await loadCatalog(env);
+  const stock = await stockStub(env).snapshot(catalogDefaults(catalog));
+  return new Response(JSON.stringify({ stock }), {
+    headers: { 'Content-Type': 'application/json', 'Cache-Control': 'public, max-age=15', ...cors },
+  });
+}
+
+async function adminStock(env: Env) {
+  const catalog = await loadCatalog(env);
+  const view = await stockStub(env).adminView(catalogDefaults(catalog));
+  const names: Record<string, string> = {};
+  for (const p of catalog) names[p.permalink] = p.name;
+  const latest = await env.HOLDS.get('backup:latest');
+  return { stock: view, names, lastBackup: latest ? JSON.parse(latest).date : null };
+}
+
+async function backupStock(env: Env) {
+  const catalog = await loadCatalog(env);
+  const stock = await stockStub(env).snapshot(catalogDefaults(catalog));
+  const date = new Date().toISOString().slice(0, 10);
+  const value = JSON.stringify({ date, stock }, null, 1);
+  await env.HOLDS.put(`backup:${date}`, value, { expirationTtl: BACKUP_DAYS * 86400 });
+  await env.HOLDS.put('backup:latest', value);
+  return { ok: true, date, count: Object.keys(stock).length };
+}
+
+// --- Paiement --------------------------------------------------------------
 async function checkout(request: Request, env: Env, key: string, json: JsonFn): Promise<Response> {
   let body: { items?: unknown; region?: unknown; cart_id?: unknown };
   try {
@@ -123,7 +299,7 @@ async function checkout(request: Request, env: Env, key: string, json: JsonFn): 
   } catch (e) {
     return json({ error: 'Requête invalide.' }, 400);
   }
-  // items : ["slug", …] ou [{ slug, qty }, …] (qty > 1 : petite série).
+  // items : ["slug", …] ou [{ slug, qty }, …] (qty > 1 : petite serie).
   const wanted = new Map<string, number>();
   for (const it of Array.isArray(body.items) ? body.items : []) {
     const slug = String(typeof it === 'object' && it ? (it as any).slug : it);
@@ -136,26 +312,25 @@ async function checkout(request: Request, env: Env, key: string, json: JsonFn): 
   const region = body.region === 'intl' ? 'intl' : 'fr';
   const cartId = /^[A-Za-z0-9-]{8,64}$/.test(String(body.cart_id || '')) ? String(body.cart_id) : 'anon-' + crypto.randomUUID();
 
-  // Catalogue publie (cache Cloudflare 60 s ; une piece vendue entre-temps
-  // est de toute facon bloquee par sa reservation « sold » ci-dessous).
-  const res = await fetch(`${env.SITE_BASE}/products.json`, { cf: { cacheTtl: 60, cacheEverything: true } } as any);
-  if (!res.ok) return json({ error: 'Catalogue indisponible, réessaie dans un instant.' }, 502);
-  const catalog: Product[] = await res.json();
+  let catalog: Product[];
+  try { catalog = await loadCatalog(env); } catch (e) { return json({ error: 'Catalogue indisponible, réessaie dans un instant.' }, 502); }
   const bySlug = new Map(catalog.map((p) => [p.permalink, p]));
 
   const products: Product[] = [];
-  const problems: { slug: string; reason: string }[] = [];
+  const problems: { slug: string; reason: string; available?: number }[] = [];
   for (const slug of slugs) {
     const p = bySlug.get(slug);
-    const hold = await env.HOLDS.get('hold:' + slug);
     if (!p) problems.push({ slug, reason: 'introuvable' });
-    else if (p.status !== 'active' || (p.options || []).every((o) => o.sold_out) || hold === 'sold') problems.push({ slug, reason: 'vendue' });
-    else if (hold && hold !== cartId) problems.push({ slug, reason: 'reservee' });
     else if (region === 'intl' && !intlLine(p)) problems.push({ slug, reason: 'france_uniquement' });
-    else if ((wanted.get(slug) || 1) > stock(p)) problems.push({ slug, reason: 'stock', available: stock(p) } as any);
     else products.push(p);
   }
   if (problems.length) return json({ error: 'Panier à mettre à jour.', problems }, 409);
+
+  // Reservation atomique (Durable Object) AVANT la page de paiement.
+  const items: Item[] = products.map((p) => ({ slug: p.permalink, qty: wanted.get(p.permalink) || 1 }));
+  const stub = stockStub(env);
+  const held = await stub.reserve(cartId, items, catalogDefaults(catalog));
+  if (!held.ok) return json({ error: 'Panier à mettre à jour.', problems: held.problems }, 409);
 
   // Meme regle que BigCartel (amount_with_others = 0 partout) : la commande
   // paie une seule fois le tarif le plus eleve du panier pour sa zone.
@@ -166,17 +341,14 @@ async function checkout(request: Request, env: Env, key: string, json: JsonFn): 
 
   const origin = new URL(env.SITE_BASE).origin;
   const slugList = products.map((p) => p.permalink).join(',').slice(0, 500);
-  // « slug:qty » par ligne, relu par le webhook pour baisser le stock.
-  const itemList = products.map((p) => `${p.permalink}:${wanted.get(p.permalink) || 1}`).join(',').slice(0, 500);
+  const itemList = items.map((it) => `${it.slug}:${it.qty}`).join(',').slice(0, 500);
   const params = new URLSearchParams();
   params.set('mode', 'payment');
   params.set('locale', 'auto');
   params.set('success_url', `${env.SITE_BASE}/merci/?session_id={CHECKOUT_SESSION_ID}`);
   params.set('cancel_url', `${env.SITE_BASE}/paiement-annule/?session_id={CHECKOUT_SESSION_ID}`);
-  // Session valable 30 min : borne la reservation d'une piece unique.
   params.set('expires_at', String(Math.floor(Date.now() / 1000) + SESSION_MINUTES * 60 + 30));
   params.set('phone_number_collection[enabled]', 'true');
-  // Codes promo crees par Jules dans Stripe (Produits > Coupons) : champ au checkout.
   params.set('allow_promotion_codes', 'true');
   params.set('custom_text[submit][message]',
     `En payant, tu acceptes les conditions de vente : ${env.SITE_BASE}/infos-conditions-generales — By paying you accept our terms.`);
@@ -195,7 +367,7 @@ async function checkout(request: Request, env: Env, key: string, json: JsonFn): 
     if (img) params.set(`line_items[${i}][price_data][product_data][images][0]`, origin + encodeURI(img));
   });
   // Stripe preselectionne le 1er pays de la liste quand celui du client n'y
-  // est pas : le Canada et les voisins d'abord (sinon « Île de l'Ascension »).
+  // est pas : le Canada et les voisins d'abord.
   const FIRST = ['CA', 'BE', 'CH', 'LU', 'DE', 'GB', 'US'];
   const countries = region === 'fr' ? ['FR'] : [...FIRST, ...STRIPE_COUNTRIES.filter((c) => !FIRST.includes(c))];
   countries.forEach((c, i) => params.set(`shipping_address_collection[allowed_countries][${i}]`, c));
@@ -205,11 +377,9 @@ async function checkout(request: Request, env: Env, key: string, json: JsonFn): 
   params.set('shipping_options[0][shipping_rate_data][fixed_amount][currency]', 'eur');
 
   const stripe = await stripeCall(key, 'POST', '/v1/checkout/sessions', params);
-  if (!stripe.ok) return json({ error: stripe.data.error?.message || 'Erreur Stripe' }, 502);
-  // Reservation des pieces uniques seulement : une petite serie reste
-  // achetable par d'autres (le stock est reverifie a chaque checkout).
-  for (const p of products) {
-    if (stock(p) <= 1) await env.HOLDS.put('hold:' + p.permalink, cartId, { expirationTtl: HOLD_TTL });
+  if (!stripe.ok) {
+    await stub.release(cartId);
+    return json({ error: stripe.data.error?.message || 'Erreur Stripe' }, 502);
   }
   return json({ url: stripe.data.url });
 }
@@ -220,8 +390,8 @@ async function session(request: Request, env: Env, key: string, json: JsonFn, ct
   const stripe = await stripeCall(key, 'GET', `/v1/checkout/sessions/${id}?expand[]=line_items`);
   if (!stripe.ok) return json({ error: 'Commande introuvable.' }, 404);
   const s = stripe.data;
-  // Filet de securite si le webhook tarde ou n'est pas encore configure
-  // (la session vient de Stripe, pas du navigateur : pas de falsification).
+  // Filet de securite si le webhook tarde (la session vient de Stripe, pas
+  // du navigateur : pas de falsification possible).
   if (s.payment_status === 'paid') ctx.waitUntil(processPaid(env, s).catch(() => {}));
   return json({
     paid: s.payment_status === 'paid',
@@ -233,43 +403,7 @@ async function session(request: Request, env: Env, key: string, json: JsonFn, ct
   });
 }
 
-// /status : page de controle pour Jules (texte simple). Dit quels secrets
-// sont poses et s'ils marchent, sans jamais afficher leur valeur.
-async function status(env: Env): Promise<Response> {
-  const lines: string[] = [];
-  const ok = (b: boolean) => (b ? 'OK ' : '-- ');
-  const raw = env.STRIPE_SECRET_KEY || '';
-  const key = raw.replace(/[\s​-‍﻿"'`]/g, '');
-  const clean = /^(sk|rk)_(test|live)_/.test(key);
-  lines.push(`${ok(!!raw)}STRIPE_SECRET_KEY posée`);
-  if (raw) {
-    lines.push(`${ok(clean)}format de la clé${clean ? ` (${key.slice(0, 7)}…)` : ' : caractères en trop avant/après, à reposer (le paiement marche quand même si c\'est une lettre devant sk_test_)'}`);
-    try {
-      const fixed = key.replace(/^[a-z]{1,3}(?=(sk|rk)_test_)/, '');
-      const r = await fetch('https://api.stripe.com/v1/balance', { headers: { Authorization: `Bearer ${fixed}` } });
-      lines.push(`${ok(r.ok)}clé acceptée par Stripe${r.ok ? '' : ` (HTTP ${r.status})`}`);
-    } catch (e) { lines.push('-- clé : Stripe injoignable'); }
-  }
-  const wh = env.STRIPE_WEBHOOK_SECRET || '';
-  lines.push(`${ok(/^whsec_/.test(wh.trim()))}STRIPE_WEBHOOK_SECRET posée${wh && !/^whsec_/.test(wh.trim()) ? ' mais ne commence pas par whsec_ : à reposer' : ''}`);
-  const gh = (env.GITHUB_TOKEN || '').trim();
-  lines.push(`${ok(!!gh)}GITHUB_TOKEN posé`);
-  if (gh) {
-    try {
-      const r = await fetch(`https://api.github.com/repos/${env.GITHUB_REPO}/contents/data/products`, {
-        headers: { Authorization: `Bearer ${gh}`, Accept: 'application/vnd.github+json', 'User-Agent': 'vgthmind-shop-checkout' },
-      });
-      const exp = r.headers.get('github-authentication-token-expiration');
-      lines.push(`${ok(r.ok)}jeton GitHub accepté sur ${env.GITHUB_REPO}${r.ok ? '' : ` (refusé, HTTP ${r.status})`}${exp ? ` — expire le ${exp}` : ' — pas de date d\'expiration lue'}`);
-      lines.push('   (l\'écriture se vérifie à la 1re commande test : commit « Vendu : … » dans le dépôt)');
-    } catch (e) { lines.push('-- jeton GitHub : GitHub injoignable'); }
-  }
-  lines.push(`   mode : ${env.LIVE_MODE === '1' ? 'LIVE' : 'test uniquement'}`);
-  return new Response(lines.join('\n') + '\n', { headers: { 'Content-Type': 'text/plain; charset=utf-8', 'Cache-Control': 'no-store' } });
-}
-
-// Retour « annuler » de Stripe : la session est expiree tout de suite pour
-// rendre les pieces aux autres visiteurs (sinon reservees jusqu'a 30 min).
+// Annulation : la session est expiree tout de suite et la reservation rendue.
 async function release(request: Request, env: Env, key: string, json: JsonFn): Promise<Response> {
   let id = '';
   try { id = String(((await request.json()) as any).id || ''); } catch (e) {}
@@ -277,19 +411,12 @@ async function release(request: Request, env: Env, key: string, json: JsonFn): P
   const got = await stripeCall(key, 'GET', `/v1/checkout/sessions/${id}`);
   if (!got.ok) return json({ ok: false });
   if (got.data.status === 'open') await stripeCall(key, 'POST', `/v1/checkout/sessions/${id}/expire`, new URLSearchParams());
-  await releaseHolds(env, got.data.metadata || {});
+  if (got.data.payment_status !== 'paid' && got.data.metadata?.cart_id) await stockStub(env).release(got.data.metadata.cart_id);
   return json({ ok: true });
 }
 
-async function releaseHolds(env: Env, metadata: any) {
-  const cartId = metadata.cart_id;
-  for (const slug of String(metadata.slugs || '').split(',').filter(Boolean)) {
-    if ((await env.HOLDS.get('hold:' + slug)) === cartId) await env.HOLDS.delete('hold:' + slug);
-  }
-}
-
 async function webhook(request: Request, env: Env, json: JsonFn): Promise<Response> {
-  const secret = env.STRIPE_WEBHOOK_SECRET || '';
+  const secret = (env.STRIPE_WEBHOOK_SECRET || '').trim();
   if (!secret) return json({ error: 'Webhook pas encore configuré.' }, 503);
   const payload = await request.text();
   if (!(await verifyStripeSignature(payload, request.headers.get('stripe-signature') || '', secret))) {
@@ -298,90 +425,123 @@ async function webhook(request: Request, env: Env, json: JsonFn): Promise<Respon
   const event = JSON.parse(payload);
   const s = event.data && event.data.object;
   if (!s) return json({ received: true });
-
   if (event.type === 'checkout.session.expired') {
-    await releaseHolds(env, s.metadata || {});
+    if (s.metadata?.cart_id) await stockStub(env).release(s.metadata.cart_id);
     return json({ received: true });
   }
   if (event.type !== 'checkout.session.completed' && event.type !== 'checkout.session.async_payment_succeeded') {
     return json({ received: true });
   }
   if (s.payment_status !== 'paid') return json({ received: true });
-  // Une erreur ici renvoie 500 : Stripe reessaie le webhook plus tard.
-  await processPaid(env, s);
+  await processPaid(env, s); // erreur -> 500 -> Stripe reessaie
   return json({ received: true });
 }
 
-// Commande payee -> pieces bloquees tout de suite, trace, stock decompte
-// (commit GitHub). Appelee par le webhook ET par /session (page Merci),
-// en filet de securite : idempotent (cles done:<session>:<slug>, et le PUT
-// GitHub echoue si deux appels se croisent sur la meme version du fichier).
+// Commande payee -> stock decompte (une seule fois par session, que l'appel
+// vienne du webhook ou de la page Merci).
 async function processPaid(env: Env, s: any) {
   const meta = s.metadata || {};
-  const sold: { slug: string; qty: number }[] = meta.items
+  const items: Item[] = meta.items
     ? String(meta.items).split(',').filter(Boolean).map((x: string) => {
       const [slug, q] = x.split(':');
       return { slug, qty: Math.max(1, Number(q) || 1) };
     })
     : String(meta.slugs || '').split(',').filter(Boolean).map((slug: string) => ({ slug, qty: 1 }));
-  const slugs = sold.map((x) => x.slug);
-  // Bloque tout de suite les pieces uniques (le site met ~1-2 min a se
-  // reconstruire) ; une reservation de ce meme panier devient « sold ».
-  for (const x of sold) {
-    const hold = await env.HOLDS.get('hold:' + x.slug);
-    if (hold === meta.cart_id || hold === 'sold') await env.HOLDS.put('hold:' + x.slug, 'sold', { expirationTtl: SOLD_TTL });
-  }
-  // Trace de la commande (future page admin « Commandes »), sans donnees
-  // personnelles au-dela de ce que Stripe garde deja.
-  await env.HOLDS.put(`order:${s.created}:${s.id}`, JSON.stringify({
-    id: s.id, created: s.created, total: s.amount_total / 100, slugs,
-    region: (s.metadata || {}).region, livemode: !!s.livemode, shipped: false,
-  }));
-
-  // Stock : chaque piece vendue passe en « Sold out » dans l'admin. Une
-  // erreur ici renvoie 500 : Stripe reessaie le webhook plus tard.
-  if (env.GITHUB_TOKEN) {
-    for (const x of sold) {
-      // Une seule baisse de stock par commande et par piece, meme si Stripe
-      // rejoue le webhook.
-      const done = `done:${s.id}:${x.slug}`;
-      if (await env.HOLDS.get(done)) continue;
-      await decrementStock(env, x.slug, x.qty, s.id);
-      await env.HOLDS.put(done, '1', { expirationTtl: 30 * 86400 });
-    }
-  }
+  const catalog = await loadCatalog(env);
+  await stockStub(env).confirm(s.id, meta.cart_id || '', items, catalogDefaults(catalog));
 }
 
-async function decrementStock(env: Env, slug: string, qty: number, sessionId: string) {
-  const api = `https://api.github.com/repos/${env.GITHUB_REPO}/contents/data/products/${encodeURIComponent(slug)}.json`;
-  const headers = {
-    Authorization: `Bearer ${env.GITHUB_TOKEN}`,
-    Accept: 'application/vnd.github+json',
-    'User-Agent': 'vgthmind-shop-checkout',
-  };
-  const got = await fetch(api, { headers });
-  if (got.status === 404) return; // piece renommee/supprimee entre-temps : rien a faire
-  if (!got.ok) throw new Error(`GitHub GET ${slug}: ${got.status}`);
-  const file: any = await got.json();
-  const product = JSON.parse(fromBase64(file.content));
-  if (product.in_stock === false) return;
-  const left = Math.max(0, (Number.isInteger(product.quantity) ? product.quantity : 1) - qty);
-  product.quantity = left;
-  if (left === 0) product.in_stock = false;
-  const put = await fetch(api, {
-    method: 'PUT',
-    headers: { ...headers, 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      message: `Vendu : ${product.name || slug} (commande Stripe ${sessionId.slice(0, 20)}…)`,
-      content: toBase64(JSON.stringify(product, null, 2) + '\n'),
-      sha: file.sha,
-    }),
+// --- OAuth GitHub (connexion admin, protocole Decap/Sveltia) ----------------
+async function oauthStart(request: Request, env: Env): Promise<Response> {
+  if (!env.GITHUB_CLIENT_ID || !env.GITHUB_CLIENT_SECRET) return new Response('Connexion GitHub pas encore configurée.', { status: 503 });
+  const state = crypto.randomUUID();
+  await env.HOLDS.put('oauth:' + state, '1', { expirationTtl: 600 });
+  const redirect = new URL('/callback', request.url).toString();
+  const url = 'https://github.com/login/oauth/authorize?' + new URLSearchParams({
+    client_id: env.GITHUB_CLIENT_ID,
+    redirect_uri: redirect,
+    scope: 'public_repo',
+    state,
+    allow_signup: 'false',
   });
-  if (!put.ok) throw new Error(`GitHub PUT ${slug}: ${put.status}`);
+  return Response.redirect(url, 302);
 }
 
-// Signature Stripe : en-tete « t=…,v1=… », HMAC-SHA256 de « t.payload »,
-// tolerance 5 min contre le rejeu.
+async function oauthCallback(request: Request, env: Env): Promise<Response> {
+  const params = new URL(request.url).searchParams;
+  const state = params.get('state') || '';
+  const code = params.get('code') || '';
+  const page = (status: 'success' | 'error', content: object) => {
+    const msg = `authorization:github:${status}:${JSON.stringify(content)}`;
+    const origin = JSON.stringify(env.ALLOWED_ORIGIN);
+    const html = `<!doctype html><meta charset="utf-8"><title>Connexion</title><p>${status === 'success' ? 'Connecté, cette fenêtre va se fermer.' : 'Connexion refusée.'}</p><script>
+(function () {
+  var msg = ${JSON.stringify(msg)};
+  function receive(e) {
+    if (e.origin !== ${origin}) return;
+    window.opener.postMessage(msg, e.origin);
+    window.removeEventListener('message', receive, false);
+    setTimeout(function () { window.close(); }, 300);
+  }
+  window.addEventListener('message', receive, false);
+  if (window.opener) window.opener.postMessage('authorizing:github', ${origin});
+})();
+</script>`;
+    return new Response(html, { headers: { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store' } });
+  };
+  if (!state || !(await env.HOLDS.get('oauth:' + state))) return page('error', { message: 'Session de connexion expirée, réessaie.' });
+  await env.HOLDS.delete('oauth:' + state);
+  const res = await fetch('https://github.com/login/oauth/access_token', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Accept: 'application/json', 'User-Agent': 'vgthmind-shop-checkout' },
+    body: JSON.stringify({ client_id: env.GITHUB_CLIENT_ID, client_secret: env.GITHUB_CLIENT_SECRET, code }),
+  });
+  const data: any = await res.json().catch(() => ({}));
+  if (!data.access_token) return page('error', { message: data.error_description || 'GitHub a refusé la connexion.' });
+  // Seul le compte admin peut se connecter.
+  const user: any = await fetch('https://api.github.com/user', {
+    headers: { Authorization: `Bearer ${data.access_token}`, Accept: 'application/vnd.github+json', 'User-Agent': 'vgthmind-shop-checkout' },
+  }).then((r) => r.json()).catch(() => ({}));
+  if (String(user.login || '').toLowerCase() !== String(env.ADMIN_GITHUB_LOGIN).toLowerCase()) {
+    return page('error', { message: 'Ce compte GitHub n\'a pas accès à cet admin.' });
+  }
+  return page('success', { token: data.access_token, provider: 'github' });
+}
+
+// --- /status -----------------------------------------------------------------
+async function status(env: Env): Promise<Response> {
+  const lines: string[] = [];
+  const ok = (b: boolean) => (b ? 'OK ' : '-- ');
+  const raw = env.STRIPE_SECRET_KEY || '';
+  const key = raw.replace(/[\s​-‍﻿"'`]/g, '');
+  const clean = /^(sk|rk)_(test|live)_/.test(key);
+  lines.push(`${ok(!!raw)}STRIPE_SECRET_KEY posée`);
+  if (raw) {
+    lines.push(`${ok(clean)}format de la clé${clean ? ` (${key.slice(0, 7)}…)` : ' : caractères en trop, à reposer (le paiement marche quand même)'}`);
+    try {
+      const fixed = key.replace(/^[a-z]{1,3}(?=(sk|rk)_test_)/, '');
+      const r = await fetch('https://api.stripe.com/v1/balance', { headers: { Authorization: `Bearer ${fixed}` } });
+      lines.push(`${ok(r.ok)}clé acceptée par Stripe${r.ok ? '' : ` (HTTP ${r.status})`}`);
+    } catch (e) { lines.push('-- clé : Stripe injoignable'); }
+  }
+  const wh = (env.STRIPE_WEBHOOK_SECRET || '').trim();
+  lines.push(`${ok(/^whsec_/.test(wh))}STRIPE_WEBHOOK_SECRET posée${wh && !/^whsec_/.test(wh) ? ' mais ne commence pas par whsec_ : à reposer' : ''}`);
+  lines.push(`${ok(!!env.GITHUB_CLIENT_ID)}GITHUB_CLIENT_ID (OAuth App) renseigné`);
+  lines.push(`${ok(!!env.GITHUB_CLIENT_SECRET)}GITHUB_CLIENT_SECRET (OAuth App) posé`);
+  if (env.GITHUB_TOKEN) lines.push('-- GITHUB_TOKEN encore posé : plus utilisé, à supprimer');
+  try {
+    const catalog = await loadCatalog(env);
+    const snap = await stockStub(env).snapshot(catalogDefaults(catalog));
+    lines.push(`OK stock (Durable Object) : ${Object.keys(snap).length} pièces, ${Object.values(snap).filter((n) => n <= 0).length} en Sold out`);
+  } catch (e: any) { lines.push('-- stock : ' + (e && e.message ? e.message : e)); }
+  const latest = await env.HOLDS.get('backup:latest');
+  lines.push(`${ok(!!latest)}dernière sauvegarde du stock : ${latest ? JSON.parse(latest).date : 'aucune'}`);
+  lines.push(`   mode : ${env.LIVE_MODE === '1' ? 'LIVE' : 'test uniquement'}`);
+  return new Response(lines.join('\n') + '\n', { headers: { 'Content-Type': 'text/plain; charset=utf-8', 'Cache-Control': 'no-store' } });
+}
+
+// --- Outils ------------------------------------------------------------------
+// Signature Stripe : « t=…,v1=… », HMAC-SHA256 de « t.payload », 5 min max.
 async function verifyStripeSignature(payload: string, header: string, secret: string): Promise<boolean> {
   const parts = header.split(',').map((kv) => kv.split('='));
   const t = (parts.find(([k]) => k === 't') || [])[1];
@@ -401,17 +561,6 @@ function timingSafeEqual(a: string, b: string) {
   return diff === 0;
 }
 
-function fromBase64(b64: string) {
-  const bin = atob(b64.replace(/\s/g, ''));
-  return new TextDecoder().decode(Uint8Array.from(bin, (c) => c.charCodeAt(0)));
-}
-function toBase64(text: string) {
-  let bin = '';
-  new TextEncoder().encode(text).forEach((b) => { bin += String.fromCharCode(b); });
-  return btoa(bin);
-}
-
-// --- Admin : commandes ---------------------------------------------------
 async function isAdmin(request: Request, env: Env): Promise<boolean> {
   const auth = request.headers.get('authorization') || '';
   if (!/^Bearer [A-Za-z0-9_]+$/.test(auth)) return false;
@@ -475,10 +624,6 @@ async function stripeCall(key: string, method: string, path: string, params?: UR
 
 function isSessionId(id: string) {
   return /^cs_(test|live)_[A-Za-z0-9]+$/.test(id);
-}
-function stock(p: Product) {
-  const q = (p as any).quantity;
-  return Number.isInteger(q) ? q : 1;
 }
 function frLine(p: Product) {
   return (p.shipping || []).find((s) => s.country && s.country.code === 'FR');

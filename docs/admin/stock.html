@@ -1,0 +1,206 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex, nofollow">
+  <title>vgthmind — stock</title>
+  <style>
+    :root { --bg: #f4f2ec; --ink: #171717; --muted: #6b6860; --line: rgba(0,0,0,.12); --card: rgba(255,255,255,.6); --ok: #2f7d4a; --warn: #a23b2a; }
+    * { box-sizing: border-box; }
+    [hidden] { display: none !important; }
+    body { margin: 0; background: var(--bg); color: var(--ink); font: 15px/1.45 system-ui, -apple-system, "Segoe UI", sans-serif; }
+    main { max-width: 860px; margin: 0 auto; padding: 24px 16px 64px; }
+    h1 { font-size: 22px; letter-spacing: .04em; text-transform: uppercase; margin: 0 0 4px; }
+    h2 { font-size: 15px; text-transform: uppercase; letter-spacing: .04em; margin: 28px 0 8px; }
+    nav a { color: var(--muted); font-size: 13px; margin-right: 12px; }
+    .muted { color: var(--muted); font-size: 13px; }
+    .bar { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin: 16px 0; }
+    button, .btn, label.btn { padding: 9px 14px; border-radius: 999px; border: 1px solid var(--line); background: #fff; color: var(--ink); font: inherit; cursor: pointer; text-decoration: none; display: inline-block; }
+    button.primary { background: var(--ink); color: #fff; border-color: var(--ink); }
+    button:disabled { opacity: .5; cursor: default; }
+    input[type=search] { flex: 1 1 200px; padding: 9px 12px; border: 1px solid var(--line); border-radius: 999px; background: #fff; font: inherit; }
+    table { width: 100%; border-collapse: collapse; background: var(--card); border: 1px solid var(--line); border-radius: 14px; overflow: hidden; }
+    th, td { text-align: left; padding: 8px 12px; border-bottom: 1px solid var(--line); vertical-align: middle; }
+    th { font-size: 12px; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); }
+    td input { width: 72px; padding: 6px 8px; border: 1px solid var(--line); border-radius: 8px; font: inherit; }
+    tr.changed td { background: rgba(255,226,122,.25); }
+    .tag { font-size: 12px; padding: 2px 8px; border-radius: 999px; border: 1px solid var(--line); white-space: nowrap; }
+    .tag.out { color: var(--warn); border-color: var(--warn); }
+    .tag.ok { color: var(--ok); border-color: var(--ok); }
+    #msg { min-height: 1.4em; }
+    .card { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 14px 16px; }
+    @media (max-width: 560px) { .hide-sm { display: none; } td, th { padding: 8px 6px; } }
+  </style>
+</head>
+<body>
+<main>
+  <nav><a href="./">← Pièces</a><a href="commandes.html">Commandes &amp; stats</a></nav>
+  <h1>Stock</h1>
+  <p class="muted">Le stock réel de chaque pièce. Chaque vente payée le baisse tout seul ; à 0 la pièce passe en « Sold out » sur le site. Pour remettre en vente : mets 1 (ou plus) puis « Enregistrer ».</p>
+
+  <div class="bar" id="login" hidden>
+    <button type="button" class="primary" id="login-btn">Se connecter avec GitHub</button>
+  </div>
+
+  <div id="app" hidden>
+    <div class="bar">
+      <input type="search" id="filter" placeholder="Chercher une pièce…" aria-label="Chercher une pièce">
+      <button type="button" class="primary" id="save" disabled>Enregistrer</button>
+      <button type="button" id="refresh">Actualiser</button>
+      <button type="button" id="logout">Se déconnecter</button>
+    </div>
+    <table>
+      <thead><tr><th>Pièce</th><th>Stock</th><th class="hide-sm">État</th></tr></thead>
+      <tbody id="rows"></tbody>
+    </table>
+
+    <h2>Sauvegardes</h2>
+    <div class="card">
+      <p class="muted">Le stock est sauvegardé automatiquement chaque nuit (gardé 180 jours). Dernière sauvegarde : <strong id="last">—</strong></p>
+      <div class="bar">
+        <button type="button" id="backup-now">Sauvegarder maintenant</button>
+        <button type="button" id="download">Télécharger la dernière</button>
+        <label class="btn">Restaurer depuis un fichier…<input type="file" id="restore" accept="application/json,.json" hidden></label>
+      </div>
+      <p class="muted" id="backups"></p>
+    </div>
+  </div>
+
+  <p id="msg" role="status" aria-live="polite"></p>
+</main>
+<script src="vg-admin-auth.js"></script>
+<script>
+(function () {
+  'use strict';
+  var $ = function (id) { return document.getElementById(id); };
+  var data = null;   // { stock: { slug: { stock, fromCatalog, held } }, names, lastBackup }
+  var edits = {};    // slug -> nouvelle quantité
+
+  function esc(s) {
+    return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+    });
+  }
+  function say(t) { $('msg').textContent = t || ''; }
+
+  function showLogin(text) {
+    $('login').hidden = false; $('app').hidden = true;
+    say(text || '');
+  }
+
+  function load() {
+    if (!window.vgAdminToken()) { showLogin(); return; }
+    say('Chargement…');
+    window.vgAdminApi('/admin/stock').then(function (d) {
+      data = d; edits = {};
+      $('login').hidden = true; $('app').hidden = false;
+      $('last').textContent = d.lastBackup || 'aucune pour l\'instant';
+      draw(); say('');
+      window.vgAdminApi('/admin/backups').then(function (b) {
+        var list = (b.backups || []).filter(function (k) { return k !== 'backup:latest'; }).slice(0, 7);
+        $('backups').innerHTML = list.length ? 'Dernières : ' + list.map(function (k) {
+          return '<a href="#" data-key="' + esc(k) + '">' + esc(k.slice(7)) + '</a>';
+        }).join(' · ') : '';
+      }).catch(function () {});
+    }).catch(function (e) {
+      if (e.status === 401) showLogin('Connexion expirée ou refusée : reconnecte-toi.');
+      else say('Erreur : ' + e.message);
+    });
+  }
+
+  function draw() {
+    var q = $('filter').value.trim().toLowerCase();
+    var slugs = Object.keys(data.stock).sort(function (a, b) {
+      return (data.names[a] || a).localeCompare(data.names[b] || b);
+    });
+    $('rows').innerHTML = slugs.filter(function (s) {
+      return !q || s.indexOf(q) !== -1 || String(data.names[s] || '').toLowerCase().indexOf(q) !== -1;
+    }).map(function (s) {
+      var row = data.stock[s];
+      var value = s in edits ? edits[s] : row.stock;
+      var tag = value <= 0 ? '<span class="tag out">Sold out</span>' : '<span class="tag ok">En vente</span>';
+      if (row.held) tag += ' <span class="tag">' + row.held + ' en cours de paiement</span>';
+      return '<tr' + (s in edits ? ' class="changed"' : '') + '><td>' + esc(data.names[s] || s + ' (retirée du site)')
+        + '<div class="muted">' + esc(s) + '</div></td>'
+        + '<td><input type="number" min="0" max="9999" step="1" value="' + value + '" data-slug="' + esc(s) + '" aria-label="Stock de ' + esc(data.names[s] || s) + '"></td>'
+        + '<td class="hide-sm">' + tag + '</td></tr>';
+    }).join('');
+    $('save').disabled = !Object.keys(edits).length;
+  }
+
+  $('rows').addEventListener('input', function (e) {
+    var s = e.target.getAttribute('data-slug');
+    if (!s) return;
+    var n = Math.max(0, Math.floor(Number(e.target.value)));
+    if (!Number.isFinite(n)) return;
+    if (n === data.stock[s].stock) delete edits[s]; else edits[s] = n;
+    e.target.closest('tr').classList.toggle('changed', s in edits);
+    $('save').disabled = !Object.keys(edits).length;
+  });
+
+  $('save').addEventListener('click', function () {
+    $('save').disabled = true; say('Enregistrement…');
+    window.vgAdminApi('/admin/stock', { method: 'POST', body: JSON.stringify({ stock: edits }) })
+      .then(function (d) { data = d; edits = {}; draw(); say('Enregistré. Le site affiche le nouveau stock sous 15 secondes.'); })
+      .catch(function (e) { say('Erreur : ' + e.message); $('save').disabled = false; });
+  });
+
+  $('filter').addEventListener('input', draw);
+  $('refresh').addEventListener('click', load);
+  $('logout').addEventListener('click', function () { window.vgAdminLogout(); showLogin(); });
+  $('login-btn').addEventListener('click', function () {
+    window.vgAdminLogin().then(load).catch(function (e) { say(e.message); });
+  });
+
+  $('backup-now').addEventListener('click', function () {
+    say('Sauvegarde…');
+    window.vgAdminApi('/admin/backup', { method: 'POST' })
+      .then(function (d) { $('last').textContent = d.date; say('Sauvegardé (' + d.count + ' pièces).'); })
+      .catch(function (e) { say('Erreur : ' + e.message); });
+  });
+
+  function download(key) {
+    fetch(window.VG_ENDPOINT + '/admin/backup?key=' + encodeURIComponent(key), { headers: { Authorization: 'Bearer ' + window.vgAdminToken() } })
+      .then(function (r) { if (!r.ok) throw new Error(r.status); return r.blob(); })
+      .then(function (blob) {
+        var a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = 'stock-' + (key === 'backup:latest' ? 'derniere' : key.slice(7)) + '.json';
+        document.body.appendChild(a); a.click(); a.remove();
+      })
+      .catch(function (e) { say('Téléchargement impossible : ' + e.message); });
+  }
+  $('download').addEventListener('click', function () { download('backup:latest'); });
+  $('backups').addEventListener('click', function (e) {
+    var k = e.target.getAttribute('data-key');
+    if (k) { e.preventDefault(); download(k); }
+  });
+
+  // Restauration : fichier de sauvegarde { date, stock: { slug: n } } -> les
+  // valeurs s'affichent comme modifications à vérifier, puis « Enregistrer ».
+  $('restore').addEventListener('change', function () {
+    var file = this.files && this.files[0];
+    if (!file) return;
+    file.text().then(function (text) {
+      var j = JSON.parse(text);
+      var stock = j && j.stock;
+      if (!stock || typeof stock !== 'object') throw new Error('fichier non reconnu');
+      edits = {};
+      Object.keys(stock).forEach(function (s) {
+        var n = Math.max(0, Math.floor(Number(stock[s])));
+        if (!Number.isFinite(n)) return;
+        if (!data.stock[s]) data.stock[s] = { stock: 0, fromCatalog: false, held: 0 };
+        if (n !== data.stock[s].stock) edits[s] = n;
+      });
+      draw();
+      say(Object.keys(edits).length + ' quantité(s) différente(s) dans la sauvegarde du ' + (j.date || '?') + ' (lignes surlignées) : vérifie puis « Enregistrer ».');
+    }).catch(function (e) { say('Restauration impossible : ' + e.message); });
+    this.value = '';
+  });
+
+  load();
+})();
+</script>
+</body>
+</html>

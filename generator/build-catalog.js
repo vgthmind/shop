@@ -62,10 +62,16 @@ function buildProduct(admin, imageMap) {
   const categories = [...realCats.map((perm) => byPermalink.get(perm)), ALL];
   if (admin.latest_drop) categories.push(LATEST_DROP);
 
-  // quantity: pieces in stock (1 = one-of-a-kind, the default). 0 = sold out
-  // too, so the checkout Worker can count a small series down to zero.
-  const quantity = Number.isInteger(admin.quantity) && admin.quantity >= 0 ? admin.quantity : 1;
-  const inStock = admin.in_stock !== false && quantity > 0;
+  // quantity = STARTING stock only (1 = one-of-a-kind, the default). The real
+  // stock lives in the checkout Worker (Durable Object): sales count it down
+  // and the admin "Stock" page sets it. The site is rendered with every piece
+  // available; assets/vg-shop-cart.js marks "Sold out" from the Worker's
+  // /stock, and the checkout refuses a piece with no stock left - so if the
+  // Worker is down, pieces still show and the payment stays the final check.
+  const quantity = Number.isInteger(admin.quantity) && admin.quantity >= 0
+    ? admin.quantity
+    : (admin.in_stock === false ? 0 : 1);
+  const inStock = true;
   const optionId = idFrom(admin.slug + ':option');
   return {
     id: idFrom(admin.slug),
@@ -109,8 +115,9 @@ function buildProduct(admin, imageMap) {
     // Not part of BigCartel's own shape: read by the front-end cart
     // (assets/vg-shop-cart.js) and left out of nothing templates render.
     stripe_payment_link: admin.stripe_payment_link || '',
-    // Also ours: read by the cart (max per order) and the checkout Worker.
-    quantity: inStock ? quantity : 0,
+    // Also ours: starting stock, used by the Worker until the piece is sold
+    // or set on the admin "Stock" page.
+    quantity,
     // Merged into search-keywords.json by build.js (site search).
     search_keywords: Array.isArray(admin.keywords) ? admin.keywords : [],
   };

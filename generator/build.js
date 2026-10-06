@@ -304,6 +304,10 @@ function injectAround(html, parts, product) {
     // Prototype: hidden from search engines until data/shop-settings.json
     // says "public": true (launch day, see README).
     SHOP_SETTINGS.public ? '' : '<meta name="robots" content="noindex, nofollow">',
+    // Stock réel lu au chargement (assets/vg-shop-cart.js) : « Add to cart »
+    // masqué le temps de la réponse (2,6 s max, puis affiché quoi qu'il arrive).
+    '<script>(function(d){d.classList.add("vg-stock-pending");setTimeout(function(){d.classList.remove("vg-stock-pending")},2600)})(document.documentElement)</script>'
+      + '<style>.vg-stock-pending #add-to-cart-form{visibility:hidden}</style>',
     `<style>\n${parts.customCss}\n</style>`,
     parts.headCode,
     // vg-transitions-dev.css hides the menu's Home link with
