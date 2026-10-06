@@ -7,5 +7,6 @@ Disallow: /
 # Au lancement : remplacer par
 # User-agent: *
 # Disallow: /admin/
+# Sitemap: https://vgthmind.github.io/shop/sitemap.xml
 # (et enlever le noindex de index.html et product.html, mais garder celui
 # de admin/index.html qui doit rester bloque en permanence)

@@ -191,19 +191,48 @@ function headContent(page, product, imageMap) {
   if (!product) return '';
   const img = product.images && product.images[0] ? (imageMap[product.images[0].url] || product.images[0].url) : '';
   const esc = (s) => String(s || '').replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
+  const desc = esc((product.description || '').replace(/\s+/g, ' ').trim().slice(0, 300));
   return [
+    `<meta name="description" content="${desc}">`,
     `<meta property="og:type" content="product">`,
     `<meta property="og:title" content="${esc(product.name)}">`,
-    `<meta property="og:description" content="${esc((product.description || '').replace(/\s+/g, ' ').slice(0, 300))}">`,
+    `<meta property="og:description" content="${desc}">`,
     img ? `<meta property="og:image" content="${esc(img)}">` : '',
+    `<meta name="twitter:card" content="summary_large_image">`,
+    `<meta name="twitter:title" content="${esc(product.name)}">`,
+    `<meta name="twitter:description" content="${desc}">`,
+    img ? `<meta name="twitter:image" content="${esc(img)}">` : '',
   ].join('\n    ');
 }
 
-function injectAround(html, parts) {
+// The real Layout's own custom code (theme/custom - see injectAround) always
+// prints a STORE-WIDE description/og:description/og:image/twitter:* first
+// (it has no per-product data to work with). For a product page this
+// generator's own headContent() above prints the real, product-specific
+// versions of the very same tags right after - keeping both would leave two
+// <meta property="og:description"> etc. in the page, and which one a given
+// crawler/share-preview picks is not guaranteed to be "the last one". Drop
+// the generic occurrence of each tag headContent() overrides so there is
+// only ever one of each - theme/custom/head.html itself is untouched.
+const PRODUCT_META_OVERRIDES = ['name="description"', 'property="og:description"', 'property="og:image"', 'name="twitter:description"', 'name="twitter:image"'];
+function stripGenericMeta(html, names) {
+  for (const n of names) {
+    html = html.replace(new RegExp(`<meta ${n}[^>]*>\\n?`), '');
+  }
+  return html;
+}
+
+function injectAround(html, parts, product) {
   // Head: noindex + Custom CSS + Head code, right before </head> (where
   // BigCartel puts them). The shim goes first in <head>, before any script.
   const shim = `<script>window.__VG_BASE = ${JSON.stringify(BASE_PATH)};\n${parts.shim}</script>`;
   html = html.replace(/<head>/i, (m) => `${m}\n${shim}`);
+  // See headContent()/PRODUCT_META_OVERRIDES above: a product page already
+  // got its real description/og/twitter tags from {{ head_content }}
+  // (rendered into `html` by layout.html before this function runs) -
+  // drop the store-wide ones the Layout's own custom code prints first, so
+  // share previews/crawlers see the product's own, not the generic ones.
+  if (product) html = stripGenericMeta(html, PRODUCT_META_OVERRIDES);
   // The real layout has no <html> tag (BigCartel's neither), so no page
   // language: Safari iPhone guesses one and offers "Translation available"
   // on every load. Declare English (the shop's main language) and opt out of
@@ -298,7 +327,7 @@ async function main() {
     }
     const layoutCtx = Object.assign({}, ctx, { page_content: pageContent, head_content: headContent(ctx.page, product, imageMap) });
     const html = liquid.render(layoutSrc, layoutCtx, filters);
-    write(relPath, withBasePath(injectAround(html, parts)));
+    write(relPath, withBasePath(injectAround(html, parts, product)));
   };
 
   page('index.html', src.home, Object.assign({}, base, {
@@ -363,6 +392,25 @@ async function main() {
   if (fs.existsSync(productImagesSrc)) fs.cpSync(productImagesSrc, rel(OUT_DIR, 'assets', 'products'), { recursive: true });
   fs.cpSync(rel(ROOT, 'assets', 'theme'), rel(OUT_DIR, 'assets', 'theme'), { recursive: true });
   fs.copyFileSync(rel(ROOT, 'robots.txt'), rel(OUT_DIR, 'robots.txt'));
+
+  // sitemap.xml - inert for now (robots.txt still has "Disallow: /" until
+  // this is the official shop, see robots.txt), ready for launch day: a
+  // crawler that ignores robots.txt entirely still gets correct, absolute
+  // URLs rather than nothing.
+  const SITE_ORIGIN = 'https://vgthmind.github.io';
+  const today = new Date().toISOString().slice(0, 10);
+  const urls = [
+    `${BASE_PATH}/`, `${BASE_PATH}/products`,
+    ...catalog.categories.filter((c) => c.permalink !== 'all').map((c) => `${BASE_PATH}/category/${c.permalink}`),
+    ...catalog.products.map((p) => `${BASE_PATH}${p.url}`),
+    ...CUSTOM_PAGES.map((cp) => `${BASE_PATH}${cp.url}`),
+  ];
+  const sitemap = '<?xml version="1.0" encoding="UTF-8"?>\n'
+    + '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'
+    + urls.map((u) => `  <url><loc>${SITE_ORIGIN}${u}</loc><lastmod>${today}</lastmod></url>`).join('\n')
+    + '\n</urlset>\n';
+  write('sitemap.xml', sitemap);
+
   // GitHub Pages: serve files and folders starting with "_" too, no Jekyll.
   write('.nojekyll', '');
 
