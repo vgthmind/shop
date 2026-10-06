@@ -150,7 +150,18 @@
     if (!wrapper) return;
     var items = readCart();
     updateBadges(items);
-    if (items.length === 0) return; // laisse l'etat "panier vide" du gabarit
+    if (items.length === 0) { // laisse l'etat "panier vide" du gabarit
+      var flash = '';
+      try { flash = sessionStorage.getItem('vg-cart-flash') || ''; sessionStorage.removeItem('vg-cart-flash'); } catch (e) {}
+      if (flash) {
+        var p = document.createElement('p');
+        p.className = 'vg-cart-msg';
+        p.setAttribute('role', 'status');
+        p.textContent = flash;
+        wrapper.appendChild(p);
+      }
+      return;
+    }
 
     var region = 'fr';
     try { region = localStorage.getItem('vg-shop-region') === 'intl' ? 'intl' : 'fr'; } catch (e) {}
@@ -302,6 +313,40 @@
     var header = wrapper.querySelector('.cart-header');
     if (header) header.classList.remove('cart-empty');
     wrapper.appendChild(root);
+
+    // Pièces vendues / retirées depuis l'ajout au panier : retirées dès
+    // l'ouverture du panier (catalogue publié), comme le fait BigCartel.
+    fetch('/products.json', { cache: 'no-store' })
+      .then(function (r) { return r.ok ? r.json() : null; })
+      .then(function (catalog) {
+        if (!catalog) return;
+        var live = {};
+        catalog.forEach(function (p) { live[p.permalink] = p; });
+        var gone = items.filter(function (it) {
+          var p = live[it.slug];
+          return !p || p.status !== 'active';
+        });
+        // Stock d'une petite série : quantité ramenée au stock restant.
+        items.forEach(function (it) {
+          var p = live[it.slug];
+          if (p && p.quantity && it.max !== p.quantity) {
+            var cart = readCart();
+            cart.forEach(function (c) { if (c.slug === it.slug) { c.max = Math.max(1, p.quantity); c.qty = Math.min(qty(c), c.max); } });
+            writeCart(cart);
+          }
+        });
+        items = readCart();
+        if (!gone.length) { draw(); return; }
+        gone.forEach(function (it) { items = removeItem(it.slug); });
+        message = 'Sorry, no longer available / Désolé, plus disponible : '
+          + gone.map(function (it) { return it.name; }).join(', ') + '.';
+        if (items.length === 0) {
+          try { sessionStorage.setItem('vg-cart-flash', message); } catch (e) {}
+          root.remove(); location.reload(); return;
+        }
+        draw();
+      })
+      .catch(function () {});
   }
 
   // --- Retour de Stripe : /merci (payé : panier vidé + récapitulatif) et
