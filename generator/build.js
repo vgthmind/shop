@@ -75,6 +75,12 @@ const CART_CSS = `
 .vg-order-summary .vg-cart-items{padding:0;}
 `.trim();
 
+const FAVICON_LINKS = [
+  '<link rel="icon" href="/assets/theme/favicon.svg" type="image/svg+xml">',
+  '<link rel="icon" href="/assets/theme/favicon.ico" type="image/x-icon">',
+  '<link rel="apple-touch-icon" href="/assets/theme/apple-touch-icon.png">',
+].join('\n');
+
 // Custom pages of the draft, in its order (they make the header nav:
 // PRODUCTS comes from the layout, then these).
 const CUSTOM_PAGES = [
@@ -87,6 +93,8 @@ const SHOP_PAGES_DIR = path.join(__dirname, 'shop-pages');
 const SHOP_PAGES = [
   { name: 'Thank you', url: '/merci', permalink: 'merci' },
   { name: 'Payment cancelled', url: '/paiement-annule', permalink: 'paiement-annule' },
+  // GitHub Pages sert 404.html pour toute adresse inconnue sous /shop/.
+  { name: 'Page not found', url: '/404', permalink: '404', out: '404.html' },
 ];
 
 function rel(...p) { return path.join(...p); }
@@ -238,6 +246,9 @@ function injectAround(html, parts, product) {
   // BigCartel puts them). The shim goes first in <head>, before any script.
   const shim = `<script>window.__VG_BASE = ${JSON.stringify(BASE_PATH)};\n${parts.shim}</script>`;
   html = html.replace(/<head>/i, (m) => `${m}\n${shim}`);
+  // Favicon : les memes fichiers que vgthmind.bigcartel.com (copies dans
+  // assets/theme/ ; BigCartel les sert hors gabarit).
+  html = html.replace(/<\/head>/i, (m) => `${FAVICON_LINKS}\n${m}`);
   // See headContent()/PRODUCT_META_OVERRIDES above: a product page already
   // got its real description/og/twitter tags from {{ head_content }}
   // (rendered into `html` by layout.html before this function runs) -
@@ -369,9 +380,12 @@ async function main() {
       product: p,
     }), p);
   }
-  page('contact/index.html', src.contact, Object.assign({}, base, {
-    page: { name: 'Contact', permalink: 'contact', category: 'custom', full_url: '/contact' },
-  }));
+  // /contact (formulaire natif BigCartel, sans backend ici) : renvoie vers
+  // la vraie page Contact (Instagram + e-mail), celle de la navigation.
+  const contactUrl = `${BASE_PATH}/contact-914a3d`;
+  write('contact/index.html', '<!doctype html><meta charset="utf-8"><meta name="robots" content="noindex">'
+    + `<meta http-equiv="refresh" content="0;url=${contactUrl}"><link rel="canonical" href="${contactUrl}">`
+    + `<title>Contact | vgthmind</title><a href="${contactUrl}">Contact</a>`);
   page('cart/index.html', src.cart, Object.assign({}, base, {
     page: { name: 'Cart', permalink: 'cart', category: 'cart', full_url: '/cart' },
   }));
@@ -389,7 +403,7 @@ async function main() {
       page: { name: cp.name, permalink: cp.permalink, category: 'custom', full_url: cp.url },
     });
     const layoutCtx = Object.assign({}, ctx, { page_content: content, head_content: '' });
-    write(`${cp.permalink}/index.html`, withBasePath(injectAround(liquid.render(layoutSrc, layoutCtx, filters), parts)));
+    write(cp.out || `${cp.permalink}/index.html`, withBasePath(injectAround(liquid.render(layoutSrc, layoutCtx, filters), parts)));
   }
 
   // Static stand-ins for BigCartel's JSON endpoints read by the scripts:
