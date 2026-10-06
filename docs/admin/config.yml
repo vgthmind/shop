@@ -22,7 +22,7 @@ collections:
     format: "json"
     slug: "{{slug}}"
     identifier_field: name
-    summary: "{{name}} — {{price}} EUR{{fields.in_stock}}"
+    summary: "{{name}} — {{price}} EUR"
     fields:
       - { label: "Nom", name: "name", widget: "string" }
       - { label: "Slug (URL, sans espaces ni accents)", name: "slug", widget: "string", hint: "ex: pantalon-denim-bleu — ne plus changer une fois la piece publiee (change son URL)" }
@@ -32,7 +32,7 @@ collections:
       - label: "Photos"
         name: "images"
         widget: "list"
-        hint: "La 1ere photo est celle affichee dans les grilles (page d'accueil, Products, categories)."
+        hint: "La 1ere photo est la photo principale, celle des grilles (glisser pour changer l'ordre). Photo detouree (fond transparent, PNG ou WebP), ~1000 px de large. Texte alternatif = nom de la piece."
         field: { label: "Image", name: "image", widget: "image" }
       - label: "Categories"
         name: "categories"
@@ -46,6 +46,7 @@ collections:
           - { label: "Merch", value: "merch" }
           - { label: "Accessories", value: "accessories" }
         hint: "Une piece peut etre dans plusieurs categories a la fois (ex: un hoodie customise est Tops ET Customs/Upcycling)."
+      - { label: "Retiree du site (archivee)", name: "archived", widget: "boolean", default: false, required: false, hint: "Cache la piece partout (pages, recherche, paiement) sans supprimer sa fiche. Prefere ceci a Supprimer." }
       - { label: "Mettre en avant (Latest Drop)", name: "latest_drop", widget: "boolean", default: false }
       - { label: "En stock", name: "in_stock", widget: "boolean", default: true }
       - { label: "Quantite en stock", name: "quantity", widget: "number", value_type: "int", default: 1, min: 0, required: false, hint: "1 = piece unique. Pour une petite serie, le nombre d exemplaires : il baisse tout seul a chaque vente, la piece passe en Sold out a 0." }
@@ -56,6 +57,6 @@ collections:
         name: "stripe_payment_link"
         widget: "string"
         required: false
-        hint: "Cree depuis le dashboard Stripe > Payment Links, colle l'URL ici. Laisse vide : le bouton d'achat reste visible mais desactive."
+        hint: "Facultatif, ancien systeme : le panier paie tout via Stripe Checkout. Ce lien ne sert que si le paiement groupe est coupe."
       - { label: "Position (ordre d'affichage, les plus petits nombres en premier)", name: "position", widget: "number", value_type: "int", default: 0 }
       - { label: "Date de creation", name: "created_at", widget: "datetime", required: false }
