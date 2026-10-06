@@ -182,6 +182,11 @@ function injectAround(html, parts) {
   // BigCartel puts them). The shim goes first in <head>, before any script.
   const shim = `<script>window.__VG_BASE = ${JSON.stringify(BASE_PATH)};\n${parts.shim}</script>`;
   html = html.replace(/<head>/i, (m) => `${m}\n${shim}`);
+  // The real layout has no <html> tag (BigCartel's neither), so no page
+  // language: Safari iPhone guesses one and offers "Translation available"
+  // on every load. Declare English (the shop's main language) and opt out of
+  // translation (the pages already have their own English / French parts).
+  html = html.replace(/<!DOCTYPE html>/i, (m) => `${m}\n<html lang="en" translate="no">`);
   // The layout's own transition boot (arrival check: flag href vs current
   // path) must see the same /shop-less path as vg-transitions-dev.js.
   // Only that script: the theme's other inline scripts declare globals
@@ -194,8 +199,26 @@ function injectAround(html, parts) {
     '<meta name="robots" content="noindex, nofollow">',
     `<style>\n${parts.customCss}\n</style>`,
     parts.headCode,
+    // vg-transitions-dev.css hides the menu's Home link with
+    // a[href="/"]; here that link is /shop/, so Home stayed in the mobile
+    // menu, which then grew taller than the screen on iPhone and its
+    // bottom (categories) scrolled past the glass background. Same rule,
+    // its "/" gets the /shop prefix from withBasePath like every URL here.
+    BASE_PATH ? '<style>body #navigation-modal .page_list li:has(> a[href="/"]){display:none !important;}</style>' : '',
+    // The "← Produits" link is in the HTML from the start (see page()); its
+    // style, taken from the Body, must be there from the first paint too.
+    `<style>\n${(parts.bodyCode.match(/^\.vg-back-link[^{\n]*\{[^}\n]*\}$/gm) || []).join('\n')}\n</style>`,
   ].join('\n');
   html = html.replace(/<\/head>/i, () => `${headExtra}\n</head>`);
+  // The Layout's <link rel="preload"> must name the file the Body really
+  // runs (our wrapped copy), as on BigCartel. Left on vgthmind.github.io it
+  // preloaded a file nobody runs: our copy was only fetched after jQuery /
+  // api.js / theme.js, so on iPhone the Body scripts (the "← Produits" link
+  // above the product title...) ran well after the arrival and the title
+  // and price jumped.
+  html = html.replace(
+    /(<link rel="preload" as="script" href=")https:\/\/vgthmind\.github\.io\/assets\/bigcartel\/vg-transitions-dev\.js[^"]*(")/,
+    (m, a, b) => `${a}${LOCAL_DEV_JS}${b}`);
   // Body code before </body>, its dev-JS <script src> pointed at our wrapped copy.
   const body = wrapInlineScripts(parts.bodyCode).replace(
     /<script src="https:\/\/vgthmind\.github\.io\/assets\/bigcartel\/vg-transitions-dev\.js[^"]*"><\/script>/,
@@ -236,7 +259,15 @@ async function main() {
   const withTitle = (ctx) => Object.assign(ctx, { page_title: liquid.render(preamble + '{{ page_title }}', ctx, filters).trim() });
   const page = (relPath, templateSrc, ctx, product) => {
     withTitle(ctx);
-    const pageContent = liquid.render(templateSrc, ctx, filters);
+    let pageContent = liquid.render(templateSrc, ctx, filters);
+    // The Body adds a "← Produits" link above the title of category and
+    // product pages, but only once its scripts run (after jQuery / api.js /
+    // theme.js): on iPhone that is after the arrival, and the title and price
+    // jumped. Same link, in the HTML from the start (the Body script sees it
+    // and adds nothing).
+    if (/^(category|product)\//.test(relPath)) {
+      pageContent = pageContent.replace(/<h1\b/, '<a class="vg-back-link" href="/products">← Produits</a>$&');
+    }
     const layoutCtx = Object.assign({}, ctx, { page_content: pageContent, head_content: headContent(ctx.page, product, imageMap) });
     const html = liquid.render(layoutSrc, layoutCtx, filters);
     write(relPath, withBasePath(injectAround(html, parts)));

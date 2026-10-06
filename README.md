@@ -56,7 +56,9 @@ remplacé par un renvoi vers les mentions légales de vgthmind.org).
   - préfixe les requêtes `fetch` / XHR vers une adresse racine
     (`/products.json`, `/product/<slug>.js`...) ;
   - fait lire aux scripts les liens SANS `/shop` (`getAttribute('href')`),
-    comme sur BigCartel, l'attribut réel gardant `/shop` ;
+    comme sur BigCartel, l'attribut réel gardant `/shop` — sauf les liens
+    vers un fichier `/shop/assets/...` (photos du zoom, que le Body met tel
+    quel en `src` d'image) ;
   - préfixe les liens créés en JavaScript (tuiles, lien retour) ;
   - donne au Body, à `vg-transitions-dev.js` et au script de transition du
     `<head>` un `location` dont `pathname` est vu sans `/shop`.
@@ -64,7 +66,16 @@ remplacé par un renvoi vers les mentions légales de vgthmind.org).
   `BASE_PATH=''` et le shim ne fait plus rien.
 - **`vg-transitions-dev.js`** : téléchargé à chaque build depuis
   vgthmind.github.io (même fichier que le brouillon), servi depuis
-  `docs/assets/vg/` enveloppé pour le `location` ci-dessus.
+  `docs/assets/vg/` enveloppé pour le `location` ci-dessus (le
+  `<link rel="preload">` du Layout pointe sur cette copie).
+- **Compléments au rendu** (le code des scripts n'est pas modifié) :
+  `<html lang="en" translate="no">` (le Layout n'a pas de balise `<html>` :
+  Safari iPhone proposait « Traduction disponible » à chaque page) ; règle
+  qui masque HOME dans le menu mobile pour le lien `/shop/` (celle du fichier
+  de transitions vise `href="/"`) ; lien « ← Produits » des pages catégorie
+  et produit écrit dans le HTML, avec ses 2 règles de style reprises du Body
+  dans `<head>` (sinon il n'apparaissait qu'après les scripts : saut du
+  titre et du prix à l'arrivée sur iPhone).
 - **Points d'accès BigCartel simulés** : `products.json`,
   `product/<slug>.js` (lu par `api.js` / `theme.js` sur les fiches),
   `cart.js` (panier vide en attendant l'étape 3).

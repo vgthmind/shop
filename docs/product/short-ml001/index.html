@@ -9,6 +9,7 @@
 
 
 <!DOCTYPE html>
+<html lang="en" translate="no">
   <head>
 <script>window.__VG_BASE = "/shop";
 /* Shim "sous-dossier" de la boutique hors BigCartel (injecté en tout premier
@@ -58,10 +59,12 @@
   // à '/products', '/cart'... : ils voient la valeur SANS /shop, comme sur
   // BigCartel. L'attribut réel garde /shop (navigation native, clic milieu,
   // barre d'état corrects).
+  // Sauf les liens vers un fichier (/shop/assets/... : photos du zoom) : le
+  // Body s'en sert tel quel comme src d'image, ils gardent /shop.
   var ga = Element.prototype.getAttribute;
   Element.prototype.getAttribute = function (name) {
     var v = ga.call(this, name);
-    if ((name === 'href' || name === 'action') && typeof v === 'string' && (v === BASE || v.indexOf(BASE + '/') === 0)) {
+    if ((name === 'href' || name === 'action') && typeof v === 'string' && (v === BASE || v.indexOf(BASE + '/') === 0) && v.indexOf(BASE + '/assets/') !== 0) {
       return v.slice(BASE.length) || '/';
     }
     return v;
@@ -113,7 +116,7 @@
 </script>
 <!-- VGTHMIND TRANSITION START -->
 <style>html,body{background-color:#f4f2ec !important;}@view-transition{navigation:auto;}::view-transition-group(root),::view-transition-old(root),::view-transition-new(root){animation:none !important;mix-blend-mode:normal !important;opacity:1 !important;}</style>
-<link rel="preload" as="script" href="https://vgthmind.github.io/assets/bigcartel/vg-transitions-dev.js?v=2026-10-05-1">
+<link rel="preload" as="script" href="/shop/assets/vg/vg-transitions-dev.js">
 <link rel="stylesheet" href="https://vgthmind.github.io/assets/bigcartel/vg-transitions-dev.css?v=2026-09-29-14">
 <!-- SECTION 6 POINT 4 (ajout) : indique au navigateur de commencer a charger
      theme.js (qui embarque lazysizes) en parallele du reste du <head>, au
@@ -1582,6 +1585,11 @@ ul.categories li.page a:hover{color:#3d4045 !important;background:transparent !i
 *{-webkit-tap-highlight-color:transparent !important;}
 </style>
 <script async src="https://www.instagram.com/embed.js"></script>
+<style>body #navigation-modal .page_list li:has(> a[href="/shop/"]){display:none !important;}</style>
+<style>
+.vg-back-link{display:inline-block !important;margin-bottom:10px !important;font-family:'IBM Plex Mono',monospace !important;font-size:11px !important;letter-spacing:0.05em !important;text-transform:uppercase !important;color:#8d929a !important;text-decoration:none !important;}
+.vg-back-link:hover{color:#3a4de8 !important;}
+</style>
 </head>
   <body id="short-ml001" class="product preloader transition-preloader" data-bc-page-type="short-ml001">
     
@@ -1654,7 +1662,7 @@ ul.categories li.page a:hover{color:#3d4045 !important;background:transparent !i
     
     <main id="main" class="content " data-bc-hook="content">
       <div class="product-container" data-bc-hook="product-container">
-  <h1>Short ML001</h1>
+  <a class="vg-back-link" href="/shop/products">← Produits</a><h1>Short ML001</h1>
   
   
   

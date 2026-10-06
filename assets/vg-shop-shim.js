@@ -45,10 +45,12 @@
   // à '/products', '/cart'... : ils voient la valeur SANS /shop, comme sur
   // BigCartel. L'attribut réel garde /shop (navigation native, clic milieu,
   // barre d'état corrects).
+  // Sauf les liens vers un fichier (/shop/assets/... : photos du zoom) : le
+  // Body s'en sert tel quel comme src d'image, ils gardent /shop.
   var ga = Element.prototype.getAttribute;
   Element.prototype.getAttribute = function (name) {
     var v = ga.call(this, name);
-    if ((name === 'href' || name === 'action') && typeof v === 'string' && (v === BASE || v.indexOf(BASE + '/') === 0)) {
+    if ((name === 'href' || name === 'action') && typeof v === 'string' && (v === BASE || v.indexOf(BASE + '/') === 0) && v.indexOf(BASE + '/assets/') !== 0) {
       return v.slice(BASE.length) || '/';
     }
     return v;
