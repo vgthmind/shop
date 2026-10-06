@@ -112,9 +112,14 @@ async function checkout(request: Request, env: Env, key: string, json: JsonFn): 
   } catch (e) {
     return json({ error: 'Requête invalide.' }, 400);
   }
-  const slugs = Array.isArray(body.items)
-    ? [...new Set(body.items.map((s: any) => String(typeof s === 'object' && s ? s.slug : s)))]
-    : [];
+  // items : ["slug", …] ou [{ slug, qty }, …] (qty > 1 : petite série).
+  const wanted = new Map<string, number>();
+  for (const it of Array.isArray(body.items) ? body.items : []) {
+    const slug = String(typeof it === 'object' && it ? (it as any).slug : it);
+    const q = typeof it === 'object' && it ? Math.floor(Number((it as any).qty) || 1) : 1;
+    wanted.set(slug, Math.min(99, (wanted.get(slug) || 0) + Math.max(1, q)));
+  }
+  const slugs = [...wanted.keys()];
   if (slugs.length === 0) return json({ error: 'Panier vide.' }, 400);
   if (slugs.length > MAX_ITEMS) return json({ error: 'Trop de pièces dans le panier.' }, 400);
   const region = body.region === 'intl' ? 'intl' : 'fr';
@@ -136,6 +141,7 @@ async function checkout(request: Request, env: Env, key: string, json: JsonFn): 
     else if (p.status !== 'active' || (p.options || []).every((o) => o.sold_out) || hold === 'sold') problems.push({ slug, reason: 'vendue' });
     else if (hold && hold !== cartId) problems.push({ slug, reason: 'reservee' });
     else if (region === 'intl' && !intlLine(p)) problems.push({ slug, reason: 'france_uniquement' });
+    else if ((wanted.get(slug) || 1) > stock(p)) problems.push({ slug, reason: 'stock', available: stock(p) } as any);
     else products.push(p);
   }
   if (problems.length) return json({ error: 'Panier à mettre à jour.', problems }, 409);
@@ -149,6 +155,8 @@ async function checkout(request: Request, env: Env, key: string, json: JsonFn): 
 
   const origin = new URL(env.SITE_BASE).origin;
   const slugList = products.map((p) => p.permalink).join(',').slice(0, 500);
+  // « slug:qty » par ligne, relu par le webhook pour baisser le stock.
+  const itemList = products.map((p) => `${p.permalink}:${wanted.get(p.permalink) || 1}`).join(',').slice(0, 500);
   const params = new URLSearchParams();
   params.set('mode', 'payment');
   params.set('locale', 'auto');
@@ -162,11 +170,12 @@ async function checkout(request: Request, env: Env, key: string, json: JsonFn): 
   params.set('custom_text[submit][message]',
     `En payant, tu acceptes les conditions de vente : ${env.SITE_BASE}/infos-conditions-generales — By paying you accept our terms.`);
   params.set('metadata[slugs]', slugList);
+  params.set('metadata[items]', itemList);
   params.set('metadata[region]', region);
   params.set('metadata[cart_id]', cartId);
   params.set('payment_intent_data[metadata][slugs]', slugList);
   products.forEach((p, i) => {
-    params.set(`line_items[${i}][quantity]`, '1');
+    params.set(`line_items[${i}][quantity]`, String(wanted.get(p.permalink) || 1));
     params.set(`line_items[${i}][price_data][currency]`, 'eur');
     params.set(`line_items[${i}][price_data][unit_amount]`, String(Math.round(p.price * 100)));
     params.set(`line_items[${i}][price_data][product_data][name]`, p.name);
@@ -183,7 +192,11 @@ async function checkout(request: Request, env: Env, key: string, json: JsonFn): 
 
   const stripe = await stripeCall(key, 'POST', '/v1/checkout/sessions', params);
   if (!stripe.ok) return json({ error: stripe.data.error?.message || 'Erreur Stripe' }, 502);
-  for (const p of products) await env.HOLDS.put('hold:' + p.permalink, cartId, { expirationTtl: HOLD_TTL });
+  // Reservation des pieces uniques seulement : une petite serie reste
+  // achetable par d'autres (le stock est reverifie a chaque checkout).
+  for (const p of products) {
+    if (stock(p) <= 1) await env.HOLDS.put('hold:' + p.permalink, cartId, { expirationTtl: HOLD_TTL });
+  }
   return json({ url: stripe.data.url });
 }
 
@@ -243,8 +256,20 @@ async function webhook(request: Request, env: Env, json: JsonFn): Promise<Respon
   }
   if (s.payment_status !== 'paid') return json({ received: true });
 
-  const slugs: string[] = String((s.metadata || {}).slugs || '').split(',').filter(Boolean);
-  for (const slug of slugs) await env.HOLDS.put('hold:' + slug, 'sold', { expirationTtl: SOLD_TTL });
+  const meta = s.metadata || {};
+  const sold: { slug: string; qty: number }[] = meta.items
+    ? String(meta.items).split(',').filter(Boolean).map((x: string) => {
+      const [slug, q] = x.split(':');
+      return { slug, qty: Math.max(1, Number(q) || 1) };
+    })
+    : String(meta.slugs || '').split(',').filter(Boolean).map((slug: string) => ({ slug, qty: 1 }));
+  const slugs = sold.map((x) => x.slug);
+  // Bloque tout de suite les pieces uniques (le site met ~1-2 min a se
+  // reconstruire) ; une reservation de ce meme panier devient « sold ».
+  for (const x of sold) {
+    const hold = await env.HOLDS.get('hold:' + x.slug);
+    if (hold === meta.cart_id || hold === 'sold') await env.HOLDS.put('hold:' + x.slug, 'sold', { expirationTtl: SOLD_TTL });
+  }
   // Trace de la commande (future page admin « Commandes »), sans donnees
   // personnelles au-dela de ce que Stripe garde deja.
   await env.HOLDS.put(`order:${s.created}:${s.id}`, JSON.stringify({
@@ -255,12 +280,19 @@ async function webhook(request: Request, env: Env, json: JsonFn): Promise<Respon
   // Stock : chaque piece vendue passe en « Sold out » dans l'admin. Une
   // erreur ici renvoie 500 : Stripe reessaie le webhook plus tard.
   if (env.GITHUB_TOKEN) {
-    for (const slug of slugs) await markSoldOut(env, slug, s.id);
+    for (const x of sold) {
+      // Une seule baisse de stock par commande et par piece, meme si Stripe
+      // rejoue le webhook.
+      const done = `done:${s.id}:${x.slug}`;
+      if (await env.HOLDS.get(done)) continue;
+      await decrementStock(env, x.slug, x.qty, s.id);
+      await env.HOLDS.put(done, '1', { expirationTtl: 30 * 86400 });
+    }
   }
   return json({ received: true });
 }
 
-async function markSoldOut(env: Env, slug: string, sessionId: string) {
+async function decrementStock(env: Env, slug: string, qty: number, sessionId: string) {
   const api = `https://api.github.com/repos/${env.GITHUB_REPO}/contents/data/products/${encodeURIComponent(slug)}.json`;
   const headers = {
     Authorization: `Bearer ${env.GITHUB_TOKEN}`,
@@ -272,8 +304,10 @@ async function markSoldOut(env: Env, slug: string, sessionId: string) {
   if (!got.ok) throw new Error(`GitHub GET ${slug}: ${got.status}`);
   const file: any = await got.json();
   const product = JSON.parse(fromBase64(file.content));
-  if (product.in_stock === false) return; // deja fait (webhook rejoue)
-  product.in_stock = false;
+  if (product.in_stock === false) return;
+  const left = Math.max(0, (Number.isInteger(product.quantity) ? product.quantity : 1) - qty);
+  product.quantity = left;
+  if (left === 0) product.in_stock = false;
   const put = await fetch(api, {
     method: 'PUT',
     headers: { ...headers, 'Content-Type': 'application/json' },
@@ -381,6 +415,10 @@ async function stripeCall(key: string, method: string, path: string, params?: UR
 
 function isSessionId(id: string) {
   return /^cs_(test|live)_[A-Za-z0-9]+$/.test(id);
+}
+function stock(p: Product) {
+  const q = (p as any).quantity;
+  return Number.isInteger(q) ? q : 1;
 }
 function frLine(p: Product) {
   return (p.shipping || []).find((s) => s.country && s.country.code === 'FR');
