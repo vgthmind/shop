@@ -110,6 +110,12 @@ const CUSTOM_PAGES = [
   { name: 'Contact', url: '/contact-914a3d', permalink: 'contact-914a3d' },
   { name: 'Studio', url: '/studio', permalink: 'studio' },
 ];
+// Pages legales : liens du pied de page uniquement (required_pages du gabarit),
+// pas dans le menu du haut.
+const LEGAL_PAGES = [
+  { name: 'Mentions légales', url: '/mentions-legales', permalink: 'mentions-legales' },
+  { name: 'Confidentialité', url: '/confidentialite', permalink: 'confidentialite' },
+];
 // Stripe Checkout return pages (success_url / cancel_url of checkout-worker/).
 const SHOP_PAGES_DIR = path.join(__dirname, 'shop-pages');
 const SHOP_PAGES = [
@@ -210,7 +216,7 @@ function baseContext(catalog) {
     store: catalog.store,
     t: translations,
     cart: { item_count: 0, total: 0, items: [] },
-    pages: { custom_pages: CUSTOM_PAGES, subscribe_page: null },
+    pages: { custom_pages: CUSTOM_PAGES, subscribe_page: null, required_pages: LEGAL_PAGES },
     categories: { active: catalog.categories },
     __imageMap: catalog.imageMap || {},
   };
@@ -473,6 +479,7 @@ async function main() {
   // rendering, content in generator/shop-pages/, filled by vg-shop-cart.js.
   const pageSources = [
     ...CUSTOM_PAGES.map((cp) => Object.assign({ file: rel(PAGES_DIR, cp.permalink + '.html') }, cp)),
+    ...LEGAL_PAGES.map((lp) => Object.assign({ file: rel(PAGES_DIR, lp.permalink + '.html') }, lp)),
     ...SHOP_PAGES.map((sp) => Object.assign({ file: rel(SHOP_PAGES_DIR, sp.permalink + '.html') }, sp)),
   ];
   for (const cp of pageSources) {
@@ -547,6 +554,7 @@ async function main() {
     ...catalog.categories.map((c) => `${BASE_PATH}/category/${c.permalink}`),
     ...catalog.products.filter((p) => !p.hidden).map((p) => `${BASE_PATH}${p.url}`),
     ...CUSTOM_PAGES.map((cp) => `${BASE_PATH}${cp.url}`),
+    ...LEGAL_PAGES.map((lp) => `${BASE_PATH}${lp.url}`),
   ];
   const sitemap = '<?xml version="1.0" encoding="UTF-8"?>\n'
     + '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'
