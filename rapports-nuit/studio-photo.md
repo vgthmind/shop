@@ -32,30 +32,57 @@ Modèles écartés : **RMBG-1.4 / 2.0** (Bria) = licence non commerciale, improp
 
 ## 3. Prototype (livré)
 
-Fichiers (tous nouveaux) :
-- `admin/studio-photo.html` — page (non liée au menu, `noindex`).
-- `admin/studio-photo.js` — interface (photos, aperçu côte à côte, valider/annuler/relancer, pinceau, export).
-- `admin/studio-engine.js` — chargement du modèle (navigateur) + **emplacement du service payant** (`remoteEngine`, désactivé, sans clé).
-- `admin/studio-process.js` — fonctions pures : défrangeage, durcissement du masque, cadrage commun, testées sous Node (`admin/studio-process.test.mjs`).
+Fichiers (tous nouveaux ; copiés dans `docs/admin/` par `node generator/build.js`) :
+- `admin/studio-photo.html` — page (non liée au menu, `noindex`, déjà exclue par `robots.txt` via `/admin/`).
+- `admin/studio-photo.js` — interface : ajout de plusieurs photos, file de détourage, original | détouré (fond du site noir ou damier), Valider / Garder l'original / Relancer, ordre (← →) et retrait, pinceau Gommer/Restaurer (taille réglable, Annuler, 8 niveaux), réglages de bords (seuils, contraction, anti-halo), export.
+- `admin/studio-engine.js` — moteurs : **`model`** (vrai branchement BiRefNet-lite via transformers.js 3.8.1, chargé depuis jsDelivr/Hugging Face au moment de l'usage ; essaie WebGPU fp16 → WASM q8 → WASM complet ; si tout échoue → **repli automatique** sur `simple` + message), **`simple`** (fond uni, sans téléchargement), **`remote`** (emplacement du service payant, `REMOTE.enabled=false`, sans clé).
+- `admin/studio-process.js` — fonctions pures (affinage du masque, anti-halo, boîte englobante, cadrage, ZIP) ; `admin/studio-process.test.mjs` = test Node.
 
-Fonctionnement : sélection de plusieurs photos → détourage une par une (file) → pour chacune : original | détouré sur le fond du site (noir) → Valider / Garder l'original / Relancer → pinceau gomme/restaure (taille réglable, annuler) → export WebP : un fichier par photo, nommés `0.webp, 1.webp…` (ordre = ordre de la pièce), cadrage centré avec la même marge sur toutes les photos de la pièce, fond transparent ou noir du site.
+Export : WebP (qualité réglée automatiquement pour rester sous le poids max choisi, 150 Ko par défaut), `0.webp, 1.webp…` dans un ZIP `<slug>/`, cadrage centré avec la même marge (4:5, 1:1 ou 3:4 ; 800/1000/1200 px), fond transparent ou noir du site, option « même échelle pour toutes ». Sur iPhone : bouton « Partager / enregistrer » (feuille de partage → Fichiers/Photos). Safari ne sait pas encoder le WebP via canvas : repli sur un encodeur WASM (jSquash), puis PNG en dernier recours.
 
-Limites connues (honnêtes) :
-- **Le vrai modèle n'a pas pu être testé cette nuit** (accès Hugging Face/jsDelivr bloqué dans l'environnement). L'interface, le défrangeage, le cadrage et l'export ont été testés avec un faux moteur. Premier essai réel = à faire sur ton PC (voir « Tester »). Si le nom des entrées/sorties du modèle diffère, c'est dans `studio-engine.js`, fonction `runModel` (une dizaine de lignes).
-- iPhone : non testé sur appareil. Prévu : modèle quantifié + WASM, image réduite à 1024 px pour l'inférence, 2000 px max pour le travail.
-- Pas de téléversement automatique : l'export télécharge les fichiers (voir §4 pour le branchement).
+Vérifié cette nuit (Chromium headless, moteur `simple`) : ajout de 3 photos de formats différents, détourage, gomme, annulation, validation, aperçu de cadrage, ZIP valide (3 WebP de 6–8 Ko), aucune erreur JS. `node admin/studio-process.test.mjs` : OK.
+**Non vérifié** : le vrai modèle (accès Hugging Face/jsDelivr bloqué ici), l'iPhone réel, l'encodeur jSquash, la qualité sur tes vêtements.
+
+### Tester le vrai modèle demain sur ton PC (Chrome ou Edge récent)
+
+```
+git fetch origin nuit/studio-photo
+git checkout nuit/studio-photo
+python -m http.server 8765        # ou : npx http-server -p 8765   (depuis la racine du dépôt)
+```
+Ouvrir **http://localhost:8765/admin/studio-photo.html** (pas de connexion nécessaire), choisir des photos : le moteur « Modèle IA » est celui par défaut. 1re fois : téléchargement du modèle (barre de progression dans la zone grise sous le choix du moteur), puis cache du navigateur. Pour forcer un autre modèle : `?model=` n'est pas prévu ; modifier `MODEL_ID` en tête de `studio-engine.js`.
+Pour tester l'interface sans modèle : `http://localhost:8765/admin/studio-photo.html?engine=simple`.
+Si le modèle se charge mais le détourage plante : ouvrir la console (F12) ; le message d'erreur dit le nom d'entrée/sortie attendu → ajuster `runModel` dans `studio-engine.js` (deux noms d'entrée essayés : `input_image`, `pixel_values`).
+Sur iPhone : mettre le même dossier en ligne n'est pas nécessaire cette fois ; plus simple → après fusion sur `main`, ouvrir `https://vgthmind.github.io/shop/admin/studio-photo.html` dans Safari.
 
 ## 4. Branchement prévu (à NE PAS faire cette nuit)
 
-Ordre conseillé, chaque étape indépendante :
+Constat important : le Worker **n'a pas de jeton GitHub** (`GITHUB_TOKEN` « n'est plus utilisé, à supprimer », `index.ts` l.52 ; OAuth : le jeton n'est pas gardé). Écrire dans le dépôt depuis le Worker demande donc de créer un jeton « fine-grained » (Contents : lecture/écriture, ce dépôt uniquement) que **tu** mets en secret (`npx wrangler secret put GITHUB_TOKEN`). Deux niveaux possibles :
 
-1. **Menu** — `admin/index.html`, dans le `<nav>` (après la ligne du lien Stock, ~l.27) ajouter :
+**Niveau 1 — sans Worker (le plus simple, recommandé pour commencer)**
+1. `admin/index.html`, dans le `<nav>` flottant (après le lien Stock, ~l.27), ajouter :
    `<a href="studio-photo.html" style="padding:8px 14px;border-radius:999px;background:#171717;color:#fff;text-decoration:none">Studio photo</a>`
-   Puis `node generator/build.js` pour mettre `docs/` à jour. (`admin/index.html` n'est pas dans la liste des fichiers modifiés sur ton PC, mais vérifie avant.)
-2. **Depuis la fiche pièce** — Sveltia n'a pas de bouton personnalisé simple. Plus fiable : le studio devient le point d'entrée « nouvelle pièce / modifier photos » : l'export pousse directement dans `assets/products/<slug>/` et met à jour `data/products/<slug>.json` (champ `images`) par l'API GitHub (`PUT /repos/vgthmind/shop/contents/...`) via le Worker (route `/admin/publish`), authentifié par la même session que Stock/Commandes (`vgAdminToken()`). Fichiers : nouvelle route dans un **nouveau** fichier `checkout-worker/studio.ts`, importée dans `checkout-worker/index.ts` par :
-   `import { handleStudio } from './studio';` (en tête) et, dans le routeur `fetch`, avant le 404 : `if (url.pathname.startsWith('/admin/studio/')) return handleStudio(request, env);`
-   (À ajouter par toi : `index.ts` a des modifs non commitées sur ton PC.) Le Worker doit disposer du jeton GitHub déjà utilisé pour l'OAuth/commit ; **ne pas en créer de nouveau dans le dépôt**.
-3. **Format** — le studio exporte déjà du WebP ; `config.yml` dit « PNG ou WebP » et `resize-images.js` accepte `.webp` (`/\.(png|jpe?g|webp)$/i`) : rien à changer côté build.
-4. **Publication** — commit sur `main` → l'Action reconstruit → site à jour. Ajouter un bouton « Publier la pièce » dans le studio appelant la route ci-dessus (fichier `studio-photo.js`, fonction `publish()` déjà prévue, vide).
-5. **Service payant (option)** — nouvelle route Worker `/admin/studio/remove-bg` (même fichier `studio.ts`) qui lit `env.REMOVEBG_API_KEY` (secret créé par toi : `npx wrangler secret put REMOVEBG_API_KEY`), relaie l'image et renvoie le PNG. Côté page : mettre `remoteEngine.enabled = true` dans `studio-engine.js`.
-6. **Confidentialité** — si l'option payante est activée : une ligne dans `theme/pages/confidentialite.html` (sous-traitant d'image). Non fait (page légale).
+2. `node generator/build.js`, commit (met `docs/admin/index.html` à jour).
+3. Usage : studio → ZIP/WebP → dans Sveltia, Pièce → Photos → ajouter les `0.webp`… dans l'ordre. Aucun changement de build : `resize-images.js` accepte déjà `.webp` (`/\.(png|jpe?g|webp)$/i`) et `config.yml` dit « PNG ou WebP ».
+4. `admin/AIDE.md`, section « Ajouter une pièce » : remplacer « photos détourées, fond transparent, ~1000 px » par un renvoi au Studio photo.
+
+**Niveau 2 — publication directe depuis le studio**
+1. Nouveau fichier `checkout-worker/studio.ts` : `export async function handleStudio(request, env, json)` — vérifie le nom de fichier (`^assets/products/[a-z0-9-]+/\d+\.webp$`), puis `PUT https://api.github.com/repos/vgthmind/shop/contents/<chemin>` avec `env.GITHUB_TOKEN`, puis met à jour `data/products/<slug>.json` (champ `images`).
+2. `checkout-worker/index.ts` (à ajouter par toi, fichier modifié sur ton PC) :
+   - en tête : `import { handleStudio } from './studio';`
+   - dans le bloc `if (path.startsWith('/admin/')) {` (après `/admin/backup` POST, juste avant `return json({ error: 'Not found' }, 404);` ~l.226) : `if (path === '/admin/studio/publish' && request.method === 'POST') return await handleStudio(request, env, json);`
+   - dans `interface Env` (~l.52) : garder `GITHUB_TOKEN?: string;` (déjà là) et mettre à jour son commentaire.
+   Le bloc `/admin/` exige déjà `isAdmin()` (session signée) : rien d'autre à faire pour la sécurité. Limite de taille de requête Worker : envoyer une photo par appel.
+3. `admin/studio-photo.js` : écrire `window.VGStudio.publish()` (déjà prévu, vide, en bas du fichier) : pour chaque fichier de `lastZip`, `fetch(VG_ENDPOINT + '/admin/studio/publish', { method:'POST', headers:{ Authorization:'Bearer '+vgAdminToken() }, body })` ; ajouter `<script src="vg-admin-auth.js">` dans `studio-photo.html` avant `studio-photo.js` (même connexion que Stock/Commandes) et un bouton « Publier la pièce ».
+4. Le commit sur `main` déclenche l'Action `build-shop.yml` : le site se reconstruit seul (1–2 min).
+
+**Service payant (option, plus tard)**
+- `checkout-worker/studio.ts` : route `/admin/studio/remove-bg` qui lit `env.REMOVEBG_API_KEY` (secret créé par toi), relaie le PNG au prestataire et renvoie le PNG détouré ; ligne `wrangler.toml` : aucune (les secrets n'y vont pas).
+- `admin/studio-engine.js` : `REMOTE.enabled = true; REMOTE.url = VG_ENDPOINT + '/admin/studio/remove-bg'` ; retirer `disabled` de l'option « Service payant » dans `studio-photo.html`.
+- `theme/pages/confidentialite.html` : une ligne « sous-traitant de traitement d'image » (non fait, page légale).
+
+## 5. Pistes non abouties / à surveiller
+- Franges et transparences (tulle) : le modèle seul sera approximatif → gomme/restaure + réglages de bords.
+- Poussières isolées hors du vêtement : elles élargissent la boîte de cadrage tant qu'elles ne sont pas gommées (idée : supprimer les îlots minuscules automatiquement).
+- iPhone avec peu de mémoire : taille de travail limitée à 1600 px ; si le modèle plante, la page se replie sur « fond uni ».
+- Jamais touché : `LIVE_MODE`, `noindex`/`robots.txt`, CGV, `emails.ts`, `vg-shop-cart.js`, `checkout-worker/index.ts`.
