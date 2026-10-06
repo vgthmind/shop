@@ -417,7 +417,14 @@ async function main() {
   fs.mkdirSync(rel(OUT_DIR, 'assets', 'vg'), { recursive: true });
   write('assets/theme.css', liquid.render(T('theme.css'), base, filters));
   write('assets/vg/vg-transitions-dev.js', wrapScript(devJs));
-  write('assets/vg/search-keywords.json', keywords);
+  // Mots-clés de recherche : fichier commun du portfolio + ceux saisis dans
+  // l'admin pour chaque pièce (champ « Mots-clés de recherche »).
+  const mergedKeywords = JSON.parse(keywords);
+  for (const p of catalog.products) {
+    const extra = (p.search_keywords || []).map((k) => String(k).trim()).filter(Boolean);
+    if (extra.length) mergedKeywords[p.permalink] = [...new Set([...(mergedKeywords[p.permalink] || []), ...extra])];
+  }
+  write('assets/vg/search-keywords.json', JSON.stringify(mergedKeywords, null, 1));
   fs.copyFileSync(rel(ROOT, 'assets', 'vg-shop-cart.js'), rel(OUT_DIR, 'assets', 'vg-shop-cart.js'));
   const productImagesSrc = rel(ROOT, 'assets', 'products');
   if (fs.existsSync(productImagesSrc)) fs.cpSync(productImagesSrc, rel(OUT_DIR, 'assets', 'products'), { recursive: true });

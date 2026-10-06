@@ -28,6 +28,7 @@ collections:
       - { label: "Slug (URL, sans espaces ni accents)", name: "slug", widget: "string", hint: "ex: pantalon-denim-bleu — ne plus changer une fois la piece publiee (change son URL)" }
       - { label: "Prix (EUR)", name: "price", widget: "number", value_type: "float" }
       - { label: "Description (anglais puis francais, separes par une ligne vide)", name: "description", widget: "text" }
+      - { label: "Mots-cles de recherche", name: "keywords", widget: "list", required: false, hint: "Mots en plus du nom et de la description, separes par des virgules (ex: hoodie, sweat, capuche). Sans accents ni majuscules." }
       - label: "Photos"
         name: "images"
         widget: "list"

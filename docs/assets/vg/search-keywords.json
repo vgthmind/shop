@@ -1,36 +1,251 @@
 {
-  "_lisezmoi": "Mots-cles de recherche par produit (cle = permalink BigCartel, visible dans l'URL /product/...). Pas d'accents ni de majuscules necessaires : la recherche les ignore. Chaque mot tape doit correspondre au DEBUT d'un mot (sac -> sacoche). Apres modification : pousser, attendre le deploiement, puis bumper le ?v= du JS (voir CLAUDE.md).",
-
-  "ch_0002": ["hoodie", "sweat", "sweat a capuche", "capuche", "pull", "aerographe", "airbrush", "custom", "noir"],
-  "ch_0003": ["hoodie", "sweat", "sweat a capuche", "capuche", "pull", "aerographe", "airbrush", "custom", "kaki", "teint"],
-  "ch_0004": ["hoodie", "sweat", "sweat a capuche", "capuche", "pull", "aerographe", "airbrush", "custom", "noir"],
-  "ch_0005": ["hoodie", "sweat", "sweat a capuche", "capuche", "pull", "aerographe", "airbrush", "custom", "gris"],
-  "ch_0006": ["hoodie", "sweat", "sweat a capuche", "capuche", "pull", "aerographe", "airbrush", "custom", "blanc"],
-  "custom-hoodie": ["hoodie", "sweat", "sweat a capuche", "capuche", "pull", "aerographe", "airbrush", "custom", "bleu marine"],
-
-  "custom-tee-shirt-col-en-v": ["t-shirt", "tshirt", "tee-shirt", "tee", "col v", "haut", "aerographe", "airbrush", "custom", "beige"],
-  "longsleeve-td002": ["longsleeve", "manches longues", "t-shirt manches longues", "haut", "capuche", "brule"],
-
-  "sa": ["short", "shorts", "bermuda", "aerographe", "airbrush", "custom", "noir"],
-  "sma_0001": ["short", "shorts", "bermuda", "aerographe", "airbrush", "custom", "gris"],
-  "sma_0003": ["short", "shorts", "bermuda", "aerographe", "airbrush", "custom", "gris"],
-  "sma_0004": ["short", "shorts", "bermuda", "aerographe", "airbrush", "custom", "blanc"],
-  "short-ge0001": ["short", "shorts", "bermuda", "ghillie", "noir"],
-  "short-sg001": ["short", "shorts", "bermuda", "soie", "bleu", "gris"],
-  "short-ml001": ["short", "shorts", "bermuda", "molleton", "gris"],
-  "short-coupe-évasée": ["short", "shorts", "bermuda", "yazzart", "collab", "satin", "aerographe", "airbrush", "gris"],
-
-  "ja_0001": ["jogging", "jogger", "sweatpants", "survetement", "pantalon", "bas", "aerographe", "airbrush", "custom", "blanc"],
-  "pantalon-rouge-framboise": ["pantalon", "pants", "jean", "jeans", "rouge", "framboise"],
-  "pantalon-denim-bleu": ["pantalon", "pants", "jean", "jeans", "denim", "bleu"],
-  "pantalon-ff001": ["pantalon", "pants", "polyester"],
-  "pantalon-vc001": ["pantalon", "pants", "velours", "velour"],
-  "pantalon-dd001": ["pantalon", "pants", "laine"],
-  "gp_0002": ["pantalon", "pants", "satin", "vgthm", "noir", "large"],
-
-  "sacoche": ["sacoche", "sac", "sac bandouliere", "bandouliere", "bag", "pochette", "accessoire", "bleu"],
-  "sc_0008": ["sacoche", "sac", "sac bandouliere", "bandouliere", "bag", "pochette", "accessoire", "noir"],
-  "cache-cou": ["cache-cou", "cache cou", "tour de cou", "snood", "echarpe", "polaire", "molleton", "accessoire", "aerographe"],
-
-  "cd-vgtape": ["cd", "album", "musique", "mixtape", "tape", "vgtape", "merch"]
+ "_lisezmoi": "Mots-cles de recherche par produit (cle = permalink BigCartel, visible dans l'URL /product/...). Pas d'accents ni de majuscules necessaires : la recherche les ignore. Chaque mot tape doit correspondre au DEBUT d'un mot (sac -> sacoche). Apres modification : pousser, attendre le deploiement, puis bumper le ?v= du JS (voir CLAUDE.md).",
+ "ch_0002": [
+  "hoodie",
+  "sweat",
+  "sweat a capuche",
+  "capuche",
+  "pull",
+  "aerographe",
+  "airbrush",
+  "custom",
+  "noir"
+ ],
+ "ch_0003": [
+  "hoodie",
+  "sweat",
+  "sweat a capuche",
+  "capuche",
+  "pull",
+  "aerographe",
+  "airbrush",
+  "custom",
+  "kaki",
+  "teint"
+ ],
+ "ch_0004": [
+  "hoodie",
+  "sweat",
+  "sweat a capuche",
+  "capuche",
+  "pull",
+  "aerographe",
+  "airbrush",
+  "custom",
+  "noir"
+ ],
+ "ch_0005": [
+  "hoodie",
+  "sweat",
+  "sweat a capuche",
+  "capuche",
+  "pull",
+  "aerographe",
+  "airbrush",
+  "custom",
+  "gris"
+ ],
+ "ch_0006": [
+  "hoodie",
+  "sweat",
+  "sweat a capuche",
+  "capuche",
+  "pull",
+  "aerographe",
+  "airbrush",
+  "custom",
+  "blanc"
+ ],
+ "custom-hoodie": [
+  "hoodie",
+  "sweat",
+  "sweat a capuche",
+  "capuche",
+  "pull",
+  "aerographe",
+  "airbrush",
+  "custom",
+  "bleu marine"
+ ],
+ "custom-tee-shirt-col-en-v": [
+  "t-shirt",
+  "tshirt",
+  "tee-shirt",
+  "tee",
+  "col v",
+  "haut",
+  "aerographe",
+  "airbrush",
+  "custom",
+  "beige"
+ ],
+ "longsleeve-td002": [
+  "longsleeve",
+  "manches longues",
+  "t-shirt manches longues",
+  "haut",
+  "capuche",
+  "brule"
+ ],
+ "sa": [
+  "short",
+  "shorts",
+  "bermuda",
+  "aerographe",
+  "airbrush",
+  "custom",
+  "noir"
+ ],
+ "sma_0001": [
+  "short",
+  "shorts",
+  "bermuda",
+  "aerographe",
+  "airbrush",
+  "custom",
+  "gris"
+ ],
+ "sma_0003": [
+  "short",
+  "shorts",
+  "bermuda",
+  "aerographe",
+  "airbrush",
+  "custom",
+  "gris"
+ ],
+ "sma_0004": [
+  "short",
+  "shorts",
+  "bermuda",
+  "aerographe",
+  "airbrush",
+  "custom",
+  "blanc"
+ ],
+ "short-ge0001": [
+  "short",
+  "shorts",
+  "bermuda",
+  "ghillie",
+  "noir"
+ ],
+ "short-sg001": [
+  "short",
+  "shorts",
+  "bermuda",
+  "soie",
+  "bleu",
+  "gris"
+ ],
+ "short-ml001": [
+  "short",
+  "shorts",
+  "bermuda",
+  "molleton",
+  "gris"
+ ],
+ "short-coupe-évasée": [
+  "short",
+  "shorts",
+  "bermuda",
+  "yazzart",
+  "collab",
+  "satin",
+  "aerographe",
+  "airbrush",
+  "gris"
+ ],
+ "ja_0001": [
+  "jogging",
+  "jogger",
+  "sweatpants",
+  "survetement",
+  "pantalon",
+  "bas",
+  "aerographe",
+  "airbrush",
+  "custom",
+  "blanc"
+ ],
+ "pantalon-rouge-framboise": [
+  "pantalon",
+  "pants",
+  "jean",
+  "jeans",
+  "rouge",
+  "framboise"
+ ],
+ "pantalon-denim-bleu": [
+  "pantalon",
+  "pants",
+  "jean",
+  "jeans",
+  "denim",
+  "bleu"
+ ],
+ "pantalon-ff001": [
+  "pantalon",
+  "pants",
+  "polyester"
+ ],
+ "pantalon-vc001": [
+  "pantalon",
+  "pants",
+  "velours",
+  "velour"
+ ],
+ "pantalon-dd001": [
+  "pantalon",
+  "pants",
+  "laine"
+ ],
+ "gp_0002": [
+  "pantalon",
+  "pants",
+  "satin",
+  "vgthm",
+  "noir",
+  "large"
+ ],
+ "sacoche": [
+  "sacoche",
+  "sac",
+  "sac bandouliere",
+  "bandouliere",
+  "bag",
+  "pochette",
+  "accessoire",
+  "bleu"
+ ],
+ "sc_0008": [
+  "sacoche",
+  "sac",
+  "sac bandouliere",
+  "bandouliere",
+  "bag",
+  "pochette",
+  "accessoire",
+  "noir"
+ ],
+ "cache-cou": [
+  "cache-cou",
+  "cache cou",
+  "tour de cou",
+  "snood",
+  "echarpe",
+  "polaire",
+  "molleton",
+  "accessoire",
+  "aerographe"
+ ],
+ "cd-vgtape": [
+  "cd",
+  "album",
+  "musique",
+  "mixtape",
+  "tape",
+  "vgtape",
+  "merch"
+ ]
 }

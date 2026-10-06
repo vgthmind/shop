@@ -111,6 +111,8 @@ function buildProduct(admin, imageMap) {
     stripe_payment_link: admin.stripe_payment_link || '',
     // Also ours: read by the cart (max per order) and the checkout Worker.
     quantity: inStock ? quantity : 0,
+    // Merged into search-keywords.json by build.js (site search).
+    search_keywords: Array.isArray(admin.keywords) ? admin.keywords : [],
   };
 }
 

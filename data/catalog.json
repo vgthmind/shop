@@ -1,5 +1,5 @@
 {
-  "fetched_at": "2026-10-06T11:49:36.090Z",
+  "fetched_at": "2026-10-06T11:50:30.700Z",
   "source": "data/products/*.json (admin)",
   "store": {
     "name": "vgthmind",
@@ -86,6 +86,7 @@
       ],
       "stripe_payment_link": "",
       "quantity": 1,
+      "search_keywords": [],
       "image": {
         "url": "/assets/products/ch_0002/0.png",
         "width": 948,
@@ -177,6 +178,7 @@
       ],
       "stripe_payment_link": "",
       "quantity": 1,
+      "search_keywords": [],
       "image": {
         "url": "/assets/products/ch_0004/0.png",
         "width": 994,
@@ -268,6 +270,7 @@
       ],
       "stripe_payment_link": "",
       "quantity": 1,
+      "search_keywords": [],
       "image": {
         "url": "/assets/products/ch_0005/0.png",
         "width": 885,
@@ -359,6 +362,7 @@
       ],
       "stripe_payment_link": "",
       "quantity": 1,
+      "search_keywords": [],
       "image": {
         "url": "/assets/products/ch_0006/0.png",
         "width": 887,
@@ -450,6 +454,7 @@
       ],
       "stripe_payment_link": "",
       "quantity": 1,
+      "search_keywords": [],
       "image": {
         "url": "/assets/products/ch_0003/0.png",
         "width": 943,
@@ -535,6 +540,7 @@
       ],
       "stripe_payment_link": "",
       "quantity": 0,
+      "search_keywords": [],
       "image": {
         "url": "/assets/products/sa/0.png",
         "width": 1000,
@@ -620,6 +626,7 @@
       ],
       "stripe_payment_link": "",
       "quantity": 1,
+      "search_keywords": [],
       "image": {
         "url": "/assets/products/sma_0003/0.png",
         "width": 1000,
@@ -705,6 +712,7 @@
       ],
       "stripe_payment_link": "",
       "quantity": 1,
+      "search_keywords": [],
       "image": {
         "url": "/assets/products/sma_0004/0.png",
         "width": 1000,
@@ -805,6 +813,7 @@
       ],
       "stripe_payment_link": "",
       "quantity": 1,
+      "search_keywords": [],
       "image": {
         "url": "/assets/products/ja_0001/0.png",
         "width": 575,
@@ -901,6 +910,7 @@
       ],
       "stripe_payment_link": "",
       "quantity": 1,
+      "search_keywords": [],
       "image": {
         "url": "/assets/products/custom-tee-shirt-col-en-v/0.png",
         "width": 832,
@@ -1001,6 +1011,7 @@
       ],
       "stripe_payment_link": "",
       "quantity": 1,
+      "search_keywords": [],
       "image": {
         "url": "/assets/products/pantalon-rouge-framboise/0.png",
         "width": 662,
@@ -1101,6 +1112,7 @@
       ],
       "stripe_payment_link": "",
       "quantity": 1,
+      "search_keywords": [],
       "image": {
         "url": "/assets/products/pantalon-denim-bleu/0.png",
         "width": 580,
@@ -1196,6 +1208,7 @@
       ],
       "stripe_payment_link": "",
       "quantity": 1,
+      "search_keywords": [],
       "image": {
         "url": "/assets/products/longsleeve-td002/0.png",
         "width": 800,
@@ -1291,6 +1304,7 @@
       ],
       "stripe_payment_link": "",
       "quantity": 1,
+      "search_keywords": [],
       "image": {
         "url": "/assets/products/pantalon-ff001/0.png",
         "width": 727,
@@ -1386,6 +1400,7 @@
       ],
       "stripe_payment_link": "",
       "quantity": 1,
+      "search_keywords": [],
       "image": {
         "url": "/assets/products/pantalon-vc001/0.png",
         "width": 663,
@@ -1481,6 +1496,7 @@
       ],
       "stripe_payment_link": "",
       "quantity": 1,
+      "search_keywords": [],
       "image": {
         "url": "/assets/products/pantalon-dd001/0.png",
         "width": 682,
@@ -1576,6 +1592,7 @@
       ],
       "stripe_payment_link": "",
       "quantity": 1,
+      "search_keywords": [],
       "image": {
         "url": "/assets/products/short-ge0001/0.png",
         "width": 1000,
@@ -1661,6 +1678,7 @@
       ],
       "stripe_payment_link": "",
       "quantity": 1,
+      "search_keywords": [],
       "image": {
         "url": "/assets/products/short-sg001/0.png",
         "width": 1000,
@@ -1756,6 +1774,7 @@
       ],
       "stripe_payment_link": "",
       "quantity": 1,
+      "search_keywords": [],
       "image": {
         "url": "/assets/products/cd-vgtape/0.png",
         "width": 918,
@@ -1846,6 +1865,7 @@
       ],
       "stripe_payment_link": "",
       "quantity": 1,
+      "search_keywords": [],
       "image": {
         "url": "/assets/products/sacoche/0.png",
         "width": 951,
@@ -1935,6 +1955,7 @@
       ],
       "stripe_payment_link": "",
       "quantity": 1,
+      "search_keywords": [],
       "image": {
         "url": "/assets/products/gp_0002/0.png",
         "width": 810,
@@ -2035,6 +2056,7 @@
       ],
       "stripe_payment_link": "",
       "quantity": 0,
+      "search_keywords": [],
       "image": {
         "url": "/assets/products/sma_0001/0.png",
         "width": 1000,
@@ -2126,6 +2148,7 @@
       ],
       "stripe_payment_link": "",
       "quantity": 0,
+      "search_keywords": [],
       "image": {
         "url": "/assets/products/custom-hoodie/0.png",
         "width": 938,
@@ -2226,6 +2249,7 @@
       ],
       "stripe_payment_link": "",
       "quantity": 0,
+      "search_keywords": [],
       "image": {
         "url": "/assets/products/short-coupe-évasée/0.png",
         "width": 1000,
@@ -2326,6 +2350,7 @@
       ],
       "stripe_payment_link": "",
       "quantity": 0,
+      "search_keywords": [],
       "image": {
         "url": "/assets/products/cache-cou/0.png",
         "width": 1000,
@@ -2411,6 +2436,7 @@
       ],
       "stripe_payment_link": "",
       "quantity": 0,
+      "search_keywords": [],
       "image": {
         "url": "/assets/products/short-ml001/0.png",
         "width": 1000,
@@ -2501,6 +2527,7 @@
       ],
       "stripe_payment_link": "",
       "quantity": 0,
+      "search_keywords": [],
       "image": {
         "url": "/assets/products/sc_0008/0.png",
         "width": 824,
