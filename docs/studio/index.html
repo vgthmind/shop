@@ -1587,6 +1587,22 @@ ul.categories li.page a:hover{color:#3d4045 !important;background:transparent !i
 .vg-back-link{display:inline-block !important;margin-bottom:10px !important;font-family:'IBM Plex Mono',monospace !important;font-size:11px !important;letter-spacing:0.05em !important;text-transform:uppercase !important;color:#8d929a !important;text-decoration:none !important;}
 .vg-back-link:hover{color:#3a4de8 !important;}
 </style>
+<style>.vg-cart-rendered{max-width:640px;margin:0 auto;padding:0 16px;}
+.vg-cart-items{list-style:none;margin:0 0 24px;padding:0;}
+.vg-cart-item{display:grid;grid-template-columns:64px 1fr auto;grid-template-areas:"img name remove" "img price price" "img pay pay";align-items:center;column-gap:12px;row-gap:4px;padding:12px 0;border-bottom:1px solid rgba(0,0,0,.1);}
+.vg-cart-item img{grid-area:img;width:64px;height:64px;object-fit:cover;border-radius:4px;}
+.vg-cart-item-name{grid-area:name;min-width:0;overflow-wrap:break-word;}
+.vg-cart-item-price{grid-area:price;}
+.vg-cart-item a.button,.vg-cart-unavailable{grid-area:pay;}
+.vg-cart-unavailable{font-size:.85em;opacity:.7;}
+.vg-cart-remove{grid-area:remove;justify-self:end;background:none;border:none;font-size:20px;line-height:1;cursor:pointer;padding:4px 8px;opacity:.6;}
+.vg-cart-remove:hover{opacity:1;}
+.vg-cart-footer{padding-top:12px;}
+.vg-cart-region{display:block;margin-bottom:12px;}
+.vg-cart-line{display:flex;justify-content:space-between;padding:2px 0;}
+.vg-cart-total{font-weight:600;border-top:1px solid rgba(0,0,0,.1);margin-top:6px;padding-top:10px;}
+.vg-cart-checkout-all{display:block;width:100%;margin-top:14px;}
+.vg-cart-note{font-size:.85em;opacity:.75;margin-top:16px;}</style>
 </head>
   <body id="studio" class="custom preloader transition-preloader" data-bc-page-type="custom">
     
@@ -1677,7 +1693,7 @@ ul.categories li.page a:hover{color:#3d4045 !important;background:transparent !i
 <p>The studio also makes custom pieces, for the stage as well as for more unexpected projects, where clothing has to work around technical constraints. Every commission is a new problem to solve.</p>
 <p><strong><span class="h3-fs">A VGTHMIND PIECE</span></strong></p>
 <p>When you buy a piece here, you&rsquo;re buying a one-of-a-kind item, made in France by the person who imagined it. It&rsquo;s made to be kept, worn for a long time, and considered a wearable piece of art.</p>
-<p>For a custom order or any question: Instagram <a href="https://www.instagram.com/vgthmind/">@vgthmind</a> or the <a href="../../../../contact">Contact</a> page.</p>
+<p>For a custom order or any question: Instagram <a href="https://www.instagram.com/vgthmind/">@vgthmind</a> or the <a href="/shop/contact-914a3d">Contact</a> page.</p>
 <p class="vg-lang-sep"><span>Fran&ccedil;ais</span></p>
 <p>vgthmind est n&eacute;e en 2021 &agrave; Vitry-sur-Seine. Derri&egrave;re le nom, une seule personne : chaque pi&egrave;ce est dessin&eacute;e, patronn&eacute;e, coup&eacute;e, cousue et finie &agrave; la main &mdash; et certaines sont aussi peintes &agrave; la main &mdash; du premier croquis jusqu&rsquo;au colis qui part chez vous.</p>
 <p>Ici, pas de stock, pas de r&eacute;assort. Chaque v&ecirc;tement existe en un seul exemplaire &mdash; ou en toute petite s&eacute;rie pour certains accessoires. Ce n&rsquo;est pas un argument marketing : c&rsquo;est simplement la fa&ccedil;on dont le travail se fait.</p>
@@ -1697,7 +1713,7 @@ ul.categories li.page a:hover{color:#3d4045 !important;background:transparent !i
 <p>L&rsquo;atelier r&eacute;alise aussi des pi&egrave;ces sur-mesure, pour la sc&egrave;ne comme pour des projets plus inattendus, o&ugrave; le v&ecirc;tement doit composer avec des contraintes techniques. Chaque commande est un nouveau probl&egrave;me &agrave; r&eacute;soudre.</p>
 <p><strong><span class="h3-fs">UNE PI&Egrave;CE VGTHMIND</span></strong></p>
 <p>Quand vous achetez une pi&egrave;ce ici, vous achetez un exemplaire unique, fait en France par la personne qui l&rsquo;a imagin&eacute;e. Elle est faite pour &ecirc;tre gard&eacute;e, port&eacute;e longtemps, et consid&eacute;r&eacute;e comme une pi&egrave;ce d&rsquo;art &agrave; porter.</p>
-<p>Pour une commande sur-mesure ou une question : Instagram <a href="https://www.instagram.com/vgthmind/">@vgthmind</a> ou la page <a href="../../../../contact">Contact</a>.</p>
+<p>Pour une commande sur-mesure ou une question : Instagram <a href="https://www.instagram.com/vgthmind/">@vgthmind</a> ou la page <a href="/shop/contact-914a3d">Contact</a>.</p>
     </main>
   
 
@@ -2961,5 +2977,6 @@ nav.sections a:hover:hover:hover:hover:hover:hover,.header nav a:hover:hover:hov
 }).call(window, window.__vgLoc || window.location);</script>
 
 
+<script src="/shop/assets/vg-shop-cart.js" defer></script>
 </body>
 </html>

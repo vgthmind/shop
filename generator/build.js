@@ -48,6 +48,28 @@ const BC_THEME_JS = 'https://assets.bigcartel.com/theme_assets/91/2.3.4/theme.js
 const BC_API_JS = 'https://assets.bigcartel.com/api/6/api.eur.js?v=1';
 filters.setThemeJsUrls({ theme: BC_THEME_JS, api: BC_API_JS });
 
+// Front-end cart (step 3, see assets/vg-shop-cart.js) - minimal styling in
+// the site's chrome/beige palette, additive like the rest of this file,
+// never part of theme/custom/custom-css.css (byte-identical to the draft).
+const CART_CSS = `
+.vg-cart-rendered{max-width:640px;margin:0 auto;padding:0 16px;}
+.vg-cart-items{list-style:none;margin:0 0 24px;padding:0;}
+.vg-cart-item{display:grid;grid-template-columns:64px 1fr auto;grid-template-areas:"img name remove" "img price price" "img pay pay";align-items:center;column-gap:12px;row-gap:4px;padding:12px 0;border-bottom:1px solid rgba(0,0,0,.1);}
+.vg-cart-item img{grid-area:img;width:64px;height:64px;object-fit:cover;border-radius:4px;}
+.vg-cart-item-name{grid-area:name;min-width:0;overflow-wrap:break-word;}
+.vg-cart-item-price{grid-area:price;}
+.vg-cart-item a.button,.vg-cart-unavailable{grid-area:pay;}
+.vg-cart-unavailable{font-size:.85em;opacity:.7;}
+.vg-cart-remove{grid-area:remove;justify-self:end;background:none;border:none;font-size:20px;line-height:1;cursor:pointer;padding:4px 8px;opacity:.6;}
+.vg-cart-remove:hover{opacity:1;}
+.vg-cart-footer{padding-top:12px;}
+.vg-cart-region{display:block;margin-bottom:12px;}
+.vg-cart-line{display:flex;justify-content:space-between;padding:2px 0;}
+.vg-cart-total{font-weight:600;border-top:1px solid rgba(0,0,0,.1);margin-top:6px;padding-top:10px;}
+.vg-cart-checkout-all{display:block;width:100%;margin-top:14px;}
+.vg-cart-note{font-size:.85em;opacity:.75;margin-top:16px;}
+`.trim();
+
 // Custom pages of the draft, in its order (they make the header nav:
 // PRODUCTS comes from the layout, then these).
 const CUSTOM_PAGES = [
@@ -208,6 +230,9 @@ function injectAround(html, parts) {
     // The "← Produits" link is in the HTML from the start (see page()); its
     // style, taken from the Body, must be there from the first paint too.
     `<style>\n${(parts.bodyCode.match(/^\.vg-back-link[^{\n]*\{[^}\n]*\}$/gm) || []).join('\n')}\n</style>`,
+    // Front-end cart (step 3, see assets/vg-shop-cart.js) - additive, not
+    // part of the real draft's Custom CSS.
+    `<style>${CART_CSS}</style>`,
   ].join('\n');
   html = html.replace(/<\/head>/i, () => `${headExtra}\n</head>`);
   // The Layout's <link rel="preload"> must name the file the Body really
@@ -223,8 +248,11 @@ function injectAround(html, parts) {
   const body = wrapInlineScripts(parts.bodyCode).replace(
     /<script src="https:\/\/vgthmind\.github\.io\/assets\/bigcartel\/vg-transitions-dev\.js[^"]*"><\/script>/,
     `<script src="${LOCAL_DEV_JS}"></script>`);
+  // Front-end cart, after the Body/dev-JS scripts (step 3, see
+  // assets/vg-shop-cart.js - not part of the real draft).
+  const cartScript = '<script src="/assets/vg-shop-cart.js" defer></script>';
   const i = html.lastIndexOf('</body>');
-  return html.slice(0, i) + body + '\n' + html.slice(i);
+  return html.slice(0, i) + body + '\n' + cartScript + '\n' + html.slice(i);
 }
 
 async function main() {
@@ -316,7 +344,10 @@ async function main() {
   // Static stand-ins for BigCartel's JSON endpoints read by the scripts:
   // /products.json (Body: home category tiles; dev JS: pops, section 3),
   // /product/<slug>.js (api.js Product.find, used by theme.js on product
-  // pages), /cart.js (api.js Cart, empty until step 3).
+  // pages - also read directly by assets/vg-shop-cart.js on add-to-cart),
+  // /cart.js (api.js Cart - our own cart lives in localStorage instead,
+  // see vg-shop-cart.js, this stays empty/unused but is kept since
+  // theme.js/api.js, BigCartel's real scripts, may still request it).
   const localized = catalog.products.map((p) => localizeProduct(p, imageMap));
   write('products.json', JSON.stringify(localized));
   for (const p of localized) write(`product/${p.permalink}.js`, JSON.stringify(p));
@@ -327,6 +358,7 @@ async function main() {
   write('assets/theme.css', liquid.render(T('theme.css'), base, filters));
   write('assets/vg/vg-transitions-dev.js', wrapScript(devJs));
   write('assets/vg/search-keywords.json', keywords);
+  fs.copyFileSync(rel(ROOT, 'assets', 'vg-shop-cart.js'), rel(OUT_DIR, 'assets', 'vg-shop-cart.js'));
   const productImagesSrc = rel(ROOT, 'assets', 'products');
   if (fs.existsSync(productImagesSrc)) fs.cpSync(productImagesSrc, rel(OUT_DIR, 'assets', 'products'), { recursive: true });
   fs.cpSync(rel(ROOT, 'assets', 'theme'), rel(OUT_DIR, 'assets', 'theme'), { recursive: true });
