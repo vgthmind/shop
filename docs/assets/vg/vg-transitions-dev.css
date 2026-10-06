@@ -1,0 +1,1102 @@
+.header, .header *, h1{user-select:none !important;-webkit-user-select:none !important;}
+.vg-pill-bounce{animation:vg-pill-bounce 260ms ease !important;}
+@keyframes vg-pill-bounce{0%{transform:scale(1);}40%{transform:scale(1.12);}100%{transform:scale(1);}}
+.vg-hover-swap.vg-hover-swap.vg-hover-swap{position:absolute !important;top:0 !important;left:0 !important;right:auto !important;bottom:auto !important;width:100% !important;height:100% !important;max-width:none !important;transform:none !important;}
+html,body{overflow-x:clip !important;}
+/* === VGTHMIND PAGE TRANSITION MODULE (pageTransition) === */
+@view-transition {
+  navigation: auto;
+}
+::view-transition-group(root),
+::view-transition-old(root),
+::view-transition-new(root){
+  animation: none !important;
+  mix-blend-mode: normal !important;
+  opacity: 1 !important;
+}
+
+@media (prefers-reduced-motion: no-preference){
+  /* SECTION 3 : --vg-origin permet a pageTransition({x,y}) de faire partir */
+  /* l'aspiration du point clique au lieu du centre (valeur par defaut) -- */
+  /* pose par JS via body.style.setProperty('--vg-origin', x+'px '+y+'px'). */
+  body.vg-aspirate{animation:vg-aspirate-out 300ms cubic-bezier(.65,0,.35,1) forwards !important;transform-origin:var(--vg-origin, 50vw 50vh) !important;will-change:transform,opacity !important;}
+  body.vg-arrive{animation:vg-arrive-in 350ms cubic-bezier(.22,1,.36,1) forwards !important;transform-origin:var(--vg-origin, 50vw 50vh) !important;will-change:transform,opacity !important;}
+}
+@keyframes vg-aspirate-out{0%{transform:perspective(var(--vg-persp,1200px)) rotateX(0deg) rotate(0deg) scale(1);opacity:1;}100%{transform:perspective(var(--vg-persp,1200px)) rotateX(35deg) rotate(-380deg) scale(0.04);opacity:0;}}
+@keyframes vg-arrive-in{0%{transform:perspective(var(--vg-persp,1200px)) rotateX(-35deg) rotate(380deg) scale(0.04);opacity:0;}100%{transform:perspective(var(--vg-persp,1200px)) rotateX(0deg) rotate(0deg) scale(1);opacity:1;}}
+@media (prefers-reduced-motion: reduce){
+  body.vg-aspirate{animation:vg-fade-out 150ms ease forwards !important;}
+  body.vg-arrive{animation:vg-fade-in 150ms ease forwards !important;}
+}
+@keyframes vg-fade-out{to{opacity:0;}}
+@keyframes vg-fade-in{from{opacity:0;}to{opacity:1;}}
+
+#vg-transition-out{position:fixed !important;inset:0 !important;width:100vw !important;height:100vh !important;height:100dvh !important;z-index:2147483647 !important;pointer-events:none !important;background:transparent !important;}
+/* SECTION 3 : --vg-out-x/--vg-out-y (poses par JS quand pageTransition() */
+/* recoit x/y) deplacent l'icone du centre (valeur par defaut 50%) vers le */
+/* point clique -- meme mecanisme que --vg-origin ci-dessus. */
+#vg-transition-out img{position:absolute !important;left:var(--vg-out-x, 50%) !important;top:var(--vg-out-y, 50%) !important;object-fit:contain !important;translate:-50% -50% !important;will-change:translate,rotate,scale,opacity !important;}
+@keyframes vg-out-pop{0%{scale:0;opacity:0;}70%{scale:1.1;opacity:1;}100%{scale:1;opacity:1;}}
+@keyframes vg-out-spin-z{from{rotate:0deg;}to{rotate:360deg;}}
+@keyframes vg-out-spin-y{from{rotate:0.35 0.5 1 0deg;}to{rotate:0.35 0.5 1 360deg;}}
+/* SECTION 3 : depart depuis la vignette au repos (scale 1/1,15 -> 1). */
+@keyframes vg-out-grow{from{scale:var(--vg-s0,0.87);opacity:1;}to{scale:1;opacity:1;}}
+#vg-transition-out img{filter:drop-shadow(0 14px 22px rgba(23,23,23,0.22));}
+/* SECTION 3 : aspiration en spirale plus lente et VISIBLE (la page reste */
+/* opaque pendant qu'elle tourne et retrecit vers le vetement, ne s'efface */
+/* qu'a la fin) -- la section 2 (header, validee) garde la sienne. */
+@media (prefers-reduced-motion: no-preference){
+  body.vg-aspirate.vg-s3{animation:vg-aspirate-s3 650ms cubic-bezier(.45,0,.6,1) forwards !important;}
+}
+@keyframes vg-aspirate-s3{
+  0%{transform:perspective(var(--vg-persp,1000px)) rotateX(0deg) rotate(0deg) scale(1);opacity:1;}
+  55%{transform:perspective(var(--vg-persp,1000px)) rotateX(18deg) rotate(-170deg) scale(0.45);opacity:1;}
+  85%{transform:perspective(var(--vg-persp,1000px)) rotateX(30deg) rotate(-330deg) scale(0.12);opacity:0.85;}
+  100%{transform:perspective(var(--vg-persp,1000px)) rotateX(35deg) rotate(-400deg) scale(0.03);opacity:0;}
+}
+/* Au clic : plus aucun effet de survol (gris/flou des voisins). */
+html.vg-s3 .product-list-link,
+html.vg-s3 .product-list-link:hover,
+html.vg-s3 .product-list-container:has(.product-list-link:hover) .product-list-link:not(:hover){
+  opacity:1 !important;
+  filter:none !important;
+}
+
+/* === SECTION 3 : clic produit/categorie -- vraie orbite des vetements */
+/* compagnons autour du vetement clique (voir vgSpawnOrbit() dans le JS, */
+/* qui pilote la rotation via Web Animations API -- transform/opacity */
+/* uniquement, conforme a la regle de perf du projet). Remplace entierement */
+/* l'ancien systeme "swirl" (.vg-swirl-tile / .vg-center-icon / vg-suck-out, */
+/* a supprimer du Body/Custom CSS a l'application -- voir APPLIQUER_LOT_A.md). */
+/* .vg-orbit-wrap = point de pivot (taille nulle, positionne au point */
+/* clique) ; tourner ce wrapper fait orbiter .vg-orbit-tile, positionnee a */
+/* "left" (rayon) de lui, en cercle autour du point clique. Aucun fond, */
+/* aucun cadre (photos deja detourees cote BigCartel, hors les 12 exclues */
+/* cote JS) -- seule exception la pochette VGTAPE, carree par nature. */
+.vg-orbit-wrap{
+  position:fixed !important;
+  /* left/top NE sont PAS fixes ici (pas de !important dessus) : poses */
+  /* dynamiquement par le JS (wrap.style.left/top = point clique). Une */
+  /* regle !important ici les ecraserait et casserait tout le */
+  /* positionnement (bug reel rencontre et corrige le 2026-09-26). */
+  width:0 !important; height:0 !important;
+  pointer-events:none !important;
+  /* BUG (releve le 2026-09-27 par capture d'ecran directe -- cf. consigne */
+  /* de vgthmind de ne se fier qu'a l'image rendue) : ce z-index etait 1 en */
+  /* dessous de #vg-transition-out (l'icone centrale qui pop), qui est */
+  /* elle-meme assez grande a l'echelle de son rayon d'orbite -- les */
+  /* compagnons, bien que correctement positionnes a l'ecran (verifie via */
+  /* getBoundingClientRect), se retrouvaient donc systematiquement peints */
+  /* SOUS l'icone centrale et jamais visibles. Passe a la meme valeur */
+  /* max (2147483647) : les .vg-orbit-wrap sont crees APRES #vg-transition-out */
+  /* (dans onPop, appele juste apres la creation de l'overlay), donc a */
+  /* z-index egal ils passent devant grace a l'ordre du DOM. */
+  z-index:2147483647 !important;
+}
+.vg-orbit-tile{
+  position:absolute !important;
+  top:0 !important;
+  /* le -50% vertical est inclus directement dans les transform: du JS
+     (Web Animations API), pas ici, pour eviter un cumul avec `translate`. */
+  object-fit:contain !important;
+  background:transparent !important;
+  border:none !important;
+  box-shadow:none !important;
+  will-change:transform,opacity !important;
+  filter:drop-shadow(0 8px 20px rgba(23,23,23,0.25)) !important;
+}
+
+/* === SECTION 6 POINT 3 : panneau de recherche (V1 "carte verre", choisie */
+/* par vgthmind le 2026-09-28, maquette chantier/captures/etape_a/p4_v1_*) === */
+/* Ce fichier est charge dans le <head> AVANT le Custom CSS : chaque */
+/* selecteur est prefixe par "body" pour rester plus specifique que le */
+/* Custom CSS quel que soit l'ordre de chargement. */
+/* Rappels (bugs deja corriges, ne pas reintroduire) : le vrai champ est */
+/* <input type="search"> ; aucun bleu nulle part ; ne JAMAIS toucher a la */
+/* `position` du header (il est position:fixed nativement -- mesure le */
+/* 2026-09-28 -- l'ecraser le fait retomber dans le flux = bande beige), */
+/* seulement a son z-index ; .modal-content fait 1200px bord a bord sans la */
+/* largeur ci-dessous (mesure directe) -- c'est elle qui fait le panneau. */
+body .open-search-button:hover,
+body .open-search-button:focus,
+body .open-search-button:focus-visible{
+  border-color:#8f939a !important;
+  background:rgba(0,0,0,0.04) !important;
+  outline:none !important;
+}
+body:has(#search-modal[aria-hidden="false"]) .header{
+  z-index:1000 !important;
+}
+body:has(#search-modal[aria-hidden="false"]) .open-search-button{
+  background:linear-gradient(155deg,#eef0f2 0%,#c7cbd0 24%,#8f939a 50%,#d8dbde 68%,#6f7379 100%) !important;
+  border-color:transparent !important;
+  box-shadow:0 2px 0 #6f7379, 0 4px 8px rgba(0,0,0,0.22) !important;
+}
+body #search-modal{
+  background:rgba(244,242,236,0.34) !important;
+  backdrop-filter:blur(14px) saturate(115%) !important;
+  -webkit-backdrop-filter:blur(14px) saturate(115%) !important;
+  overflow-y:auto !important;
+}
+body #search-modal .modal-content{
+  position:relative !important;
+  width:auto !important;
+  max-width:620px !important;
+  margin-left:auto !important;
+  margin-right:auto !important;
+  margin-top:calc(var(--header-height, 90px) + 16px) !important;
+  margin-bottom:24px !important;
+  color:#171717 !important;
+  text-align:left !important;
+  border:0 !important;
+  border-radius:24px !important;
+  background:linear-gradient(158deg,rgba(255,255,255,0.72) 0%,rgba(255,255,255,0.58) 35%,rgba(255,255,255,0.52) 100%) !important;
+  backdrop-filter:blur(28px) saturate(160%) !important;
+  -webkit-backdrop-filter:blur(28px) saturate(160%) !important;
+  box-shadow:0 30px 70px rgba(23,23,23,0.20), 0 2px 6px rgba(23,23,23,0.06), inset 0 1px 0 rgba(255,255,255,0.85) !important;
+}
+/* Liseré chrome (meme degrade que les pills), trace par un masque pour */
+/* garder les coins arrondis -- border-image les ignorerait. */
+body #search-modal .modal-content::before{
+  content:'' !important;
+  position:absolute !important;
+  inset:0 !important;
+  border-radius:inherit !important;
+  padding:1.5px !important;
+  background:linear-gradient(120deg,#ffffff 0%,#c7cbd0 22%,#8f939a 48%,#e4e6e8 70%,#6f7379 100%) !important;
+  -webkit-mask:linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0) !important;
+  -webkit-mask-composite:xor !important;
+  mask-composite:exclude !important;
+  pointer-events:none !important;
+}
+body #search-modal .modal-content--inner{
+  overflow:visible !important;
+}
+body #search-modal .wrapper{
+  max-width:none !important;
+  padding:22px 24px 16px !important;
+  align-items:stretch !important;
+}
+@media (prefers-reduced-motion: no-preference){
+  body #search-modal[aria-hidden="false"] .modal-content{
+    animation:vg-panel-in 280ms cubic-bezier(.2,.8,.2,1) both !important;
+  }
+}
+@keyframes vg-panel-in{
+  from{opacity:0;transform:translateY(-10px) scale(.985);}
+  to{opacity:1;transform:none;}
+}
+body #search-modal .search-form{
+  display:grid !important;
+  grid-template-columns:minmax(0,1fr) auto !important;
+  column-gap:12px !important;
+  row-gap:14px !important;
+  background:transparent !important;
+  padding:0 !important;
+  margin:0 !important;
+  max-width:none !important;
+  border:0 !important;
+  box-shadow:none !important;
+}
+/* Police mono / majuscules / interlettrage : reportes du Custom CSS (ancien */
+/* bloc "verre fonce" retire le 2026-09-28) pour garder l'etiquette dans la */
+/* DA du site. */
+body #search-modal label{
+  grid-column:1 / -1 !important;
+  grid-row:1 !important;
+  margin:4px 0 0 2px !important;
+  font-family:'IBM Plex Mono',monospace !important;
+  font-size:10.5px !important;
+  font-weight:600 !important;
+  letter-spacing:0.16em !important;
+  text-transform:uppercase !important;
+  color:#8d929a !important;
+  text-align:left !important;
+}
+body #search-modal input.search-input{
+  grid-row:2 !important;
+  grid-column:1 !important;
+  height:56px !important;
+  /* 16px minimum : en dessous, iOS zoome la page au focus. */
+  font-size:16px !important;
+  font-family:'Inter',system-ui,sans-serif !important;
+  color:#171717 !important;
+  padding:0 22px 0 48px !important;
+  border-radius:999px !important;
+  border:1px solid rgba(0,0,0,0.10) !important;
+  background:
+    url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%238d929a' stroke-width='2.2' stroke-linecap='round'><circle cx='10.5' cy='10.5' r='6.5'/><path d='M20 20l-4.8-4.8'/></svg>") 20px 50% / 16px 16px no-repeat,
+    linear-gradient(180deg,rgba(236,237,238,0.95),rgba(255,255,255,0.92)) !important;
+  box-shadow:inset 0 2px 5px rgba(0,0,0,0.18), inset 0 -1px 0 rgba(255,255,255,0.9), 0 1px 0 rgba(255,255,255,0.8) !important;
+  -webkit-appearance:none !important;
+  appearance:none !important;
+}
+body #search-modal input.search-input::placeholder{
+  color:#9a9ea5 !important;
+}
+body #search-modal input.search-input:focus,
+body #search-modal input.search-input:focus-visible{
+  outline:none !important;
+  border-color:rgba(0,0,0,0.10) !important;
+  box-shadow:inset 0 2px 5px rgba(0,0,0,0.18), inset 0 -1px 0 rgba(255,255,255,0.9), 0 0 0 3px rgba(143,147,154,0.35) !important;
+}
+/* Croix native "effacer" du champ : bleutee par defaut -- grise ici. */
+body #search-modal input.search-input::-webkit-search-cancel-button{
+  -webkit-appearance:none !important;
+  appearance:none !important;
+  width:14px !important;
+  height:14px !important;
+  cursor:pointer !important;
+  background-color:#6c6c6c !important;
+  -webkit-mask-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><path d='M1 1l14 14M15 1L1 15' stroke='black' stroke-width='2' stroke-linecap='round'/></svg>") !important;
+  mask-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><path d='M1 1l14 14M15 1L1 15' stroke='black' stroke-width='2' stroke-linecap='round'/></svg>") !important;
+  -webkit-mask-repeat:no-repeat !important;
+  mask-repeat:no-repeat !important;
+  -webkit-mask-size:contain !important;
+  mask-size:contain !important;
+}
+body #search-modal button.search-button{
+  grid-row:2 !important;
+  grid-column:2 !important;
+  width:56px !important;
+  height:56px !important;
+  padding:0 !important;
+  border:0 !important;
+  border-radius:50% !important;
+  color:#2f3134 !important;
+  background:linear-gradient(155deg,#eef0f2 0%,#c7cbd0 24%,#8f939a 50%,#d8dbde 68%,#6f7379 100%) !important;
+  box-shadow:0 2px 0 #6f7379, 0 4px 8px rgba(0,0,0,0.22) !important;
+}
+body #search-modal button.search-button::before{display:none !important;}
+body #search-modal button.search-button svg{
+  width:19px !important;
+  height:19px !important;
+  fill:#2f3134 !important;
+}
+body #search-modal button.search-button:focus-visible{
+  outline:none !important;
+  box-shadow:0 2px 0 #6f7379, 0 4px 8px rgba(0,0,0,0.22), 0 0 0 3px rgba(143,147,154,0.45) !important;
+}
+/* Croix : le bouton natif est cache (il etait rendu dans .wrapper, mal */
+/* place -- et faussait toute detection de visibilite) ; la croix chromee */
+/* est ajoutee par vg-transitions-dev.js dans .modal-content, alignee sur */
+/* la ligne de l'etiquette "Search". */
+body #search-modal button.close-modal{
+  display:none !important;
+}
+body #search-modal .vg-search-close-fallback{
+  position:absolute !important;
+  top:14px !important;
+  right:18px !important;
+  z-index:10 !important;
+  display:flex !important;
+  align-items:center !important;
+  justify-content:center !important;
+  visibility:visible !important;
+  opacity:1 !important;
+  width:34px !important;
+  height:34px !important;
+  padding:0 !important;
+  border:none !important;
+  border-radius:50% !important;
+  cursor:pointer !important;
+  color:#2f3134 !important;
+  background:linear-gradient(155deg,#eef0f2 0%,#c7cbd0 24%,#8f939a 50%,#d8dbde 68%,#6f7379 100%) !important;
+  box-shadow:0 2px 0 #6f7379, 0 3px 6px rgba(0,0,0,0.25) !important;
+}
+body #search-modal .vg-search-close-fallback:focus-visible{
+  outline:none !important;
+  box-shadow:0 2px 0 #6f7379, 0 3px 6px rgba(0,0,0,0.25), 0 0 0 3px rgba(143,147,154,0.45) !important;
+}
+@media (hover:hover){
+  body #search-modal .vg-search-close-fallback:hover{filter:brightness(1.08) !important;}
+}
+
+/* --- Resultats en direct (construits par vg-transitions-dev.js) --- */
+body #search-modal .vg-sr{
+  margin-top:16px;
+  border-top:1px solid rgba(0,0,0,0.08);
+  padding-top:10px;
+}
+body #search-modal .vg-sr[hidden]{display:none !important;}
+body #search-modal .vg-sr-head{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  margin:0 4px 6px;
+}
+body #search-modal .vg-sr-count,
+body #search-modal .vg-sr-empty{
+  font-family:'IBM Plex Mono',monospace;
+  font-size:10.5px;
+  font-weight:600;
+  letter-spacing:0.16em;
+  text-transform:uppercase;
+  color:#8d929a;
+}
+body #search-modal .vg-sr-empty{display:block;padding:10px 4px 6px;}
+body #search-modal a.vg-sr-all{
+  font-family:'IBM Plex Mono',monospace;
+  font-size:10.5px;
+  letter-spacing:0.1em;
+  text-transform:uppercase;
+  color:#2b2c2e;
+  text-decoration:none;
+  border-bottom:1px solid rgba(0,0,0,0.3);
+  padding:6px 0 1px;
+}
+body #search-modal .vg-sr-list{
+  list-style:none;
+  margin:0;
+  padding:0;
+  overflow-y:auto;
+  overscroll-behavior:contain;
+  -webkit-overflow-scrolling:touch;
+}
+body #search-modal a.vg-sr-item{
+  display:grid;
+  grid-template-columns:72px minmax(0,1fr) auto;
+  align-items:center;
+  gap:16px;
+  padding:8px 10px;
+  border-radius:16px;
+  color:#171717;
+  text-decoration:none;
+  transition:background-color .15s ease, box-shadow .15s ease;
+}
+body #search-modal a.vg-sr-item.is-active{
+  background:rgba(255,255,255,0.72);
+  box-shadow:inset 0 0 0 1px rgba(0,0,0,0.06);
+}
+@media (hover:hover){
+  body #search-modal a.vg-sr-item:hover{
+    background:rgba(255,255,255,0.72);
+    box-shadow:inset 0 0 0 1px rgba(0,0,0,0.06);
+  }
+}
+body #search-modal a.vg-sr-item:focus-visible{
+  outline:none;
+  box-shadow:inset 0 0 0 2px rgba(143,147,154,0.6);
+}
+body #search-modal .vg-sr-thumb{
+  width:72px;
+  height:72px;
+  object-fit:contain;
+  filter:drop-shadow(0 8px 12px rgba(23,23,23,0.22));
+}
+body #search-modal .vg-sr-txt{display:flex;flex-direction:column;gap:3px;min-width:0;}
+body #search-modal .vg-sr-name{
+  font-family:'Space Grotesk','Inter',sans-serif;
+  font-weight:600;
+  font-size:15px;
+  line-height:1.25;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+body #search-modal .vg-sr-cat{
+  font-family:'IBM Plex Mono',monospace;
+  font-size:9.5px;
+  letter-spacing:0.12em;
+  text-transform:uppercase;
+  color:#8d929a;
+}
+body #search-modal .vg-sr-price{
+  font-family:'IBM Plex Mono',monospace;
+  font-size:12px;
+  font-weight:500;
+  color:#44474c;
+  white-space:nowrap;
+}
+body #search-modal .vg-sr-hint{
+  display:flex;
+  justify-content:space-between;
+  margin-top:10px;
+  padding:0 4px;
+  font-family:'IBM Plex Mono',monospace;
+  font-size:10px;
+  letter-spacing:0.06em;
+  color:#8d929a;
+}
+body #search-modal .vg-sr-hint kbd{
+  display:inline-block;
+  padding:1px 6px;
+  margin-right:4px;
+  border-radius:5px;
+  border:1px solid rgba(0,0,0,0.14);
+  background:rgba(255,255,255,0.6);
+  font-family:inherit;
+  font-size:9.5px;
+  color:#55585d;
+}
+/* Pas de clavier physique sur ecran tactile : les raccourcis n'ont pas de */
+/* sens, on les masque. */
+@media (hover:none), (pointer:coarse){
+  body #search-modal .vg-sr-hint{display:none;}
+}
+@media screen and (max-width:640px){
+  body #search-modal .modal-content{
+    max-width:none !important;
+    margin-left:12px !important;
+    margin-right:12px !important;
+    margin-top:calc(var(--header-height, 66px) + 12px) !important;
+    border-radius:22px !important;
+  }
+  body #search-modal .wrapper{padding:16px 16px 14px !important;}
+  body #search-modal .search-form{column-gap:10px !important;row-gap:12px !important;}
+  body #search-modal input.search-input{height:50px !important;padding-left:44px !important;background-position:18px 50%, 0 0 !important;}
+  body #search-modal button.search-button{width:50px !important;height:50px !important;}
+  body #search-modal .vg-search-close-fallback{top:10px !important;right:12px !important;width:32px !important;height:32px !important;}
+  body #search-modal a.vg-sr-item{grid-template-columns:62px minmax(0,1fr);column-gap:12px;row-gap:3px;padding:7px 6px;}
+  body #search-modal .vg-sr-thumb{width:62px;height:62px;grid-row:1 / span 2;}
+  body #search-modal .vg-sr-txt{align-self:end;}
+  body #search-modal .vg-sr-name{font-size:14px;}
+  body #search-modal .vg-sr-price{grid-column:2;grid-row:2;align-self:start;font-size:11.5px;}
+}
+
+/* === MENU MOBILE (V1 "plein ecran verre", categories en grille 2 colonnes */
+/* comme la V2 -- choix de vgthmind le 2026-09-28, maquette p5_v1) === */
+/* Structure du theme : #navigation-modal > .overlay_background + */
+/* .overlay_content > button.close_overlay + nav.primary_navigation > */
+/* ul.page_list--main (Home, Products) + ul.page_list--categories + */
+/* ul.page_list--pages + ul.page_list--social_links. On restyle ces liens */
+/* existants plutot que de les recreer : les transitions de page (qui */
+/* ecoutent "nav.primary_navigation .page_list a") continuent de marcher. */
+body .open-mobile-navigation{
+  align-items:center !important;
+  gap:8px !important;
+  height:38px !important;
+  padding:0 14px 0 12px !important;
+  border:0 !important;
+  border-radius:999px !important;
+  color:#232426 !important;
+  opacity:1 !important;
+  background:linear-gradient(155deg,#eef0f2 0%,#c7cbd0 24%,#8f939a 50%,#d8dbde 68%,#6f7379 100%) !important;
+  box-shadow:0 2px 0 #6f7379, 0 4px 8px rgba(0,0,0,0.22) !important;
+}
+body .open-mobile-navigation svg{
+  width:15px !important;
+  height:11px !important;
+  fill:#232426 !important;
+}
+body .open-mobile-navigation::after{
+  content:'MENU';
+  font-family:'IBM Plex Mono',monospace;
+  font-size:10.5px;
+  font-weight:600;
+  letter-spacing:0.14em;
+  line-height:1;
+}
+body .open-mobile-navigation:focus-visible{
+  outline:none !important;
+  box-shadow:0 2px 0 #6f7379, 0 4px 8px rgba(0,0,0,0.22), 0 0 0 3px rgba(143,147,154,0.45) !important;
+}
+body #navigation-modal{
+  text-align:left !important;
+}
+/* Verre volontairement peu couvrant (demande de vgthmind) : la page floutee */
+/* doit se deviner derriere. */
+body #navigation-modal .overlay_background{
+  background:rgba(244,242,236,0.40) !important;
+  backdrop-filter:blur(16px) saturate(135%) !important;
+  -webkit-backdrop-filter:blur(16px) saturate(135%) !important;
+}
+body #navigation-modal .overlay_background::after{
+  content:'';
+  position:absolute;
+  inset:0;
+  background:linear-gradient(160deg,rgba(255,255,255,0.45) 0%,rgba(255,255,255,0) 40%);
+}
+body #navigation-modal .overlay_content{
+  position:relative !important;
+  padding:0 18px 28px !important;
+  display:flex !important;
+  flex-direction:column !important;
+  min-height:100% !important;
+}
+@media (prefers-reduced-motion: no-preference){
+  body #navigation-modal[aria-hidden="false"] .overlay_content{
+    animation:vg-menu-in 300ms cubic-bezier(.2,.8,.2,1) both;
+  }
+}
+@keyframes vg-menu-in{
+  from{opacity:0;transform:translateY(-12px);}
+  to{opacity:1;transform:none;}
+}
+body #navigation-modal .vg-menu-bar{
+  height:66px;
+  display:flex;
+  align-items:center;
+  flex:none;
+}
+body #navigation-modal .vg-menu-bar img{
+  height:26px;
+  width:auto;
+  filter:drop-shadow(0 1px 1px rgba(0,0,0,0.2));
+}
+body #navigation-modal .close_overlay{
+  top:13px !important;
+  right:16px !important;
+  width:40px !important;
+  height:40px !important;
+  padding:0 !important;
+  border:0 !important;
+  border-radius:50% !important;
+  color:#2f3134 !important;
+  background:linear-gradient(155deg,#eef0f2 0%,#c7cbd0 24%,#8f939a 50%,#d8dbde 68%,#6f7379 100%) !important;
+  box-shadow:0 2px 0 #6f7379, 0 4px 8px rgba(0,0,0,0.22) !important;
+  z-index:2 !important;
+}
+body #navigation-modal .close_overlay svg{width:14px !important;height:14px !important;fill:#2f3134 !important;}
+body #navigation-modal .close_overlay:focus-visible{
+  outline:none !important;
+  box-shadow:0 2px 0 #6f7379, 0 4px 8px rgba(0,0,0,0.22), 0 0 0 3px rgba(143,147,154,0.45) !important;
+}
+body #navigation-modal .primary_navigation{
+  display:flex !important;
+  flex-direction:column !important;
+  gap:0 !important;
+  justify-content:flex-start !important;
+  flex:1 !important;
+  padding-top:14px !important;
+}
+body #navigation-modal .page_list{
+  display:flex !important;
+  flex-direction:column !important;
+  align-items:stretch !important;
+  list-style:none !important;
+  margin:0 !important;
+  padding:0 !important;
+  gap:12px !important;
+}
+body #navigation-modal .page_list li{display:block !important;margin:0 !important;max-width:none !important;}
+body #navigation-modal .page_list--main::before,
+body #navigation-modal .page_list--categories::before{
+  font-family:'IBM Plex Mono',monospace;
+  font-size:10.5px;
+  font-weight:600;
+  letter-spacing:0.16em;
+  text-transform:uppercase;
+  color:#8d929a;
+  margin:0 0 0 4px;
+}
+body #navigation-modal .page_list--main::before{content:'Pages';}
+body #navigation-modal .page_list--categories::before{content:'Categories';grid-column:1 / -1;margin-bottom:0;}
+/* "Pages" = Products (page_list--main) puis les pages (page_list--pages), */
+/* sans espace visible entre les 2 listes. */
+body #navigation-modal .page_list--pages{margin-top:12px !important;order:1;}
+body #navigation-modal .page_list--main{order:0;}
+body #navigation-modal .page_list--categories{order:2;margin-top:26px !important;}
+body #navigation-modal .page_list--social_links{order:3;}
+/* Accueil : le logo y mene deja ; "All" doublonne Products. */
+body #navigation-modal .page_list li:has(> a[href="/"]),
+body #navigation-modal .page_list--categories li:has(> a[href$="/category/all"]){
+  display:none !important;
+}
+body #navigation-modal .page_list--main li a,
+body #navigation-modal .page_list--pages li a{
+  display:flex !important;
+  align-items:center !important;
+  gap:14px !important;
+  min-height:62px !important;
+  padding:0 44px 0 16px !important;
+  position:relative !important;
+  border-radius:18px !important;
+  font-family:'IBM Plex Mono',monospace !important;
+  font-size:14px !important;
+  font-weight:600 !important;
+  letter-spacing:0.14em !important;
+  text-transform:uppercase !important;
+  text-decoration:none !important;
+  color:#1f2022 !important;
+  background:linear-gradient(155deg,#eef0f2 0%,#c7cbd0 24%,#8f939a 50%,#d8dbde 68%,#6f7379 100%) !important;
+  box-shadow:0 3px 0 #6f7379, 0 8px 18px rgba(0,0,0,0.16) !important;
+}
+/* Icone de transition de chaque page (memes fichiers que l'animation). */
+body #navigation-modal .page_list li a[href$="/products"]::before,
+body #navigation-modal .page_list li a[href*="infos-conditions-generales"]::before,
+body #navigation-modal .page_list li a[href*="/studio"]::before,
+body #navigation-modal .page_list li a[href*="/contact"]::before{
+  content:'';
+  flex:none;
+  width:40px;
+  height:40px;
+  background:center / contain no-repeat;
+  filter:drop-shadow(0 2px 3px rgba(0,0,0,0.3));
+}
+body #navigation-modal .page_list li a[href$="/products"]::before{background-image:url("https://vgthmind.github.io/assets/bigcartel/products-icon.png");}
+body #navigation-modal .page_list li a[href*="infos-conditions-generales"]::before{background-image:url("https://vgthmind.github.io/assets/bigcartel/info-icon.png");}
+body #navigation-modal .page_list li a[href*="/contact"]::before{background-image:url("https://vgthmind.github.io/assets/bigcartel/contact-icon.png");}
+body #navigation-modal .page_list li a[href*="/studio"]::before{background-image:url("https://vgthmind.github.io/assets/bigcartel/studio-icon.png");width:56px;margin-right:-8px;}
+body #navigation-modal .page_list--main li a::after,
+body #navigation-modal .page_list--pages li a::after{
+  content:'';
+  position:absolute;
+  right:18px;
+  top:50%;
+  width:10px;
+  height:16px;
+  margin-top:-8px;
+  opacity:.6;
+  background:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='16' viewBox='0 0 10 16'><path d='M2 2l6 6-6 6' stroke='%231f2022' stroke-width='2.2' fill='none' stroke-linecap='round'/></svg>") center / contain no-repeat;
+}
+body #navigation-modal .page_list li a:focus-visible{
+  outline:none !important;
+  box-shadow:0 3px 0 #6f7379, 0 8px 18px rgba(0,0,0,0.16), 0 0 0 3px rgba(143,147,154,0.5) !important;
+}
+@media (hover:hover){
+  body #navigation-modal .page_list li a:hover{filter:brightness(1.05) !important;text-decoration:none !important;}
+}
+body #navigation-modal .page_list--categories{
+  display:grid !important;
+  grid-template-columns:repeat(2, minmax(0,1fr)) !important;
+  gap:8px !important;
+}
+body #navigation-modal .page_list--categories::before{margin-bottom:4px;}
+body #navigation-modal .page_list--categories li a{
+  display:block !important;
+  text-align:center !important;
+  padding:11px 6px !important;
+  border-radius:8px !important;
+  font-family:'IBM Plex Mono',monospace !important;
+  font-size:10.5px !important;
+  font-weight:500 !important;
+  letter-spacing:0.07em !important;
+  text-transform:uppercase !important;
+  text-decoration:none !important;
+  color:#2b2c2e !important;
+  background:linear-gradient(180deg,#fbfbfa,#e2e2de) !important;
+  border:1px solid rgba(0,0,0,0.13) !important;
+  box-shadow:0 2px 0 rgba(0,0,0,0.28) !important;
+  white-space:nowrap !important;
+  overflow:hidden !important;
+  text-overflow:ellipsis !important;
+}
+body #navigation-modal .page_list--social_links{
+  flex-direction:row !important;
+  justify-content:center !important;
+  gap:10px !important;
+  max-width:none !important;
+  padding:26px 0 0 !important;
+}
+body #navigation-modal .page_list--social_links a{
+  width:44px !important;
+  height:44px !important;
+  padding:11px !important;
+  border-radius:50% !important;
+  border:1px solid rgba(0,0,0,0.14) !important;
+  background:rgba(255,255,255,0.35) !important;
+  color:#3d4045 !important;
+  box-shadow:none !important;
+  min-height:0 !important;
+}
+body #navigation-modal .page_list--social_links a::before,
+body #navigation-modal .page_list--social_links a::after{display:none !important;}
+/* Pied du menu (ajoute par vg-transitions-dev.js) : recherche + panier. */
+body #navigation-modal .vg-menu-foot{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  margin-top:auto;
+  padding-top:24px;
+}
+body #navigation-modal .vg-menu-foot .vg-menu-search{
+  flex:none;
+  width:44px;
+  height:44px;
+  border-radius:50%;
+  border:1px solid rgba(0,0,0,0.14);
+  background:rgba(255,255,255,0.35);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  color:#3d4045;
+  padding:0;
+  cursor:pointer;
+}
+body #navigation-modal .vg-menu-foot .cart-link{
+  flex:1;
+  justify-content:center;
+  color:#2b2c2e !important;
+  background:rgba(255,255,255,0.45) !important;
+}
+body #navigation-modal .vg-menu-foot .cart-link *{
+  color:#2b2c2e !important;
+  opacity:1 !important;
+}
+
+/* === SECTIONS 4 ET 5 : pop au survol (voir vg-transitions-dev.js) === */
+/* Superposition position:fixed, taille identique pour tous, au-dessus du */
+/* header (sous l'overlay des transitions de page), jamais coupee. */
+.vg-pop{
+  position:fixed !important;
+  z-index:2147483000 !important;
+  pointer-events:none !important;
+  transform:translate(-50%,-50%) scale(var(--vg-pop-s0,0.5)) !important;
+  transition:transform 260ms cubic-bezier(.34,1.45,.64,1) !important;
+  will-change:transform !important;
+}
+.vg-pop.is-open{
+  transform:translate(-50%,-50%) scale(1) !important;
+}
+.vg-pop-img{
+  position:absolute !important;
+  inset:0 !important;
+  width:100% !important;
+  height:100% !important;
+  object-fit:contain !important;
+  background:transparent !important;
+  border:0 !important;
+  border-radius:0 !important;
+  box-shadow:none !important;
+  filter:drop-shadow(0 18px 26px rgba(23,23,23,0.28)) !important;
+  transition:opacity 200ms ease !important;
+}
+.vg-pop-b{opacity:0 !important;}
+.vg-pop.is-swapped .vg-pop-a{opacity:0 !important;}
+.vg-pop.is-swapped .vg-pop-b{opacity:1 !important;}
+/* Image d'origine masquee pendant le pop : une seule image visible. */
+body .vg-pop-hidden{
+  opacity:0 !important;
+  transition:none !important;
+}
+
+/* Neutralise les anciens effets de survol produit du Custom CSS et du */
+/* Body (grossissement en flux, rotation, pseudo-element, decalage). */
+/* L'effet gris/flou sur les AUTRES produits de la grille est garde. */
+body .product-list-link:hover{
+  transform:none !important;
+}
+body .product-list-link:hover .product-list-image-container img,
+body .product-list-link:hover .product-list-image-container img:not(.vg-hover-swap){
+  width:100% !important;
+  max-width:100% !important;
+  transform:none !important;
+}
+body .product-list-link:hover .product-list-image-container::after{
+  display:none !important;
+}
+body .vg-hover-swap{display:none !important;}
+
+/* Section 4 : tuiles de l'accueil. La 2e image (.vg-category-tile-img-alt) */
+/* ne sert plus qu'a fournir son URL au pop : jamais affichee dans la tuile */
+/* (c'etait elle, en fondu par-dessus la base, qui faisait le fantome). */
+body .vg-category-tile-img-alt{display:none !important;}
+body .vg-category-tile:hover .vg-category-tile-img{transform:none !important;}
+body .vg-category-tile,
+body .vg-category-tile:hover{overflow:visible !important;}
+/* Labels SOUS l'image, lisibles (plus par-dessus le vetement). */
+body .vg-category-tile .vg-category-tile-img{bottom:30px !important;}
+body .vg-category-tile .vg-category-tile-label{
+  top:auto !important;
+  bottom:0 !important;
+  padding:0 4px !important;
+  height:24px !important;
+  line-height:24px !important;
+  text-align:center !important;
+  color:#2b2c2e !important;
+  text-shadow:none !important;
+  font-family:'IBM Plex Mono',monospace !important;
+  font-size:11px !important;
+  letter-spacing:0.1em !important;
+  white-space:nowrap !important;
+  overflow:hidden !important;
+  text-overflow:ellipsis !important;
+}
+/* Latest Drop : toujours mis en avant au repos, mais ~1,4x les autres au */
+/* lieu d'une tuile de 640px. */
+body .vg-category-tile.vg-tile-featured{
+  max-width:290px !important;
+  aspect-ratio:1/1 !important;
+  max-height:none !important;
+  margin:28px auto 18px !important;
+}
+@media (max-width:640px){
+  body .vg-category-tile.vg-tile-featured{
+    flex:0 1 70% !important;
+    max-width:70% !important;
+  }
+}
+
+/* Section 5b : fiche produit, l'image principale n'est jamais plus haute */
+/* que la fenetre moins le header (sinon son haut passe sous le header). */
+body .product-images img{
+  max-height:calc(100vh - var(--header-height, 90px) - 40px) !important;
+  max-height:calc(100svh - var(--header-height, 90px) - 40px) !important;
+}
+body .product-images{
+  scroll-margin-top:calc(var(--header-height, 90px) + 16px) !important;
+}
+/* L'image de la fiche produit reste entierement visible sous le header */
+/* quand on fait defiler la description (colonne collante, desktop). */
+@media (min-width:801px){
+  body .product-images{
+    position:sticky !important;
+    top:calc(var(--header-height, 90px) + 16px) !important;
+  }
+}
+
+/* Tactile : AUCUN effet de survol (un doigt qui fait defiler "survole" */
+/* le produit touche : il passait en avant et les autres en gris). */
+@media (hover:none), (pointer:coarse){
+  body .product-list-container:has(.product-list-link:hover) .product-list-link:not(:hover),
+  body .product-list-link,
+  body .product-list-link:hover{
+    opacity:1 !important;
+    filter:none !important;
+    transform:none !important;
+  }
+  body ul.categories:has(li.page a:hover) li.page a:not(:hover){
+    opacity:1 !important;
+  }
+  body .vg-category-tile:hover .vg-category-tile-img{
+    transform:none !important;
+  }
+  .vg-pop{display:none !important;}
+}
+
+/* Zoom plein ecran de la fiche produit : c'est la visionneuse maison du */
+/* Body (.vg-lightbox, travail de nuit) qui s'ouvre au clic, pas PhotoSwipe. */
+/* Dans la DA : verre depoli beige au lieu du voile sombre + photo floutee */
+/* assombrie, ombre douce qui suit la forme. Fleches et croix deja chromees */
+/* (Custom CSS). Les regles PhotoSwipe plus bas restent en secours. */
+html .vg-lightbox{
+  background:rgba(244,242,236,0.84) !important;
+  -webkit-backdrop-filter:blur(28px) saturate(110%) !important;
+  backdrop-filter:blur(28px) saturate(110%) !important;
+}
+html .vg-lightbox .vg-lightbox-backdrop{
+  display:none !important;
+}
+/* L'ancienne "ombre" etait une 2e copie floutee de la photo, decalee : */
+/* sur telephone elle faisait une masse grise sous le vetement (fantome). */
+html .vg-lightbox .vg-lightbox-shadow{
+  display:none !important;
+}
+html .vg-lightbox .vg-lightbox-img{
+  filter:drop-shadow(0 18px 24px rgba(23,23,23,0.22)) !important;
+}
+
+/* Zoom plein ecran de la fiche produit (PhotoSwipe) dans la DA : verre */
+/* depoli beige au lieu du noir, fleches et croix chromees. */
+.pswp{
+  --pswp-bg:#f4f2ec;
+  --pswp-placeholder-bg:transparent;
+  --pswp-icon-color:#2b2c2e;
+  --pswp-icon-color-secondary:#ffffff;
+  --pswp-icon-stroke-color:#ffffff;
+  --pswp-icon-stroke-width:0px;
+  --pswp-preloader-color:rgba(43,44,46,0.25);
+  --pswp-preloader-color-secondary:rgba(43,44,46,0.8);
+}
+/* Plus specifique que l'ancienne regle du Custom CSS (.pswp__bg noir */
+/* rgba(20,19,16,0.8), chargee apres ce fichier). */
+html .pswp .pswp__bg,
+html .pswp .pswp__bg--opacity{
+  background:rgba(244,242,236,0.62) !important;
+  -webkit-backdrop-filter:blur(18px) saturate(115%) !important;
+  backdrop-filter:blur(18px) saturate(115%) !important;
+}
+.pswp__img{
+  filter:drop-shadow(0 18px 26px rgba(23,23,23,0.22)) !important;
+}
+.pswp__button--arrow,
+.pswp__button--close,
+.pswp__button--zoom{
+  width:48px !important;
+  height:48px !important;
+  margin:0 !important;
+  border-radius:50% !important;
+  background:linear-gradient(180deg,#ffffff 0%,#dfe1e5 45%,#b8bcc3 55%,#eef0f2 100%) !important;
+  box-shadow:0 1px 0 rgba(255,255,255,0.9) inset, 0 -2px 4px rgba(0,0,0,0.12) inset, 0 6px 14px rgba(23,23,23,0.18) !important;
+  border:1px solid rgba(120,124,132,0.45) !important;
+  display:flex !important;
+  align-items:center !important;
+  justify-content:center !important;
+  opacity:1 !important;
+}
+.pswp__button--arrow{
+  top:50% !important;
+  transform:translateY(-50%) !important;
+}
+.pswp__button--arrow--prev{ left:18px !important; }
+.pswp__button--arrow--next{ right:18px !important; }
+.pswp__button--close{ margin:14px 18px 0 0 !important; }
+.pswp__button--zoom{ margin:14px 10px 0 0 !important; }
+.pswp__button .pswp__icn{
+  position:static !important;
+  width:22px !important;
+  height:22px !important;
+}
+.pswp__button--arrow .pswp__icn{
+  width:26px !important;
+  height:26px !important;
+  margin:0 !important;
+}
+.pswp__icn-shadow{ display:none !important; }
+.pswp__counter{
+  color:#2b2c2e !important;
+  text-shadow:none !important;
+  font-family:'IBM Plex Mono',monospace !important;
+  font-size:12px !important;
+  letter-spacing:0.12em !important;
+  margin:24px 0 0 22px !important;
+  opacity:0.8 !important;
+}
+
+/* === SECTION 6 POINT 2 : 2 videos superposees pour le crossfade === */
+/* Le Custom CSS actuel affiche TOUTE .vg-splash-video des que .vg-splash- */
+/* -playing est present (une seule video etait prevue a l'origine). Avec */
+/* 2 videos desormais presentes en meme temps (voir vg-transitions-next.js), */
+/* on doit piloter l'opacite individuellement via .vg-active. Prefixe */
+/* "body" pour gagner sur la regle du Custom CSS (meme raison qu'au point 3 : */
+/* ce fichier charge avant le Custom CSS dans le <head>). */
+body .vg-splash-playing .vg-splash-video{
+  opacity:0 !important;
+  z-index:1 !important;
+}
+body .vg-splash-playing .vg-splash-video.vg-active{
+  opacity:1 !important;
+  z-index:2 !important;
+}
+
+/* === SECTION 6 : arrivee nette (voir vg-transitions-dev.js) === */
+/* Elements deja visibles a l'arrivee : affiches d'un coup, sans le fondu */
+/* .vg-reveal du Body (qui reste actif pour la suite de la page). */
+.vg-reveal.vg-instant{transition:none !important;}
+/* Titres jamais sous le header fixe (au chargement, apres une ancre, au */
+/* retour) : decalage du contenu et marges de defilement = hauteur REELLE */
+/* du header, mesuree par le JS (--vg-header-h), sinon celle du theme. */
+body{padding-top:var(--vg-header-h, var(--header-height)) !important;}
+html{scroll-padding-top:calc(var(--vg-header-h, var(--header-height, 95px)) + 16px) !important;}
+main h1, main h2, main [id]{scroll-margin-top:calc(var(--vg-header-h, var(--header-height, 95px)) + 16px) !important;}
+
+/* === PAGE STUDIO : video d'atelier en boucle en haut de page === */
+/* (inseree par vg-transitions-dev.js sur /studio ; texte = page BigCartel) */
+.vg-studio-reel{
+  display:block;
+  width:min(420px, 86vw);
+  aspect-ratio:4 / 5;
+  margin:8px auto 36px;
+  border-radius:22px;
+  overflow:hidden;
+  background:#e7e4dc;
+  box-shadow:0 1px 0 rgba(255,255,255,0.9) inset, 0 18px 40px rgba(23,23,23,0.18);
+  position:relative;
+}
+.vg-studio-reel video,
+.vg-studio-reel img{
+  position:absolute;
+  inset:0;
+  width:100%;
+  height:100%;
+  object-fit:cover;
+  display:block;
+}
+/* liseré chrome, comme les panneaux verre du site */
+.vg-studio-reel::after{
+  content:'';
+  position:absolute;
+  inset:0;
+  border-radius:inherit;
+  pointer-events:none;
+  border:1.5px solid rgba(255,255,255,0.75);
+  box-shadow:0 0 0 1px rgba(120,124,132,0.35) inset;
+}
+
+/* === Pages bilingues (Studio, Info & Terms) : separation ENGLISH / FRANCAIS === */
+/* (option A choisie par vgthmind le 2026-09-29) : intitule dans une pill chromee */
+/* comme celles du header, pose sur un filet chrome. Balise dans le contenu */
+/* de la page : <p class="vg-lang-sep"><span>English</span></p>. */
+.vg-lang-sep{
+  display:flex !important;
+  align-items:center !important;
+  gap:14px !important;
+  margin:36px 0 22px !important;
+  padding:0 !important;
+  text-align:center !important;
+}
+.vg-lang-sep:first-child{margin-top:8px !important;}
+.vg-lang-sep::before,
+.vg-lang-sep::after{
+  content:'' !important;
+  flex:1 !important;
+  height:2px !important;
+  border-radius:2px !important;
+  background:linear-gradient(90deg, transparent, #c7cbd0 20%, #8f939a 50%, #c7cbd0 80%, transparent) !important;
+}
+.vg-lang-sep > span{
+  font-family:'IBM Plex Mono',monospace !important;
+  font-size:12px !important;
+  font-weight:600 !important;
+  letter-spacing:0.16em !important;
+  text-transform:uppercase !important;
+  color:#1f2022 !important;
+  padding:8px 18px !important;
+  border-radius:999px !important;
+  background:linear-gradient(155deg,#eef0f2 0%,#c7cbd0 24%,#8f939a 50%,#d8dbde 68%,#6f7379 100%) !important;
+  box-shadow:0 3px 0 #6f7379, 0 6px 12px rgba(0,0,0,0.14) !important;
+  white-space:nowrap !important;
+}
+
+/* [2026-09-29 finale] Header fixe des le premier rendu. Le theme ne pose */
+/* header.fixed qu'au window.load (apres TOUTES les images) : avant, le */
+/* header etait dans le flux EN PLUS du padding-top du body (hauteur comptee */
+/* deux fois), puis tout remontait d'un coup au chargement des images. */
+header.header{position:fixed !important;top:0 !important;left:0 !important;}
+/* Arrivee d'une transition : la page apparait sur place, en fondu, sous */
+/* l'icone qui tourne encore (classe posee par le boot du <head>). */
+@keyframes vg-arrive-fade{from{opacity:0;}to{opacity:1;}}
+html.vg-arriving body{animation:vg-arrive-fade 320ms ease both !important;}
+/* Videos en lecture automatique : jamais le gros bouton lecture natif */
+/* d'iOS par-dessus. Studio (et splash) : aucun controle natif ; si la */
+/* lecture est refusee, image fixe propre (.vg-reel-still). Fiches produit : */
+/* barre de controle gardee, seul le gros bouton central est masque. */
+.vg-studio-reel video::-webkit-media-controls-start-playback-button,
+.vg-splash-video::-webkit-media-controls-start-playback-button,
+video.ig-reel-video::-webkit-media-controls-start-playback-button{display:none !important;-webkit-appearance:none !important;}
+.vg-studio-reel video::-webkit-media-controls,
+.vg-splash-video::-webkit-media-controls{display:none !important;}
+.vg-studio-reel .vg-reel-still{opacity:0;pointer-events:none;transition:opacity .25s ease;}
+.vg-studio-reel.vg-reel-failed .vg-reel-still{opacity:1;}
+/* [2026-09-29 finale] « Sold out » (et « Coming soon ») lisibles, dans la DA : */
+/* pill chromee comme celles du header et des separateurs ENGLISH/FRANCAIS. */
+/* Grilles (.product-list-thumb-status) et fiche produit (.product-status). */
+.product-list-thumb-status.status-secondary,
+.product-status.status-secondary{
+  display:inline-block !important;
+  font-family:'IBM Plex Mono',monospace !important;
+  font-weight:600 !important;
+  letter-spacing:0.14em !important;
+  text-transform:uppercase !important;
+  color:#1f2022 !important;
+  border-radius:999px !important;
+  background:linear-gradient(155deg,#eef0f2 0%,#c7cbd0 24%,#8f939a 50%,#d8dbde 68%,#6f7379 100%) !important;
+  box-shadow:0 2px 0 #6f7379, 0 4px 10px rgba(0,0,0,0.12) !important;
+  white-space:nowrap !important;
+  line-height:1.2 !important;
+}
+.product-list-thumb-status.status-secondary{font-size:10px !important;padding:5px 12px !important;margin-top:6px !important;}
+.product-status.status-secondary{font-size:11px !important;padding:6px 14px !important;}
+/* [2026-09-29 finale] Page panier : bouton Checkout et sous-total dans la */
+/* meme typo que les pills du site (comme ADD TO CART). Le checkout lui-meme */
+/* (pages BigCartel) n'est pas touche. */
+.button--checkout{
+  font-family:'IBM Plex Mono',monospace !important;
+  font-weight:600 !important;
+  letter-spacing:0.14em !important;
+  text-transform:uppercase !important;
+  font-size:13px !important;
+}
+.cart-subtotal__label,
+.cart-subtotal__amount{
+  font-family:'IBM Plex Mono',monospace !important;
+  letter-spacing:0.08em !important;
+}
+.cart-subtotal__label{text-transform:uppercase !important;font-size:0.85em !important;}
+/* [2026-09-29 finale] Fiche produit : avant l'initialisation du carrousel */
+/* (theme.js), le theme ecrase TOUTES les slides a 0 px (aucune n'est encore */
+/* .is-active) -> les vignettes remontaient puis redescendaient (~375 px sur */
+/* iPhone) maintenant que la page s'affiche avant les scripts. La 1re slide */
+/* reserve sa taille finale des le premier rendu. */
+.product-carousel:not(.is-initialized) .splide__slide:first-child{height:auto !important;width:100% !important;}
