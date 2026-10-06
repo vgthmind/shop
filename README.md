@@ -37,7 +37,11 @@ data/categories.json  les 7 catégories (id/nom/URL stables), pas éditable par 
 assets/vg-shop-shim.js  shim "sous-dossier" (voir plus bas)
 assets/theme/     logo + photo d'accueil du thème (images du brouillon)
 assets/products/  photos produit (pièces migrées depuis BigCartel le 2026-10-05 ;
-                   les nouvelles pièces ajoutées par l'admin vont dans data/uploads/)
+                   les nouvelles photos ajoutées par l'admin vont dans assets/products/uploads/)
+assets/products-sized/  mêmes photos en WebP 24/320/540/800 px (generator/resize-images.js, cache)
+assets/vg-shop-cart.js  panier (localStorage) + paiement via checkout-worker/
+checkout-worker/  Cloudflare Worker : session Stripe Checkout, webhook, commandes (voir son README)
+generator/shop-pages/   pages /merci, /paiement-annule, 404
 data/catalog.json catalogue généré (par build-catalog.js) - NE PAS éditer à la main
 docs/             site généré (servi par GitHub Pages : main / docs)
 ```
@@ -55,11 +59,13 @@ relancer quoi que ce soit à la main.
 
 Pour reconstruire en local (pour vérifier avant de pousser, par exemple) :
 ```
+npm ci                            # une fois (sharp, pour les tailles d'images)
 node generator/build-catalog.js   # data/products/*.json -> data/catalog.json
+node generator/resize-images.js   # photos -> assets/products-sized/ (nouvelles seulement)
 node generator/build.js           # -> docs/
 ```
-(Node n'est pas installé sur le PC : celui fourni avec Playwright convient,
-`...\Python312\Lib\site-packages\playwright\driver\node.exe`.)
+(= `npm run build`. Avant de pousser : `git pull --rebase`, l'Action pousse
+aussi des commits.)
 
 **`generator/import-catalog.js` n'est plus utilisé par le build normal.**
 Le catalogue réel de BigCartel (27 pièces, importées le 2026-10-05) a été
@@ -113,7 +119,7 @@ remplacé par un renvoi vers les mentions légales de vgthmind.org).
   titre et du prix à l'arrivée sur iPhone).
 - **Points d'accès BigCartel simulés** : `products.json`,
   `product/<slug>.js` (lu par `api.js` / `theme.js` sur les fiches),
-  `cart.js` (panier vide en attendant l'étape 3).
+  `cart.js` (vide : le panier vit dans `localStorage`, voir `assets/vg-shop-cart.js`).
 - **`theme.css`** est lui-même un gabarit Liquid : rendu avec les réglages.
 - **jQuery, `api.js`, `theme.js`** : chargés depuis les CDN, comme sur le
   brouillon (pas copiés ici, c'est le code de BigCartel). **À remplacer avant
@@ -121,16 +127,25 @@ remplacé par un renvoi vers les mentions légales de vgthmind.org).
 - Prix au format du brouillon (`money_format: code` → « 84,00 EUR ») ;
   pièces à option unique sans menu « Select variant » (comme BigCartel).
 
-## Ce qui diffère encore du brouillon BigCartel
+## Ajouts par rapport à BigCartel (2026-10-06)
 
-- **Panier et paiement** : pas encore (étape 3). « Add to cart » envoie un
-  formulaire vers `/shop/cart` que GitHub Pages ne sait pas traiter.
-- **Formulaire de contact** (`/contact`) : pas de backend.
+- **Panier et paiement** : panier en `localStorage` rendu avec le balisage du
+  gabarit panier ; un seul paiement Stripe Checkout pour tout le panier via
+  `checkout-worker/` (prix, stock, port relus côté serveur ; mode test tant
+  que `LIVE_MODE` = 0). Retour sur `/merci` ou `/paiement-annule`.
+- **Stock** : quantité par pièce (1 = unique) ; le webhook Stripe la décompte
+  et passe la pièce en Sold out (commit dans `data/products/`).
+- **Commandes** : `/shop/admin/commandes.html`. Aide : `admin/AIDE.md`.
+- **Photos** en 4 tailles WebP ; images du compte BigCartel servies d'ici ;
+  CSS et JS de transitions copiés au build ; favicon ; page 404 ;
+  `/contact` renvoie vers la page Contact.
+
+## Ce qui diffère encore de BigCartel
+
+- **jQuery, `api.js`, `theme.js`** toujours servis par leurs CDN.
 - **Rebond « déjà sur la page »** et petites différences liées au
   sous-dossier : à vérifier en vidéo.
-- **Photos** : servies en taille unique (≈ 1000 px) au lieu des tailles
-  adaptées du CDN BigCartel ; photo d'accueil 1,7 Mo.
-- **favicon** absente sous `/shop/`.
+- Liste complète et à jour : rubrique BACKLOG de `chantier/ETAT.md` (dépôt privé).
 
 ---
 
