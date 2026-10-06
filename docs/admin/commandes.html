@@ -28,6 +28,13 @@
     ul { margin: 8px 0; padding-left: 18px; }
     .actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
     #msg { min-height: 1.4em; }
+    .items { list-style: none; padding: 0; margin: 10px 0; }
+    .items li { display: flex; gap: 12px; align-items: center; padding: 8px 0; border-top: 1px solid var(--line); }
+    .items li:first-child { border-top: 0; }
+    .items img, .items .ph { width: 56px; height: 59px; object-fit: cover; border-radius: 6px; background: #e9e5da; flex: none; }
+    .items .nm { flex: 1; min-width: 0; }
+    .items .nm small { display: block; color: var(--muted); }
+    .items .pr { white-space: nowrap; }
   </style>
 </head>
 <body>
@@ -94,18 +101,6 @@
     });
   }
 
-  function shippedMail(o, tracking) {
-    var first = (o.name || '').split(' ')[0];
-    var body = 'Hi ' + first + ',\n\nYour order has shipped!'
-      + (tracking ? '\nTracking number: ' + tracking : '')
-      + '\n\nThanks for your support,\nvgthmind\n\n—\n\nSalut ' + first + ',\n\nTa commande est partie !'
-      + (tracking ? '\nNuméro de suivi : ' + tracking : '')
-      + '\n\nMerci pour ton soutien,\nvgthmind';
-    return 'mailto:' + encodeURIComponent(o.email)
-      + '?subject=' + encodeURIComponent('vgthmind — your order has shipped / ta commande est partie')
-      + '&body=' + encodeURIComponent(body);
-  }
-
   // Stats de ventes (comme l'onglet Stats de BigCartel) : calculées sur les
   // commandes payées listées, en séparant test et réel. Les visites sont
   // dans Cloudflare Web Analytics.
@@ -148,15 +143,19 @@
       return '<article class="order" data-id="' + esc(o.id) + '">'
         + '<header><div><strong>' + esc(o.name || o.email) + '</strong> '
         + (o.livemode ? '' : '<span class="tag test">test</span> ')
-        + (o.shipped ? '<span class="tag ok">expédiée le ' + esc(date(o.shipped.at)) + (o.shipped.tracking ? ' · ' + esc(o.shipped.tracking) : '') + '</span>' : '')
+        + (o.shipped ? '<span class="tag ok">expédiée le ' + esc(date(o.shipped.at)) + (o.shipped.tracking ? ' · suivi ' + esc(o.shipped.tracking) : '') + (o.shipped.notified ? ' · client prévenu' : '') + '</span>' : '')
         + '<div class="muted">' + esc(date(o.created)) + ' · ' + esc(o.email) + (o.phone ? ' · ' + esc(o.phone) : '') + '</div></div>'
         + '<div class="total">' + money(o.total) + '</div></header>'
-        + '<ul>' + o.items.map(function (it) { return '<li>' + esc(it.name) + ' — ' + money(it.amount) + '</li>'; }).join('')
-        + '<li class="muted">Livraison ' + money(o.shipping) + (o.discount ? ' · remise −' + money(o.discount) : '') + '</li></ul>'
+        + '<ul class="items">' + o.items.map(function (it) {
+          return '<li>' + (it.image ? '<img src="' + esc(it.image) + '" alt="' + esc(it.name) + '" width="56" height="59" loading="lazy">' : '<span class="ph"></span>')
+            + '<span class="nm"><strong>' + esc(it.name) + '</strong><small>' + (it.size ? 'Taille ' + esc(it.size) + ' · ' : '') + 'Qté ' + esc(it.qty || 1) + '</small></span>'
+            + '<span class="pr">' + money(it.amount) + '</span></li>';
+        }).join('')
+        + '<li class="muted"><span class="ph" style="visibility:hidden"></span><span class="nm">Livraison' + (o.discount ? ' · remise −' + money(o.discount) : '') + '</span><span class="pr">' + money(o.shipping) + '</span></li></ul>'
         + '<div class="muted">' + address(o.address) + '</div>'
         + '<div class="actions">'
         + (o.shipped
-          ? '<a class="btn" href="' + esc(shippedMail(o, o.shipped.tracking)) + '">E-mail « expédiée »</a><button type="button" data-undo>Annuler « expédiée »</button>'
+          ? '<button type="button" data-mail>' + (o.shipped.notified ? 'Renvoyer le mail « expédiée »' : 'Envoyer le mail « expédiée » au client') + '</button><button type="button" data-undo>Annuler « expédiée »</button>'
           : '<button type="button" data-ship>Marquer expédiée…</button>')
         + '<a class="btn" target="_blank" rel="noopener" href="https://dashboard.stripe.com/' + (o.livemode ? '' : 'test/') + 'checkout/sessions/' + esc(o.id) + '">Voir dans Stripe</a>'
         + '</div></article>';
@@ -168,14 +167,22 @@
     if (!card) return;
     var o = orders.filter(function (x) { return x.id === card.getAttribute('data-id'); })[0];
     if (e.target.hasAttribute('data-ship')) {
-      var tracking = window.prompt('Numéro de suivi (laisser vide s\'il n\'y en a pas) :', '');
+      var tracking = window.prompt('Numéro de suivi (celui de ton étiquette ; vide s\'il n\'y en a pas) :', '');
       if (tracking === null) return;
       api('/orders/shipped', { method: 'POST', body: JSON.stringify({ id: o.id, tracking: tracking.trim() }) })
         .then(function (d) {
           o.shipped = d.shipped;
           draw();
-          $('msg').textContent = 'Marquée expédiée. Clique « E-mail « expédiée » » pour prévenir le client.';
+          $('msg').textContent = 'Marquée expédiée. Clique « Envoyer le mail « expédiée » au client » pour le prévenir.';
         })
+        .catch(function (err) { $('msg').textContent = 'Erreur : ' + err.message; });
+    }
+    if (e.target.hasAttribute('data-mail')) {
+      var again = !!o.shipped.notified;
+      if (!window.confirm((again ? 'Renvoyer' : 'Envoyer') + ' le mail « expédiée » à ' + o.email + ' ?')) return;
+      $('msg').textContent = 'Envoi…';
+      api('/orders/shipped-mail', { method: 'POST', body: JSON.stringify({ id: o.id }) })
+        .then(function (d) { o.shipped = d.shipped; draw(); $('msg').textContent = 'Mail envoyé à ' + o.email + '.'; })
         .catch(function (err) { $('msg').textContent = 'Erreur : ' + err.message; });
     }
     if (e.target.hasAttribute('data-undo')) {

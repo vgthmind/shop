@@ -443,7 +443,8 @@
           + '<li class="vg-cart-line"><span>Shipping / Livraison</span><span>' + money(s.shipping) + '</span></li>'
           + '<li class="vg-cart-line vg-cart-total"><span>Total</span><span>' + money(s.total) + '</span></li>'
           + '</ul>'
-          + (s.email ? '<p class="vg-cart-note">Receipt sent to / Reçu envoyé à ' + esc(s.email) + '</p>' : '');
+          + (s.email ? '<p class="vg-cart-note">Receipt sent to / Reçu envoyé à ' + esc(s.email) + '</p>' : '')
+          + '<p class="vg-cart-note">No email from us? Check your spam folder. / Pas de mail de notre part ? Regarde dans tes spams.</p>';
         summary.hidden = false;
       })
       .catch(function () {});

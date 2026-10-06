@@ -27,9 +27,10 @@
 //   GET/POST /admin/stock   lire / regler les quantites
 //   GET  /admin/backups     liste des sauvegardes ; GET /admin/backup?key=…
 //   POST /admin/backup      sauvegarde immediate
-//   GET  /orders ; POST /orders/shipped
+//   GET  /orders ; POST /orders/shipped ; POST /orders/shipped-mail
 
 import { DurableObject } from 'cloudflare:workers';
+import { customerEmail, sellerEmail, shippedEmail, REPLY_TO, type MailItem, type OrderData } from './emails';
 
 interface KV {
   get(key: string): Promise<string | null>;
@@ -62,6 +63,7 @@ interface Product {
   name: string;
   price: number;
   url: string;
+  description?: string;
   quantity?: number;
   images: { url: string }[];
   shipping: ShippingLine[];
@@ -233,6 +235,7 @@ export default {
       if (path === '/webhook' && request.method === 'POST') return await webhook(request, env, json);
       if (path === '/orders' && request.method === 'GET') return await listOrders(request, env, key.value, json);
       if (path === '/orders/shipped' && request.method === 'POST') return await markShipped(request, env, json);
+      if (path === '/orders/shipped-mail' && request.method === 'POST') return await sendShippedMail(request, env, key.value, json);
     } catch (e: any) {
       return json({ error: 'Erreur interne : ' + (e && e.message ? e.message : e) }, 500);
     }
@@ -464,18 +467,58 @@ async function processPaid(env: Env, s: any) {
 // --- Emails de commande (Resend) ---------------------------------------------
 // Alerte pour l'admin (ALERT_EMAIL) ; confirmation au client seulement si un
 // domaine verifie est configure (MAIL_FROM). Une seule fois par commande.
-function esc(t: any) {
-  return String(t ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c] as string));
-}
-
-async function resendSend(env: Env, from: string, to: string, subject: string, html: string) {
+async function resendSend(env: Env, from: string, to: string, subject: string, html: string, text: string, replyTo?: string) {
   const res = await fetch('https://api.resend.com/emails', {
     method: 'POST',
     headers: { Authorization: `Bearer ${env.RESEND_API_KEY}`, 'Content-Type': 'application/json' },
-    body: JSON.stringify({ from, to: [to], subject, html }),
+    body: JSON.stringify({ from, to: [to], subject, html, text, ...(replyTo ? { reply_to: replyTo } : {}) }),
   });
   return res.ok;
 }
+
+const SESSION_EXPAND = 'expand[]=line_items&expand[]=line_items.data.price.product';
+
+// Articles d'une session Stripe : nom, taille (lue dans la description du
+// catalogue), quantite, prix, photo (URL publique absolue posee a la creation
+// de la session sur le produit Stripe).
+async function mailItems(env: Env, lineItems: any[], money: (c: number) => string, preloaded?: Product[]): Promise<MailItem[]> {
+  let catalog: Product[] = preloaded || [];
+  if (!preloaded) { try { catalog = await loadCatalog(env); } catch (e) {} }
+  return lineItems.map((li: any) => {
+    const prod = typeof li.price?.product === 'object' ? li.price.product : null;
+    const p = catalog.find((c) => c.permalink === prod?.metadata?.slug);
+    const size = /\b(?:size|taille)\s+([A-Za-z0-9./-]+)/i.exec(p?.description || '');
+    return {
+      name: String(li.description),
+      size: size ? size[1] : '',
+      qty: li.quantity,
+      amount: money(li.amount_total),
+      image: (prod && prod.images && prod.images[0]) || '',
+    };
+  });
+}
+
+async function buildOrder(env: Env, o: any): Promise<OrderData> {
+  const ship = (o.collected_information && o.collected_information.shipping_details) || o.shipping_details || {};
+  const a = ship.address || {};
+  const money = (c: number) => (c / 100).toFixed(2).replace('.', ',') + ' ' + String(o.currency || 'eur').toUpperCase();
+  return {
+    ref: String(o.id).slice(-8).toUpperCase(),
+    name: ship.name || o.customer_details?.name || '',
+    email: o.customer_details?.email || '',
+    phone: o.customer_details?.phone || '',
+    country: a.country || o.customer_details?.address?.country || '',
+    address: [ship.name || o.customer_details?.name, a.line1, a.line2, [a.postal_code, a.city].filter(Boolean).join(' '), a.state, a.country].filter(Boolean),
+    items: await mailItems(env, o.line_items?.data || [], money),
+    shipping: money(o.shipping_cost?.amount_total || 0),
+    total: money(o.amount_total),
+    test: !o.livemode,
+    stripeUrl: `https://dashboard.stripe.com/${o.livemode ? '' : 'test/'}payments/${typeof o.payment_intent === 'string' ? o.payment_intent : ''}`,
+    cgvUrl: `${env.SITE_BASE}/infos-conditions-generales`,
+    orderUrl: `${env.SITE_BASE}/merci/?session_id=${o.id}`,
+  };
+}
+
 
 async function sendOrderEmails(env: Env, s: any) {
   if (!env.RESEND_API_KEY || !env.STRIPE_SECRET_KEY) return;
@@ -487,35 +530,18 @@ async function sendOrderEmails(env: Env, s: any) {
   const needClient = !!customerFrom && !done.client;
   if (!needAlert && !needClient) return;
 
-  const full = await stripeCall(env.STRIPE_SECRET_KEY, 'GET', `/v1/checkout/sessions/${s.id}?expand[]=line_items`);
+  const full = await stripeCall(env.STRIPE_SECRET_KEY, 'GET', `/v1/checkout/sessions/${s.id}?${SESSION_EXPAND}`);
   if (!full.ok) return;
-  const o = full.data;
-  const ship = (o.collected_information && o.collected_information.shipping_details) || o.shipping_details || {};
-  const a = ship.address || {};
-  const name = ship.name || o.customer_details?.name || '';
-  const email = o.customer_details?.email || '';
-  const money = (c: number) => (c / 100).toFixed(2).replace('.', ',') + ' ' + String(o.currency || 'eur').toUpperCase();
-  const rows = (o.line_items?.data || [])
-    .map((li: any) => `<tr><td>${esc(li.description)} × ${esc(li.quantity)}</td><td align="right">${money(li.amount_total)}</td></tr>`)
-    .join('');
-  const table = `<table cellpadding="4" style="border-collapse:collapse">${rows}`
-    + `<tr><td>Livraison</td><td align="right">${money(o.shipping_cost?.amount_total || 0)}</td></tr>`
-    + `<tr><td><b>Total</b></td><td align="right"><b>${money(o.amount_total)}</b></td></tr></table>`;
-  const address = [name, a.line1, a.line2, [a.postal_code, a.city].filter(Boolean).join(' '), a.country].filter(Boolean).map(esc).join('<br>');
-  const ref = esc(String(o.id).slice(-8).toUpperCase());
+  const order = await buildOrder(env, full.data);
 
   if (needAlert) {
-    const ok = await resendSend(env, customerFrom || 'vgthmind <onboarding@resend.dev>', alertTo,
-      `Nouvelle commande ${money(o.amount_total)} (${ref})`,
-      `<p>Nouvelle commande payée${o.livemode ? '' : ' (mode TEST)'}.</p>${table}<p><b>Livrer à :</b><br>${address}</p>`
-      + `<p>Email client : ${esc(email)}${o.customer_details?.phone ? '<br>Tél : ' + esc(o.customer_details.phone) : ''}</p>`);
+    const m = sellerEmail(order);
+    const ok = await resendSend(env, customerFrom || 'vgthmind <onboarding@resend.dev>', alertTo, m.subject, m.html, m.text);
     if (ok) done.alert = 1;
   }
-  if (needClient && email) {
-    const ok = await resendSend(env, customerFrom, email, `Confirmation de commande (${ref})`,
-      `<p>Merci${name ? ' ' + esc(name) : ''} ! Ta commande est bien payée.</p>${table}`
-      + `<p><b>Adresse de livraison :</b><br>${address}</p><p>Tu recevras un message dès l'expédition.</p>`
-      + `<p style="color:#666;font-size:13px">Pense à vérifier tes spams (courriers indésirables) si tu ne vois pas nos mails.</p>`);
+  if (needClient && order.email) {
+    const m = customerEmail(order);
+    const ok = await resendSend(env, customerFrom, order.email, m.subject, m.html, m.text, REPLY_TO);
     if (ok) done.client = 1;
   }
   await env.HOLDS.put(doneKey, JSON.stringify(done), { expirationTtl: 60 * 60 * 24 * 90 });
@@ -667,9 +693,11 @@ async function isAdmin(request: Request, env: Env): Promise<boolean> {
 
 async function listOrders(request: Request, env: Env, key: string, json: JsonFn): Promise<Response> {
   if (!(await isAdmin(request, env))) return json({ error: 'Non autorisé.' }, 401);
-  const stripe = await stripeCall(key, 'GET', '/v1/checkout/sessions?status=complete&limit=100&expand[]=data.line_items');
+  const stripe = await stripeCall(key, 'GET', '/v1/checkout/sessions?status=complete&limit=100&expand[]=data.line_items&expand[]=data.line_items.data.price.product');
   if (!stripe.ok) return json({ error: stripe.data.error?.message || 'Erreur Stripe' }, 502);
   const orders = [];
+  let catalog: Product[] = [];
+  try { catalog = await loadCatalog(env); } catch (e) {}
   for (const s of stripe.data.data || []) {
     if (s.payment_status !== 'paid') continue;
     const ship = (s.collected_information && s.collected_information.shipping_details) || s.shipping_details || {};
@@ -685,7 +713,7 @@ async function listOrders(request: Request, env: Env, key: string, json: JsonFn)
       phone: s.customer_details?.phone || '',
       name: ship.name || s.customer_details?.name || '',
       address: ship.address || null,
-      items: (s.line_items?.data || []).map((li: any) => ({ name: li.description, amount: li.amount_total / 100 })),
+      items: (await mailItems(env, s.line_items?.data || [], (c) => String(c / 100), catalog)).map((i) => ({ ...i, amount: Number(i.amount) })),
       shipped: shipped ? JSON.parse(shipped) : null,
     });
   }
@@ -701,9 +729,32 @@ async function markShipped(request: Request, env: Env, json: JsonFn): Promise<Re
     await env.HOLDS.delete('shipped:' + body.id);
     return json({ ok: true });
   }
-  const value = { at: Math.floor(Date.now() / 1000), tracking: String(body.tracking || '').slice(0, 100) };
+  const value = { at: Math.floor(Date.now() / 1000), tracking: String(body.tracking || '').trim().slice(0, 100) };
   await env.HOLDS.put('shipped:' + body.id, JSON.stringify(value));
   return json({ ok: true, shipped: value });
+}
+
+// Mail « expediee » HTML envoye au client (bouton admin), une fois par clic.
+async function sendShippedMail(request: Request, env: Env, key: string, json: JsonFn): Promise<Response> {
+  if (!(await isAdmin(request, env))) return json({ error: 'Non autorisé.' }, 401);
+  let body: any = {};
+  try { body = await request.json(); } catch (e) {}
+  const id = String(body.id || '');
+  if (!isSessionId(id)) return json({ error: 'Identifiant invalide.' }, 400);
+  const from = (env.MAIL_FROM || '').trim();
+  if (!env.RESEND_API_KEY || !from) return json({ error: "Envoi d'email non configuré." }, 503);
+  const raw = await env.HOLDS.get('shipped:' + id);
+  if (!raw) return json({ error: "Marque d'abord la commande « expédiée »." }, 400);
+  const shipped = JSON.parse(raw);
+  const full = await stripeCall(key, 'GET', `/v1/checkout/sessions/${id}?${SESSION_EXPAND}`);
+  if (!full.ok) return json({ error: full.data.error?.message || 'Erreur Stripe' }, 502);
+  const order = await buildOrder(env, full.data);
+  if (!order.email) return json({ error: 'Pas d’email client sur cette commande.' }, 400);
+  const m = shippedEmail(order, shipped.tracking || '');
+  if (!(await resendSend(env, from, order.email, m.subject, m.html, m.text, REPLY_TO))) return json({ error: "L'envoi a échoué (Resend)." }, 502);
+  shipped.notified = Math.floor(Date.now() / 1000);
+  await env.HOLDS.put('shipped:' + id, JSON.stringify(shipped));
+  return json({ ok: true, shipped });
 }
 
 async function stripeCall(key: string, method: string, path: string, params?: URLSearchParams) {
