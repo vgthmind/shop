@@ -443,7 +443,14 @@ async function main() {
   // Assets: theme.css is a Liquid template too (theme.* colours/fonts).
   fs.mkdirSync(rel(OUT_DIR, 'assets', 'vg'), { recursive: true });
   write('assets/theme.css', liquid.render(T('theme.css'), base, filters));
-  write('assets/vg/vg-transitions-dev.js', wrapScript(devJs));
+  // Seul ajout au code du fichier : sized() (taille ?w= demandée au CDN
+  // BigCartel) passe d'abord par window.__vgSized (shim : variante WebP
+  // locale). Si le motif change côté portfolio, la copie reste telle quelle.
+  const SIZED_HOOK = /function sized\(url, px\) \{\r?\n/;
+  if (!SIZED_HOOK.test(devJs)) console.warn('build: sized() introuvable dans vg-transitions-dev.js, photos des pops en taille d\'origine');
+  const devJsHooked = devJs.replace(SIZED_HOOK,
+    (m) => `${m}    if (window.__vgSized) { var vgS = window.__vgSized(url, px); if (vgS) return vgS; }\n`);
+  write('assets/vg/vg-transitions-dev.js', wrapScript(devJsHooked));
   write('assets/vg/vg-transitions-dev.css', devCss);
   // Mots-clés de recherche : fichier commun du portfolio + ceux saisis dans
   // l'admin pour chaque pièce (champ « Mots-clés de recherche »).
@@ -456,6 +463,9 @@ async function main() {
   fs.copyFileSync(rel(ROOT, 'assets', 'vg-shop-cart.js'), rel(OUT_DIR, 'assets', 'vg-shop-cart.js'));
   const productImagesSrc = rel(ROOT, 'assets', 'products');
   if (fs.existsSync(productImagesSrc)) fs.cpSync(productImagesSrc, rel(OUT_DIR, 'assets', 'products'), { recursive: true });
+  // Product photo widths (generator/resize-images.js), used by `constrain`.
+  const sizedSrc = rel(ROOT, 'assets', 'products-sized');
+  if (fs.existsSync(sizedSrc)) fs.cpSync(sizedSrc, rel(OUT_DIR, 'assets', 'products-sized'), { recursive: true });
   fs.cpSync(rel(ROOT, 'assets', 'theme'), rel(OUT_DIR, 'assets', 'theme'), { recursive: true });
   fs.copyFileSync(rel(ROOT, 'robots.txt'), rel(OUT_DIR, 'robots.txt'));
   // Admin (Sveltia CMS) : servi tel quel sous /shop/admin/ (page + config +

@@ -19,3 +19,6 @@ oauth-worker/dist/
 checkout-worker/node_modules/
 checkout-worker/.wrangler/
 checkout-worker/.dev.vars
+
+# generator dependencies
+node_modules/

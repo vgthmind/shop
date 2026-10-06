@@ -38,12 +38,28 @@ function productImageUrl(image, imageMap) {
   return local || image.url;
 }
 
+// Widths made by generator/resize-images.js (assets/products-sized/<w>/…webp).
+const SIZED_WIDTHS = [24, 320, 540, 800];
+const SIZED_ROOT = require('path').join(__dirname, '..', 'assets', 'products-sized');
+
+function sizedProductImage(url, width) {
+  const m = /^\/assets\/products\/(.+)\.(png|jpe?g|webp)$/i.exec(url);
+  const w = Number(width);
+  if (!m || !(w > 0)) return null;
+  const bucket = SIZED_WIDTHS.find((x) => x >= w);
+  if (!bucket) return null; // wider than the largest variant: the original
+  const rel = `${m[1]}.webp`;
+  if (!require('fs').existsSync(require('path').join(SIZED_ROOT, String(bucket), rel))) return null;
+  return `/assets/products-sized/${bucket}/${rel}`;
+}
+
 function constrain(url, width) {
   if (!url) return '';
   try {
-    // Local copies are static files: the width parameter would be ignored
-    // (and `constrain: '', height` - the logo - would give w=NaN).
-    if (url.startsWith('/')) return url;
+    // Local product photos: the closest pre-made width (as BigCartel's CDN
+    // did with ?w=). Other local files are served as they are (and
+    // `constrain: '', height` - the logo - would give w=NaN).
+    if (url.startsWith('/')) return sizedProductImage(url, width) || url;
     const u = new URL(url);
     u.searchParams.set('w', Math.round(width));
     if (u.searchParams.has('h')) u.searchParams.set('h', Math.round(width));

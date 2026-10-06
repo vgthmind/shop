@@ -1,0 +1,12 @@
+{
+  "name": "vgthmind-shop",
+  "private": true,
+  "description": "Generateur de la boutique /shop/ (voir README). Seule dependance : sharp, pour les tailles d'images.",
+  "scripts": {
+    "images": "node generator/resize-images.js",
+    "build": "node generator/build-catalog.js && node generator/resize-images.js && node generator/build.js"
+  },
+  "devDependencies": {
+    "sharp": "^0.34.0"
+  }
+}

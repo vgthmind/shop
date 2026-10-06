@@ -39,6 +39,20 @@
     return BASE + u;
   }
   window.__vgFixUrl = fix;
+
+  // Photos produit demandées par vg-transitions-dev.js avec ?w=N (pops,
+  // compagnons de la section 3 : comme sur le CDN BigCartel) -> la variante
+  // WebP la plus proche (generator/resize-images.js), 800 px au plus, au
+  // lieu du PNG d'origine (~400 Ko chacun). build.js branche sized() dessus.
+  var SIZED = [24, 320, 540, 800];
+  window.__vgSized = function (url, px) {
+    var m = /^(?:https?:\/\/[^\/]+)?(\/[^?#]*?)?\/assets\/products\/([^?#]+)\.(png|jpe?g|webp)(?:[?#].*)?$/i.exec(String(url));
+    if (!m) return null;
+    var w = SIZED[SIZED.length - 1];
+    for (var i = 0; i < SIZED.length; i++) { if (SIZED[i] >= px) { w = SIZED[i]; break; } }
+    return BASE + '/assets/products-sized/' + w + '/' + m[2] + '.webp';
+  };
+
   if (!BASE) { window.__vgLoc = window.location; return; }
 
   var origFetch = window.fetch;
@@ -1730,15 +1744,15 @@ ul.categories li.page a:hover{color:#3d4045 !important;background:transparent !i
                   <img
                     alt=""
                     class="blur-up product-list-image lazyload grid-cover"
-                    src="/shop/assets/products/sa/0.png"
+                    src="/shop/assets/products-sized/24/sa/0.webp"
                     data-aspectratio="1.146788990825688"
                     data-srcset="
-                      /shop/assets/products/sa/0.png 240w,
-                      /shop/assets/products/sa/0.png 320w,
-                      /shop/assets/products/sa/0.png 400w,
-                      /shop/assets/products/sa/0.png 540w,
-                      /shop/assets/products/sa/0.png 600w,
-                      /shop/assets/products/sa/0.png 800w,
+                      /shop/assets/products-sized/320/sa/0.webp 240w,
+                      /shop/assets/products-sized/320/sa/0.webp 320w,
+                      /shop/assets/products-sized/540/sa/0.webp 400w,
+                      /shop/assets/products-sized/540/sa/0.webp 540w,
+                      /shop/assets/products-sized/800/sa/0.webp 600w,
+                      /shop/assets/products-sized/800/sa/0.webp 800w,
                       /shop/assets/products/sa/0.png 960w
                     "
                     data-sizes="auto"
@@ -1782,15 +1796,15 @@ ul.categories li.page a:hover{color:#3d4045 !important;background:transparent !i
                   <img
                     alt=""
                     class="blur-up product-list-image lazyload grid-cover"
-                    src="/shop/assets/products/sma_0003/0.png"
+                    src="/shop/assets/products-sized/24/sma_0003/0.webp"
                     data-aspectratio="1.2406947890818858"
                     data-srcset="
-                      /shop/assets/products/sma_0003/0.png 240w,
-                      /shop/assets/products/sma_0003/0.png 320w,
-                      /shop/assets/products/sma_0003/0.png 400w,
-                      /shop/assets/products/sma_0003/0.png 540w,
-                      /shop/assets/products/sma_0003/0.png 600w,
-                      /shop/assets/products/sma_0003/0.png 800w,
+                      /shop/assets/products-sized/320/sma_0003/0.webp 240w,
+                      /shop/assets/products-sized/320/sma_0003/0.webp 320w,
+                      /shop/assets/products-sized/540/sma_0003/0.webp 400w,
+                      /shop/assets/products-sized/540/sma_0003/0.webp 540w,
+                      /shop/assets/products-sized/800/sma_0003/0.webp 600w,
+                      /shop/assets/products-sized/800/sma_0003/0.webp 800w,
                       /shop/assets/products/sma_0003/0.png 960w
                     "
                     data-sizes="auto"
@@ -1832,15 +1846,15 @@ ul.categories li.page a:hover{color:#3d4045 !important;background:transparent !i
                   <img
                     alt=""
                     class="blur-up product-list-image lazyload grid-cover"
-                    src="/shop/assets/products/sma_0004/0.png"
+                    src="/shop/assets/products-sized/24/sma_0004/0.webp"
                     data-aspectratio="1.2422360248447204"
                     data-srcset="
-                      /shop/assets/products/sma_0004/0.png 240w,
-                      /shop/assets/products/sma_0004/0.png 320w,
-                      /shop/assets/products/sma_0004/0.png 400w,
-                      /shop/assets/products/sma_0004/0.png 540w,
-                      /shop/assets/products/sma_0004/0.png 600w,
-                      /shop/assets/products/sma_0004/0.png 800w,
+                      /shop/assets/products-sized/320/sma_0004/0.webp 240w,
+                      /shop/assets/products-sized/320/sma_0004/0.webp 320w,
+                      /shop/assets/products-sized/540/sma_0004/0.webp 400w,
+                      /shop/assets/products-sized/540/sma_0004/0.webp 540w,
+                      /shop/assets/products-sized/800/sma_0004/0.webp 600w,
+                      /shop/assets/products-sized/800/sma_0004/0.webp 800w,
                       /shop/assets/products/sma_0004/0.png 960w
                     "
                     data-sizes="auto"
@@ -1882,15 +1896,15 @@ ul.categories li.page a:hover{color:#3d4045 !important;background:transparent !i
                   <img
                     alt=""
                     class="blur-up product-list-image lazyload grid-cover"
-                    src="/shop/assets/products/ja_0001/0.png"
+                    src="/shop/assets/products-sized/24/ja_0001/0.webp"
                     data-aspectratio="0.575"
                     data-srcset="
-                      /shop/assets/products/ja_0001/0.png 240w,
-                      /shop/assets/products/ja_0001/0.png 320w,
-                      /shop/assets/products/ja_0001/0.png 400w,
-                      /shop/assets/products/ja_0001/0.png 540w,
-                      /shop/assets/products/ja_0001/0.png 600w,
-                      /shop/assets/products/ja_0001/0.png 800w,
+                      /shop/assets/products-sized/320/ja_0001/0.webp 240w,
+                      /shop/assets/products-sized/320/ja_0001/0.webp 320w,
+                      /shop/assets/products-sized/540/ja_0001/0.webp 400w,
+                      /shop/assets/products-sized/540/ja_0001/0.webp 540w,
+                      /shop/assets/products-sized/800/ja_0001/0.webp 600w,
+                      /shop/assets/products-sized/800/ja_0001/0.webp 800w,
                       /shop/assets/products/ja_0001/0.png 960w
                     "
                     data-sizes="auto"
@@ -1932,15 +1946,15 @@ ul.categories li.page a:hover{color:#3d4045 !important;background:transparent !i
                   <img
                     alt=""
                     class="blur-up product-list-image lazyload grid-cover"
-                    src="/shop/assets/products/pantalon-rouge-framboise/0.png"
+                    src="/shop/assets/products-sized/24/pantalon-rouge-framboise/0.webp"
                     data-aspectratio="0.662"
                     data-srcset="
-                      /shop/assets/products/pantalon-rouge-framboise/0.png 240w,
-                      /shop/assets/products/pantalon-rouge-framboise/0.png 320w,
-                      /shop/assets/products/pantalon-rouge-framboise/0.png 400w,
-                      /shop/assets/products/pantalon-rouge-framboise/0.png 540w,
-                      /shop/assets/products/pantalon-rouge-framboise/0.png 600w,
-                      /shop/assets/products/pantalon-rouge-framboise/0.png 800w,
+                      /shop/assets/products-sized/320/pantalon-rouge-framboise/0.webp 240w,
+                      /shop/assets/products-sized/320/pantalon-rouge-framboise/0.webp 320w,
+                      /shop/assets/products-sized/540/pantalon-rouge-framboise/0.webp 400w,
+                      /shop/assets/products-sized/540/pantalon-rouge-framboise/0.webp 540w,
+                      /shop/assets/products-sized/800/pantalon-rouge-framboise/0.webp 600w,
+                      /shop/assets/products-sized/800/pantalon-rouge-framboise/0.webp 800w,
                       /shop/assets/products/pantalon-rouge-framboise/0.png 960w
                     "
                     data-sizes="auto"
@@ -1982,15 +1996,15 @@ ul.categories li.page a:hover{color:#3d4045 !important;background:transparent !i
                   <img
                     alt=""
                     class="blur-up product-list-image lazyload grid-cover"
-                    src="/shop/assets/products/pantalon-denim-bleu/0.png"
+                    src="/shop/assets/products-sized/24/pantalon-denim-bleu/0.webp"
                     data-aspectratio="0.58"
                     data-srcset="
-                      /shop/assets/products/pantalon-denim-bleu/0.png 240w,
-                      /shop/assets/products/pantalon-denim-bleu/0.png 320w,
-                      /shop/assets/products/pantalon-denim-bleu/0.png 400w,
-                      /shop/assets/products/pantalon-denim-bleu/0.png 540w,
-                      /shop/assets/products/pantalon-denim-bleu/0.png 600w,
-                      /shop/assets/products/pantalon-denim-bleu/0.png 800w,
+                      /shop/assets/products-sized/320/pantalon-denim-bleu/0.webp 240w,
+                      /shop/assets/products-sized/320/pantalon-denim-bleu/0.webp 320w,
+                      /shop/assets/products-sized/540/pantalon-denim-bleu/0.webp 400w,
+                      /shop/assets/products-sized/540/pantalon-denim-bleu/0.webp 540w,
+                      /shop/assets/products-sized/800/pantalon-denim-bleu/0.webp 600w,
+                      /shop/assets/products-sized/800/pantalon-denim-bleu/0.webp 800w,
                       /shop/assets/products/pantalon-denim-bleu/0.png 960w
                     "
                     data-sizes="auto"
@@ -2032,15 +2046,15 @@ ul.categories li.page a:hover{color:#3d4045 !important;background:transparent !i
                   <img
                     alt=""
                     class="blur-up product-list-image lazyload grid-cover"
-                    src="/shop/assets/products/pantalon-ff001/0.png"
+                    src="/shop/assets/products-sized/24/pantalon-ff001/0.webp"
                     data-aspectratio="0.727"
                     data-srcset="
-                      /shop/assets/products/pantalon-ff001/0.png 240w,
-                      /shop/assets/products/pantalon-ff001/0.png 320w,
-                      /shop/assets/products/pantalon-ff001/0.png 400w,
-                      /shop/assets/products/pantalon-ff001/0.png 540w,
-                      /shop/assets/products/pantalon-ff001/0.png 600w,
-                      /shop/assets/products/pantalon-ff001/0.png 800w,
+                      /shop/assets/products-sized/320/pantalon-ff001/0.webp 240w,
+                      /shop/assets/products-sized/320/pantalon-ff001/0.webp 320w,
+                      /shop/assets/products-sized/540/pantalon-ff001/0.webp 400w,
+                      /shop/assets/products-sized/540/pantalon-ff001/0.webp 540w,
+                      /shop/assets/products-sized/800/pantalon-ff001/0.webp 600w,
+                      /shop/assets/products-sized/800/pantalon-ff001/0.webp 800w,
                       /shop/assets/products/pantalon-ff001/0.png 960w
                     "
                     data-sizes="auto"
@@ -2082,15 +2096,15 @@ ul.categories li.page a:hover{color:#3d4045 !important;background:transparent !i
                   <img
                     alt=""
                     class="blur-up product-list-image lazyload grid-cover"
-                    src="/shop/assets/products/pantalon-vc001/0.png"
+                    src="/shop/assets/products-sized/24/pantalon-vc001/0.webp"
                     data-aspectratio="0.663"
                     data-srcset="
-                      /shop/assets/products/pantalon-vc001/0.png 240w,
-                      /shop/assets/products/pantalon-vc001/0.png 320w,
-                      /shop/assets/products/pantalon-vc001/0.png 400w,
-                      /shop/assets/products/pantalon-vc001/0.png 540w,
-                      /shop/assets/products/pantalon-vc001/0.png 600w,
-                      /shop/assets/products/pantalon-vc001/0.png 800w,
+                      /shop/assets/products-sized/320/pantalon-vc001/0.webp 240w,
+                      /shop/assets/products-sized/320/pantalon-vc001/0.webp 320w,
+                      /shop/assets/products-sized/540/pantalon-vc001/0.webp 400w,
+                      /shop/assets/products-sized/540/pantalon-vc001/0.webp 540w,
+                      /shop/assets/products-sized/800/pantalon-vc001/0.webp 600w,
+                      /shop/assets/products-sized/800/pantalon-vc001/0.webp 800w,
                       /shop/assets/products/pantalon-vc001/0.png 960w
                     "
                     data-sizes="auto"
@@ -2132,15 +2146,15 @@ ul.categories li.page a:hover{color:#3d4045 !important;background:transparent !i
                   <img
                     alt=""
                     class="blur-up product-list-image lazyload grid-cover"
-                    src="/shop/assets/products/pantalon-dd001/0.png"
+                    src="/shop/assets/products-sized/24/pantalon-dd001/0.webp"
                     data-aspectratio="0.682"
                     data-srcset="
-                      /shop/assets/products/pantalon-dd001/0.png 240w,
-                      /shop/assets/products/pantalon-dd001/0.png 320w,
-                      /shop/assets/products/pantalon-dd001/0.png 400w,
-                      /shop/assets/products/pantalon-dd001/0.png 540w,
-                      /shop/assets/products/pantalon-dd001/0.png 600w,
-                      /shop/assets/products/pantalon-dd001/0.png 800w,
+                      /shop/assets/products-sized/320/pantalon-dd001/0.webp 240w,
+                      /shop/assets/products-sized/320/pantalon-dd001/0.webp 320w,
+                      /shop/assets/products-sized/540/pantalon-dd001/0.webp 400w,
+                      /shop/assets/products-sized/540/pantalon-dd001/0.webp 540w,
+                      /shop/assets/products-sized/800/pantalon-dd001/0.webp 600w,
+                      /shop/assets/products-sized/800/pantalon-dd001/0.webp 800w,
                       /shop/assets/products/pantalon-dd001/0.png 960w
                     "
                     data-sizes="auto"
@@ -2182,15 +2196,15 @@ ul.categories li.page a:hover{color:#3d4045 !important;background:transparent !i
                   <img
                     alt=""
                     class="blur-up product-list-image lazyload grid-cover"
-                    src="/shop/assets/products/short-ge0001/0.png"
+                    src="/shop/assets/products-sized/24/short-ge0001/0.webp"
                     data-aspectratio="1.0775862068965518"
                     data-srcset="
-                      /shop/assets/products/short-ge0001/0.png 240w,
-                      /shop/assets/products/short-ge0001/0.png 320w,
-                      /shop/assets/products/short-ge0001/0.png 400w,
-                      /shop/assets/products/short-ge0001/0.png 540w,
-                      /shop/assets/products/short-ge0001/0.png 600w,
-                      /shop/assets/products/short-ge0001/0.png 800w,
+                      /shop/assets/products-sized/320/short-ge0001/0.webp 240w,
+                      /shop/assets/products-sized/320/short-ge0001/0.webp 320w,
+                      /shop/assets/products-sized/540/short-ge0001/0.webp 400w,
+                      /shop/assets/products-sized/540/short-ge0001/0.webp 540w,
+                      /shop/assets/products-sized/800/short-ge0001/0.webp 600w,
+                      /shop/assets/products-sized/800/short-ge0001/0.webp 800w,
                       /shop/assets/products/short-ge0001/0.png 960w
                     "
                     data-sizes="auto"
@@ -2232,15 +2246,15 @@ ul.categories li.page a:hover{color:#3d4045 !important;background:transparent !i
                   <img
                     alt=""
                     class="blur-up product-list-image lazyload grid-cover"
-                    src="/shop/assets/products/short-sg001/0.png"
+                    src="/shop/assets/products-sized/24/short-sg001/0.webp"
                     data-aspectratio="1.2453300124533002"
                     data-srcset="
-                      /shop/assets/products/short-sg001/0.png 240w,
-                      /shop/assets/products/short-sg001/0.png 320w,
-                      /shop/assets/products/short-sg001/0.png 400w,
-                      /shop/assets/products/short-sg001/0.png 540w,
-                      /shop/assets/products/short-sg001/0.png 600w,
-                      /shop/assets/products/short-sg001/0.png 800w,
+                      /shop/assets/products-sized/320/short-sg001/0.webp 240w,
+                      /shop/assets/products-sized/320/short-sg001/0.webp 320w,
+                      /shop/assets/products-sized/540/short-sg001/0.webp 400w,
+                      /shop/assets/products-sized/540/short-sg001/0.webp 540w,
+                      /shop/assets/products-sized/800/short-sg001/0.webp 600w,
+                      /shop/assets/products-sized/800/short-sg001/0.webp 800w,
                       /shop/assets/products/short-sg001/0.png 960w
                     "
                     data-sizes="auto"
@@ -2282,15 +2296,15 @@ ul.categories li.page a:hover{color:#3d4045 !important;background:transparent !i
                   <img
                     alt=""
                     class="blur-up product-list-image lazyload grid-cover"
-                    src="/shop/assets/products/gp_0002/0.png"
+                    src="/shop/assets/products-sized/24/gp_0002/0.webp"
                     data-aspectratio="0.81"
                     data-srcset="
-                      /shop/assets/products/gp_0002/0.png 240w,
-                      /shop/assets/products/gp_0002/0.png 320w,
-                      /shop/assets/products/gp_0002/0.png 400w,
-                      /shop/assets/products/gp_0002/0.png 540w,
-                      /shop/assets/products/gp_0002/0.png 600w,
-                      /shop/assets/products/gp_0002/0.png 800w,
+                      /shop/assets/products-sized/320/gp_0002/0.webp 240w,
+                      /shop/assets/products-sized/320/gp_0002/0.webp 320w,
+                      /shop/assets/products-sized/540/gp_0002/0.webp 400w,
+                      /shop/assets/products-sized/540/gp_0002/0.webp 540w,
+                      /shop/assets/products-sized/800/gp_0002/0.webp 600w,
+                      /shop/assets/products-sized/800/gp_0002/0.webp 800w,
                       /shop/assets/products/gp_0002/0.png 960w
                     "
                     data-sizes="auto"
@@ -2332,15 +2346,15 @@ ul.categories li.page a:hover{color:#3d4045 !important;background:transparent !i
                   <img
                     alt=""
                     class="blur-up product-list-image lazyload grid-cover"
-                    src="/shop/assets/products/sma_0001/0.png"
+                    src="/shop/assets/products-sized/24/sma_0001/0.webp"
                     data-aspectratio="1.0482180293501049"
                     data-srcset="
-                      /shop/assets/products/sma_0001/0.png 240w,
-                      /shop/assets/products/sma_0001/0.png 320w,
-                      /shop/assets/products/sma_0001/0.png 400w,
-                      /shop/assets/products/sma_0001/0.png 540w,
-                      /shop/assets/products/sma_0001/0.png 600w,
-                      /shop/assets/products/sma_0001/0.png 800w,
+                      /shop/assets/products-sized/320/sma_0001/0.webp 240w,
+                      /shop/assets/products-sized/320/sma_0001/0.webp 320w,
+                      /shop/assets/products-sized/540/sma_0001/0.webp 400w,
+                      /shop/assets/products-sized/540/sma_0001/0.webp 540w,
+                      /shop/assets/products-sized/800/sma_0001/0.webp 600w,
+                      /shop/assets/products-sized/800/sma_0001/0.webp 800w,
                       /shop/assets/products/sma_0001/0.png 960w
                     "
                     data-sizes="auto"
@@ -2384,15 +2398,15 @@ ul.categories li.page a:hover{color:#3d4045 !important;background:transparent !i
                   <img
                     alt=""
                     class="blur-up product-list-image lazyload grid-cover"
-                    src="/shop/assets/products/short-coupe-évasée/0.png"
+                    src="/shop/assets/products-sized/24/short-coupe-évasée/0.webp"
                     data-aspectratio="1.0683760683760684"
                     data-srcset="
-                      /shop/assets/products/short-coupe-évasée/0.png 240w,
-                      /shop/assets/products/short-coupe-évasée/0.png 320w,
-                      /shop/assets/products/short-coupe-évasée/0.png 400w,
-                      /shop/assets/products/short-coupe-évasée/0.png 540w,
-                      /shop/assets/products/short-coupe-évasée/0.png 600w,
-                      /shop/assets/products/short-coupe-évasée/0.png 800w,
+                      /shop/assets/products-sized/320/short-coupe-évasée/0.webp 240w,
+                      /shop/assets/products-sized/320/short-coupe-évasée/0.webp 320w,
+                      /shop/assets/products-sized/540/short-coupe-évasée/0.webp 400w,
+                      /shop/assets/products-sized/540/short-coupe-évasée/0.webp 540w,
+                      /shop/assets/products-sized/800/short-coupe-évasée/0.webp 600w,
+                      /shop/assets/products-sized/800/short-coupe-évasée/0.webp 800w,
                       /shop/assets/products/short-coupe-évasée/0.png 960w
                     "
                     data-sizes="auto"
@@ -2436,15 +2450,15 @@ ul.categories li.page a:hover{color:#3d4045 !important;background:transparent !i
                   <img
                     alt=""
                     class="blur-up product-list-image lazyload grid-cover"
-                    src="/shop/assets/products/short-ml001/0.png"
+                    src="/shop/assets/products-sized/24/short-ml001/0.webp"
                     data-aspectratio="1.0482180293501049"
                     data-srcset="
-                      /shop/assets/products/short-ml001/0.png 240w,
-                      /shop/assets/products/short-ml001/0.png 320w,
-                      /shop/assets/products/short-ml001/0.png 400w,
-                      /shop/assets/products/short-ml001/0.png 540w,
-                      /shop/assets/products/short-ml001/0.png 600w,
-                      /shop/assets/products/short-ml001/0.png 800w,
+                      /shop/assets/products-sized/320/short-ml001/0.webp 240w,
+                      /shop/assets/products-sized/320/short-ml001/0.webp 320w,
+                      /shop/assets/products-sized/540/short-ml001/0.webp 400w,
+                      /shop/assets/products-sized/540/short-ml001/0.webp 540w,
+                      /shop/assets/products-sized/800/short-ml001/0.webp 600w,
+                      /shop/assets/products-sized/800/short-ml001/0.webp 800w,
                       /shop/assets/products/short-ml001/0.png 960w
                     "
                     data-sizes="auto"
