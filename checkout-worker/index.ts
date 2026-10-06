@@ -541,7 +541,7 @@ async function sendOrderEmails(env: Env, s: any) {
 
   if (needAlert) {
     const m = sellerEmail(order);
-    const ok = await resendSend(env, customerFrom || 'vgthmind <onboarding@resend.dev>', alertTo, m.subject, m.html, m.text);
+    const ok = await resendSend(env, customerFrom || 'vgthmind <onboarding@resend.dev>', alertTo, m.subject, m.html, m.text, REPLY_TO);
     if (ok) done.alert = 1;
   }
   if (needClient && order.email) {
