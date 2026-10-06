@@ -414,6 +414,10 @@ async function main() {
   if (fs.existsSync(productImagesSrc)) fs.cpSync(productImagesSrc, rel(OUT_DIR, 'assets', 'products'), { recursive: true });
   fs.cpSync(rel(ROOT, 'assets', 'theme'), rel(OUT_DIR, 'assets', 'theme'), { recursive: true });
   fs.copyFileSync(rel(ROOT, 'robots.txt'), rel(OUT_DIR, 'robots.txt'));
+  // Admin (Sveltia CMS) : servi tel quel sous /shop/admin/ (page + config +
+  // pages maison), jamais passé par le préfixe /shop (Sveltia lit
+  // config.yml à côté de la page).
+  fs.cpSync(rel(ROOT, 'admin'), rel(OUT_DIR, 'admin'), { recursive: true });
 
   // sitemap.xml - inert for now (robots.txt still has "Disallow: /" until
   // this is the official shop, see robots.txt), ready for launch day: a
