@@ -1,21 +1,34 @@
 /* Connexion des pages admin maison (Stock, Commandes) : « Se connecter avec
    GitHub », même relais OAuth que Sveltia (Worker /auth -> /callback, seul
-   le compte vgthmind est accepté). Le jeton reste dans ce navigateur
-   (localStorage), comme celui de Sveltia, qu'on réutilise s'il existe. */
+   le compte vgthmind est accepté). Le Worker rend une session signée de 30 jours,
+   gardée dans ce navigateur (localStorage, pas de cookie : Safari bloque les
+   cookies tiers) et renouvelée à chaque visite. Le jeton GitHub n'est pas gardé. */
 (function () {
   'use strict';
   var ENDPOINT = 'https://vgthmind-shop-checkout.vgthm66.workers.dev';
   window.VG_ENDPOINT = ENDPOINT;
 
+  var KEY = 'vg-admin-session';
+
+  // Session signee par le Worker (30 jours, renouvelee), vide si absente ou expiree.
   window.vgAdminToken = function () {
     try {
-      var own = localStorage.getItem('vg-admin-token');
-      if (own) return own;
-      var sveltia = JSON.parse(localStorage.getItem('sveltia-cms.user') || 'null');
-      if (sveltia && sveltia.token) return sveltia.token;
-    } catch (e) {}
-    return '';
+      var s = localStorage.getItem(KEY) || '';
+      var exp = Number(s.split('.')[1]);
+      return exp > Date.now() / 1000 ? s : '';
+    } catch (e) { return ''; }
   };
+
+  // Renouvelle la session si elle a plus d'un jour (sans bloquer la page).
+  function renew() {
+    var s = window.vgAdminToken();
+    if (!s || Number(s.split('.')[1]) - Date.now() / 1000 > 29 * 86400) return;
+    fetch(ENDPOINT + '/admin/renew', { method: 'POST', headers: { Authorization: 'Bearer ' + s } })
+      .then(function (r) { return r.ok ? r.json() : null; })
+      .then(function (d) { if (d && d.session) localStorage.setItem(KEY, d.session); })
+      .catch(function () {});
+  }
+  renew();
 
   window.vgAdminLogin = function () {
     return new Promise(function (resolve, reject) {
@@ -31,9 +44,9 @@
         window.removeEventListener('message', onMessage);
         var payload = {};
         try { payload = JSON.parse(m[2]); } catch (err) {}
-        if (m[1] === 'success' && payload.token) {
-          try { localStorage.setItem('vg-admin-token', payload.token); } catch (err) {}
-          resolve(payload.token);
+        if (m[1] === 'success' && payload.session) {
+          try { localStorage.setItem(KEY, payload.session); } catch (err) {}
+          resolve(payload.session);
         } else {
           reject(new Error(payload.message || 'Connexion refusée.'));
         }
@@ -43,7 +56,7 @@
   };
 
   window.vgAdminLogout = function () {
-    try { localStorage.removeItem('vg-admin-token'); } catch (e) {}
+    try { localStorage.removeItem(KEY); localStorage.removeItem('vg-admin-token'); } catch (e) {}
   };
 
   // Appel au Worker avec le jeton ; 401 -> jeton oublié (à reconnecter).
