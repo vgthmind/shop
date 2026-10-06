@@ -1,0 +1,14 @@
+name = "vgthmind-shop-checkout"
+main = "index.ts"
+
+compatibility_date = "2024-01-01"
+
+# Remplace par ton propre account_id Cloudflare (obtenu via `wrangler whoami`
+# apres `wrangler login` - deja fait, voir chantier/ETAT.md du 2026-10-06).
+account_id = "COLLE_TON_ACCOUNT_ID_ICI"
+workers_dev = true
+
+# Autorise uniquement le site a appeler ce Worker (CORS, voir index.ts).
+# Mets a jour si jamais /shop/ change d'adresse.
+[vars]
+ALLOWED_ORIGIN = "https://vgthmind.github.io"

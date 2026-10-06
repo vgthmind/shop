@@ -1,0 +1,13 @@
+{
+  "name": "vgthmind-shop-checkout-worker",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Cree une session Stripe Checkout pour le panier de la boutique (shop/assets/vg-shop-cart.js), deploye en Cloudflare Worker. Pas de dependance a Stripe node SDK (appel direct a l'API REST, plus leger en Worker).",
+  "main": "index.ts",
+  "scripts": {
+    "deploy": "wrangler deploy"
+  },
+  "devDependencies": {
+    "wrangler": "^3"
+  }
+}

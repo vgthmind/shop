@@ -1590,6 +1590,22 @@ ul.categories li.page a:hover{color:#3d4045 !important;background:transparent !i
 .vg-back-link{display:inline-block !important;margin-bottom:10px !important;font-family:'IBM Plex Mono',monospace !important;font-size:11px !important;letter-spacing:0.05em !important;text-transform:uppercase !important;color:#8d929a !important;text-decoration:none !important;}
 .vg-back-link:hover{color:#3a4de8 !important;}
 </style>
+<style>.vg-cart-rendered{max-width:640px;margin:0 auto;padding:0 16px;}
+.vg-cart-items{list-style:none;margin:0 0 24px;padding:0;}
+.vg-cart-item{display:grid;grid-template-columns:64px 1fr auto;grid-template-areas:"img name remove" "img price price" "img pay pay";align-items:center;column-gap:12px;row-gap:4px;padding:12px 0;border-bottom:1px solid rgba(0,0,0,.1);}
+.vg-cart-item img{grid-area:img;width:64px;height:64px;object-fit:cover;border-radius:4px;}
+.vg-cart-item-name{grid-area:name;min-width:0;overflow-wrap:break-word;}
+.vg-cart-item-price{grid-area:price;}
+.vg-cart-item a.button,.vg-cart-unavailable{grid-area:pay;}
+.vg-cart-unavailable{font-size:.85em;opacity:.7;}
+.vg-cart-remove{grid-area:remove;justify-self:end;background:none;border:none;font-size:20px;line-height:1;cursor:pointer;padding:4px 8px;opacity:.6;}
+.vg-cart-remove:hover{opacity:1;}
+.vg-cart-footer{padding-top:12px;}
+.vg-cart-region{display:block;margin-bottom:12px;}
+.vg-cart-line{display:flex;justify-content:space-between;padding:2px 0;}
+.vg-cart-total{font-weight:600;border-top:1px solid rgba(0,0,0,.1);margin-top:6px;padding-top:10px;}
+.vg-cart-checkout-all{display:block;width:100%;margin-top:14px;}
+.vg-cart-note{font-size:.85em;opacity:.75;margin-top:16px;}</style>
 </head>
   <body id="gp_0002" class="product preloader transition-preloader" data-bc-page-type="gp_0002">
     
@@ -3191,5 +3207,6 @@ nav.sections a:hover:hover:hover:hover:hover:hover,.header nav a:hover:hover:hov
 }).call(window, window.__vgLoc || window.location);</script>
 
 
+<script src="/shop/assets/vg-shop-cart.js" defer></script>
 </body>
 </html>
