@@ -425,7 +425,7 @@ async function isAdmin(request: Request, env: Env): Promise<boolean> {
 
 async function listOrders(request: Request, env: Env, key: string, json: JsonFn): Promise<Response> {
   if (!(await isAdmin(request, env))) return json({ error: 'Non autorisé.' }, 401);
-  const stripe = await stripeCall(key, 'GET', '/v1/checkout/sessions?status=complete&limit=50&expand[]=data.line_items');
+  const stripe = await stripeCall(key, 'GET', '/v1/checkout/sessions?status=complete&limit=100&expand[]=data.line_items');
   if (!stripe.ok) return json({ error: stripe.data.error?.message || 'Erreur Stripe' }, 502);
   const orders = [];
   for (const s of stripe.data.data || []) {
