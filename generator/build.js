@@ -433,11 +433,11 @@ async function main() {
   page('index.html', src.home, Object.assign({}, base, {
     page: { name: 'Home', permalink: 'home', category: 'home', full_url: '/' },
     // home.html: {% paginate products from products.current by theme.featured_products %}
-    products: { current: catalog.products },
+    products: { current: catalog.products.filter((p) => !p.hidden) },
   }));
   page('products/index.html', src.products, Object.assign({}, base, {
     page: { name: 'Products', permalink: 'products', category: 'products', full_url: '/products' },
-    products: { current: catalog.products },
+    products: { current: catalog.products.filter((p) => !p.hidden) },
   }));
   for (const cat of catalog.categories) {
     // "all" is a real page too (/category/all) - every product's categories
@@ -545,7 +545,7 @@ async function main() {
   const urls = [
     `${BASE_PATH}/`, `${BASE_PATH}/products`,
     ...catalog.categories.map((c) => `${BASE_PATH}/category/${c.permalink}`),
-    ...catalog.products.map((p) => `${BASE_PATH}${p.url}`),
+    ...catalog.products.filter((p) => !p.hidden).map((p) => `${BASE_PATH}${p.url}`),
     ...CUSTOM_PAGES.map((cp) => `${BASE_PATH}${cp.url}`),
   ];
   const sitemap = '<?xml version="1.0" encoding="UTF-8"?>\n'

@@ -50,7 +50,9 @@ function imageDims(localPath) {
 function buildProduct(admin, imageMap) {
   if (!admin.name || !admin.slug) throw new Error(`Produit sans nom/slug: ${JSON.stringify(admin)}`);
   const realCats = admin.categories || [];
-  if (realCats.length === 0) throw new Error(`Produit "${admin.name}": aucune categorie (data/products/${admin.slug}.json)`);
+  // hidden: true = page + paiement OK, mais ni liste, ni categorie, ni sitemap
+  // (produit test du passage en live).
+  if (realCats.length === 0 && admin.hidden !== true) throw new Error(`Produit "${admin.name}": aucune categorie (data/products/${admin.slug}.json)`);
   for (const perm of realCats) {
     if (!byPermalink.has(perm)) throw new Error(`Produit "${admin.name}": categorie "${perm}" inconnue (voir data/categories.json)`);
   }
@@ -59,8 +61,8 @@ function buildProduct(admin, imageMap) {
     imageMap[url] = url; // identity: already-local paths, see generator/filters.js productImageUrl()
     return Object.assign({ url }, dims);
   });
-  const categories = [...realCats.map((perm) => byPermalink.get(perm)), ALL];
-  if (admin.latest_drop) categories.push(LATEST_DROP);
+  const categories = admin.hidden === true ? [] : [...realCats.map((perm) => byPermalink.get(perm)), ALL];
+  if (admin.latest_drop && admin.hidden !== true)categories.push(LATEST_DROP);
 
   // quantity = STARTING stock only (1 = one-of-a-kind, the default). The real
   // stock lives in the checkout Worker (Durable Object): sales count it down
@@ -104,6 +106,7 @@ function buildProduct(admin, imageMap) {
     }],
     artists: [],
     categories,
+    ...(admin.hidden === true ? { hidden: true } : {}),
     option_groups: [],
     // ships_intl:false = France only (no "everywhere else" line, as on
     // BigCartel for SC_0008/SC_0009): the cart and the checkout Worker
