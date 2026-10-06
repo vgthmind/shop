@@ -48,6 +48,7 @@ collections:
       - { label: "Mettre en avant (Latest Drop)", name: "latest_drop", widget: "boolean", default: false }
       - { label: "En stock", name: "in_stock", widget: "boolean", default: true }
       - { label: "Frais de port France (EUR)", name: "shipping_fr", widget: "number", value_type: "float", default: 5 }
+      - { label: "Livrable hors de France", name: "ships_intl", widget: "boolean", default: true }
       - { label: "Frais de port international (EUR, Canada inclus)", name: "shipping_intl", widget: "number", value_type: "float", default: 15 }
       - label: "Lien de paiement Stripe"
         name: "stripe_payment_link"

@@ -1602,7 +1602,12 @@ ul.categories li.page a:hover{color:#3d4045 !important;background:transparent !i
 .vg-cart-line{display:flex;justify-content:space-between;padding:2px 0;}
 .vg-cart-total{font-weight:600;border-top:1px solid rgba(0,0,0,.1);margin-top:6px;padding-top:10px;}
 .vg-cart-checkout-all{display:block;width:100%;margin-top:14px;}
-.vg-cart-note{font-size:.85em;opacity:.75;margin-top:16px;}</style>
+.vg-cart-note{font-size:.85em;opacity:.75;margin-top:16px;}
+.vg-cart-checkout-all[disabled]{opacity:.45;cursor:not-allowed;}
+.vg-cart-msg{margin-top:12px;padding:10px 14px;border-radius:12px;background:rgba(255,255,255,.55);border:1px solid rgba(0,0,0,.12);}
+.vg-cart-msg[hidden],.vg-order-summary[hidden]{display:none;}
+.vg-order-summary{max-width:640px;margin:16px 0 24px;}
+.vg-order-summary .vg-cart-items{padding:0;}</style>
 </head>
   <body id="cart" class="cart preloader transition-preloader" data-bc-page-type="cart">
     

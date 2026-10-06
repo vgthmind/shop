@@ -14,3 +14,7 @@ desktop.ini
 oauth-worker/node_modules/
 oauth-worker/.wrangler/
 oauth-worker/dist/
+
+# checkout-worker (Cloudflare Worker tooling)
+checkout-worker/node_modules/
+checkout-worker/.wrangler/

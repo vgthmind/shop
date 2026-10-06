@@ -1,14 +1,14 @@
 name = "vgthmind-shop-checkout"
 main = "index.ts"
-
-compatibility_date = "2024-01-01"
-
-# Remplace par ton propre account_id Cloudflare (obtenu via `wrangler whoami`
-# apres `wrangler login` - deja fait, voir chantier/ETAT.md du 2026-10-06).
-account_id = "COLLE_TON_ACCOUNT_ID_ICI"
+compatibility_date = "2025-01-01"
 workers_dev = true
 
-# Autorise uniquement le site a appeler ce Worker (CORS, voir index.ts).
-# Mets a jour si jamais /shop/ change d'adresse.
+# Pas d'account_id ici : wrangler prend le compte de `wrangler login`.
+# Aucun secret dans ce fichier : STRIPE_SECRET_KEY se saisit avec
+#   npx wrangler secret put STRIPE_SECRET_KEY
 [vars]
 ALLOWED_ORIGIN = "https://vgthmind.github.io"
+SITE_BASE = "https://vgthmind.github.io/shop"
+# "1" seulement le jour du passage en live (voir README) : tant que c'est "0",
+# toute cle sk_live_ est refusee.
+LIVE_MODE = "0"

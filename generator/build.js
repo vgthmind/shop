@@ -68,6 +68,11 @@ const CART_CSS = `
 .vg-cart-total{font-weight:600;border-top:1px solid rgba(0,0,0,.1);margin-top:6px;padding-top:10px;}
 .vg-cart-checkout-all{display:block;width:100%;margin-top:14px;}
 .vg-cart-note{font-size:.85em;opacity:.75;margin-top:16px;}
+.vg-cart-checkout-all[disabled]{opacity:.45;cursor:not-allowed;}
+.vg-cart-msg{margin-top:12px;padding:10px 14px;border-radius:12px;background:rgba(255,255,255,.55);border:1px solid rgba(0,0,0,.12);}
+.vg-cart-msg[hidden],.vg-order-summary[hidden]{display:none;}
+.vg-order-summary{max-width:640px;margin:16px 0 24px;}
+.vg-order-summary .vg-cart-items{padding:0;}
 `.trim();
 
 // Custom pages of the draft, in its order (they make the header nav:
@@ -76,6 +81,12 @@ const CUSTOM_PAGES = [
   { name: 'Info & Terms', url: '/infos-conditions-generales', permalink: 'infos-conditions-generales' },
   { name: 'Contact', url: '/contact-914a3d', permalink: 'contact-914a3d' },
   { name: 'Studio', url: '/studio', permalink: 'studio' },
+];
+// Stripe Checkout return pages (success_url / cancel_url of checkout-worker/).
+const SHOP_PAGES_DIR = path.join(__dirname, 'shop-pages');
+const SHOP_PAGES = [
+  { name: 'Thank you', url: '/merci', permalink: 'merci' },
+  { name: 'Payment cancelled', url: '/paiement-annule', permalink: 'paiement-annule' },
 ];
 
 function rel(...p) { return path.join(...p); }
@@ -366,8 +377,14 @@ async function main() {
   }));
   // Custom pages (Info & Terms, Contact, Studio): the layout renders
   // page_content itself for category 'custom' (no page template).
-  for (const cp of CUSTOM_PAGES) {
-    const content = read(rel(PAGES_DIR, cp.permalink + '.html'));
+  // + the checkout return pages (not in the draft, not in the nav): same
+  // rendering, content in generator/shop-pages/, filled by vg-shop-cart.js.
+  const pageSources = [
+    ...CUSTOM_PAGES.map((cp) => Object.assign({ file: rel(PAGES_DIR, cp.permalink + '.html') }, cp)),
+    ...SHOP_PAGES.map((sp) => Object.assign({ file: rel(SHOP_PAGES_DIR, sp.permalink + '.html') }, sp)),
+  ];
+  for (const cp of pageSources) {
+    const content = read(cp.file);
     const ctx = Object.assign({}, base, {
       page: { name: cp.name, permalink: cp.permalink, category: 'custom', full_url: cp.url },
     });

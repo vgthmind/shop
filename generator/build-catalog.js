@@ -96,9 +96,12 @@ function buildProduct(admin, imageMap) {
     artists: [],
     categories,
     option_groups: [],
+    // ships_intl:false = France only (no "everywhere else" line, as on
+    // BigCartel for SC_0008/SC_0009): the cart and the checkout Worker
+    // refuse these pieces for an international delivery.
     shipping: [
       { amount_alone: admin.shipping_fr || 0, amount_with_others: 0, country: { id: 15, name: 'France', code: 'FR' } },
-      { amount_alone: admin.shipping_intl != null ? admin.shipping_intl : (admin.shipping_fr || 0), amount_with_others: 0 },
+      ...(admin.ships_intl === false ? [] : [{ amount_alone: admin.shipping_intl != null ? admin.shipping_intl : (admin.shipping_fr || 0), amount_with_others: 0 }]),
     ],
     // Not part of BigCartel's own shape: read by the front-end cart
     // (assets/vg-shop-cart.js) and left out of nothing templates render.

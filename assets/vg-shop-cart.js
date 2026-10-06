@@ -12,15 +12,18 @@
    intercepte seulement l'événement submit, qui se déclenche après le
    click que ce script-là écoute, pour éviter tout conflit).
 
-   Paiement : chaque pièce étant unique, pas de vrai panier multi-articles
-   unifié pour l'instant (voir ETAT.md, tâche 2) - un lien de paiement
-   Stripe par pièce (configuré dans l'admin, admin/config.yml). Si
-   window.VG_SHOP_CHECKOUT_ENDPOINT est renseigné un jour (petite fonction
-   serverless créant une session Stripe Checkout pour tout le panier -
-   voir checkout-worker/), ce module l'utilise à la place. */
+   Paiement : tout le panier en une fois via le Checkout Worker
+   (checkout-worker/, session Stripe Checkout créée côté serveur, qui relit
+   prix, stock et frais de port dans le catalogue publié). Retour de Stripe
+   sur /merci (panier vidé, récapitulatif) ou /paiement-annule (panier
+   gardé). Les liens Stripe par pièce de l'admin ne servent plus que de
+   repli si l'endpoint est vidé. */
 (function () {
   'use strict';
   var STORAGE_KEY = 'vg-shop-cart-v1';
+  var ENDPOINT = window.VG_SHOP_CHECKOUT_ENDPOINT !== undefined
+    ? window.VG_SHOP_CHECKOUT_ENDPOINT
+    : 'https://vgthmind-shop-checkout.vgthm66.workers.dev';
   var loc = window.__vgLoc || window.location;
 
   function readCart() {
@@ -33,6 +36,11 @@
 
   function money(amount) {
     return (Math.round((amount || 0) * 100) / 100).toFixed(2).replace('.', ',') + ' EUR';
+  }
+  function esc(s) {
+    return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+    });
   }
 
   function updateBadges(items) {
@@ -89,19 +97,20 @@
       .catch(function () { loc.href = '/cart'; });
   }, true);
 
+  // --- Frais de port : ligne "FR" pour la France, ligne sans pays pour
+  // l'international ; pas de ligne sans pays = pièce livrable en France
+  // seulement (null).
+  function shippingFor(item, region) {
+    var list = item.shipping || [];
+    var line = list.filter(function (s) {
+      return region === 'fr' ? (s.country && s.country.code === 'FR') : !s.country;
+    })[0];
+    return line ? line.amount_alone : (region === 'fr' ? 0 : null);
+  }
+
   // --- Rendu du panier (remplace l'état "vide" statique de cart.html
   // quand le panier local contient quelque chose - ne touche jamais au
   // gabarit lui-même).
-  function shippingFor(item, region) {
-    var list = item.shipping || [];
-    if (region === 'fr') {
-      var fr = list.filter(function (s) { return s.country && s.country.code === 'FR'; })[0];
-      return fr ? fr.amount_alone : 0;
-    }
-    var intl = list.filter(function (s) { return !s.country; })[0];
-    return intl ? intl.amount_alone : (list[0] ? list[0].amount_alone : 0);
-  }
-
   function renderCart() {
     var wrapper = document.querySelector('.cart-wrapper');
     if (!wrapper) return;
@@ -110,35 +119,41 @@
     if (items.length === 0) return; // laisse l'etat "panier vide" du gabarit
 
     var region = 'fr';
+    try { region = localStorage.getItem('vg-shop-region') === 'intl' ? 'intl' : 'fr'; } catch (e) {}
+    var message = '';
     var root = document.createElement('div');
     root.className = 'vg-cart-rendered';
 
     function subtotal() { return items.reduce(function (s, it) { return s + (it.price || 0); }, 0); }
+    function franceOnly() { return items.filter(function (it) { return shippingFor(it, region) === null; }); }
     // Les frais de port BigCartel de ce catalogue ont tous
     // amount_with_others=0 : combiner des pièces ne coûte jamais plus que
-    // la pièce la plus chère à expédier seule (vérifié sur les 27 pièces
-    // importées) - le panier reprend donc cette règle plutôt que de
-    // sommer un frais par pièce.
+    // la pièce la plus chère à expédier seule - même règle ici et dans le
+    // Worker (qui fait foi).
     function shippingTotal() {
-      return items.reduce(function (max, it) { return Math.max(max, shippingFor(it, region)); }, 0);
+      return items.reduce(function (max, it) { return Math.max(max, shippingFor(it, region) || 0); }, 0);
     }
 
     function draw() {
       root.innerHTML = '';
+      var blocked = franceOnly();
       var list = document.createElement('ul');
       list.className = 'vg-cart-items';
       items.forEach(function (it) {
         var li = document.createElement('li');
         li.className = 'vg-cart-item';
-        var img = it.image ? '<img src="' + it.image + '" alt="" width="64" height="64">' : '';
-        var payLink = it.stripe_payment_link
-          ? '<a class="button minimal-button" href="' + it.stripe_payment_link + '" target="_blank" rel="noopener">Payer cette pièce</a>'
-          : '<span class="vg-cart-unavailable">Indisponible au paiement en ligne pour l’instant — contacte-moi sur Instagram</span>';
+        var img = it.image ? '<img src="' + esc(it.image) + '" alt="" width="64" height="64">' : '';
+        var extra = '';
+        if (blocked.indexOf(it) !== -1) {
+          extra = '<span class="vg-cart-unavailable">France only / livraison en France uniquement</span>';
+        } else if (!ENDPOINT && it.stripe_payment_link) {
+          extra = '<a class="button minimal-button" href="' + esc(it.stripe_payment_link) + '" target="_blank" rel="noopener">Payer cette pièce</a>';
+        }
         li.innerHTML = img
-          + '<span class="vg-cart-item-name"><a href="' + it.url + '">' + it.name + '</a></span>'
+          + '<span class="vg-cart-item-name"><a href="' + esc(it.url) + '">' + esc(it.name) + '</a></span>'
           + '<span class="vg-cart-item-price">' + money(it.price) + '</span>'
-          + payLink
-          + '<button type="button" class="vg-cart-remove" data-slug="' + it.slug + '" aria-label="Retirer">×</button>';
+          + extra
+          + '<button type="button" class="vg-cart-remove" data-slug="' + esc(it.slug) + '" aria-label="Remove / Retirer">×</button>';
         list.appendChild(li);
       });
       root.appendChild(list);
@@ -146,59 +161,107 @@
       var footer = document.createElement('div');
       footer.className = 'vg-cart-footer';
       footer.innerHTML =
-        '<label class="vg-cart-region">Livraison : '
+        '<label class="vg-cart-region">Shipping / Livraison : '
         + '<select class="vg-cart-region-select">'
         + '<option value="fr"' + (region === 'fr' ? ' selected' : '') + '>France</option>'
-        + '<option value="intl"' + (region === 'intl' ? ' selected' : '') + '>International (Canada inclus)</option>'
+        + '<option value="intl"' + (region === 'intl' ? ' selected' : '') + '>International</option>'
         + '</select></label>'
-        + '<div class="vg-cart-line">Sous-total : ' + money(subtotal()) + '</div>'
-        + '<div class="vg-cart-line">Livraison : ' + money(shippingTotal()) + '</div>'
-        + '<div class="vg-cart-line vg-cart-total">Total : ' + money(subtotal() + shippingTotal()) + '</div>'
-        + (window.VG_SHOP_CHECKOUT_ENDPOINT
-            ? '<button type="button" class="button vg-cart-checkout-all">Payer tout le panier</button>'
+        + '<div class="vg-cart-line"><span>Subtotal / Sous-total</span><span>' + money(subtotal()) + '</span></div>'
+        + '<div class="vg-cart-line"><span>Shipping / Livraison</span><span>' + money(shippingTotal()) + '</span></div>'
+        + '<div class="vg-cart-line vg-cart-total"><span>Total</span><span>' + money(subtotal() + shippingTotal()) + '</span></div>'
+        + (ENDPOINT
+            ? '<button type="button" class="button vg-cart-checkout-all"' + (blocked.length ? ' disabled' : '') + '>Checkout / Payer</button>'
             : '')
-        + '<p class="vg-cart-note">Chaque pièce étant unique, le paiement se fait pièce par pièce via son propre lien Stripe sécurisé ci-dessus.</p>';
+        + '<p class="vg-cart-msg" role="status" aria-live="polite"' + (message ? '' : ' hidden') + '>' + esc(message) + '</p>'
+        + (blocked.length
+            ? '<p class="vg-cart-note">Remove the France-only pieces to ship abroad. / Retire les pièces livrables en France uniquement pour une livraison à l\'étranger.</p>'
+            : '')
+        + '<p class="vg-cart-note">Secure payment by Stripe (card, Apple Pay, Google Pay). / Paiement sécurisé par Stripe.</p>';
       root.appendChild(footer);
 
       root.querySelectorAll('.vg-cart-remove').forEach(function (btn) {
         btn.addEventListener('click', function () {
           items = removeItem(btn.getAttribute('data-slug'));
-          if (items.length === 0) { wrapper.querySelector('.vg-cart-rendered').remove(); location.reload(); return; }
+          message = '';
+          if (items.length === 0) { root.remove(); location.reload(); return; }
           draw();
         });
       });
       root.querySelector('.vg-cart-region-select').addEventListener('change', function (e) {
         region = e.target.value;
+        try { localStorage.setItem('vg-shop-region', region); } catch (err) {}
+        message = '';
         draw();
       });
       var checkoutBtn = root.querySelector('.vg-cart-checkout-all');
-      if (checkoutBtn) {
-        checkoutBtn.addEventListener('click', function () {
-          checkoutBtn.disabled = true;
-          checkoutBtn.textContent = 'Un instant...';
-          fetch(window.VG_SHOP_CHECKOUT_ENDPOINT, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ items: items, region: region }),
-          })
-            .then(function (r) { return r.json(); })
-            .then(function (data) {
-              if (data.url) { window.location.href = data.url; return; }
-              throw new Error(data.error || 'Erreur inconnue');
-            })
-            .catch(function (e) {
-              checkoutBtn.disabled = false;
-              checkoutBtn.textContent = 'Payer tout le panier';
-              alert('Paiement groupé indisponible pour le moment (' + e.message + '). Utilise les liens par pièce ci-dessus.');
-            });
-        });
-      }
+      if (checkoutBtn) checkoutBtn.addEventListener('click', function () { checkout(checkoutBtn); });
     }
-    draw();
 
+    function checkout(btn) {
+      btn.disabled = true;
+      btn.textContent = 'Un instant…';
+      fetch(ENDPOINT + '/checkout', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ items: items.map(function (it) { return it.slug; }), region: region }),
+      })
+        .then(function (r) { return r.json().then(function (data) { return { status: r.status, data: data }; }); })
+        .then(function (res) {
+          if (res.data.url) { window.location.href = res.data.url; return; }
+          if (res.status === 409 && res.data.problems) {
+            // Pièces vendues entre-temps : retirées du panier, on le dit.
+            var gone = res.data.problems.filter(function (p) { return p.reason !== 'france_uniquement'; })
+              .map(function (p) { return p.slug; });
+            var names = items.filter(function (it) { return gone.indexOf(it.slug) !== -1; }).map(function (it) { return it.name; });
+            gone.forEach(function (slug) { items = removeItem(slug); });
+            message = names.length
+              ? 'Sorry, already sold / Désolé, déjà vendu : ' + names.join(', ') + '. Removed from your cart / Retiré du panier.'
+              : 'France only / Livraison en France uniquement pour certaines pièces.';
+            if (items.length === 0) { root.remove(); location.reload(); return; }
+          } else {
+            message = 'Payment unavailable right now / Paiement indisponible pour le moment (' + (res.data.error || 'erreur') + ').';
+          }
+          draw();
+        })
+        .catch(function () {
+          message = 'Connection problem, try again / Problème de connexion, réessaie.';
+          draw();
+        });
+    }
+
+    draw();
     var native = wrapper.querySelector('form.cart-form, .alert-message');
     if (native) native.style.display = 'none';
     wrapper.appendChild(root);
+  }
+
+  // --- Retour de Stripe : /merci (payé : panier vidé + récapitulatif) et
+  // /paiement-annule (rien à faire, le panier est intact).
+  function renderOrderResult() {
+    var box = document.querySelector('[data-vg-order="success"]');
+    if (!box) return;
+    var id = (loc.search || '').match(/[?&]session_id=([^&]+)/);
+    if (!id || !ENDPOINT) return;
+    fetch(ENDPOINT + '/session?id=' + encodeURIComponent(decodeURIComponent(id[1])))
+      .then(function (r) { return r.json(); })
+      .then(function (s) {
+        if (!s.paid) return;
+        var paidSlugs = s.slugs || [];
+        var left = readCart().filter(function (it) { return paidSlugs.indexOf(it.slug) === -1; });
+        writeCart(left);
+        var summary = box.querySelector('.vg-order-summary');
+        if (!summary) return;
+        summary.innerHTML = '<ul class="vg-cart-items">'
+          + (s.items || []).map(function (it) {
+            return '<li class="vg-cart-line"><span>' + esc(it.name) + '</span><span>' + money(it.amount) + '</span></li>';
+          }).join('')
+          + '<li class="vg-cart-line"><span>Shipping / Livraison</span><span>' + money(s.shipping) + '</span></li>'
+          + '<li class="vg-cart-line vg-cart-total"><span>Total</span><span>' + money(s.total) + '</span></li>'
+          + '</ul>'
+          + (s.email ? '<p class="vg-cart-note">Receipt sent to / Reçu envoyé à ' + esc(s.email) + '</p>' : '');
+        summary.hidden = false;
+      })
+      .catch(function () {});
   }
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', onReady);
@@ -206,5 +269,6 @@
   function onReady() {
     updateBadges();
     renderCart();
+    renderOrderResult();
   }
 })();
