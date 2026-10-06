@@ -12,3 +12,10 @@ SITE_BASE = "https://vgthmind.github.io/shop"
 # "1" seulement le jour du passage en live (voir README) : tant que c'est "0",
 # toute cle sk_live_ est refusee.
 LIVE_MODE = "0"
+GITHUB_REPO = "vgthmind/shop"
+
+# Reservations des pieces pendant un paiement (30 min) + trace des commandes.
+# (identifiant de stockage, pas un secret)
+[[kv_namespaces]]
+binding = "HOLDS"
+id = "de2360d770d64089b018c6f56d48bb85"

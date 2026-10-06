@@ -26,6 +26,19 @@
     : 'https://vgthmind-shop-checkout.vgthm66.workers.dev';
   var loc = window.__vgLoc || window.location;
 
+  // Identifiant anonyme du panier : le Worker réserve les pièces 30 min
+  // pour CE panier pendant un paiement (une autre personne ne peut pas les
+  // payer en même temps), sans bloquer ce même visiteur s'il revient.
+  function cartId() {
+    var id = '';
+    try { id = localStorage.getItem('vg-shop-cart-id') || ''; } catch (e) {}
+    if (!/^[A-Za-z0-9-]{8,64}$/.test(id)) {
+      id = 'c-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 10);
+      try { localStorage.setItem('vg-shop-cart-id', id); } catch (e) {}
+    }
+    return id;
+  }
+
   function readCart() {
     try { return JSON.parse(localStorage.getItem(STORAGE_KEY)) || []; } catch (e) { return []; }
   }
@@ -203,20 +216,25 @@
       fetch(ENDPOINT + '/checkout', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ items: items.map(function (it) { return it.slug; }), region: region }),
+        body: JSON.stringify({ items: items.map(function (it) { return it.slug; }), region: region, cart_id: cartId() }),
       })
         .then(function (r) { return r.json().then(function (data) { return { status: r.status, data: data }; }); })
         .then(function (res) {
           if (res.data.url) { window.location.href = res.data.url; return; }
           if (res.status === 409 && res.data.problems) {
             // Pièces vendues entre-temps : retirées du panier, on le dit.
-            var gone = res.data.problems.filter(function (p) { return p.reason !== 'france_uniquement'; })
+            var gone = res.data.problems.filter(function (p) { return p.reason === 'vendue' || p.reason === 'introuvable'; })
               .map(function (p) { return p.slug; });
+            var held = res.data.problems.filter(function (p) { return p.reason === 'reservee'; })
+              .map(function (p) { return p.slug; });
+            var heldNames = items.filter(function (it) { return held.indexOf(it.slug) !== -1; }).map(function (it) { return it.name; });
             var names = items.filter(function (it) { return gone.indexOf(it.slug) !== -1; }).map(function (it) { return it.name; });
             gone.forEach(function (slug) { items = removeItem(slug); });
             message = names.length
               ? 'Sorry, already sold / Désolé, déjà vendu : ' + names.join(', ') + '. Removed from your cart / Retiré du panier.'
-              : 'France only / Livraison en France uniquement pour certaines pièces.';
+              : heldNames.length
+                ? 'Someone is paying for ' + heldNames.join(', ') + ' right now, try again in 30 min. / Quelqu’un est en train de payer ' + heldNames.join(', ') + ', réessaie dans 30 min.'
+                : 'France only / Livraison en France uniquement pour certaines pièces.';
             if (items.length === 0) { root.remove(); location.reload(); return; }
           } else {
             message = 'Payment unavailable right now / Paiement indisponible pour le moment (' + (res.data.error || 'erreur') + ').';
@@ -238,10 +256,19 @@
   // --- Retour de Stripe : /merci (payé : panier vidé + récapitulatif) et
   // /paiement-annule (rien à faire, le panier est intact).
   function renderOrderResult() {
-    var box = document.querySelector('[data-vg-order="success"]');
-    if (!box) return;
     var id = (loc.search || '').match(/[?&]session_id=([^&]+)/);
     if (!id || !ENDPOINT) return;
+    if (document.querySelector('[data-vg-order="cancel"]')) {
+      // Rend tout de suite les pièces aux autres visiteurs.
+      fetch(ENDPOINT + '/release', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: decodeURIComponent(id[1]) }),
+      }).catch(function () {});
+      return;
+    }
+    var box = document.querySelector('[data-vg-order="success"]');
+    if (!box) return;
     fetch(ENDPOINT + '/session?id=' + encodeURIComponent(decodeURIComponent(id[1])))
       .then(function (r) { return r.json(); })
       .then(function (s) {
