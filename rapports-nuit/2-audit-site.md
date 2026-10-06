@@ -1,6 +1,6 @@
 # 2 — Audit du site public (FR et EN)
 
-Rapport de nuit, lecture seule : **aucune correction appliquée**. Périmètre : les 45 pages de `docs/` (accueil, 7 catégories, 27 fiches, panier, merci, paiement annulé, suivi, 404, Info & CGV, Mentions légales, Confidentialité, Studio, Contact), les e-mails (`checkout-worker/emails.ts`) et le Worker.
+Rapport de nuit, lecture seule : **aucune correction appliquée**. Périmètre : les 47 pages HTML de `docs/` (hors admin) (accueil, 7 catégories, 27 fiches, panier, merci, paiement annulé, suivi, 404, Info & CGV, Mentions légales, Confidentialité, Studio, Contact), les e-mails (`checkout-worker/emails.ts`) et le Worker.
 Méthode : lecture des sources (`theme/`, `generator/`, `data/products/`, `checkout-worker/`), script de contrôle des pages générées (titres, méta, liens, images), un seul test mobile automatisé (360 et 390 px, sans capture).
 Les corrections se font dans les **sources** (pas dans `docs/`, qui est généré). Après toute correction dans `theme/` ou `admin/` : `node generator/build.js` (règle du dépôt).
 Rien n'a été modifié concernant `LIVE_MODE`, `noindex`, `robots.txt`.
@@ -10,10 +10,10 @@ Rien n'a été modifié concernant `LIVE_MODE`, `noindex`, `robots.txt`.
 | Classe | Nombre |
 |---|---|
 | Bloquant avant lancement | 8 |
-| Important | 17 |
+| Important | 25 |
 | Confort | 14 |
 
-**Ce qui va bien** : aucun lien interne cassé (45 pages, tous les `href`/`src` vérifiés) ; aucune page ne déborde en largeur sur mobile (360/390 px) ; aucune cible tactile < 24 px ni texte < 12 px visibles ; `viewport` correct ; `prefers-reduced-motion` géré ; photos produit en WebP 320/540/800 avec `srcset` et chargement différé ; canonical + JSON-LD Product sur les 27 fiches ; stock réel côté Worker ; aucun secret, clé ni jeton privé dans le dépôt (recherche `sk_`, `whsec_`, `re_`).
+**Ce qui va bien** : aucun lien interne cassé (tous les `href`/`src` de toutes les pages vérifiés) ; aucune page ne déborde en largeur sur mobile (360/390 px) ; aucune cible tactile < 24 px ni texte < 12 px visibles ; `viewport` correct ; `prefers-reduced-motion` géré ; photos produit en WebP 320/540/800 avec `srcset` et chargement différé ; canonical + JSON-LD Product sur les 27 fiches ; stock réel côté Worker ; aucun secret, clé ni jeton privé dans le dépôt (recherche `sk_`, `whsec_`, `re_`).
 
 ---
 
@@ -63,13 +63,13 @@ Rien n'a été modifié concernant `LIVE_MODE`, `noindex`, `robots.txt`.
 | B2.8 | **`srcset` des grilles : PNG d'origine en dernière taille (960w)** : un écran large ou 2x charge le PNG (jusqu'à 900 Ko par vignette ; moyenne 360 Ko, 93 PNG, 34 Mo au total). | `docs/index.html:1852+` (généré par `generator/build.js`, `resize-images.js`) | Ajouter une taille WebP 1200 px et retirer le PNG du `srcset` (garder le PNG pour l'og:image seulement si besoin). |
 | B2.9 | **`/status` public** : révèle les 7 premiers caractères de la clé Stripe (`sk_test`), le nombre de pièces, la dernière sauvegarde, et appelle l'API Stripe à chaque visite. | `checkout-worker/index.ts:205, 615-650` | Réserver à l'admin (jeton `Bearer`) ou réduire la sortie. |
 | B2.10 | **`/checkout` sans limite** : un robot peut créer des sessions Stripe et **réserver tout le stock 32 min**, en boucle (blocage de vente). Seul `/track` est limité. | `checkout-worker/index.ts:307-337` (`reserve`), `:793-803` (`bump` n'est utilisé que pour le suivi) | Limite par IP (même mécanisme `bump`), plafond de réservations simultanées par IP, Turnstile (gratuit) si abus. |
-| B2.11 | **Pays proposés à l'international : toute la liste Stripe**, y compris des destinations que Colissimo ne dessert pas ou sous sanctions (RU, BY, KP absent mais IR/SY/CU/…?), et codes non pays (`ZZ`, `AC`, `TA`). | `checkout-worker/index.ts:82-92` | Liste blanche des pays réellement livrés (UE, UK, CH, CA, US…). Décision à prendre avec le chantier frais d'envoi. |
+| B2.11 | **Pays proposés à l'international : toute la liste Stripe**, y compris des destinations que Colissimo ne dessert pas ou sous sanctions (la liste contient notamment RU et BY) et des codes qui ne sont pas des pays à livrer (`ZZ`, `AC`, `TA`, `AQ`, `BV`). | `checkout-worker/index.ts:82-92` | Liste blanche des pays réellement livrés (UE, UK, CH, CA, US…). Décision à prendre avec le chantier frais d'envoi. |
 | B2.12 | **Annulation d'une commande / remboursement ne remet pas la pièce unique en vente** (voir rapport 1 #33, #25). | `checkout-worker/index.ts` | Voir B1.4. |
 | B2.13 | **Pas de pagination des commandes** (100 max) : au-delà, des commandes payées disparaissent de l'admin. | `checkout-worker/index.ts:701` | `starting_after` + cache KV. |
 | B2.14 | **Panier et paiement partiellement en français seulement** : « Un instant… » (bouton), « (erreur) » dans le message d'échec, alors que l'interface est en anglais ; « Remove » reste en anglais seul. | `assets/vg-shop-cart.js:324, 359, 271` | Libellés bilingues, comme les autres messages (« EN / FR »). |
 | B2.15 | **Titres et descriptions SEO génériques** : toutes les catégories partagent la même méta description ; fiches : `description` = les 300 premiers caractères de la fiche (anglais, sans ponctuation, ex. « White fleece neck warmer One size One-of-a-kind… »), `title` = « CH_0002 | vgthmind » sans type de pièce. | `generator/build.js:295-305` | Titre = « {nom} — {type}, pièce unique | vgthmind » ; description rédigée par pièce ou construite (type, matière, taille, « pièce unique faite main en France »), FR + EN. Champs dédiés dans l'admin. |
 | B2.16 | **Noms de pièces peu parlants** : `CH_0002`, `SMA_0001`… dans les titres, le panier et les e-mails ; `Pantalon GP_0002  collection « VGTHM »` (double espace), `Pantalon rouge framboise ` (espace final). | `data/products/gp_0002.json:2`, `pantalon-rouge-framboise.json:2` | Nom = type + référence (« Hoodie customisé CH_0002 »), nettoyer les espaces. |
-| B2.17 | **Frais de port incohérents d'une pièce à l'autre** : France 0 € (6 pantalons/shorts à 85–315 €), 1,90 €, 2,35 €, 3,50 €, 4 €, 5 €, 5,35 €, 5,50 €, 5,70 € ; international de 1,90 € à 30 € (même gabarit, ex. hoodies 9 € ou 25 €, shorts SMA 8 € ou 30 €). Le panier prend le plus haut : une pièce « gratuite » accompagnée d'un hoodie à 25 € coûte 25 €. | `data/products/*.json` (`shipping_fr`, `shipping_intl`, lignes 20-30) | Chantier frais d'envoi : grille par catégorie/poids, jamais par fiche. |
+| B2.17 | **Frais de port incohérents d'une pièce à l'autre** : France 0 € (6 pièces de 85 à 315 €), 1,90 €, 2,35 €, 3,50 €, 4 €, 5 €, 5,35 €, 5,50 €, 5,70 € ; international de 1,90 € à 30 € (même gabarit, ex. hoodies 9 € ou 25 €, shorts SMA 8 € ou 30 €). Le panier prend le plus haut : une pièce « gratuite » accompagnée d'un hoodie à 25 € coûte 25 €. | `data/products/*.json` (`shipping_fr`, `shipping_intl`, lignes 20-30) | Chantier frais d'envoi : grille par catégorie/poids, jamais par fiche. |
 
 ---
 
@@ -77,7 +77,7 @@ Rien n'a été modifié concernant `LIVE_MODE`, `noindex`, `robots.txt`.
 
 | # | Problème | Fichier : ligne | Correction |
 |---|---|---|---|
-| C1 | **Fautes dans les descriptions FR** : « Size M / S / L » à la place de « Taille » (19 fiches : ch_0002…0006, custom-hoodie, custom-tee-shirt-col-en-v, ja_0001, sa, sma_0001/3/4, ...). | `data/products/<slug>.json:5` (ex. `ch_0002.json:5`) | « Taille M ». Le Worker lit déjà « Size » ou « Taille » pour les e-mails : aucun risque. |
+| C1 | **Fautes dans les descriptions FR** : « Size M / S / L » à la place de « Taille » (12 fiches : ch_0002 à ch_0006, custom-hoodie, custom-tee-shirt-col-en-v, ja_0001, sa, sma_0001, sma_0003, sma_0004). | `data/products/<slug>.json:5` (ex. `ch_0002.json:5`) | « Taille M ». Le Worker lit déjà « Size » ou « Taille » pour les e-mails : aucun risque. |
 | C2 | « **Epais** » sans accent (3 fiches). | `pantalon-dd001.json:5`, `pantalon-ff001.json:5`, `pantalon-vc001.json:5` | « Épais ». |
 | C3 | « **Cotton bleu** » (FR) à la place de « Coton bleu ». | `data/products/sacoche.json:5` | « Coton bleu 100 % recouvert… ». |
 | C4 | Ponctuation FR : « 100% coton/ Bord côte », « Tissu: », « 24à48h », « Stylisme/Modélisme: ». Espaces insécables avant `:` `%` `!` absents ; « 58cm » sans espace. | `custom-hoodie.json:5`, `sacoche.json:5`, `contact-914a3d.html:8`, `infos-conditions-generales.html:24-26` | Uniformiser (« 24 à 48 h », « 100 % coton »). |
