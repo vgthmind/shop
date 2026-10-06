@@ -40,6 +40,11 @@ const BASE_PATH = process.env.BASE_PATH !== undefined ? process.env.BASE_PATH : 
 const DEV_JS_URL = 'https://vgthmind.github.io/assets/bigcartel/vg-transitions-dev.js';
 const DEV_KEYWORDS_URL = 'https://vgthmind.github.io/assets/bigcartel/search-keywords.json';
 const LOCAL_DEV_JS = '/assets/vg/vg-transitions-dev.js';
+// Same for the CSS (copied as is; its url()s are absolute): the shop no
+// longer changes when the portfolio's -dev CSS is edited, only on rebuild.
+const DEV_CSS_URL = 'https://vgthmind.github.io/assets/bigcartel/vg-transitions-dev.css';
+const LOCAL_DEV_CSS = '/assets/vg/vg-transitions-dev.css';
+let DEV_CSS_VERSION = '0'; // content hash, set in main()
 
 // BigCartel's own scripts, loaded from BigCartel's CDN exactly like the
 // draft does (jQuery is from cdnjs in the layout itself). Not copied into
@@ -307,6 +312,9 @@ function injectAround(html, parts, product) {
   html = html.replace(
     /(<link rel="preload" as="script" href=")https:\/\/vgthmind\.github\.io\/assets\/bigcartel\/vg-transitions-dev\.js[^"]*(")/,
     (m, a, b) => `${a}${LOCAL_DEV_JS}${b}`);
+  html = html.replace(
+    /https:\/\/vgthmind\.github\.io\/assets\/bigcartel\/vg-transitions-dev\.css\?v=[^"]*/g,
+    () => `${LOCAL_DEV_CSS}?v=${DEV_CSS_VERSION}`);
   // Body code before </body>, its dev-JS <script src> pointed at our wrapped copy.
   const body = wrapInlineScripts(parts.bodyCode).replace(
     /<script src="https:\/\/vgthmind\.github\.io\/assets\/bigcartel\/vg-transitions-dev\.js[^"]*"><\/script>/,
@@ -332,6 +340,8 @@ async function main() {
   };
 
   const devJs = await download(DEV_JS_URL);
+  const devCss = await download(DEV_CSS_URL);
+  DEV_CSS_VERSION = require('crypto').createHash('sha1').update(devCss).digest('hex').slice(0, 10);
   const keywords = await download(DEV_KEYWORDS_URL);
 
   fs.rmSync(OUT_DIR, { recursive: true, force: true });
@@ -434,6 +444,7 @@ async function main() {
   fs.mkdirSync(rel(OUT_DIR, 'assets', 'vg'), { recursive: true });
   write('assets/theme.css', liquid.render(T('theme.css'), base, filters));
   write('assets/vg/vg-transitions-dev.js', wrapScript(devJs));
+  write('assets/vg/vg-transitions-dev.css', devCss);
   // Mots-clés de recherche : fichier commun du portfolio + ceux saisis dans
   // l'admin pour chaque pièce (champ « Mots-clés de recherche »).
   const mergedKeywords = JSON.parse(keywords);
