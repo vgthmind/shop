@@ -8,8 +8,8 @@ backend:
   # uniquement. Pas de serveur OAuth a deployer. Voir README.md,
   # section "Securite" / "Connexion".
 
-media_folder: "assets/products/uploads"
-public_folder: "/assets/products/uploads"
+media_folder: "assets/products"
+public_folder: "/assets/products"
 
 collections:
   - name: "products"

@@ -37,7 +37,7 @@ data/categories.json  les 7 catégories (id/nom/URL stables), pas éditable par 
 assets/vg-shop-shim.js  shim "sous-dossier" (voir plus bas)
 assets/theme/     logo + photo d'accueil du thème (images du brouillon)
 assets/products/  photos produit (pièces migrées depuis BigCartel le 2026-10-05 ;
-                   les nouvelles photos ajoutées par l'admin vont dans assets/products/uploads/)
+                   les nouvelles photos ajoutées par l'admin y vont aussi)
 assets/products-sized/  mêmes photos en WebP 24/320/540/800 px (generator/resize-images.js, cache)
 assets/vg-shop-cart.js  panier (localStorage) + paiement via checkout-worker/
 checkout-worker/  Cloudflare Worker : session Stripe Checkout, webhook, commandes (voir son README)
