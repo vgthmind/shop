@@ -7,17 +7,17 @@ import { customerEmail, sellerEmail, shippedEmail } from './emails.ts';
 const img = (n) => `../docs/assets/products/${n}`; // en vrai : URL publique absolue
 const items = [
   { name: 'CH_0002', size: 'M', qty: 1, amount: '84,00 EUR', image: img('ch_0002/0.png') },
-  { name: 'CD_VGTAPE', size: '', qty: 2, amount: '30,00 EUR', image: img('cd-vgtape/0.png') },
+  { name: 'CD_VGTAPE', size: '', qty: 2, amount: '30,00 EUR', image: img('sacoche/0.png'), unit: '15,00 EUR' },
 ];
 const base = {
-  ref: 'A1B2C3D4', name: 'Camille Martin', email: 'camille@example.com', phone: '+33 6 00 00 00 00',
+  ref: 'VG-K7M4QX', name: 'Camille Martin', email: 'camille@example.com', phone: '+33 6 00 00 00 00',
   items, shipping: '9,90 EUR', total: '123,90 EUR', test: true,
   stripeUrl: 'https://dashboard.stripe.com/test/payments/pi_EXEMPLE',
   cgvUrl: 'https://vgthmind.org/infos-conditions-generales',
-  orderUrl: 'https://vgthmind.org/merci/?session_id=cs_test_EXEMPLE',
+  orderUrl: 'https://vgthmind.org/suivi/?o=VG-K7M4QX&l=fr',
 };
-const fr = { ...base, country: 'FR', address: ['Camille Martin', '12 rue des Lilas', '66000 Perpignan', 'FR'] };
-const ca = { ...base, name: 'Alex Tremblay', country: 'CA', address: ['Alex Tremblay', '45 Rue Saint-Denis', 'Montréal QC H2X 1K4', 'CA'] };
+const fr = { ...base, country: 'FR', address: ['Camille Martin', '12 rue des Lilas', '66000 Perpignan', 'France'] };
+const ca = { ...base, name: 'Alex Tremblay', country: 'CA', address: ['Alex Tremblay', '45 Rue Saint-Denis', 'Montréal QC H2X 1K4', 'Canada'] };
 const TRK = '6A12345678901';
 
 const out = 'apercu-emails';
@@ -36,12 +36,15 @@ for (const [f, , m] of files) {
 
 // Page commandes de l'admin : la vraie page, avec de fausses donnees.
 const orders = [
-  { id: 'cs_test_1', created: 1791000000, livemode: false, total: 123.9, shipping: 9.9, discount: 0, email: fr.email, phone: fr.phone, name: fr.name,
+  { id: 'cs_test_1', ref: 'VG-K7M4QX', created: 1791000000, livemode: false, total: 123.9, shipping: 9.9, discount: 0, email: fr.email, phone: fr.phone, name: fr.name,
     address: { line1: '12 rue des Lilas', postal_code: '66000', city: 'Perpignan', country: 'FR' },
-    items: items.map((i) => ({ ...i, amount: parseFloat(i.amount) })), shipped: null },
-  { id: 'cs_test_2', created: 1790900000, livemode: false, total: 93.9, shipping: 9.9, discount: 0, email: ca.email, name: ca.name,
+    items: items.map((i) => ({ ...i, amount: parseFloat(i.amount), unit: i.unit ? parseFloat(i.unit) : 0 })), shipped: null, preparing: null },
+  { id: 'cs_test_2', ref: 'VG-NFX2XX', created: 1790900000, livemode: false, total: 93.9, shipping: 9.9, discount: 0, email: ca.email, name: ca.name,
     address: { line1: '45 Rue Saint-Denis', postal_code: 'H2X 1K4', city: 'Montréal', state: 'QC', country: 'CA' },
     items: [{ ...items[0], amount: 84 }], shipped: { at: 1791050000, tracking: TRK, notified: 1791050100 } },
+  { id: 'cs_test_3', ref: 'VG-CYEVE7', created: 1790950000, livemode: true, total: 45, shipping: 5, discount: 0, email: 'lea@example.com', name: 'Léa Durand',
+    address: { line1: '3 place Carnot', postal_code: '75011', city: 'Paris', country: 'FR' },
+    items: [{ ...items[1], amount: 30, unit: 15 }], shipped: null, preparing: { at: 1791000500 } },
 ];
 const stub = `<script>window.vgAdminToken=function(){return 'x'};window.vgAdminLogout=function(){};window.vgAdminApi=function(){return Promise.resolve({orders:${JSON.stringify(orders)}})};</script>`;
 const admin = readFileSync('admin/commandes.html', 'utf8')

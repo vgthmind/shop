@@ -24,6 +24,8 @@
     .muted { color: var(--muted); font-size: 13px; }
     .tag { font-size: 12px; padding: 2px 8px; border-radius: 999px; border: 1px solid var(--line); }
     .tag.ok { color: var(--ok); border-color: var(--ok); }
+    .tag.ref { font-weight: 700; letter-spacing: .04em; color: var(--ink); border-color: var(--ink); }
+    .tag.prep { color: #8a5a00; border-color: #8a5a00; }
     .tag.test { color: #8a5a00; border-color: #8a5a00; }
     ul { margin: 8px 0; padding-left: 18px; }
     .actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
@@ -31,7 +33,7 @@
     .items { list-style: none; padding: 0; margin: 10px 0; }
     .items li { display: flex; gap: 12px; align-items: center; padding: 8px 0; border-top: 1px solid var(--line); }
     .items li:first-child { border-top: 0; }
-    .items img, .items .ph { width: 56px; height: 59px; object-fit: cover; border-radius: 6px; background: #e9e5da; flex: none; }
+    .items img, .items .ph { width: 56px; height: 59px; object-fit: contain; border-radius: 6px; background: var(--bg); flex: none; }
     .items .nm { flex: 1; min-width: 0; }
     .items .nm small { display: block; color: var(--muted); }
     .items .pr { white-space: nowrap; }
@@ -52,6 +54,7 @@
     <button type="button" data-f="done" aria-pressed="false">Expédiées</button>
     <button type="button" data-f="all" aria-pressed="false">Toutes</button>
     <button type="button" data-f="stats" aria-pressed="false">Stats</button>
+    <input type="text" id="q" placeholder="Rechercher : VG-…, nom, e-mail" aria-label="Rechercher une commande" autocomplete="off">
     <button type="button" id="refresh">Actualiser</button>
     <button type="button" id="logout">Se déconnecter</button>
   </div>
@@ -75,9 +78,13 @@
   }
   function money(n) { return (Math.round((n || 0) * 100) / 100).toFixed(2).replace('.', ',') + ' €'; }
   function date(ts) { return new Date(ts * 1000).toLocaleString('fr-FR', { dateStyle: 'medium', timeStyle: 'short' }); }
+  function countryName(c) {
+    if (!c) return '';
+    try { return new Intl.DisplayNames(['fr'], { type: 'region' }).of(String(c).toUpperCase()) || c; } catch (e) { return c; }
+  }
   function address(a) {
     if (!a) return '';
-    return [a.line1, a.line2, [a.postal_code, a.city].filter(Boolean).join(' '), a.state, a.country].filter(Boolean).map(esc).join('<br>');
+    return [a.line1, a.line2, [a.postal_code, a.city].filter(Boolean).join(' '), a.state, countryName(a.country)].filter(Boolean).map(esc).join('<br>');
   }
 
   var api = window.vgAdminApi;
@@ -136,19 +143,22 @@
 
   function draw() {
     if (filter === 'stats') { drawStats(); return; }
+    var needle = (($('q') && $('q').value) || '').trim().toLowerCase().replace(/^vg[\s-]*/, '');
     var list = orders.filter(function (o) {
-      return filter === 'all' || (filter === 'todo' ? !o.shipped : !!o.shipped);
+      if (needle && [o.ref, o.name, o.email].join(' ').toLowerCase().replace(/vg-/g, '').indexOf(needle) === -1) return false;
+      return filter === 'all' || needle || (filter === 'todo' ? !o.shipped : !!o.shipped);
     });
     $('orders').innerHTML = list.length ? list.map(function (o) {
       return '<article class="order" data-id="' + esc(o.id) + '">'
-        + '<header><div><strong>' + esc(o.name || o.email) + '</strong> '
+        + '<header><div><span class="tag ref">' + esc(o.ref || '') + '</span> <strong>' + esc(o.name || o.email) + '</strong> '
         + (o.livemode ? '' : '<span class="tag test">test</span> ')
+        + (o.preparing && !o.shipped ? '<span class="tag prep">en préparation depuis le ' + esc(date(o.preparing.at)) + '</span> ' : '')
         + (o.shipped ? '<span class="tag ok">expédiée le ' + esc(date(o.shipped.at)) + (o.shipped.tracking ? ' · suivi ' + esc(o.shipped.tracking) : '') + (o.shipped.notified ? ' · client prévenu' : '') + '</span>' : '')
         + '<div class="muted">' + esc(date(o.created)) + ' · ' + esc(o.email) + (o.phone ? ' · ' + esc(o.phone) : '') + '</div></div>'
         + '<div class="total">' + money(o.total) + '</div></header>'
         + '<ul class="items">' + o.items.map(function (it) {
           return '<li>' + (it.image ? '<img src="' + esc(it.image) + '" alt="' + esc(it.name) + '" width="56" height="59" loading="lazy">' : '<span class="ph"></span>')
-            + '<span class="nm"><strong>' + esc(it.name) + '</strong><small>' + (it.size ? 'Taille ' + esc(it.size) + ' · ' : '') + 'Qté ' + esc(it.qty || 1) + '</small></span>'
+            + '<span class="nm"><strong>' + esc(it.name) + '</strong><small>' + (it.size ? 'Taille ' + esc(it.size) + ' · ' : '') + 'Qté ' + esc(it.qty || 1) + (it.unit ? ' (' + money(it.unit) + ' l\'unité)' : '') + '</small></span>'
             + '<span class="pr">' + money(it.amount) + '</span></li>';
         }).join('')
         + '<li class="muted"><span class="ph" style="visibility:hidden"></span><span class="nm">Livraison' + (o.discount ? ' · remise −' + money(o.discount) : '') + '</span><span class="pr">' + money(o.shipping) + '</span></li></ul>'
@@ -156,7 +166,10 @@
         + '<div class="actions">'
         + (o.shipped
           ? '<button type="button" data-mail>' + (o.shipped.notified ? 'Renvoyer le mail « expédiée »' : 'Envoyer le mail « expédiée » au client') + '</button><button type="button" data-undo>Annuler « expédiée »</button>'
-          : '<button type="button" data-ship>Marquer expédiée…</button>')
+          : (o.preparing
+            ? '<button type="button" data-unprep>Annuler « en préparation »</button>'
+            : '<button type="button" data-prep>Marquer en préparation</button>')
+            + '<button type="button" data-ship>Marquer expédiée…</button>')
         + '<a class="btn" target="_blank" rel="noopener" href="https://dashboard.stripe.com/' + (o.livemode ? '' : 'test/') + 'checkout/sessions/' + esc(o.id) + '">Voir dans Stripe</a>'
         + '</div></article>';
     }).join('') : '<p class="muted">Aucune commande ici.</p>';
@@ -166,6 +179,16 @@
     var card = e.target.closest('.order');
     if (!card) return;
     var o = orders.filter(function (x) { return x.id === card.getAttribute('data-id'); })[0];
+    if (e.target.hasAttribute('data-prep') || e.target.hasAttribute('data-unprep')) {
+      var undoPrep = e.target.hasAttribute('data-unprep');
+      api('/orders/preparing', { method: 'POST', body: JSON.stringify(undoPrep ? { id: o.id, undo: true } : { id: o.id }) })
+        .then(function (d) {
+          o.preparing = undoPrep ? null : d.preparing;
+          draw();
+          $('msg').textContent = undoPrep ? '« En préparation » annulé.' : 'Marquée en préparation : le client la voit sur la page de suivi.';
+        })
+        .catch(function (err) { $('msg').textContent = 'Erreur : ' + err.message; });
+    }
     if (e.target.hasAttribute('data-ship')) {
       var tracking = window.prompt('Numéro de suivi (celui de ton étiquette ; vide s\'il n\'y en a pas) :', '');
       if (tracking === null) return;
@@ -191,6 +214,8 @@
         .catch(function (err) { $('msg').textContent = 'Erreur : ' + err.message; });
     }
   });
+
+  $('q').addEventListener('input', draw);
 
   $('filters').addEventListener('click', function (e) {
     var f = e.target.getAttribute('data-f');

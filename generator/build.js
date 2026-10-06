@@ -78,6 +78,58 @@ const CART_CSS = `
 .vg-cart-msg[hidden],.vg-order-summary[hidden]{display:none;}
 .vg-order-summary{max-width:640px;margin:16px 0 24px;}
 .vg-order-summary ul{list-style:none;padding:0;margin:0;}
+.vg-track{max-width:640px;}
+.vg-track [hidden]{display:none !important;}
+.vg-track-lang{text-align:right;font-size:.85em;opacity:.7;margin:0 0 8px;}
+.vg-track-lang a{text-decoration:none;}
+.vg-track-lang a[aria-current=true]{font-weight:700;text-decoration:underline;}
+.vg-track-intro{margin:0 0 24px;}
+.vg-track input{width:100%;height:50px;box-sizing:border-box;background:rgba(255,255,255,.55);border:1px solid rgba(0,0,0,.18);border-radius:8px;color:#171717;padding:8px 12px;font:inherit;font-size:16px;transition:border-color .2s ease;}
+.vg-track input::placeholder{color:rgba(0,0,0,.35);}
+.vg-track input:focus{border-color:#171717;outline:none;}
+.vg-track .vg-track-submit{display:block;margin:0 auto;max-width:320px;}
+.vg-track-parcel a.button,.vg-track-parcel a.button:hover{text-decoration:none !important;display:inline-block;width:auto;padding-left:28px;padding-right:28px;}
+.vg-track-msg{margin-top:20px;padding:10px 14px;border-radius:12px;background:rgba(255,255,255,.55);border:1px solid rgba(0,0,0,.12);}
+.vg-track-submit[aria-busy=true]{opacity:.6;cursor:progress;}
+.vg-track-result{animation:vg-track-in .32s ease-out both;}
+@keyframes vg-track-in{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:none;}}
+.vg-track-head{display:flex;justify-content:space-between;align-items:baseline;gap:12px;flex-wrap:wrap;margin:0 0 28px;}
+.vg-track-ref{font-weight:700;letter-spacing:.06em;}
+.vg-track-date{font-size:.9em;opacity:.7;}
+.vg-track-steps,.vg-track-steps li{list-style:none;}
+.vg-track-steps li::marker{content:"";}
+.vg-track-steps{display:grid;grid-template-columns:repeat(3,1fr);list-style:none;margin:0 0 12px;padding:0;position:relative;}
+.vg-track-steps li{position:relative;text-align:center;padding-top:34px;font-size:.9em;opacity:.55;}
+.vg-track-steps li::before{content:"";position:absolute;top:8px;left:calc(50% - 9px);width:18px;height:18px;border-radius:50%;border:2px solid #171717;background:transparent;box-sizing:border-box;z-index:1;}
+.vg-track-steps li::after{content:"";position:absolute;top:16px;left:calc(-50% + 9px);width:calc(100% - 18px);height:2px;background:rgba(0,0,0,.2);}
+.vg-track-steps li:first-child::after{display:none;}
+.vg-track-steps li.is-done{opacity:1;}
+.vg-track-steps li.is-done::before{background:#171717;}
+.vg-track-steps li.is-done::after{background:#171717;}
+.vg-track-steps li.is-current{opacity:1;font-weight:700;}
+.vg-track-steps li.is-current::before{box-shadow:0 0 0 4px rgba(0,0,0,.2);}
+.vg-track-steps small{display:block;font-weight:400;opacity:.7;margin-top:2px;}
+.vg-track-status{margin:0 0 32px;text-align:center;}
+.vg-track-h{font-size:1em;font-weight:700;margin:32px 0 8px;text-align:left !important;text-transform:uppercase;letter-spacing:.04em;}
+.vg-track-result .cart-item .cart-item-image-link img{object-fit:contain;object-position:center;background:transparent;}
+.vg-track-unit{font-size:.8rem;opacity:.65;margin-top:2px;}
+.vg-track-result .cart-items,.vg-track-result ul{padding:0;margin:0;list-style:none;}
+.vg-track-result .cart-footer .cart-subtotal,.vg-track-result .cart-footer .cart-subtotal__label,.vg-track-result .cart-footer .cart-subtotal__amount{font-family:inherit !important;font-size:1rem !important;letter-spacing:normal !important;text-transform:none !important;font-weight:400 !important;}
+.vg-track-result .cart-footer .vg-cart-total,.vg-track-result .cart-footer .vg-cart-total span{font-weight:700 !important;}
+.vg-track-result .cart-footer .cart-subtotal{width:100%;justify-content:space-between;gap:16px;}
+.vg-track-address{white-space:pre-line;margin:0;text-align:left !important;}
+.vg-track-result h2.vg-track-h{text-align:left !important;}
+.vg-track-parcel{margin-top:32px;padding:18px 20px;border:1px solid rgba(0,0,0,.2);border-radius:var(--border-radius);text-align:center;}
+.vg-track-parcel p{margin:0 0 14px;}
+.vg-track-parcel strong{letter-spacing:.04em;word-break:break-all;}
+.vg-track-parcel .button{margin:0 auto;}
+.vg-track-again{margin-top:32px;text-align:center;}
+.vg-track-again .button{display:block;margin:0 auto;max-width:320px;}
+.vg-track-result .cart-items{margin:0;}
+.vg-track-result .cart-item{grid-template-columns:auto 1fr auto;}
+.vg-track-result .cart-item .cart-item-detail{padding-right:0;}
+.vg-track-result .cart-footer{display:flex;flex-direction:column;align-items:stretch;gap:6px;margin-top:16px;}
+.vg-track-result .cart-subtotal{flex-wrap:nowrap;}
 `.trim();
 
 // Images que le thème/Body/dev JS chargent depuis le compte BigCartel
@@ -121,6 +173,8 @@ const SHOP_PAGES_DIR = path.join(__dirname, 'shop-pages');
 const SHOP_PAGES = [
   { name: 'Thank you', url: '/merci', permalink: 'merci' },
   { name: 'Payment cancelled', url: '/paiement-annule', permalink: 'paiement-annule' },
+  // Suivi de commande (numero + e-mail) : lien discret du pied de page, jamais dans le sitemap, toujours noindex.
+  { name: 'Track my order', url: '/suivi', permalink: 'suivi' },
   // GitHub Pages sert 404.html pour toute adresse inconnue sous /shop/.
   { name: 'Page not found', url: '/404', permalink: '404', out: '404.html' },
 ];
@@ -216,7 +270,7 @@ function baseContext(catalog) {
     store: catalog.store,
     t: translations,
     cart: { item_count: 0, total: 0, items: [] },
-    pages: { custom_pages: CUSTOM_PAGES, subscribe_page: null, required_pages: LEGAL_PAGES },
+    pages: { custom_pages: CUSTOM_PAGES, subscribe_page: null, required_pages: LEGAL_PAGES.concat(SHOP_PAGES.filter((p) => p.permalink === 'suivi')) },
     categories: { active: catalog.categories },
     __imageMap: catalog.imageMap || {},
   };
@@ -310,7 +364,7 @@ function injectAround(html, parts, product, relPath) {
   // structurées Product (prix, stock) pour Google. Rien sur les pages
   // techniques (merci, paiement-annule, 404, contact).
   let seoTags = '';
-  if (relPath && !/^(merci|paiement-annule|404|contact)/.test(relPath)) {
+  if (relPath && !/^(merci|paiement-annule|suivi|404|contact)/.test(relPath)) {
     const escA = (v) => String(v || '').replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
     const pagePath = '/' + relPath.replace(/index\.html$/, '').replace(/\/$/, '');
     const url = SHOP_SETTINGS.site_url.replace(/\/$/, '') + (pagePath === '/' ? '/' : pagePath);
@@ -335,7 +389,7 @@ function injectAround(html, parts, product, relPath) {
     seoTags,
     // Prototype: hidden from search engines until data/shop-settings.json
     // says "public": true (launch day, see README).
-    SHOP_SETTINGS.public ? '' : '<meta name="robots" content="noindex, nofollow">',
+    SHOP_SETTINGS.public && !/^suivi\//.test(relPath || '') ? '' : '<meta name="robots" content="noindex, nofollow">',
     // Stock réel lu au chargement (assets/vg-shop-cart.js) : « Add to cart »
     // masqué le temps de la réponse (2,6 s max, puis affiché quoi qu'il arrive).
     '<script>(function(d){d.classList.add("vg-stock-pending");setTimeout(function(){d.classList.remove("vg-stock-pending")},2600)})(document.documentElement)</script>'
