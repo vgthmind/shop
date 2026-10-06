@@ -70,6 +70,23 @@ const CART_CSS = `
 .vg-order-summary ul{list-style:none;padding:0;margin:0;}
 `.trim();
 
+// Images que le thème/Body/dev JS chargent depuis le compte BigCartel
+// (assets.bigcartel.com/theme_images|product_images, liés au compte) :
+// servies depuis /shop/ pour que la boutique ne dépende plus de BigCartel.
+// (theme.js / api.js restent sur le CDN : fichiers génériques du thème,
+// pas liés au compte.) cover+clean.png est déjà en 404 chez BigCartel :
+// remplacé par la 1re photo locale du CD.
+const SITE_ORIGIN_URL = 'https://vgthmind.github.io';
+const BC_IMAGE_MAP = [
+  [/https:\/\/assets\.bigcartel\.com\/theme_images\/142638069\/Cover\.png(\?[^"'\s)]*)?/g, () => `${SITE_ORIGIN_URL}${BASE_PATH}/assets/theme/bc/cover.png`],
+  [/https:\/\/assets\.bigcartel\.com\/theme_images\/122404563\/Illustration_sans_titre\+_1_\.PNG(\?[^"'\s)]*)?/g, () => `${BASE_PATH}/assets/theme/bc/logo-illustration.png`],
+  [/https:\/\/assets\.bigcartel\.com\/product_images\/405517188\/cover\+clean\.png(\?[^"'\s)]*)?/g, () => `${BASE_PATH}/assets/products/cd-vgtape/0.png`],
+];
+function localizeBigCartelImages(text) {
+  if (typeof text !== 'string' || text.indexOf('assets.bigcartel.com') === -1) return text;
+  return BC_IMAGE_MAP.reduce((t, [re, to]) => t.replace(re, to), text);
+}
+
 const FAVICON_LINKS = [
   '<link rel="icon" href="/assets/theme/favicon.svg" type="image/svg+xml">',
   '<link rel="icon" href="/assets/theme/favicon.ico" type="image/x-icon">',
@@ -324,7 +341,7 @@ async function main() {
   const write = (relPath, html) => {
     const dest = rel(OUT_DIR, relPath);
     fs.mkdirSync(path.dirname(dest), { recursive: true });
-    fs.writeFileSync(dest, html);
+    fs.writeFileSync(dest, localizeBigCartelImages(html));
   };
   // page_title is assigned at the top of the real layout (before
   // <!DOCTYPE html>), but page templates (products.html, cart.html) print it
