@@ -263,7 +263,7 @@ function stripGenericMeta(html, names) {
   return html;
 }
 
-function injectAround(html, parts, product) {
+function injectAround(html, parts, product, relPath) {
   // Head: noindex + Custom CSS + Head code, right before </head> (where
   // BigCartel puts them). The shim goes first in <head>, before any script.
   const shim = `<script>window.__VG_BASE = ${JSON.stringify(BASE_PATH)};\n${parts.shim}</script>`;
@@ -300,7 +300,33 @@ function injectAround(html, parts, product) {
     if (!/vg-transition-boot/.test(body)) return m;
     return `<script>${wrapScript(body)}</script>`;
   });
+  // SEO : adresse canonique + og:url (+ og:title hors fiches), et données
+  // structurées Product (prix, stock) pour Google. Rien sur les pages
+  // techniques (merci, paiement-annule, 404, contact).
+  let seoTags = '';
+  if (relPath && !/^(merci|paiement-annule|404|contact)/.test(relPath)) {
+    const escA = (v) => String(v || '').replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
+    const pagePath = '/' + relPath.replace(/index\.html$/, '').replace(/\/$/, '');
+    const url = SHOP_SETTINGS.site_url.replace(/\/$/, '') + (pagePath === '/' ? '/' : pagePath);
+    seoTags = `<link rel="canonical" href="${escA(url)}">\n<meta property="og:url" content="${escA(url)}">`;
+    if (!product) {
+      const t = (html.match(/<title>([\s\S]*?)<\/title>/i) || [])[1];
+      if (t) seoTags += `\n<meta property="og:title" content="${escA(t.trim())}">\n<meta property="og:type" content="website">\n<meta name="twitter:card" content="summary_large_image">`;
+    } else {
+      const imgs = (product.images || []).map((im) => im.url).filter(Boolean).slice(0, 4)
+        .map((u) => (u.charAt(0) === '/' ? SHOP_SETTINGS.site_url.replace(/\/$/, '') + u : u));
+      const ld = {
+        '@context': 'https://schema.org', '@type': 'Product', name: product.name,
+        description: String(product.description || '').replace(/\s+/g, ' ').trim().slice(0, 500),
+        image: imgs, brand: { '@type': 'Brand', name: 'vgthmind' },
+        offers: { '@type': 'Offer', url, priceCurrency: 'EUR', price: String(product.price),
+          availability: product.quantity === 0 ? 'https://schema.org/OutOfStock' : 'https://schema.org/InStock' },
+      };
+      seoTags += `\n<script type="application/ld+json">${JSON.stringify(ld).replace(/</g, '\\u003c')}</script>`;
+    }
+  }
   const headExtra = [
+    seoTags,
     // Prototype: hidden from search engines until data/shop-settings.json
     // says "public": true (launch day, see README).
     SHOP_SETTINGS.public ? '' : '<meta name="robots" content="noindex, nofollow">',
@@ -401,7 +427,7 @@ async function main() {
     }
     const layoutCtx = Object.assign({}, ctx, { page_content: pageContent, head_content: headContent(ctx.page, product, imageMap) });
     const html = liquid.render(layoutSrc, layoutCtx, filters);
-    write(relPath, withBasePath(injectAround(html, parts, product)));
+    write(relPath, withBasePath(injectAround(html, parts, product, relPath)));
   };
 
   page('index.html', src.home, Object.assign({}, base, {
@@ -455,7 +481,7 @@ async function main() {
       page: { name: cp.name, permalink: cp.permalink, category: 'custom', full_url: cp.url },
     });
     const layoutCtx = Object.assign({}, ctx, { page_content: content, head_content: '' });
-    write(cp.out || `${cp.permalink}/index.html`, withBasePath(injectAround(liquid.render(layoutSrc, layoutCtx, filters), parts)));
+    write(cp.out || `${cp.permalink}/index.html`, withBasePath(injectAround(liquid.render(layoutSrc, layoutCtx, filters), parts, undefined, cp.out || `${cp.permalink}/index.html`)));
   }
 
   // Static stand-ins for BigCartel's JSON endpoints read by the scripts:

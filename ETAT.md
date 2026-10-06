@@ -1,5 +1,5 @@
-# ETAT
-- Fait : audit lecture seule (étape 1). Stock (Durable Object, réservation, décrément après paiement, sold out à 0), admin stock, worker checkout déployé, frais de port par produit (fr/intl, Canada = intl).
-- Reste : vérifier paiement test de bout en bout (secrets, webhook Stripe, GITHUB_CLIENT_ID vide), emails de commande, codes promo, tarif Canada propre, domaine propre, Stripe live.
-- Nettoyage : oauth-worker/ doublon et README checkout périmé ; jeton admin du navigateur à fiabiliser.
-- Prochain pas : test de paiement Stripe en mode test, puis emails de commande.
+# ETAT — boutique vgthmind/shop (Stripe test, LIVE_MODE = 0, ne pas changer)
+Fait : stock, ports, panier, admin, A, B, C (admin OK PC+iPhone). D en cours : SEO codé dans generator/build.js (canonical, og:url/title, JSON-LD Product), docs/ regénéré, PAS commité. Codes promo : déjà actifs dans le worker (allow_promotion_codes), reste à créer un coupon test dans Stripe et à tester.
+À faire D : lire diff + commit ; vérif pages légales (SIRET manquant « voir mentions légales », hébergement « Big Cartel » à changer au lancement) ; og:image encore sur CDN BigCartel ; adresses : lancement = BASE_PATH='' + site_url vgthmind.org + public:true ; redirections /products etc. déjà même structure ; Stripe live ; DNS IONOS (jamais MX/SPF/DKIM).
+Reste : médiateur de la consommation à choisir par moi avant la bascule. SIRET à écrire dans la page légale (non reçu : le message contenait « ... »).
+Règles : user non technique, français simple, secrets/adresses perso jamais dans le chat ni le dépôt (public). Worker : checkout-worker/.
