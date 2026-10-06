@@ -38,6 +38,7 @@ const BASE_PATH = process.env.BASE_PATH !== undefined ? process.env.BASE_PATH : 
 // A copy is served by this site, wrapped so it sees location.pathname without
 // the /shop prefix (see wrapScript) - the code itself is not modified.
 const DEV_JS_URL = 'https://vgthmind.github.io/assets/bigcartel/vg-transitions-dev.js';
+const PRODUCTS_CONFIG_URL = 'https://vgthmind.github.io/assets/bigcartel/products-config.json';
 const DEV_KEYWORDS_URL = 'https://vgthmind.github.io/assets/bigcartel/search-keywords.json';
 const LOCAL_DEV_JS = '/assets/vg/vg-transitions-dev.js';
 // Same for the CSS (copied as is; its url()s are absolute): the shop no
@@ -336,8 +337,17 @@ async function main() {
     shim: read(rel(ROOT, 'assets', 'vg-shop-shim.js')),
     customCss: read(rel(CUSTOM_DIR, 'custom-css.css')),
     headCode: read(rel(CUSTOM_DIR, 'head.html')),
-    bodyCode: read(rel(CUSTOM_DIR, 'body.html')),
+    // The Body reads products-config.json (portfolio) for, among others,
+    // unique_mode: served from /shop/ with "force-no" added for the pieces
+    // the admin gives more than one in stock (no "Unique piece" badge).
+    bodyCode: read(rel(CUSTOM_DIR, 'body.html')).replace(
+      "fetch('https://vgthmind.github.io/assets/bigcartel/products-config.json')",
+      "fetch('/assets/vg/products-config.json')"),
   };
+  const productsConfig = JSON.parse(await download(PRODUCTS_CONFIG_URL));
+  for (const p of catalog.products) {
+    if ((p.quantity || 0) > 1) productsConfig[p.permalink] = Object.assign({}, productsConfig[p.permalink], { unique_mode: 'force-no' });
+  }
 
   const devJs = await download(DEV_JS_URL);
   const devCss = await download(DEV_CSS_URL);
@@ -452,6 +462,7 @@ async function main() {
     (m) => `${m}    if (window.__vgSized) { var vgS = window.__vgSized(url, px); if (vgS) return vgS; }\n`);
   write('assets/vg/vg-transitions-dev.js', wrapScript(devJsHooked));
   write('assets/vg/vg-transitions-dev.css', devCss);
+  write('assets/vg/products-config.json', JSON.stringify(productsConfig, null, 1));
   // Mots-clés de recherche : fichier commun du portfolio + ceux saisis dans
   // l'admin pour chaque pièce (champ « Mots-clés de recherche »).
   const mergedKeywords = JSON.parse(keywords);
