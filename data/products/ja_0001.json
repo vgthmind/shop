@@ -1,0 +1,24 @@
+{
+  "name": "JA_0001",
+  "slug": "ja_0001",
+  "price": 180,
+  "description": "Sweatpants sewn and then customized with an airbrush\r\n97% cotton, 3% spandex\r\nOff-white\r\nSizes S/M/L elastic waist (waist circumference approximately 72 to 102 cm)\r\n\r\nJogging cousu puis customisé à l'aérographe\r\n97% coton 3% Elasthanne\r\nBlanc cassé\r\nSize S/M/L élastique (tour de taille entre 72 et 102cm environ)",
+  "images": [
+    "/assets/products/ja_0001/0.png",
+    "/assets/products/ja_0001/1.png",
+    "/assets/products/ja_0001/2.png",
+    "/assets/products/ja_0001/3.png",
+    "/assets/products/ja_0001/4.png"
+  ],
+  "categories": [
+    "pantsshorts"
+  ],
+  "latest_drop": true,
+  "unique": true,
+  "in_stock": true,
+  "position": 9,
+  "created_at": "2026-06-21T11:19:19.000Z",
+  "stripe_payment_link": "",
+  "shipping_fr": 5,
+  "shipping_intl": 9
+}

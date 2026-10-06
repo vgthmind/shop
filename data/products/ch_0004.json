@@ -1,0 +1,22 @@
+{
+  "name": "CH_0004",
+  "slug": "ch_0004",
+  "price": 104,
+  "description": "Airbrushed Custom Hoodie\r\nBlack\r\n50% cotton, 50% polyester\r\nSize L\r\n\r\nHoodie customisé à l'aérographe\r\nNoir\r\n50% coton 50% polyester\r\nSize L",
+  "images": [
+    "/assets/products/ch_0004/0.png",
+    "/assets/products/ch_0004/1.png"
+  ],
+  "categories": [
+    "tops",
+    "customsupcycling"
+  ],
+  "latest_drop": true,
+  "unique": true,
+  "in_stock": true,
+  "position": 2,
+  "created_at": "2026-07-22T12:20:45.000Z",
+  "stripe_payment_link": "",
+  "shipping_fr": 5,
+  "shipping_intl": 25
+}

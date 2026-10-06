@@ -1,0 +1,24 @@
+{
+  "name": "Short Collab Yazzart",
+  "slug": "short-coupe-évasée",
+  "price": 130,
+  "description": "100% Grey Duchess Satin with Blue Sheen\r\nAirbrushed design\r\nSize S / EU36/38/40\r\n56cm length from waistband to hem\r\n82cm leg opening\r\nLightweight\r\n\r\n100% Satin Duchesse Gris Reflet Bleu\r\nDesign fait à l'aérographe\r\nTaille S / 36/38/40EU\r\n56cm de longueur du haut de la ceinture au bas de la jambe.\r\n82cm d'ouverture de jambe.\r\nLéger",
+  "images": [
+    "/assets/products/short-coupe-évasée/0.png",
+    "/assets/products/short-coupe-évasée/1.png",
+    "/assets/products/short-coupe-évasée/2.png",
+    "/assets/products/short-coupe-évasée/3.png",
+    "/assets/products/short-coupe-évasée/4.png"
+  ],
+  "categories": [
+    "pantsshorts"
+  ],
+  "latest_drop": true,
+  "unique": true,
+  "in_stock": false,
+  "position": 24,
+  "created_at": "2025-07-23T12:11:57.000Z",
+  "stripe_payment_link": "",
+  "shipping_fr": 5.35,
+  "shipping_intl": 15
+}

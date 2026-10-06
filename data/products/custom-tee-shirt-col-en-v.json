@@ -1,0 +1,23 @@
+{
+  "name": "Custom Tee-shirt col en v",
+  "slug": "custom-tee-shirt-col-en-v",
+  "price": 65,
+  "description": "Airbrushed custom v-neck t-shirt\r\nBeige/Camel/Sand\r\nSize XS\r\n100% cotton\r\n\r\nTee-shirt customisé à l'aérographe\r\nBeige/Camel/Sable\r\nSize XS\r\n100% coton",
+  "images": [
+    "/assets/products/custom-tee-shirt-col-en-v/0.png",
+    "/assets/products/custom-tee-shirt-col-en-v/1.png",
+    "/assets/products/custom-tee-shirt-col-en-v/2.png"
+  ],
+  "categories": [
+    "tops",
+    "customsupcycling"
+  ],
+  "latest_drop": true,
+  "unique": true,
+  "in_stock": true,
+  "position": 10,
+  "created_at": "2026-06-21T11:12:47.000Z",
+  "stripe_payment_link": "",
+  "shipping_fr": 4,
+  "shipping_intl": 8.38
+}

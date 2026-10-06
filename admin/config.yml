@@ -17,28 +17,42 @@ collections:
     label_singular: "Piece"
     folder: "data/products"
     create: true
+    delete: true
     extension: "json"
     format: "json"
     slug: "{{slug}}"
     identifier_field: name
-    summary: "{{name}} — {{price}} EUR"
+    summary: "{{name}} — {{price}} EUR{{fields.in_stock}}"
     fields:
       - { label: "Nom", name: "name", widget: "string" }
-      - { label: "Slug (URL, sans espaces)", name: "slug", widget: "string", hint: "ex: pantalon-denim-bleu" }
+      - { label: "Slug (URL, sans espaces ni accents)", name: "slug", widget: "string", hint: "ex: pantalon-denim-bleu — ne plus changer une fois la piece publiee (change son URL)" }
       - { label: "Prix (EUR)", name: "price", widget: "number", value_type: "float" }
-      - { label: "Description", name: "description", widget: "text" }
+      - { label: "Description (anglais puis francais, separes par une ligne vide)", name: "description", widget: "text" }
       - label: "Photos"
         name: "images"
         widget: "list"
+        hint: "La 1ere photo est celle affichee dans les grilles (page d'accueil, Products, categories)."
         field: { label: "Image", name: "image", widget: "image" }
-      - { label: "Categorie", name: "category", widget: "string", required: false }
-      - { label: "Piece unique", name: "unique", widget: "boolean", default: true }
-      - { label: "Couleur (nom)", name: "couleur_nom", widget: "string", required: false }
-      - { label: "Couleur (hex)", name: "couleur_hex", widget: "color", required: false }
-      - { label: "Lien Instagram (reel)", name: "reel_url", widget: "string", required: false }
+      - label: "Categories"
+        name: "categories"
+        widget: "select"
+        multiple: true
+        min: 1
+        options:
+          - { label: "Tops", value: "tops" }
+          - { label: "Customs/Upcycling", value: "customsupcycling" }
+          - { label: "Pants/Shorts", value: "pantsshorts" }
+          - { label: "Merch", value: "merch" }
+          - { label: "Accessories", value: "accessories" }
+        hint: "Une piece peut etre dans plusieurs categories a la fois (ex: un hoodie customise est Tops ET Customs/Upcycling)."
+      - { label: "Mettre en avant (Latest Drop)", name: "latest_drop", widget: "boolean", default: false }
+      - { label: "En stock", name: "in_stock", widget: "boolean", default: true }
+      - { label: "Frais de port France (EUR)", name: "shipping_fr", widget: "number", value_type: "float", default: 5 }
+      - { label: "Frais de port international (EUR, Canada inclus)", name: "shipping_intl", widget: "number", value_type: "float", default: 15 }
       - label: "Lien de paiement Stripe"
         name: "stripe_payment_link"
         widget: "string"
         required: false
-        hint: "Cree depuis le dashboard Stripe > Payment Links, colle l'URL ici"
-      - { label: "En stock", name: "in_stock", widget: "boolean", default: true }
+        hint: "Cree depuis le dashboard Stripe > Payment Links, colle l'URL ici. Laisse vide : le bouton d'achat reste visible mais desactive."
+      - { label: "Position (ordre d'affichage, les plus petits nombres en premier)", name: "position", widget: "number", value_type: "int", default: 0 }
+      - { label: "Date de creation", name: "created_at", widget: "datetime", required: false }

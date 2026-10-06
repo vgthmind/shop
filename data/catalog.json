@@ -1,6 +1,6 @@
 {
-  "fetched_at": "2026-10-05T18:07:12.016Z",
-  "source": "https://vgthmind.bigcartel.com/products.json",
+  "fetched_at": "2026-10-06T01:12:56.525Z",
+  "source": "data/products/*.json (admin)",
   "store": {
     "name": "vgthmind",
     "currency": {
@@ -9,7 +9,7 @@
   },
   "products": [
     {
-      "id": 120150564,
+      "id": 922712793,
       "name": "CH_0002",
       "permalink": "ch_0002",
       "position": 1,
@@ -19,14 +19,14 @@
       "has_password_protection": false,
       "images": [
         {
-          "url": "https://assets.bigcartel.com/product_images/431519232/0_1_web.png?auto=format&fit=max&h=1000&w=1000",
-          "width": 1024,
-          "height": 1080
+          "url": "/assets/products/ch_0002/0.png",
+          "width": 948,
+          "height": 1000
         },
         {
-          "url": "https://assets.bigcartel.com/product_images/431519235/1_2_web.png?auto=format&fit=max&h=1000&w=1000",
-          "width": 997,
-          "height": 1080
+          "url": "/assets/products/ch_0002/1.png",
+          "width": 923,
+          "height": 1000
         }
       ],
       "price": 84,
@@ -37,23 +37,23 @@
       "has_option_groups": false,
       "options": [
         {
-          "id": 486704916,
+          "id": 1913628664,
           "name": "CH_0002",
           "price": 84,
           "sold_out": false,
           "has_custom_price": false,
           "option_group_values": [],
           "isLowInventory": true,
-          "isAlmostSoldOut": true
+          "isAlmostSoldOut": false
         }
       ],
       "artists": [],
       "categories": [
         {
-          "id": 1421738880,
-          "name": "Latest Drop",
-          "permalink": "latest-drop",
-          "url": "/category/latest-drop"
+          "id": 1420455576,
+          "name": "Tops",
+          "permalink": "tops",
+          "url": "/category/tops"
         },
         {
           "id": 1420475163,
@@ -62,10 +62,10 @@
           "url": "/category/all"
         },
         {
-          "id": 1420455576,
-          "name": "Tops",
-          "permalink": "tops",
-          "url": "/category/tops"
+          "id": 1421738880,
+          "name": "Latest Drop",
+          "permalink": "latest-drop",
+          "url": "/category/latest-drop"
         }
       ],
       "option_groups": [],
@@ -84,15 +84,16 @@
           "amount_with_others": 0
         }
       ],
+      "stripe_payment_link": "",
       "image": {
-        "url": "https://assets.bigcartel.com/product_images/431519232/0_1_web.png?auto=format&fit=max&h=1000&w=1000",
-        "width": 1024,
-        "height": 1080
+        "url": "/assets/products/ch_0002/0.png",
+        "width": 948,
+        "height": 1000
       },
       "css_class": ""
     },
     {
-      "id": 120296313,
+      "id": 956268031,
       "name": "CH_0004",
       "permalink": "ch_0004",
       "position": 2,
@@ -102,12 +103,12 @@
       "has_password_protection": false,
       "images": [
         {
-          "url": "https://assets.bigcartel.com/product_images/431519292/0_1_web.png?auto=format&fit=max&h=1000&w=1000",
-          "width": 1074,
-          "height": 1080
+          "url": "/assets/products/ch_0004/0.png",
+          "width": 994,
+          "height": 1000
         },
         {
-          "url": "https://assets.bigcartel.com/product_images/431519295/1_ch_0004_1_final.png?auto=format&fit=max&h=1000&w=1000",
+          "url": "/assets/products/ch_0004/1.png",
           "width": 937,
           "height": 1000
         }
@@ -120,30 +121,18 @@
       "has_option_groups": false,
       "options": [
         {
-          "id": 487422972,
+          "id": 717636810,
           "name": "CH_0004",
           "price": 104,
           "sold_out": false,
           "has_custom_price": false,
           "option_group_values": [],
           "isLowInventory": true,
-          "isAlmostSoldOut": true
+          "isAlmostSoldOut": false
         }
       ],
       "artists": [],
       "categories": [
-        {
-          "id": 1421738880,
-          "name": "Latest Drop",
-          "permalink": "latest-drop",
-          "url": "/category/latest-drop"
-        },
-        {
-          "id": 1420475163,
-          "name": "All",
-          "permalink": "all",
-          "url": "/category/all"
-        },
         {
           "id": 1420455576,
           "name": "Tops",
@@ -155,6 +144,18 @@
           "name": "Customs/Upcycling",
           "permalink": "customsupcycling",
           "url": "/category/customsupcycling"
+        },
+        {
+          "id": 1420475163,
+          "name": "All",
+          "permalink": "all",
+          "url": "/category/all"
+        },
+        {
+          "id": 1421738880,
+          "name": "Latest Drop",
+          "permalink": "latest-drop",
+          "url": "/category/latest-drop"
         }
       ],
       "option_groups": [],
@@ -173,15 +174,16 @@
           "amount_with_others": 0
         }
       ],
+      "stripe_payment_link": "",
       "image": {
-        "url": "https://assets.bigcartel.com/product_images/431519292/0_1_web.png?auto=format&fit=max&h=1000&w=1000",
-        "width": 1074,
-        "height": 1080
+        "url": "/assets/products/ch_0004/0.png",
+        "width": 994,
+        "height": 1000
       },
       "css_class": ""
     },
     {
-      "id": 120296316,
+      "id": 939490412,
       "name": "CH_0005",
       "permalink": "ch_0005",
       "position": 3,
@@ -191,14 +193,14 @@
       "has_password_protection": false,
       "images": [
         {
-          "url": "https://assets.bigcartel.com/product_images/431552700/0_1_web.png?auto=format&fit=max&h=1000&w=1000",
-          "width": 956,
-          "height": 1080
+          "url": "/assets/products/ch_0005/0.png",
+          "width": 885,
+          "height": 1000
         },
         {
-          "url": "https://assets.bigcartel.com/product_images/431552703/1_2_web.png?auto=format&fit=max&h=1000&w=1000",
-          "width": 908,
-          "height": 1080
+          "url": "/assets/products/ch_0005/1.png",
+          "width": 840,
+          "height": 1000
         }
       ],
       "price": 114,
@@ -209,30 +211,18 @@
       "has_option_groups": false,
       "options": [
         {
-          "id": 487422975,
+          "id": 140044265,
           "name": "CH_0005",
           "price": 114,
           "sold_out": false,
           "has_custom_price": false,
           "option_group_values": [],
           "isLowInventory": true,
-          "isAlmostSoldOut": true
+          "isAlmostSoldOut": false
         }
       ],
       "artists": [],
       "categories": [
-        {
-          "id": 1421738880,
-          "name": "Latest Drop",
-          "permalink": "latest-drop",
-          "url": "/category/latest-drop"
-        },
-        {
-          "id": 1420475163,
-          "name": "All",
-          "permalink": "all",
-          "url": "/category/all"
-        },
         {
           "id": 1420455576,
           "name": "Tops",
@@ -244,6 +234,18 @@
           "name": "Customs/Upcycling",
           "permalink": "customsupcycling",
           "url": "/category/customsupcycling"
+        },
+        {
+          "id": 1420475163,
+          "name": "All",
+          "permalink": "all",
+          "url": "/category/all"
+        },
+        {
+          "id": 1421738880,
+          "name": "Latest Drop",
+          "permalink": "latest-drop",
+          "url": "/category/latest-drop"
         }
       ],
       "option_groups": [],
@@ -262,15 +264,16 @@
           "amount_with_others": 0
         }
       ],
+      "stripe_payment_link": "",
       "image": {
-        "url": "https://assets.bigcartel.com/product_images/431552700/0_1_web.png?auto=format&fit=max&h=1000&w=1000",
-        "width": 956,
-        "height": 1080
+        "url": "/assets/products/ch_0005/0.png",
+        "width": 885,
+        "height": 1000
       },
       "css_class": ""
     },
     {
-      "id": 120296322,
+      "id": 989823269,
       "name": "CH_0006",
       "permalink": "ch_0006",
       "position": 4,
@@ -280,14 +283,14 @@
       "has_password_protection": false,
       "images": [
         {
-          "url": "https://assets.bigcartel.com/product_images/431518929/ch0006_1_defringed.png?auto=format&fit=max&h=1000&w=1000",
-          "width": 959,
-          "height": 1080
+          "url": "/assets/products/ch_0006/0.png",
+          "width": 887,
+          "height": 1000
         },
         {
-          "url": "https://assets.bigcartel.com/product_images/431532357/ch0006_back.png?auto=format&fit=max&h=1000&w=1000",
-          "width": 1021,
-          "height": 1080
+          "url": "/assets/products/ch_0006/1.png",
+          "width": 945,
+          "height": 1000
         }
       ],
       "price": 114,
@@ -298,30 +301,18 @@
       "has_option_groups": false,
       "options": [
         {
-          "id": 487422984,
+          "id": 783518140,
           "name": "CH_0006",
           "price": 114,
           "sold_out": false,
           "has_custom_price": false,
           "option_group_values": [],
           "isLowInventory": true,
-          "isAlmostSoldOut": true
+          "isAlmostSoldOut": false
         }
       ],
       "artists": [],
       "categories": [
-        {
-          "id": 1421738880,
-          "name": "Latest Drop",
-          "permalink": "latest-drop",
-          "url": "/category/latest-drop"
-        },
-        {
-          "id": 1420475163,
-          "name": "All",
-          "permalink": "all",
-          "url": "/category/all"
-        },
         {
           "id": 1420455576,
           "name": "Tops",
@@ -333,6 +324,18 @@
           "name": "Customs/Upcycling",
           "permalink": "customsupcycling",
           "url": "/category/customsupcycling"
+        },
+        {
+          "id": 1420475163,
+          "name": "All",
+          "permalink": "all",
+          "url": "/category/all"
+        },
+        {
+          "id": 1421738880,
+          "name": "Latest Drop",
+          "permalink": "latest-drop",
+          "url": "/category/latest-drop"
         }
       ],
       "option_groups": [],
@@ -351,15 +354,16 @@
           "amount_with_others": 0
         }
       ],
+      "stripe_payment_link": "",
       "image": {
-        "url": "https://assets.bigcartel.com/product_images/431518929/ch0006_1_defringed.png?auto=format&fit=max&h=1000&w=1000",
-        "width": 959,
-        "height": 1080
+        "url": "/assets/products/ch_0006/0.png",
+        "width": 887,
+        "height": 1000
       },
       "css_class": ""
     },
     {
-      "id": 120296310,
+      "id": 905935174,
       "name": "CH_0003",
       "permalink": "ch_0003",
       "position": 5,
@@ -369,14 +373,14 @@
       "has_password_protection": false,
       "images": [
         {
-          "url": "https://assets.bigcartel.com/product_images/431552649/0_1_web.png?auto=format&fit=max&h=1000&w=1000",
-          "width": 1019,
-          "height": 1080
+          "url": "/assets/products/ch_0003/0.png",
+          "width": 943,
+          "height": 1000
         },
         {
-          "url": "https://assets.bigcartel.com/product_images/431552652/1_2_web.png?auto=format&fit=max&h=1000&w=1000",
-          "width": 1013,
-          "height": 1080
+          "url": "/assets/products/ch_0003/1.png",
+          "width": 937,
+          "height": 1000
         }
       ],
       "price": 84,
@@ -387,30 +391,18 @@
       "has_option_groups": false,
       "options": [
         {
-          "id": 487422969,
+          "id": 834468445,
           "name": "CH_0003",
           "price": 84,
           "sold_out": false,
           "has_custom_price": false,
           "option_group_values": [],
           "isLowInventory": true,
-          "isAlmostSoldOut": true
+          "isAlmostSoldOut": false
         }
       ],
       "artists": [],
       "categories": [
-        {
-          "id": 1421738880,
-          "name": "Latest Drop",
-          "permalink": "latest-drop",
-          "url": "/category/latest-drop"
-        },
-        {
-          "id": 1420475163,
-          "name": "All",
-          "permalink": "all",
-          "url": "/category/all"
-        },
         {
           "id": 1420455576,
           "name": "Tops",
@@ -422,6 +414,18 @@
           "name": "Customs/Upcycling",
           "permalink": "customsupcycling",
           "url": "/category/customsupcycling"
+        },
+        {
+          "id": 1420475163,
+          "name": "All",
+          "permalink": "all",
+          "url": "/category/all"
+        },
+        {
+          "id": 1421738880,
+          "name": "Latest Drop",
+          "permalink": "latest-drop",
+          "url": "/category/latest-drop"
         }
       ],
       "option_groups": [],
@@ -440,15 +444,16 @@
           "amount_with_others": 0
         }
       ],
+      "stripe_payment_link": "",
       "image": {
-        "url": "https://assets.bigcartel.com/product_images/431552649/0_1_web.png?auto=format&fit=max&h=1000&w=1000",
-        "width": 1019,
-        "height": 1080
+        "url": "/assets/products/ch_0003/0.png",
+        "width": 943,
+        "height": 1000
       },
       "css_class": ""
     },
     {
-      "id": 120150513,
+      "id": 944899161,
       "name": "SMA_0002",
       "permalink": "sa",
       "position": 6,
@@ -458,14 +463,14 @@
       "has_password_protection": false,
       "images": [
         {
-          "url": "https://assets.bigcartel.com/product_images/431552733/0_1_web.png?auto=format&fit=max&h=1000&w=1000",
-          "width": 1080,
-          "height": 942
+          "url": "/assets/products/sa/0.png",
+          "width": 1000,
+          "height": 872
         },
         {
-          "url": "https://assets.bigcartel.com/product_images/431552730/1_2_web.png?auto=format&fit=max&h=1000&w=1000",
-          "width": 1080,
-          "height": 943
+          "url": "/assets/products/sa/1.png",
+          "width": 1000,
+          "height": 873
         }
       ],
       "price": 130,
@@ -476,23 +481,23 @@
       "has_option_groups": false,
       "options": [
         {
-          "id": 486704742,
+          "id": 717695112,
           "name": "SMA_0002",
           "price": 130,
-          "sold_out": false,
+          "sold_out": true,
           "has_custom_price": false,
           "option_group_values": [],
-          "isLowInventory": true,
-          "isAlmostSoldOut": true
+          "isLowInventory": false,
+          "isAlmostSoldOut": false
         }
       ],
       "artists": [],
       "categories": [
         {
-          "id": 1421738880,
-          "name": "Latest Drop",
-          "permalink": "latest-drop",
-          "url": "/category/latest-drop"
+          "id": 1420455573,
+          "name": "Pants/Shorts",
+          "permalink": "pantsshorts",
+          "url": "/category/pantsshorts"
         },
         {
           "id": 1420475163,
@@ -501,10 +506,10 @@
           "url": "/category/all"
         },
         {
-          "id": 1420455573,
-          "name": "Pants/Shorts",
-          "permalink": "pantsshorts",
-          "url": "/category/pantsshorts"
+          "id": 1421738880,
+          "name": "Latest Drop",
+          "permalink": "latest-drop",
+          "url": "/category/latest-drop"
         }
       ],
       "option_groups": [],
@@ -523,15 +528,16 @@
           "amount_with_others": 0
         }
       ],
+      "stripe_payment_link": "",
       "image": {
-        "url": "https://assets.bigcartel.com/product_images/431552733/0_1_web.png?auto=format&fit=max&h=1000&w=1000",
-        "width": 1080,
-        "height": 942
+        "url": "/assets/products/sa/0.png",
+        "width": 1000,
+        "height": 872
       },
       "css_class": ""
     },
     {
-      "id": 120150552,
+      "id": 666482872,
       "name": "SMA_0003",
       "permalink": "sma_0003",
       "position": 7,
@@ -541,12 +547,12 @@
       "has_password_protection": false,
       "images": [
         {
-          "url": "https://assets.bigcartel.com/product_images/431552742/0_1_web.png?auto=format&fit=max&h=1000&w=1000",
-          "width": 1080,
-          "height": 871
+          "url": "/assets/products/sma_0003/0.png",
+          "width": 1000,
+          "height": 806
         },
         {
-          "url": "https://assets.bigcartel.com/product_images/431552745/1_sma0003_1_corrected.png?auto=format&fit=max&h=1000&w=1000",
+          "url": "/assets/products/sma_0003/1.png",
           "width": 1000,
           "height": 802
         }
@@ -559,23 +565,23 @@
       "has_option_groups": false,
       "options": [
         {
-          "id": 486704901,
+          "id": 1401021253,
           "name": "SMA_0003",
           "price": 130,
           "sold_out": false,
           "has_custom_price": false,
           "option_group_values": [],
           "isLowInventory": true,
-          "isAlmostSoldOut": true
+          "isAlmostSoldOut": false
         }
       ],
       "artists": [],
       "categories": [
         {
-          "id": 1421738880,
-          "name": "Latest Drop",
-          "permalink": "latest-drop",
-          "url": "/category/latest-drop"
+          "id": 1420455573,
+          "name": "Pants/Shorts",
+          "permalink": "pantsshorts",
+          "url": "/category/pantsshorts"
         },
         {
           "id": 1420475163,
@@ -584,10 +590,10 @@
           "url": "/category/all"
         },
         {
-          "id": 1420455573,
-          "name": "Pants/Shorts",
-          "permalink": "pantsshorts",
-          "url": "/category/pantsshorts"
+          "id": 1421738880,
+          "name": "Latest Drop",
+          "permalink": "latest-drop",
+          "url": "/category/latest-drop"
         }
       ],
       "option_groups": [],
@@ -606,15 +612,16 @@
           "amount_with_others": 0
         }
       ],
+      "stripe_payment_link": "",
       "image": {
-        "url": "https://assets.bigcartel.com/product_images/431552742/0_1_web.png?auto=format&fit=max&h=1000&w=1000",
-        "width": 1080,
-        "height": 871
+        "url": "/assets/products/sma_0003/0.png",
+        "width": 1000,
+        "height": 806
       },
       "css_class": ""
     },
     {
-      "id": 120150561,
+      "id": 549039539,
       "name": "SMA_0004",
       "permalink": "sma_0004",
       "position": 8,
@@ -624,14 +631,14 @@
       "has_password_protection": false,
       "images": [
         {
-          "url": "https://assets.bigcartel.com/product_images/431552748/0_1_web.png?auto=format&fit=max&h=1000&w=1000",
-          "width": 1080,
-          "height": 870
+          "url": "/assets/products/sma_0004/0.png",
+          "width": 1000,
+          "height": 805
         },
         {
-          "url": "https://assets.bigcartel.com/product_images/431552751/1_2_web.png?auto=format&fit=max&h=1000&w=1000",
-          "width": 1080,
-          "height": 875
+          "url": "/assets/products/sma_0004/1.png",
+          "width": 1000,
+          "height": 810
         }
       ],
       "price": 130,
@@ -642,23 +649,23 @@
       "has_option_groups": false,
       "options": [
         {
-          "id": 486704913,
+          "id": 1616242012,
           "name": "SMA_0004",
           "price": 130,
           "sold_out": false,
           "has_custom_price": false,
           "option_group_values": [],
           "isLowInventory": true,
-          "isAlmostSoldOut": true
+          "isAlmostSoldOut": false
         }
       ],
       "artists": [],
       "categories": [
         {
-          "id": 1421738880,
-          "name": "Latest Drop",
-          "permalink": "latest-drop",
-          "url": "/category/latest-drop"
+          "id": 1420455573,
+          "name": "Pants/Shorts",
+          "permalink": "pantsshorts",
+          "url": "/category/pantsshorts"
         },
         {
           "id": 1420475163,
@@ -667,10 +674,10 @@
           "url": "/category/all"
         },
         {
-          "id": 1420455573,
-          "name": "Pants/Shorts",
-          "permalink": "pantsshorts",
-          "url": "/category/pantsshorts"
+          "id": 1421738880,
+          "name": "Latest Drop",
+          "permalink": "latest-drop",
+          "url": "/category/latest-drop"
         }
       ],
       "option_groups": [],
@@ -689,15 +696,16 @@
           "amount_with_others": 0
         }
       ],
+      "stripe_payment_link": "",
       "image": {
-        "url": "https://assets.bigcartel.com/product_images/431552748/0_1_web.png?auto=format&fit=max&h=1000&w=1000",
-        "width": 1080,
-        "height": 870
+        "url": "/assets/products/sma_0004/0.png",
+        "width": 1000,
+        "height": 805
       },
       "css_class": ""
     },
     {
-      "id": 119835828,
+      "id": 1581070510,
       "name": "JA_0001",
       "permalink": "ja_0001",
       "position": 9,
@@ -707,29 +715,29 @@
       "has_password_protection": false,
       "images": [
         {
-          "url": "https://assets.bigcartel.com/product_images/431529807/0_1_web.png?auto=format&fit=max&h=1000&w=1000",
-          "width": 621,
-          "height": 1080
+          "url": "/assets/products/ja_0001/0.png",
+          "width": 575,
+          "height": 1000
         },
         {
-          "url": "https://assets.bigcartel.com/product_images/431529810/1_2_web.png?auto=format&fit=max&h=1000&w=1000",
-          "width": 626,
-          "height": 1080
+          "url": "/assets/products/ja_0001/1.png",
+          "width": 579,
+          "height": 1000
         },
         {
-          "url": "https://assets.bigcartel.com/product_images/431529813/2_4_web.png?auto=format&fit=max&h=1000&w=1000",
-          "width": 1080,
-          "height": 1080
+          "url": "/assets/products/ja_0001/2.png",
+          "width": 1000,
+          "height": 1000
         },
         {
-          "url": "https://assets.bigcartel.com/product_images/431529816/3_3_web.png?auto=format&fit=max&h=1000&w=1000",
-          "width": 1080,
-          "height": 1080
+          "url": "/assets/products/ja_0001/3.png",
+          "width": 1000,
+          "height": 1000
         },
         {
-          "url": "https://assets.bigcartel.com/product_images/431529819/4_5_web.png?auto=format&fit=max&h=1000&w=1000",
-          "width": 1080,
-          "height": 1080
+          "url": "/assets/products/ja_0001/4.png",
+          "width": 1000,
+          "height": 1000
         }
       ],
       "price": 180,
@@ -740,23 +748,23 @@
       "has_option_groups": false,
       "options": [
         {
-          "id": 485188029,
+          "id": 515331845,
           "name": "JA_0001",
           "price": 180,
           "sold_out": false,
           "has_custom_price": false,
           "option_group_values": [],
           "isLowInventory": true,
-          "isAlmostSoldOut": true
+          "isAlmostSoldOut": false
         }
       ],
       "artists": [],
       "categories": [
         {
-          "id": 1421738880,
-          "name": "Latest Drop",
-          "permalink": "latest-drop",
-          "url": "/category/latest-drop"
+          "id": 1420455573,
+          "name": "Pants/Shorts",
+          "permalink": "pantsshorts",
+          "url": "/category/pantsshorts"
         },
         {
           "id": 1420475163,
@@ -765,10 +773,10 @@
           "url": "/category/all"
         },
         {
-          "id": 1420455573,
-          "name": "Pants/Shorts",
-          "permalink": "pantsshorts",
-          "url": "/category/pantsshorts"
+          "id": 1421738880,
+          "name": "Latest Drop",
+          "permalink": "latest-drop",
+          "url": "/category/latest-drop"
         }
       ],
       "option_groups": [],
@@ -787,15 +795,16 @@
           "amount_with_others": 0
         }
       ],
+      "stripe_payment_link": "",
       "image": {
-        "url": "https://assets.bigcartel.com/product_images/431529807/0_1_web.png?auto=format&fit=max&h=1000&w=1000",
-        "width": 621,
-        "height": 1080
+        "url": "/assets/products/ja_0001/0.png",
+        "width": 575,
+        "height": 1000
       },
       "css_class": ""
     },
     {
-      "id": 119835774,
+      "id": 664897698,
       "name": "Custom Tee-shirt col en v",
       "permalink": "custom-tee-shirt-col-en-v",
       "position": 10,
@@ -805,19 +814,19 @@
       "has_password_protection": false,
       "images": [
         {
-          "url": "https://assets.bigcartel.com/product_images/431519769/1_2_web.png?auto=format&fit=max&h=1000&w=1000",
-          "width": 899,
-          "height": 1080
+          "url": "/assets/products/custom-tee-shirt-col-en-v/0.png",
+          "width": 832,
+          "height": 1000
         },
         {
-          "url": "https://assets.bigcartel.com/product_images/431519772/0_1_web.png?auto=format&fit=max&h=1000&w=1000",
-          "width": 992,
-          "height": 1080
+          "url": "/assets/products/custom-tee-shirt-col-en-v/1.png",
+          "width": 918,
+          "height": 1000
         },
         {
-          "url": "https://assets.bigcartel.com/product_images/431519775/2_3_web.png?auto=format&fit=max&h=1000&w=1000",
-          "width": 1012,
-          "height": 1080
+          "url": "/assets/products/custom-tee-shirt-col-en-v/2.png",
+          "width": 937,
+          "height": 1000
         }
       ],
       "price": 65,
@@ -828,30 +837,18 @@
       "has_option_groups": false,
       "options": [
         {
-          "id": 485187891,
+          "id": 521124661,
           "name": "Custom Tee-shirt col en v",
           "price": 65,
           "sold_out": false,
           "has_custom_price": false,
           "option_group_values": [],
           "isLowInventory": true,
-          "isAlmostSoldOut": true
+          "isAlmostSoldOut": false
         }
       ],
       "artists": [],
       "categories": [
-        {
-          "id": 1421738880,
-          "name": "Latest Drop",
-          "permalink": "latest-drop",
-          "url": "/category/latest-drop"
-        },
-        {
-          "id": 1420475163,
-          "name": "All",
-          "permalink": "all",
-          "url": "/category/all"
-        },
         {
           "id": 1420455576,
           "name": "Tops",
@@ -863,6 +860,18 @@
           "name": "Customs/Upcycling",
           "permalink": "customsupcycling",
           "url": "/category/customsupcycling"
+        },
+        {
+          "id": 1420475163,
+          "name": "All",
+          "permalink": "all",
+          "url": "/category/all"
+        },
+        {
+          "id": 1421738880,
+          "name": "Latest Drop",
+          "permalink": "latest-drop",
+          "url": "/category/latest-drop"
         }
       ],
       "option_groups": [],
@@ -881,15 +890,16 @@
           "amount_with_others": 0
         }
       ],
+      "stripe_payment_link": "",
       "image": {
-        "url": "https://assets.bigcartel.com/product_images/431519769/1_2_web.png?auto=format&fit=max&h=1000&w=1000",
-        "width": 899,
-        "height": 1080
+        "url": "/assets/products/custom-tee-shirt-col-en-v/0.png",
+        "width": 832,
+        "height": 1000
       },
       "css_class": ""
     },
     {
-      "id": 116791395,
+      "id": 468324526,
       "name": "Pantalon rouge framboise ",
       "permalink": "pantalon-rouge-framboise",
       "position": 11,
@@ -899,27 +909,27 @@
       "has_password_protection": false,
       "images": [
         {
-          "url": "https://assets.bigcartel.com/product_images/431529921/0_1_web.png?auto=format&fit=max&h=1000&w=1000",
-          "width": 954,
-          "height": 1440
+          "url": "/assets/products/pantalon-rouge-framboise/0.png",
+          "width": 662,
+          "height": 1000
         },
         {
-          "url": "https://assets.bigcartel.com/product_images/431529924/1_2_web.png?auto=format&fit=max&h=1000&w=1000",
-          "width": 969,
-          "height": 1440
+          "url": "/assets/products/pantalon-rouge-framboise/1.png",
+          "width": 672,
+          "height": 1000
         },
         {
-          "url": "https://assets.bigcartel.com/product_images/431447256/4_web.png?auto=format&fit=max&h=1000&w=1000",
-          "width": 1080,
-          "height": 1390
+          "url": "/assets/products/pantalon-rouge-framboise/2.png",
+          "width": 776,
+          "height": 1000
         },
         {
-          "url": "https://assets.bigcartel.com/product_images/431529927/2_5_web.png?auto=format&fit=max&h=1000&w=1000",
-          "width": 1080,
-          "height": 1289
+          "url": "/assets/products/pantalon-rouge-framboise/3.png",
+          "width": 837,
+          "height": 1000
         },
         {
-          "url": "https://assets.bigcartel.com/product_images/431447253/3_web.png?auto=format&fit=max&h=1000&w=1000",
+          "url": "/assets/products/pantalon-rouge-framboise/4.png",
           "width": 353,
           "height": 965
         }
@@ -932,23 +942,23 @@
       "has_option_groups": false,
       "options": [
         {
-          "id": 470273283,
+          "id": 321970427,
           "name": "Pantalon rouge framboise ",
           "price": 200,
           "sold_out": false,
           "has_custom_price": false,
           "option_group_values": [],
           "isLowInventory": true,
-          "isAlmostSoldOut": true
+          "isAlmostSoldOut": false
         }
       ],
       "artists": [],
       "categories": [
         {
-          "id": 1421738880,
-          "name": "Latest Drop",
-          "permalink": "latest-drop",
-          "url": "/category/latest-drop"
+          "id": 1420455573,
+          "name": "Pants/Shorts",
+          "permalink": "pantsshorts",
+          "url": "/category/pantsshorts"
         },
         {
           "id": 1420475163,
@@ -957,10 +967,10 @@
           "url": "/category/all"
         },
         {
-          "id": 1420455573,
-          "name": "Pants/Shorts",
-          "permalink": "pantsshorts",
-          "url": "/category/pantsshorts"
+          "id": 1421738880,
+          "name": "Latest Drop",
+          "permalink": "latest-drop",
+          "url": "/category/latest-drop"
         }
       ],
       "option_groups": [],
@@ -979,15 +989,16 @@
           "amount_with_others": 0
         }
       ],
+      "stripe_payment_link": "",
       "image": {
-        "url": "https://assets.bigcartel.com/product_images/431529921/0_1_web.png?auto=format&fit=max&h=1000&w=1000",
-        "width": 954,
-        "height": 1440
+        "url": "/assets/products/pantalon-rouge-framboise/0.png",
+        "width": 662,
+        "height": 1000
       },
       "css_class": ""
     },
     {
-      "id": 116590689,
+      "id": 807198309,
       "name": "Pantalon Denim Bleu",
       "permalink": "pantalon-denim-bleu",
       "position": 12,
@@ -997,29 +1008,29 @@
       "has_password_protection": false,
       "images": [
         {
-          "url": "https://assets.bigcartel.com/product_images/431529963/1_1_web.png?auto=format&fit=max&h=1000&w=1000",
-          "width": 836,
-          "height": 1440
+          "url": "/assets/products/pantalon-denim-bleu/0.png",
+          "width": 580,
+          "height": 1000
         },
         {
-          "url": "https://assets.bigcartel.com/product_images/431529960/0_2_web.png?auto=format&fit=max&h=1000&w=1000",
-          "width": 963,
-          "height": 1440
+          "url": "/assets/products/pantalon-denim-bleu/1.png",
+          "width": 668,
+          "height": 1000
         },
         {
-          "url": "https://assets.bigcartel.com/product_images/431420391/4_web.png?auto=format&fit=max&h=1000&w=1000",
-          "width": 1080,
-          "height": 1440
+          "url": "/assets/products/pantalon-denim-bleu/2.png",
+          "height": 1000,
+          "width": 750
         },
         {
-          "url": "https://assets.bigcartel.com/product_images/431420394/5_web.png?auto=format&fit=max&h=1000&w=1000",
-          "width": 1080,
-          "height": 1440
+          "url": "/assets/products/pantalon-denim-bleu/3.png",
+          "height": 1000,
+          "width": 750
         },
         {
-          "url": "https://assets.bigcartel.com/product_images/431529966/2_3_web.png?auto=format&fit=max&h=1000&w=1000",
-          "width": 1080,
-          "height": 1146
+          "url": "/assets/products/pantalon-denim-bleu/4.png",
+          "width": 942,
+          "height": 1000
         }
       ],
       "price": 170,
@@ -1030,23 +1041,23 @@
       "has_option_groups": false,
       "options": [
         {
-          "id": 469456743,
+          "id": 1019937038,
           "name": "Pantalon Denim Bleu",
           "price": 170,
           "sold_out": false,
           "has_custom_price": false,
           "option_group_values": [],
           "isLowInventory": true,
-          "isAlmostSoldOut": true
+          "isAlmostSoldOut": false
         }
       ],
       "artists": [],
       "categories": [
         {
-          "id": 1421738880,
-          "name": "Latest Drop",
-          "permalink": "latest-drop",
-          "url": "/category/latest-drop"
+          "id": 1420455573,
+          "name": "Pants/Shorts",
+          "permalink": "pantsshorts",
+          "url": "/category/pantsshorts"
         },
         {
           "id": 1420475163,
@@ -1055,10 +1066,10 @@
           "url": "/category/all"
         },
         {
-          "id": 1420455573,
-          "name": "Pants/Shorts",
-          "permalink": "pantsshorts",
-          "url": "/category/pantsshorts"
+          "id": 1421738880,
+          "name": "Latest Drop",
+          "permalink": "latest-drop",
+          "url": "/category/latest-drop"
         }
       ],
       "option_groups": [],
@@ -1077,15 +1088,16 @@
           "amount_with_others": 0
         }
       ],
+      "stripe_payment_link": "",
       "image": {
-        "url": "https://assets.bigcartel.com/product_images/431529963/1_1_web.png?auto=format&fit=max&h=1000&w=1000",
-        "width": 836,
-        "height": 1440
+        "url": "/assets/products/pantalon-denim-bleu/0.png",
+        "width": 580,
+        "height": 1000
       },
       "css_class": ""
     },
     {
-      "id": 115428927,
+      "id": 666362000,
       "name": "Longsleeve TD002",
       "permalink": "longsleeve-td002",
       "position": 13,
@@ -1095,24 +1107,24 @@
       "has_password_protection": false,
       "images": [
         {
-          "url": "https://assets.bigcartel.com/product_images/431519802/2_1_web.png?auto=format&fit=max&h=1000&w=1000",
-          "width": 1080,
-          "height": 1350
+          "url": "/assets/products/longsleeve-td002/0.png",
+          "width": 800,
+          "height": 1000
         },
         {
-          "url": "https://assets.bigcartel.com/product_images/431519805/3_2_web.png?auto=format&fit=max&h=1000&w=1000",
-          "width": 1080,
-          "height": 1350
+          "url": "/assets/products/longsleeve-td002/1.png",
+          "width": 800,
+          "height": 1000
         },
         {
-          "url": "https://assets.bigcartel.com/product_images/431519799/0_3_web.png?auto=format&fit=max&h=1000&w=1000",
-          "width": 606,
-          "height": 1350
+          "url": "/assets/products/longsleeve-td002/2.png",
+          "width": 448,
+          "height": 1000
         },
         {
-          "url": "https://assets.bigcartel.com/product_images/431519796/1_4_web.png?auto=format&fit=max&h=1000&w=1000",
-          "width": 594,
-          "height": 1350
+          "url": "/assets/products/longsleeve-td002/3.png",
+          "width": 440,
+          "height": 1000
         }
       ],
       "price": 210,
@@ -1123,23 +1135,23 @@
       "has_option_groups": false,
       "options": [
         {
-          "id": 464365593,
+          "id": 1803209955,
           "name": "Longsleeve TD002",
           "price": 210,
           "sold_out": false,
           "has_custom_price": false,
           "option_group_values": [],
           "isLowInventory": true,
-          "isAlmostSoldOut": true
+          "isAlmostSoldOut": false
         }
       ],
       "artists": [],
       "categories": [
         {
-          "id": 1421738880,
-          "name": "Latest Drop",
-          "permalink": "latest-drop",
-          "url": "/category/latest-drop"
+          "id": 1420455576,
+          "name": "Tops",
+          "permalink": "tops",
+          "url": "/category/tops"
         },
         {
           "id": 1420475163,
@@ -1148,10 +1160,10 @@
           "url": "/category/all"
         },
         {
-          "id": 1420455576,
-          "name": "Tops",
-          "permalink": "tops",
-          "url": "/category/tops"
+          "id": 1421738880,
+          "name": "Latest Drop",
+          "permalink": "latest-drop",
+          "url": "/category/latest-drop"
         }
       ],
       "option_groups": [],
@@ -1170,15 +1182,16 @@
           "amount_with_others": 0
         }
       ],
+      "stripe_payment_link": "",
       "image": {
-        "url": "https://assets.bigcartel.com/product_images/431519802/2_1_web.png?auto=format&fit=max&h=1000&w=1000",
-        "width": 1080,
-        "height": 1350
+        "url": "/assets/products/longsleeve-td002/0.png",
+        "width": 800,
+        "height": 1000
       },
       "css_class": ""
     },
     {
-      "id": 115428897,
+      "id": 722866050,
       "name": "Pantalon FF001",
       "permalink": "pantalon-ff001",
       "position": 14,
@@ -1188,24 +1201,24 @@
       "has_password_protection": false,
       "images": [
         {
-          "url": "https://assets.bigcartel.com/product_images/431519853/2_1_web.png?auto=format&fit=max&h=1000&w=1000",
-          "width": 982,
-          "height": 1350
+          "url": "/assets/products/pantalon-ff001/0.png",
+          "width": 727,
+          "height": 1000
         },
         {
-          "url": "https://assets.bigcartel.com/product_images/431519856/3_2_web.png?auto=format&fit=max&h=1000&w=1000",
-          "width": 983,
-          "height": 1350
+          "url": "/assets/products/pantalon-ff001/1.png",
+          "width": 728,
+          "height": 1000
         },
         {
-          "url": "https://assets.bigcartel.com/product_images/431519847/0_4_web.png?auto=format&fit=max&h=1000&w=1000",
-          "width": 529,
-          "height": 1350
+          "url": "/assets/products/pantalon-ff001/2.png",
+          "width": 391,
+          "height": 1000
         },
         {
-          "url": "https://assets.bigcartel.com/product_images/431519850/1_3_web.png?auto=format&fit=max&h=1000&w=1000",
-          "width": 529,
-          "height": 1350
+          "url": "/assets/products/pantalon-ff001/3.png",
+          "width": 391,
+          "height": 1000
         }
       ],
       "price": 170,
@@ -1216,23 +1229,23 @@
       "has_option_groups": false,
       "options": [
         {
-          "id": 464365482,
+          "id": 686672641,
           "name": "Pantalon FF001",
           "price": 170,
           "sold_out": false,
           "has_custom_price": false,
           "option_group_values": [],
           "isLowInventory": true,
-          "isAlmostSoldOut": true
+          "isAlmostSoldOut": false
         }
       ],
       "artists": [],
       "categories": [
         {
-          "id": 1421738880,
-          "name": "Latest Drop",
-          "permalink": "latest-drop",
-          "url": "/category/latest-drop"
+          "id": 1420455573,
+          "name": "Pants/Shorts",
+          "permalink": "pantsshorts",
+          "url": "/category/pantsshorts"
         },
         {
           "id": 1420475163,
@@ -1241,10 +1254,10 @@
           "url": "/category/all"
         },
         {
-          "id": 1420455573,
-          "name": "Pants/Shorts",
-          "permalink": "pantsshorts",
-          "url": "/category/pantsshorts"
+          "id": 1421738880,
+          "name": "Latest Drop",
+          "permalink": "latest-drop",
+          "url": "/category/latest-drop"
         }
       ],
       "option_groups": [],
@@ -1263,15 +1276,16 @@
           "amount_with_others": 0
         }
       ],
+      "stripe_payment_link": "",
       "image": {
-        "url": "https://assets.bigcartel.com/product_images/431519853/2_1_web.png?auto=format&fit=max&h=1000&w=1000",
-        "width": 982,
-        "height": 1350
+        "url": "/assets/products/pantalon-ff001/0.png",
+        "width": 727,
+        "height": 1000
       },
       "css_class": ""
     },
     {
-      "id": 115428720,
+      "id": 606145373,
       "name": "Pantalon VC001",
       "permalink": "pantalon-vc001",
       "position": 15,
@@ -1281,24 +1295,24 @@
       "has_password_protection": false,
       "images": [
         {
-          "url": "https://assets.bigcartel.com/product_images/431519877/2_1_web.png?auto=format&fit=max&h=1000&w=1000",
-          "width": 896,
-          "height": 1350
+          "url": "/assets/products/pantalon-vc001/0.png",
+          "width": 663,
+          "height": 1000
         },
         {
-          "url": "https://assets.bigcartel.com/product_images/431519880/3_2_web.png?auto=format&fit=max&h=1000&w=1000",
-          "width": 1008,
-          "height": 1350
+          "url": "/assets/products/pantalon-vc001/1.png",
+          "width": 746,
+          "height": 1000
         },
         {
-          "url": "https://assets.bigcartel.com/product_images/431519871/0_3_web.png?auto=format&fit=max&h=1000&w=1000",
-          "width": 531,
-          "height": 1324
+          "url": "/assets/products/pantalon-vc001/2.png",
+          "width": 401,
+          "height": 1000
         },
         {
-          "url": "https://assets.bigcartel.com/product_images/431519874/1_4_web.png?auto=format&fit=max&h=1000&w=1000",
-          "width": 553,
-          "height": 1350
+          "url": "/assets/products/pantalon-vc001/3.png",
+          "width": 409,
+          "height": 1000
         }
       ],
       "price": 170,
@@ -1309,23 +1323,23 @@
       "has_option_groups": false,
       "options": [
         {
-          "id": 464364789,
+          "id": 570574806,
           "name": "Pantalon VC001",
           "price": 170,
           "sold_out": false,
           "has_custom_price": false,
           "option_group_values": [],
           "isLowInventory": true,
-          "isAlmostSoldOut": true
+          "isAlmostSoldOut": false
         }
       ],
       "artists": [],
       "categories": [
         {
-          "id": 1421738880,
-          "name": "Latest Drop",
-          "permalink": "latest-drop",
-          "url": "/category/latest-drop"
+          "id": 1420455573,
+          "name": "Pants/Shorts",
+          "permalink": "pantsshorts",
+          "url": "/category/pantsshorts"
         },
         {
           "id": 1420475163,
@@ -1334,10 +1348,10 @@
           "url": "/category/all"
         },
         {
-          "id": 1420455573,
-          "name": "Pants/Shorts",
-          "permalink": "pantsshorts",
-          "url": "/category/pantsshorts"
+          "id": 1421738880,
+          "name": "Latest Drop",
+          "permalink": "latest-drop",
+          "url": "/category/latest-drop"
         }
       ],
       "option_groups": [],
@@ -1356,15 +1370,16 @@
           "amount_with_others": 0
         }
       ],
+      "stripe_payment_link": "",
       "image": {
-        "url": "https://assets.bigcartel.com/product_images/431519877/2_1_web.png?auto=format&fit=max&h=1000&w=1000",
-        "width": 896,
-        "height": 1350
+        "url": "/assets/products/pantalon-vc001/0.png",
+        "width": 663,
+        "height": 1000
       },
       "css_class": ""
     },
     {
-      "id": 115428684,
+      "id": 323010774,
       "name": "Pantalon DD001",
       "permalink": "pantalon-dd001",
       "position": 16,
@@ -1374,24 +1389,24 @@
       "has_password_protection": false,
       "images": [
         {
-          "url": "https://assets.bigcartel.com/product_images/431519928/0_1_web.png?auto=format&fit=max&h=1000&w=1000",
-          "width": 921,
-          "height": 1350
+          "url": "/assets/products/pantalon-dd001/0.png",
+          "width": 682,
+          "height": 1000
         },
         {
-          "url": "https://assets.bigcartel.com/product_images/431519919/1_2_web.png?auto=format&fit=max&h=1000&w=1000",
-          "width": 1057,
-          "height": 1348
+          "url": "/assets/products/pantalon-dd001/1.png",
+          "width": 784,
+          "height": 1000
         },
         {
-          "url": "https://assets.bigcartel.com/product_images/431519922/2_3_web.png?auto=format&fit=max&h=1000&w=1000",
-          "width": 512,
-          "height": 1350
+          "url": "/assets/products/pantalon-dd001/2.png",
+          "width": 379,
+          "height": 1000
         },
         {
-          "url": "https://assets.bigcartel.com/product_images/431519925/3_4_web.png?auto=format&fit=max&h=1000&w=1000",
-          "width": 546,
-          "height": 1350
+          "url": "/assets/products/pantalon-dd001/3.png",
+          "width": 404,
+          "height": 1000
         }
       ],
       "price": 210.7,
@@ -1402,23 +1417,23 @@
       "has_option_groups": false,
       "options": [
         {
-          "id": 464364573,
+          "id": 1078241417,
           "name": "Pantalon DD001",
           "price": 210.7,
           "sold_out": false,
           "has_custom_price": false,
           "option_group_values": [],
           "isLowInventory": true,
-          "isAlmostSoldOut": true
+          "isAlmostSoldOut": false
         }
       ],
       "artists": [],
       "categories": [
         {
-          "id": 1421738880,
-          "name": "Latest Drop",
-          "permalink": "latest-drop",
-          "url": "/category/latest-drop"
+          "id": 1420455573,
+          "name": "Pants/Shorts",
+          "permalink": "pantsshorts",
+          "url": "/category/pantsshorts"
         },
         {
           "id": 1420475163,
@@ -1427,10 +1442,10 @@
           "url": "/category/all"
         },
         {
-          "id": 1420455573,
-          "name": "Pants/Shorts",
-          "permalink": "pantsshorts",
-          "url": "/category/pantsshorts"
+          "id": 1421738880,
+          "name": "Latest Drop",
+          "permalink": "latest-drop",
+          "url": "/category/latest-drop"
         }
       ],
       "option_groups": [],
@@ -1449,15 +1464,16 @@
           "amount_with_others": 0
         }
       ],
+      "stripe_payment_link": "",
       "image": {
-        "url": "https://assets.bigcartel.com/product_images/431519928/0_1_web.png?auto=format&fit=max&h=1000&w=1000",
-        "width": 921,
-        "height": 1350
+        "url": "/assets/products/pantalon-dd001/0.png",
+        "width": 682,
+        "height": 1000
       },
       "css_class": ""
     },
     {
-      "id": 115428609,
+      "id": 349084795,
       "name": "Short GE001",
       "permalink": "short-ge0001",
       "position": 17,
@@ -1467,24 +1483,24 @@
       "has_password_protection": false,
       "images": [
         {
-          "url": "https://assets.bigcartel.com/product_images/431529600/0_1_web.png?auto=format&fit=max&h=1000&w=1000",
-          "width": 1080,
-          "height": 1003
+          "url": "/assets/products/short-ge0001/0.png",
+          "width": 1000,
+          "height": 928
         },
         {
-          "url": "https://assets.bigcartel.com/product_images/431529603/1_2_web.png?auto=format&fit=max&h=1000&w=1000",
-          "width": 1080,
-          "height": 1075
+          "url": "/assets/products/short-ge0001/1.png",
+          "width": 1000,
+          "height": 995
         },
         {
-          "url": "https://assets.bigcartel.com/product_images/431529606/2_3_web.png?auto=format&fit=max&h=1000&w=1000",
-          "width": 606,
-          "height": 1350
+          "url": "/assets/products/short-ge0001/2.png",
+          "width": 448,
+          "height": 1000
         },
         {
-          "url": "https://assets.bigcartel.com/product_images/431529609/3_4_web.png?auto=format&fit=max&h=1000&w=1000",
-          "width": 594,
-          "height": 1350
+          "url": "/assets/products/short-ge0001/3.png",
+          "width": 440,
+          "height": 1000
         }
       ],
       "price": 115,
@@ -1495,23 +1511,23 @@
       "has_option_groups": false,
       "options": [
         {
-          "id": 464364318,
+          "id": 1145039598,
           "name": "Short GE001",
           "price": 115,
           "sold_out": false,
           "has_custom_price": false,
           "option_group_values": [],
           "isLowInventory": true,
-          "isAlmostSoldOut": true
+          "isAlmostSoldOut": false
         }
       ],
       "artists": [],
       "categories": [
         {
-          "id": 1421738880,
-          "name": "Latest Drop",
-          "permalink": "latest-drop",
-          "url": "/category/latest-drop"
+          "id": 1420455573,
+          "name": "Pants/Shorts",
+          "permalink": "pantsshorts",
+          "url": "/category/pantsshorts"
         },
         {
           "id": 1420475163,
@@ -1520,10 +1536,10 @@
           "url": "/category/all"
         },
         {
-          "id": 1420455573,
-          "name": "Pants/Shorts",
-          "permalink": "pantsshorts",
-          "url": "/category/pantsshorts"
+          "id": 1421738880,
+          "name": "Latest Drop",
+          "permalink": "latest-drop",
+          "url": "/category/latest-drop"
         }
       ],
       "option_groups": [],
@@ -1542,15 +1558,16 @@
           "amount_with_others": 0
         }
       ],
+      "stripe_payment_link": "",
       "image": {
-        "url": "https://assets.bigcartel.com/product_images/431529600/0_1_web.png?auto=format&fit=max&h=1000&w=1000",
-        "width": 1080,
-        "height": 1003
+        "url": "/assets/products/short-ge0001/0.png",
+        "width": 1000,
+        "height": 928
       },
       "css_class": ""
     },
     {
-      "id": 114455157,
+      "id": 603583031,
       "name": "Short SG001",
       "permalink": "short-sg001",
       "position": 18,
@@ -1560,14 +1577,14 @@
       "has_password_protection": false,
       "images": [
         {
-          "url": "https://assets.bigcartel.com/product_images/431552763/0_1_web.png?auto=format&fit=max&h=1000&w=1000",
-          "width": 1600,
-          "height": 1286
+          "url": "/assets/products/short-sg001/0.png",
+          "width": 1000,
+          "height": 803
         },
         {
-          "url": "https://assets.bigcartel.com/product_images/431552766/1_2_web.png?auto=format&fit=max&h=1000&w=1000",
-          "width": 1600,
-          "height": 1314
+          "url": "/assets/products/short-sg001/1.png",
+          "width": 1000,
+          "height": 821
         }
       ],
       "price": 85,
@@ -1578,23 +1595,23 @@
       "has_option_groups": false,
       "options": [
         {
-          "id": 459954804,
+          "id": 193740040,
           "name": "Short SG001",
           "price": 85,
           "sold_out": false,
           "has_custom_price": false,
           "option_group_values": [],
           "isLowInventory": true,
-          "isAlmostSoldOut": true
+          "isAlmostSoldOut": false
         }
       ],
       "artists": [],
       "categories": [
         {
-          "id": 1421738880,
-          "name": "Latest Drop",
-          "permalink": "latest-drop",
-          "url": "/category/latest-drop"
+          "id": 1420455573,
+          "name": "Pants/Shorts",
+          "permalink": "pantsshorts",
+          "url": "/category/pantsshorts"
         },
         {
           "id": 1420475163,
@@ -1603,10 +1620,10 @@
           "url": "/category/all"
         },
         {
-          "id": 1420455573,
-          "name": "Pants/Shorts",
-          "permalink": "pantsshorts",
-          "url": "/category/pantsshorts"
+          "id": 1421738880,
+          "name": "Latest Drop",
+          "permalink": "latest-drop",
+          "url": "/category/latest-drop"
         }
       ],
       "option_groups": [],
@@ -1625,15 +1642,16 @@
           "amount_with_others": 0
         }
       ],
+      "stripe_payment_link": "",
       "image": {
-        "url": "https://assets.bigcartel.com/product_images/431552763/0_1_web.png?auto=format&fit=max&h=1000&w=1000",
-        "width": 1600,
-        "height": 1286
+        "url": "/assets/products/short-sg001/0.png",
+        "width": 1000,
+        "height": 803
       },
       "css_class": ""
     },
     {
-      "id": 113740725,
+      "id": 1701250922,
       "name": "CD VGTAPE",
       "permalink": "cd-vgtape",
       "position": 19,
@@ -1643,24 +1661,24 @@
       "has_password_protection": false,
       "images": [
         {
-          "url": "https://assets.bigcartel.com/product_images/431529636/0_1_web.png?auto=format&fit=max&h=1000&w=1000",
+          "url": "/assets/products/cd-vgtape/0.png",
           "width": 918,
           "height": 922
         },
         {
-          "url": "https://assets.bigcartel.com/product_images/431529627/1_2_web.png?auto=format&fit=max&h=1000&w=1000",
+          "url": "/assets/products/cd-vgtape/1.png",
           "width": 919,
           "height": 926
         },
         {
-          "url": "https://assets.bigcartel.com/product_images/431529630/2_3_web.png?auto=format&fit=max&h=1000&w=1000",
-          "width": 1195,
-          "height": 1199
+          "url": "/assets/products/cd-vgtape/2.png",
+          "width": 996,
+          "height": 1000
         },
         {
-          "url": "https://assets.bigcartel.com/product_images/431529633/3_4_web.png?auto=format&fit=max&h=1000&w=1000",
-          "width": 1562,
-          "height": 1551
+          "url": "/assets/products/cd-vgtape/3.png",
+          "width": 1000,
+          "height": 992
         }
       ],
       "price": 8,
@@ -1671,23 +1689,23 @@
       "has_option_groups": false,
       "options": [
         {
-          "id": 456814287,
+          "id": 502089143,
           "name": "CD VGTAPE",
           "price": 8,
           "sold_out": false,
           "has_custom_price": false,
           "option_group_values": [],
           "isLowInventory": true,
-          "isAlmostSoldOut": true
+          "isAlmostSoldOut": false
         }
       ],
       "artists": [],
       "categories": [
         {
-          "id": 1421738880,
-          "name": "Latest Drop",
-          "permalink": "latest-drop",
-          "url": "/category/latest-drop"
+          "id": 1421624925,
+          "name": "Merch",
+          "permalink": "merch",
+          "url": "/category/merch"
         },
         {
           "id": 1420475163,
@@ -1696,10 +1714,10 @@
           "url": "/category/all"
         },
         {
-          "id": 1421624925,
-          "name": "Merch",
-          "permalink": "merch",
-          "url": "/category/merch"
+          "id": 1421738880,
+          "name": "Latest Drop",
+          "permalink": "latest-drop",
+          "url": "/category/latest-drop"
         }
       ],
       "option_groups": [],
@@ -1718,15 +1736,16 @@
           "amount_with_others": 0
         }
       ],
+      "stripe_payment_link": "",
       "image": {
-        "url": "https://assets.bigcartel.com/product_images/431529636/0_1_web.png?auto=format&fit=max&h=1000&w=1000",
+        "url": "/assets/products/cd-vgtape/0.png",
         "width": 918,
         "height": 922
       },
       "css_class": ""
     },
     {
-      "id": 115428528,
+      "id": 769696151,
       "name": "SC_0009",
       "permalink": "sacoche",
       "position": 20,
@@ -1736,29 +1755,29 @@
       "has_password_protection": false,
       "images": [
         {
-          "url": "https://assets.bigcartel.com/product_images/431446026/1_web.png?auto=format&fit=max&h=1000&w=1000",
-          "width": 1080,
-          "height": 1135
+          "url": "/assets/products/sacoche/0.png",
+          "width": 951,
+          "height": 1000
         },
         {
-          "url": "https://assets.bigcartel.com/product_images/431446029/2_web.png?auto=format&fit=max&h=1000&w=1000",
-          "width": 1080,
-          "height": 1237
+          "url": "/assets/products/sacoche/1.png",
+          "width": 873,
+          "height": 1000
         },
         {
-          "url": "https://assets.bigcartel.com/product_images/431446032/3_web.png?auto=format&fit=max&h=1000&w=1000",
-          "width": 1080,
-          "height": 1152
+          "url": "/assets/products/sacoche/2.png",
+          "width": 937,
+          "height": 1000
         },
         {
-          "url": "https://assets.bigcartel.com/product_images/431447214/4_web.png?auto=format&fit=max&h=1000&w=1000",
-          "width": 1080,
-          "height": 1350
+          "url": "/assets/products/sacoche/3.png",
+          "height": 1000,
+          "width": 800
         },
         {
-          "url": "https://assets.bigcartel.com/product_images/431447217/5_web.png?auto=format&fit=max&h=1000&w=1000",
-          "width": 1080,
-          "height": 1350
+          "url": "/assets/products/sacoche/4.png",
+          "height": 1000,
+          "width": 800
         }
       ],
       "price": 55,
@@ -1769,29 +1788,29 @@
       "has_option_groups": false,
       "options": [
         {
-          "id": 464363871,
+          "id": 489517118,
           "name": "SC_0009",
           "price": 55,
           "sold_out": false,
           "has_custom_price": false,
           "option_group_values": [],
           "isLowInventory": true,
-          "isAlmostSoldOut": true
+          "isAlmostSoldOut": false
         }
       ],
       "artists": [],
       "categories": [
         {
-          "id": 1420475163,
-          "name": "All",
-          "permalink": "all",
-          "url": "/category/all"
-        },
-        {
           "id": 1420455579,
           "name": "Accessories",
           "permalink": "accessories",
           "url": "/category/accessories"
+        },
+        {
+          "id": 1420475163,
+          "name": "All",
+          "permalink": "all",
+          "url": "/category/all"
         }
       ],
       "option_groups": [],
@@ -1804,17 +1823,22 @@
             "name": "France",
             "code": "FR"
           }
+        },
+        {
+          "amount_alone": 1.9,
+          "amount_with_others": 0
         }
       ],
+      "stripe_payment_link": "",
       "image": {
-        "url": "https://assets.bigcartel.com/product_images/431446026/1_web.png?auto=format&fit=max&h=1000&w=1000",
-        "width": 1080,
-        "height": 1135
+        "url": "/assets/products/sacoche/0.png",
+        "width": 951,
+        "height": 1000
       },
       "css_class": ""
     },
     {
-      "id": 106249782,
+      "id": 1307594083,
       "name": "Pantalon GP_0002  collection « VGTHM »",
       "permalink": "gp_0002",
       "position": 21,
@@ -1824,24 +1848,24 @@
       "has_password_protection": false,
       "images": [
         {
-          "url": "https://assets.bigcartel.com/product_images/431529684/0_1_web.png?auto=format&fit=max&h=1000&w=1000",
-          "width": 1080,
-          "height": 1333
+          "url": "/assets/products/gp_0002/0.png",
+          "width": 810,
+          "height": 1000
         },
         {
-          "url": "https://assets.bigcartel.com/product_images/431529687/1_2_web.png?auto=format&fit=max&h=1000&w=1000",
-          "width": 1080,
-          "height": 1304
+          "url": "/assets/products/gp_0002/1.png",
+          "width": 828,
+          "height": 1000
         },
         {
-          "url": "https://assets.bigcartel.com/product_images/431529690/2_3_web.png?auto=format&fit=max&h=1000&w=1000",
-          "width": 726,
-          "height": 1350
+          "url": "/assets/products/gp_0002/2.png",
+          "width": 537,
+          "height": 1000
         },
         {
-          "url": "https://assets.bigcartel.com/product_images/431529693/3_4_web.png?auto=format&fit=max&h=1000&w=1000",
-          "width": 730,
-          "height": 1350
+          "url": "/assets/products/gp_0002/3.png",
+          "width": 540,
+          "height": 1000
         }
       ],
       "price": 315,
@@ -1852,29 +1876,29 @@
       "has_option_groups": false,
       "options": [
         {
-          "id": 423471012,
+          "id": 2080832588,
           "name": "Pantalon GP_0002  collection « VGTHM »",
           "price": 315,
           "sold_out": false,
           "has_custom_price": false,
           "option_group_values": [],
           "isLowInventory": true,
-          "isAlmostSoldOut": true
+          "isAlmostSoldOut": false
         }
       ],
       "artists": [],
       "categories": [
         {
-          "id": 1420475163,
-          "name": "All",
-          "permalink": "all",
-          "url": "/category/all"
-        },
-        {
           "id": 1420455573,
           "name": "Pants/Shorts",
           "permalink": "pantsshorts",
           "url": "/category/pantsshorts"
+        },
+        {
+          "id": 1420475163,
+          "name": "All",
+          "permalink": "all",
+          "url": "/category/all"
         }
       ],
       "option_groups": [],
@@ -1893,15 +1917,16 @@
           "amount_with_others": 0
         }
       ],
+      "stripe_payment_link": "",
       "image": {
-        "url": "https://assets.bigcartel.com/product_images/431529684/0_1_web.png?auto=format&fit=max&h=1000&w=1000",
-        "width": 1080,
-        "height": 1333
+        "url": "/assets/products/gp_0002/0.png",
+        "width": 810,
+        "height": 1000
       },
       "css_class": ""
     },
     {
-      "id": 119835870,
+      "id": 632927634,
       "name": "SMA_0001",
       "permalink": "sma_0001",
       "position": 22,
@@ -1911,29 +1936,29 @@
       "has_password_protection": false,
       "images": [
         {
-          "url": "https://assets.bigcartel.com/product_images/431530134/1_1_web.png?auto=format&fit=max&h=1000&w=1000",
-          "width": 1080,
-          "height": 1031
+          "url": "/assets/products/sma_0001/0.png",
+          "width": 1000,
+          "height": 954
         },
         {
-          "url": "https://assets.bigcartel.com/product_images/431530131/0_2_web.png?auto=format&fit=max&h=1000&w=1000",
-          "width": 1080,
-          "height": 988
+          "url": "/assets/products/sma_0001/1.png",
+          "width": 1000,
+          "height": 914
         },
         {
-          "url": "https://assets.bigcartel.com/product_images/431446107/4_web.png?auto=format&fit=max&h=1000&w=1000",
-          "width": 1080,
-          "height": 1080
+          "url": "/assets/products/sma_0001/2.png",
+          "height": 1000,
+          "width": 1000
         },
         {
-          "url": "https://assets.bigcartel.com/product_images/431446110/5_web.png?auto=format&fit=max&h=1000&w=1000",
-          "width": 1080,
-          "height": 1080
+          "url": "/assets/products/sma_0001/3.png",
+          "height": 1000,
+          "width": 1000
         },
         {
-          "url": "https://assets.bigcartel.com/product_images/431530137/2_3_web.png?auto=format&fit=max&h=1000&w=1000",
-          "width": 1080,
-          "height": 1080
+          "url": "/assets/products/sma_0001/4.png",
+          "width": 1000,
+          "height": 1000
         }
       ],
       "price": 130,
@@ -1944,21 +1969,23 @@
       "has_option_groups": false,
       "options": [
         {
-          "id": 485188239,
+          "id": 1813235781,
           "name": "SMA_0001",
           "price": 130,
           "sold_out": true,
           "has_custom_price": false,
-          "option_group_values": []
+          "option_group_values": [],
+          "isLowInventory": false,
+          "isAlmostSoldOut": false
         }
       ],
       "artists": [],
       "categories": [
         {
-          "id": 1421738880,
-          "name": "Latest Drop",
-          "permalink": "latest-drop",
-          "url": "/category/latest-drop"
+          "id": 1420455573,
+          "name": "Pants/Shorts",
+          "permalink": "pantsshorts",
+          "url": "/category/pantsshorts"
         },
         {
           "id": 1420475163,
@@ -1967,10 +1994,10 @@
           "url": "/category/all"
         },
         {
-          "id": 1420455573,
-          "name": "Pants/Shorts",
-          "permalink": "pantsshorts",
-          "url": "/category/pantsshorts"
+          "id": 1421738880,
+          "name": "Latest Drop",
+          "permalink": "latest-drop",
+          "url": "/category/latest-drop"
         }
       ],
       "option_groups": [],
@@ -1989,15 +2016,16 @@
           "amount_with_others": 0
         }
       ],
+      "stripe_payment_link": "",
       "image": {
-        "url": "https://assets.bigcartel.com/product_images/431530134/1_1_web.png?auto=format&fit=max&h=1000&w=1000",
-        "width": 1080,
-        "height": 1031
+        "url": "/assets/products/sma_0001/0.png",
+        "width": 1000,
+        "height": 954
       },
       "css_class": ""
     },
     {
-      "id": 119835858,
+      "id": 1546092907,
       "name": "Custom Hoodie",
       "permalink": "custom-hoodie",
       "position": 23,
@@ -2007,14 +2035,14 @@
       "has_password_protection": false,
       "images": [
         {
-          "url": "https://assets.bigcartel.com/product_images/431529738/1_1_web.png?auto=format&fit=max&h=1000&w=1000",
-          "width": 1014,
-          "height": 1080
+          "url": "/assets/products/custom-hoodie/0.png",
+          "width": 938,
+          "height": 1000
         },
         {
-          "url": "https://assets.bigcartel.com/product_images/431552301/hoodie_back.png?auto=format&fit=max&h=1000&w=1000",
-          "width": 1080,
-          "height": 1047
+          "url": "/assets/products/custom-hoodie/1.png",
+          "width": 1000,
+          "height": 969
         }
       ],
       "price": 120,
@@ -2025,30 +2053,18 @@
       "has_option_groups": false,
       "options": [
         {
-          "id": 485188107,
+          "id": 260576532,
           "name": "Custom Hoodie",
           "price": 120,
-          "sold_out": false,
+          "sold_out": true,
           "has_custom_price": false,
           "option_group_values": [],
-          "isLowInventory": true,
-          "isAlmostSoldOut": true
+          "isLowInventory": false,
+          "isAlmostSoldOut": false
         }
       ],
       "artists": [],
       "categories": [
-        {
-          "id": 1421738880,
-          "name": "Latest Drop",
-          "permalink": "latest-drop",
-          "url": "/category/latest-drop"
-        },
-        {
-          "id": 1420475163,
-          "name": "All",
-          "permalink": "all",
-          "url": "/category/all"
-        },
         {
           "id": 1420455576,
           "name": "Tops",
@@ -2060,6 +2076,18 @@
           "name": "Customs/Upcycling",
           "permalink": "customsupcycling",
           "url": "/category/customsupcycling"
+        },
+        {
+          "id": 1420475163,
+          "name": "All",
+          "permalink": "all",
+          "url": "/category/all"
+        },
+        {
+          "id": 1421738880,
+          "name": "Latest Drop",
+          "permalink": "latest-drop",
+          "url": "/category/latest-drop"
         }
       ],
       "option_groups": [],
@@ -2078,15 +2106,16 @@
           "amount_with_others": 0
         }
       ],
+      "stripe_payment_link": "",
       "image": {
-        "url": "https://assets.bigcartel.com/product_images/431529738/1_1_web.png?auto=format&fit=max&h=1000&w=1000",
-        "width": 1014,
-        "height": 1080
+        "url": "/assets/products/custom-hoodie/0.png",
+        "width": 938,
+        "height": 1000
       },
       "css_class": ""
     },
     {
-      "id": 114455049,
+      "id": 1944971080,
       "name": "Short Collab Yazzart",
       "permalink": "short-coupe-évasée",
       "position": 24,
@@ -2096,27 +2125,27 @@
       "has_password_protection": false,
       "images": [
         {
-          "url": "https://assets.bigcartel.com/product_images/431530206/3_2_web.png?auto=format&fit=max&h=1000&w=1000",
-          "width": 1080,
-          "height": 1011
+          "url": "/assets/products/short-coupe-évasée/0.png",
+          "width": 1000,
+          "height": 936
         },
         {
-          "url": "https://assets.bigcartel.com/product_images/431530194/2_1_web.png?auto=format&fit=max&h=1000&w=1000",
-          "width": 1080,
-          "height": 1037
+          "url": "/assets/products/short-coupe-évasée/1.png",
+          "width": 1000,
+          "height": 960
         },
         {
-          "url": "https://assets.bigcartel.com/product_images/431530197/4_3_web.png?auto=format&fit=max&h=1000&w=1000",
-          "width": 1080,
-          "height": 1440
+          "url": "/assets/products/short-coupe-évasée/2.png",
+          "width": 750,
+          "height": 1000
         },
         {
-          "url": "https://assets.bigcartel.com/product_images/431530200/0_4_web.png?auto=format&fit=max&h=1000&w=1000",
+          "url": "/assets/products/short-coupe-évasée/3.png",
           "width": 330,
           "height": 858
         },
         {
-          "url": "https://assets.bigcartel.com/product_images/431530203/1_5_web.png?auto=format&fit=max&h=1000&w=1000",
+          "url": "/assets/products/short-coupe-évasée/4.png",
           "width": 314,
           "height": 660
         }
@@ -2129,21 +2158,23 @@
       "has_option_groups": false,
       "options": [
         {
-          "id": 459954594,
+          "id": 1487405893,
           "name": "Short Collab Yazzart",
           "price": 130,
           "sold_out": true,
           "has_custom_price": false,
-          "option_group_values": []
+          "option_group_values": [],
+          "isLowInventory": false,
+          "isAlmostSoldOut": false
         }
       ],
       "artists": [],
       "categories": [
         {
-          "id": 1421738880,
-          "name": "Latest Drop",
-          "permalink": "latest-drop",
-          "url": "/category/latest-drop"
+          "id": 1420455573,
+          "name": "Pants/Shorts",
+          "permalink": "pantsshorts",
+          "url": "/category/pantsshorts"
         },
         {
           "id": 1420475163,
@@ -2152,10 +2183,10 @@
           "url": "/category/all"
         },
         {
-          "id": 1420455573,
-          "name": "Pants/Shorts",
-          "permalink": "pantsshorts",
-          "url": "/category/pantsshorts"
+          "id": 1421738880,
+          "name": "Latest Drop",
+          "permalink": "latest-drop",
+          "url": "/category/latest-drop"
         }
       ],
       "option_groups": [],
@@ -2174,15 +2205,16 @@
           "amount_with_others": 0
         }
       ],
+      "stripe_payment_link": "",
       "image": {
-        "url": "https://assets.bigcartel.com/product_images/431530206/3_2_web.png?auto=format&fit=max&h=1000&w=1000",
-        "width": 1080,
-        "height": 1011
+        "url": "/assets/products/short-coupe-évasée/0.png",
+        "width": 1000,
+        "height": 936
       },
       "css_class": ""
     },
     {
-      "id": 116523867,
+      "id": 1391172845,
       "name": "Cache-cou",
       "permalink": "cache-cou",
       "position": 25,
@@ -2192,29 +2224,29 @@
       "has_password_protection": false,
       "images": [
         {
-          "url": "https://assets.bigcartel.com/product_images/431530227/2_5_web.png?auto=format&fit=max&h=1000&w=1000",
-          "width": 1070,
-          "height": 844
+          "url": "/assets/products/cache-cou/0.png",
+          "width": 1000,
+          "height": 788
         },
         {
-          "url": "https://assets.bigcartel.com/product_images/431530224/1_3_web.png?auto=format&fit=max&h=1000&w=1000",
-          "width": 1070,
-          "height": 894
+          "url": "/assets/products/cache-cou/1.png",
+          "width": 1000,
+          "height": 835
         },
         {
-          "url": "https://assets.bigcartel.com/product_images/431446185/4_web.png?auto=format&fit=max&h=1000&w=1000",
-          "width": 1080,
-          "height": 902
+          "url": "/assets/products/cache-cou/2.png",
+          "width": 1000,
+          "height": 835
         },
         {
-          "url": "https://assets.bigcartel.com/product_images/431446182/2_web.png?auto=format&fit=max&h=1000&w=1000",
-          "width": 1080,
-          "height": 1440
+          "url": "/assets/products/cache-cou/3.png",
+          "width": 750,
+          "height": 1000
         },
         {
-          "url": "https://assets.bigcartel.com/product_images/431530221/0_1_web.png?auto=format&fit=max&h=1000&w=1000",
-          "width": 988,
-          "height": 1334
+          "url": "/assets/products/cache-cou/4.png",
+          "width": 740,
+          "height": 1000
         }
       ],
       "price": 30,
@@ -2225,21 +2257,23 @@
       "has_option_groups": false,
       "options": [
         {
-          "id": 469165110,
+          "id": 1495493316,
           "name": "Cache-cou",
           "price": 30,
           "sold_out": true,
           "has_custom_price": false,
-          "option_group_values": []
+          "option_group_values": [],
+          "isLowInventory": false,
+          "isAlmostSoldOut": false
         }
       ],
       "artists": [],
       "categories": [
         {
-          "id": 1421738880,
-          "name": "Latest Drop",
-          "permalink": "latest-drop",
-          "url": "/category/latest-drop"
+          "id": 1420455579,
+          "name": "Accessories",
+          "permalink": "accessories",
+          "url": "/category/accessories"
         },
         {
           "id": 1420475163,
@@ -2248,10 +2282,10 @@
           "url": "/category/all"
         },
         {
-          "id": 1420455579,
-          "name": "Accessories",
-          "permalink": "accessories",
-          "url": "/category/accessories"
+          "id": 1421738880,
+          "name": "Latest Drop",
+          "permalink": "latest-drop",
+          "url": "/category/latest-drop"
         }
       ],
       "option_groups": [],
@@ -2270,15 +2304,16 @@
           "amount_with_others": 0
         }
       ],
+      "stripe_payment_link": "",
       "image": {
-        "url": "https://assets.bigcartel.com/product_images/431530227/2_5_web.png?auto=format&fit=max&h=1000&w=1000",
-        "width": 1070,
-        "height": 844
+        "url": "/assets/products/cache-cou/0.png",
+        "width": 1000,
+        "height": 788
       },
       "css_class": ""
     },
     {
-      "id": 114455238,
+      "id": 629246240,
       "name": "Short ML001",
       "permalink": "short-ml001",
       "position": 26,
@@ -2288,14 +2323,14 @@
       "has_password_protection": false,
       "images": [
         {
-          "url": "https://assets.bigcartel.com/product_images/431552802/0_1_web.png?auto=format&fit=max&h=1000&w=1000",
-          "width": 1600,
-          "height": 1527
+          "url": "/assets/products/short-ml001/0.png",
+          "width": 1000,
+          "height": 954
         },
         {
-          "url": "https://assets.bigcartel.com/product_images/431552805/1_2_web.png?auto=format&fit=max&h=1000&w=1000",
-          "width": 1582,
-          "height": 1600
+          "url": "/assets/products/short-ml001/1.png",
+          "width": 988,
+          "height": 1000
         }
       ],
       "price": 105,
@@ -2306,21 +2341,23 @@
       "has_option_groups": false,
       "options": [
         {
-          "id": 459955158,
+          "id": 1760212717,
           "name": "Short ML001",
           "price": 105,
           "sold_out": true,
           "has_custom_price": false,
-          "option_group_values": []
+          "option_group_values": [],
+          "isLowInventory": false,
+          "isAlmostSoldOut": false
         }
       ],
       "artists": [],
       "categories": [
         {
-          "id": 1421738880,
-          "name": "Latest Drop",
-          "permalink": "latest-drop",
-          "url": "/category/latest-drop"
+          "id": 1420455573,
+          "name": "Pants/Shorts",
+          "permalink": "pantsshorts",
+          "url": "/category/pantsshorts"
         },
         {
           "id": 1420475163,
@@ -2329,10 +2366,10 @@
           "url": "/category/all"
         },
         {
-          "id": 1420455573,
-          "name": "Pants/Shorts",
-          "permalink": "pantsshorts",
-          "url": "/category/pantsshorts"
+          "id": 1421738880,
+          "name": "Latest Drop",
+          "permalink": "latest-drop",
+          "url": "/category/latest-drop"
         }
       ],
       "option_groups": [],
@@ -2351,15 +2388,16 @@
           "amount_with_others": 0
         }
       ],
+      "stripe_payment_link": "",
       "image": {
-        "url": "https://assets.bigcartel.com/product_images/431552802/0_1_web.png?auto=format&fit=max&h=1000&w=1000",
-        "width": 1600,
-        "height": 1527
+        "url": "/assets/products/short-ml001/0.png",
+        "width": 1000,
+        "height": 954
       },
       "css_class": ""
     },
     {
-      "id": 106385175,
+      "id": 1283583636,
       "name": "SC_0008",
       "permalink": "sc_0008",
       "position": 27,
@@ -2369,29 +2407,29 @@
       "has_password_protection": false,
       "images": [
         {
-          "url": "https://assets.bigcartel.com/product_images/431530263/0_1_web.png?auto=format&fit=max&h=1000&w=1000",
-          "width": 1200,
-          "height": 1455
+          "url": "/assets/products/sc_0008/0.png",
+          "width": 824,
+          "height": 1000
         },
         {
-          "url": "https://assets.bigcartel.com/product_images/431530266/1_2_web.png?auto=format&fit=max&h=1000&w=1000",
-          "width": 1200,
-          "height": 1593
+          "url": "/assets/products/sc_0008/1.png",
+          "width": 753,
+          "height": 1000
         },
         {
-          "url": "https://assets.bigcartel.com/product_images/431530260/2_3_web.png?auto=format&fit=max&h=1000&w=1000",
-          "width": 1200,
-          "height": 1600
+          "url": "/assets/products/sc_0008/2.png",
+          "width": 750,
+          "height": 1000
         },
         {
-          "url": "https://assets.bigcartel.com/product_images/431530254/3_4_web.png?auto=format&fit=max&h=1000&w=1000",
-          "width": 481,
-          "height": 1257
+          "url": "/assets/products/sc_0008/3.png",
+          "width": 382,
+          "height": 1000
         },
         {
-          "url": "https://assets.bigcartel.com/product_images/431530257/4_5_web.png?auto=format&fit=max&h=1000&w=1000",
-          "width": 479,
-          "height": 1293
+          "url": "/assets/products/sc_0008/4.png",
+          "width": 370,
+          "height": 1000
         }
       ],
       "price": 55,
@@ -2402,27 +2440,29 @@
       "has_option_groups": false,
       "options": [
         {
-          "id": 424056186,
+          "id": 55521047,
           "name": "SC_0008",
           "price": 55,
           "sold_out": true,
           "has_custom_price": false,
-          "option_group_values": []
+          "option_group_values": [],
+          "isLowInventory": false,
+          "isAlmostSoldOut": false
         }
       ],
       "artists": [],
       "categories": [
         {
-          "id": 1420475163,
-          "name": "All",
-          "permalink": "all",
-          "url": "/category/all"
-        },
-        {
           "id": 1420455579,
           "name": "Accessories",
           "permalink": "accessories",
           "url": "/category/accessories"
+        },
+        {
+          "id": 1420475163,
+          "name": "All",
+          "permalink": "all",
+          "url": "/category/all"
         }
       ],
       "option_groups": [],
@@ -2435,12 +2475,17 @@
             "name": "France",
             "code": "FR"
           }
+        },
+        {
+          "amount_alone": 1.9,
+          "amount_with_others": 0
         }
       ],
+      "stripe_payment_link": "",
       "image": {
-        "url": "https://assets.bigcartel.com/product_images/431530263/0_1_web.png?auto=format&fit=max&h=1000&w=1000",
-        "width": 1200,
-        "height": 1455
+        "url": "/assets/products/sc_0008/0.png",
+        "width": 824,
+        "height": 1000
       },
       "css_class": ""
     }
@@ -2490,98 +2535,98 @@
     }
   ],
   "imageMap": {
-    "https://assets.bigcartel.com/product_images/431519232/0_1_web.png?auto=format&fit=max&h=1000&w=1000": "/assets/products/ch_0002/0.png",
-    "https://assets.bigcartel.com/product_images/431519235/1_2_web.png?auto=format&fit=max&h=1000&w=1000": "/assets/products/ch_0002/1.png",
-    "https://assets.bigcartel.com/product_images/431519292/0_1_web.png?auto=format&fit=max&h=1000&w=1000": "/assets/products/ch_0004/0.png",
-    "https://assets.bigcartel.com/product_images/431519295/1_ch_0004_1_final.png?auto=format&fit=max&h=1000&w=1000": "/assets/products/ch_0004/1.png",
-    "https://assets.bigcartel.com/product_images/431552700/0_1_web.png?auto=format&fit=max&h=1000&w=1000": "/assets/products/ch_0005/0.png",
-    "https://assets.bigcartel.com/product_images/431552703/1_2_web.png?auto=format&fit=max&h=1000&w=1000": "/assets/products/ch_0005/1.png",
-    "https://assets.bigcartel.com/product_images/431518929/ch0006_1_defringed.png?auto=format&fit=max&h=1000&w=1000": "/assets/products/ch_0006/0.png",
-    "https://assets.bigcartel.com/product_images/431532357/ch0006_back.png?auto=format&fit=max&h=1000&w=1000": "/assets/products/ch_0006/1.png",
-    "https://assets.bigcartel.com/product_images/431552649/0_1_web.png?auto=format&fit=max&h=1000&w=1000": "/assets/products/ch_0003/0.png",
-    "https://assets.bigcartel.com/product_images/431552652/1_2_web.png?auto=format&fit=max&h=1000&w=1000": "/assets/products/ch_0003/1.png",
-    "https://assets.bigcartel.com/product_images/431552733/0_1_web.png?auto=format&fit=max&h=1000&w=1000": "/assets/products/sa/0.png",
-    "https://assets.bigcartel.com/product_images/431552730/1_2_web.png?auto=format&fit=max&h=1000&w=1000": "/assets/products/sa/1.png",
-    "https://assets.bigcartel.com/product_images/431552742/0_1_web.png?auto=format&fit=max&h=1000&w=1000": "/assets/products/sma_0003/0.png",
-    "https://assets.bigcartel.com/product_images/431552745/1_sma0003_1_corrected.png?auto=format&fit=max&h=1000&w=1000": "/assets/products/sma_0003/1.png",
-    "https://assets.bigcartel.com/product_images/431552748/0_1_web.png?auto=format&fit=max&h=1000&w=1000": "/assets/products/sma_0004/0.png",
-    "https://assets.bigcartel.com/product_images/431552751/1_2_web.png?auto=format&fit=max&h=1000&w=1000": "/assets/products/sma_0004/1.png",
-    "https://assets.bigcartel.com/product_images/431529807/0_1_web.png?auto=format&fit=max&h=1000&w=1000": "/assets/products/ja_0001/0.png",
-    "https://assets.bigcartel.com/product_images/431529810/1_2_web.png?auto=format&fit=max&h=1000&w=1000": "/assets/products/ja_0001/1.png",
-    "https://assets.bigcartel.com/product_images/431529813/2_4_web.png?auto=format&fit=max&h=1000&w=1000": "/assets/products/ja_0001/2.png",
-    "https://assets.bigcartel.com/product_images/431529816/3_3_web.png?auto=format&fit=max&h=1000&w=1000": "/assets/products/ja_0001/3.png",
-    "https://assets.bigcartel.com/product_images/431529819/4_5_web.png?auto=format&fit=max&h=1000&w=1000": "/assets/products/ja_0001/4.png",
-    "https://assets.bigcartel.com/product_images/431519769/1_2_web.png?auto=format&fit=max&h=1000&w=1000": "/assets/products/custom-tee-shirt-col-en-v/0.png",
-    "https://assets.bigcartel.com/product_images/431519772/0_1_web.png?auto=format&fit=max&h=1000&w=1000": "/assets/products/custom-tee-shirt-col-en-v/1.png",
-    "https://assets.bigcartel.com/product_images/431519775/2_3_web.png?auto=format&fit=max&h=1000&w=1000": "/assets/products/custom-tee-shirt-col-en-v/2.png",
-    "https://assets.bigcartel.com/product_images/431529921/0_1_web.png?auto=format&fit=max&h=1000&w=1000": "/assets/products/pantalon-rouge-framboise/0.png",
-    "https://assets.bigcartel.com/product_images/431529924/1_2_web.png?auto=format&fit=max&h=1000&w=1000": "/assets/products/pantalon-rouge-framboise/1.png",
-    "https://assets.bigcartel.com/product_images/431447256/4_web.png?auto=format&fit=max&h=1000&w=1000": "/assets/products/pantalon-rouge-framboise/2.png",
-    "https://assets.bigcartel.com/product_images/431529927/2_5_web.png?auto=format&fit=max&h=1000&w=1000": "/assets/products/pantalon-rouge-framboise/3.png",
-    "https://assets.bigcartel.com/product_images/431447253/3_web.png?auto=format&fit=max&h=1000&w=1000": "/assets/products/pantalon-rouge-framboise/4.png",
-    "https://assets.bigcartel.com/product_images/431529963/1_1_web.png?auto=format&fit=max&h=1000&w=1000": "/assets/products/pantalon-denim-bleu/0.png",
-    "https://assets.bigcartel.com/product_images/431529960/0_2_web.png?auto=format&fit=max&h=1000&w=1000": "/assets/products/pantalon-denim-bleu/1.png",
-    "https://assets.bigcartel.com/product_images/431420391/4_web.png?auto=format&fit=max&h=1000&w=1000": "/assets/products/pantalon-denim-bleu/2.png",
-    "https://assets.bigcartel.com/product_images/431420394/5_web.png?auto=format&fit=max&h=1000&w=1000": "/assets/products/pantalon-denim-bleu/3.png",
-    "https://assets.bigcartel.com/product_images/431529966/2_3_web.png?auto=format&fit=max&h=1000&w=1000": "/assets/products/pantalon-denim-bleu/4.png",
-    "https://assets.bigcartel.com/product_images/431519802/2_1_web.png?auto=format&fit=max&h=1000&w=1000": "/assets/products/longsleeve-td002/0.png",
-    "https://assets.bigcartel.com/product_images/431519805/3_2_web.png?auto=format&fit=max&h=1000&w=1000": "/assets/products/longsleeve-td002/1.png",
-    "https://assets.bigcartel.com/product_images/431519799/0_3_web.png?auto=format&fit=max&h=1000&w=1000": "/assets/products/longsleeve-td002/2.png",
-    "https://assets.bigcartel.com/product_images/431519796/1_4_web.png?auto=format&fit=max&h=1000&w=1000": "/assets/products/longsleeve-td002/3.png",
-    "https://assets.bigcartel.com/product_images/431519853/2_1_web.png?auto=format&fit=max&h=1000&w=1000": "/assets/products/pantalon-ff001/0.png",
-    "https://assets.bigcartel.com/product_images/431519856/3_2_web.png?auto=format&fit=max&h=1000&w=1000": "/assets/products/pantalon-ff001/1.png",
-    "https://assets.bigcartel.com/product_images/431519847/0_4_web.png?auto=format&fit=max&h=1000&w=1000": "/assets/products/pantalon-ff001/2.png",
-    "https://assets.bigcartel.com/product_images/431519850/1_3_web.png?auto=format&fit=max&h=1000&w=1000": "/assets/products/pantalon-ff001/3.png",
-    "https://assets.bigcartel.com/product_images/431519877/2_1_web.png?auto=format&fit=max&h=1000&w=1000": "/assets/products/pantalon-vc001/0.png",
-    "https://assets.bigcartel.com/product_images/431519880/3_2_web.png?auto=format&fit=max&h=1000&w=1000": "/assets/products/pantalon-vc001/1.png",
-    "https://assets.bigcartel.com/product_images/431519871/0_3_web.png?auto=format&fit=max&h=1000&w=1000": "/assets/products/pantalon-vc001/2.png",
-    "https://assets.bigcartel.com/product_images/431519874/1_4_web.png?auto=format&fit=max&h=1000&w=1000": "/assets/products/pantalon-vc001/3.png",
-    "https://assets.bigcartel.com/product_images/431519928/0_1_web.png?auto=format&fit=max&h=1000&w=1000": "/assets/products/pantalon-dd001/0.png",
-    "https://assets.bigcartel.com/product_images/431519919/1_2_web.png?auto=format&fit=max&h=1000&w=1000": "/assets/products/pantalon-dd001/1.png",
-    "https://assets.bigcartel.com/product_images/431519922/2_3_web.png?auto=format&fit=max&h=1000&w=1000": "/assets/products/pantalon-dd001/2.png",
-    "https://assets.bigcartel.com/product_images/431519925/3_4_web.png?auto=format&fit=max&h=1000&w=1000": "/assets/products/pantalon-dd001/3.png",
-    "https://assets.bigcartel.com/product_images/431529600/0_1_web.png?auto=format&fit=max&h=1000&w=1000": "/assets/products/short-ge0001/0.png",
-    "https://assets.bigcartel.com/product_images/431529603/1_2_web.png?auto=format&fit=max&h=1000&w=1000": "/assets/products/short-ge0001/1.png",
-    "https://assets.bigcartel.com/product_images/431529606/2_3_web.png?auto=format&fit=max&h=1000&w=1000": "/assets/products/short-ge0001/2.png",
-    "https://assets.bigcartel.com/product_images/431529609/3_4_web.png?auto=format&fit=max&h=1000&w=1000": "/assets/products/short-ge0001/3.png",
-    "https://assets.bigcartel.com/product_images/431552763/0_1_web.png?auto=format&fit=max&h=1000&w=1000": "/assets/products/short-sg001/0.png",
-    "https://assets.bigcartel.com/product_images/431552766/1_2_web.png?auto=format&fit=max&h=1000&w=1000": "/assets/products/short-sg001/1.png",
-    "https://assets.bigcartel.com/product_images/431529636/0_1_web.png?auto=format&fit=max&h=1000&w=1000": "/assets/products/cd-vgtape/0.png",
-    "https://assets.bigcartel.com/product_images/431529627/1_2_web.png?auto=format&fit=max&h=1000&w=1000": "/assets/products/cd-vgtape/1.png",
-    "https://assets.bigcartel.com/product_images/431529630/2_3_web.png?auto=format&fit=max&h=1000&w=1000": "/assets/products/cd-vgtape/2.png",
-    "https://assets.bigcartel.com/product_images/431529633/3_4_web.png?auto=format&fit=max&h=1000&w=1000": "/assets/products/cd-vgtape/3.png",
-    "https://assets.bigcartel.com/product_images/431446026/1_web.png?auto=format&fit=max&h=1000&w=1000": "/assets/products/sacoche/0.png",
-    "https://assets.bigcartel.com/product_images/431446029/2_web.png?auto=format&fit=max&h=1000&w=1000": "/assets/products/sacoche/1.png",
-    "https://assets.bigcartel.com/product_images/431446032/3_web.png?auto=format&fit=max&h=1000&w=1000": "/assets/products/sacoche/2.png",
-    "https://assets.bigcartel.com/product_images/431447214/4_web.png?auto=format&fit=max&h=1000&w=1000": "/assets/products/sacoche/3.png",
-    "https://assets.bigcartel.com/product_images/431447217/5_web.png?auto=format&fit=max&h=1000&w=1000": "/assets/products/sacoche/4.png",
-    "https://assets.bigcartel.com/product_images/431529684/0_1_web.png?auto=format&fit=max&h=1000&w=1000": "/assets/products/gp_0002/0.png",
-    "https://assets.bigcartel.com/product_images/431529687/1_2_web.png?auto=format&fit=max&h=1000&w=1000": "/assets/products/gp_0002/1.png",
-    "https://assets.bigcartel.com/product_images/431529690/2_3_web.png?auto=format&fit=max&h=1000&w=1000": "/assets/products/gp_0002/2.png",
-    "https://assets.bigcartel.com/product_images/431529693/3_4_web.png?auto=format&fit=max&h=1000&w=1000": "/assets/products/gp_0002/3.png",
-    "https://assets.bigcartel.com/product_images/431530134/1_1_web.png?auto=format&fit=max&h=1000&w=1000": "/assets/products/sma_0001/0.png",
-    "https://assets.bigcartel.com/product_images/431530131/0_2_web.png?auto=format&fit=max&h=1000&w=1000": "/assets/products/sma_0001/1.png",
-    "https://assets.bigcartel.com/product_images/431446107/4_web.png?auto=format&fit=max&h=1000&w=1000": "/assets/products/sma_0001/2.png",
-    "https://assets.bigcartel.com/product_images/431446110/5_web.png?auto=format&fit=max&h=1000&w=1000": "/assets/products/sma_0001/3.png",
-    "https://assets.bigcartel.com/product_images/431530137/2_3_web.png?auto=format&fit=max&h=1000&w=1000": "/assets/products/sma_0001/4.png",
-    "https://assets.bigcartel.com/product_images/431529738/1_1_web.png?auto=format&fit=max&h=1000&w=1000": "/assets/products/custom-hoodie/0.png",
-    "https://assets.bigcartel.com/product_images/431552301/hoodie_back.png?auto=format&fit=max&h=1000&w=1000": "/assets/products/custom-hoodie/1.png",
-    "https://assets.bigcartel.com/product_images/431530206/3_2_web.png?auto=format&fit=max&h=1000&w=1000": "/assets/products/short-coupe-évasée/0.png",
-    "https://assets.bigcartel.com/product_images/431530194/2_1_web.png?auto=format&fit=max&h=1000&w=1000": "/assets/products/short-coupe-évasée/1.png",
-    "https://assets.bigcartel.com/product_images/431530197/4_3_web.png?auto=format&fit=max&h=1000&w=1000": "/assets/products/short-coupe-évasée/2.png",
-    "https://assets.bigcartel.com/product_images/431530200/0_4_web.png?auto=format&fit=max&h=1000&w=1000": "/assets/products/short-coupe-évasée/3.png",
-    "https://assets.bigcartel.com/product_images/431530203/1_5_web.png?auto=format&fit=max&h=1000&w=1000": "/assets/products/short-coupe-évasée/4.png",
-    "https://assets.bigcartel.com/product_images/431530227/2_5_web.png?auto=format&fit=max&h=1000&w=1000": "/assets/products/cache-cou/0.png",
-    "https://assets.bigcartel.com/product_images/431530224/1_3_web.png?auto=format&fit=max&h=1000&w=1000": "/assets/products/cache-cou/1.png",
-    "https://assets.bigcartel.com/product_images/431446185/4_web.png?auto=format&fit=max&h=1000&w=1000": "/assets/products/cache-cou/2.png",
-    "https://assets.bigcartel.com/product_images/431446182/2_web.png?auto=format&fit=max&h=1000&w=1000": "/assets/products/cache-cou/3.png",
-    "https://assets.bigcartel.com/product_images/431530221/0_1_web.png?auto=format&fit=max&h=1000&w=1000": "/assets/products/cache-cou/4.png",
-    "https://assets.bigcartel.com/product_images/431552802/0_1_web.png?auto=format&fit=max&h=1000&w=1000": "/assets/products/short-ml001/0.png",
-    "https://assets.bigcartel.com/product_images/431552805/1_2_web.png?auto=format&fit=max&h=1000&w=1000": "/assets/products/short-ml001/1.png",
-    "https://assets.bigcartel.com/product_images/431530263/0_1_web.png?auto=format&fit=max&h=1000&w=1000": "/assets/products/sc_0008/0.png",
-    "https://assets.bigcartel.com/product_images/431530266/1_2_web.png?auto=format&fit=max&h=1000&w=1000": "/assets/products/sc_0008/1.png",
-    "https://assets.bigcartel.com/product_images/431530260/2_3_web.png?auto=format&fit=max&h=1000&w=1000": "/assets/products/sc_0008/2.png",
-    "https://assets.bigcartel.com/product_images/431530254/3_4_web.png?auto=format&fit=max&h=1000&w=1000": "/assets/products/sc_0008/3.png",
-    "https://assets.bigcartel.com/product_images/431530257/4_5_web.png?auto=format&fit=max&h=1000&w=1000": "/assets/products/sc_0008/4.png"
+    "/assets/products/cache-cou/0.png": "/assets/products/cache-cou/0.png",
+    "/assets/products/cache-cou/1.png": "/assets/products/cache-cou/1.png",
+    "/assets/products/cache-cou/2.png": "/assets/products/cache-cou/2.png",
+    "/assets/products/cache-cou/3.png": "/assets/products/cache-cou/3.png",
+    "/assets/products/cache-cou/4.png": "/assets/products/cache-cou/4.png",
+    "/assets/products/cd-vgtape/0.png": "/assets/products/cd-vgtape/0.png",
+    "/assets/products/cd-vgtape/1.png": "/assets/products/cd-vgtape/1.png",
+    "/assets/products/cd-vgtape/2.png": "/assets/products/cd-vgtape/2.png",
+    "/assets/products/cd-vgtape/3.png": "/assets/products/cd-vgtape/3.png",
+    "/assets/products/ch_0002/0.png": "/assets/products/ch_0002/0.png",
+    "/assets/products/ch_0002/1.png": "/assets/products/ch_0002/1.png",
+    "/assets/products/ch_0003/0.png": "/assets/products/ch_0003/0.png",
+    "/assets/products/ch_0003/1.png": "/assets/products/ch_0003/1.png",
+    "/assets/products/ch_0004/0.png": "/assets/products/ch_0004/0.png",
+    "/assets/products/ch_0004/1.png": "/assets/products/ch_0004/1.png",
+    "/assets/products/ch_0005/0.png": "/assets/products/ch_0005/0.png",
+    "/assets/products/ch_0005/1.png": "/assets/products/ch_0005/1.png",
+    "/assets/products/ch_0006/0.png": "/assets/products/ch_0006/0.png",
+    "/assets/products/ch_0006/1.png": "/assets/products/ch_0006/1.png",
+    "/assets/products/custom-hoodie/0.png": "/assets/products/custom-hoodie/0.png",
+    "/assets/products/custom-hoodie/1.png": "/assets/products/custom-hoodie/1.png",
+    "/assets/products/custom-tee-shirt-col-en-v/0.png": "/assets/products/custom-tee-shirt-col-en-v/0.png",
+    "/assets/products/custom-tee-shirt-col-en-v/1.png": "/assets/products/custom-tee-shirt-col-en-v/1.png",
+    "/assets/products/custom-tee-shirt-col-en-v/2.png": "/assets/products/custom-tee-shirt-col-en-v/2.png",
+    "/assets/products/gp_0002/0.png": "/assets/products/gp_0002/0.png",
+    "/assets/products/gp_0002/1.png": "/assets/products/gp_0002/1.png",
+    "/assets/products/gp_0002/2.png": "/assets/products/gp_0002/2.png",
+    "/assets/products/gp_0002/3.png": "/assets/products/gp_0002/3.png",
+    "/assets/products/ja_0001/0.png": "/assets/products/ja_0001/0.png",
+    "/assets/products/ja_0001/1.png": "/assets/products/ja_0001/1.png",
+    "/assets/products/ja_0001/2.png": "/assets/products/ja_0001/2.png",
+    "/assets/products/ja_0001/3.png": "/assets/products/ja_0001/3.png",
+    "/assets/products/ja_0001/4.png": "/assets/products/ja_0001/4.png",
+    "/assets/products/longsleeve-td002/0.png": "/assets/products/longsleeve-td002/0.png",
+    "/assets/products/longsleeve-td002/1.png": "/assets/products/longsleeve-td002/1.png",
+    "/assets/products/longsleeve-td002/2.png": "/assets/products/longsleeve-td002/2.png",
+    "/assets/products/longsleeve-td002/3.png": "/assets/products/longsleeve-td002/3.png",
+    "/assets/products/pantalon-dd001/0.png": "/assets/products/pantalon-dd001/0.png",
+    "/assets/products/pantalon-dd001/1.png": "/assets/products/pantalon-dd001/1.png",
+    "/assets/products/pantalon-dd001/2.png": "/assets/products/pantalon-dd001/2.png",
+    "/assets/products/pantalon-dd001/3.png": "/assets/products/pantalon-dd001/3.png",
+    "/assets/products/pantalon-denim-bleu/0.png": "/assets/products/pantalon-denim-bleu/0.png",
+    "/assets/products/pantalon-denim-bleu/1.png": "/assets/products/pantalon-denim-bleu/1.png",
+    "/assets/products/pantalon-denim-bleu/2.png": "/assets/products/pantalon-denim-bleu/2.png",
+    "/assets/products/pantalon-denim-bleu/3.png": "/assets/products/pantalon-denim-bleu/3.png",
+    "/assets/products/pantalon-denim-bleu/4.png": "/assets/products/pantalon-denim-bleu/4.png",
+    "/assets/products/pantalon-ff001/0.png": "/assets/products/pantalon-ff001/0.png",
+    "/assets/products/pantalon-ff001/1.png": "/assets/products/pantalon-ff001/1.png",
+    "/assets/products/pantalon-ff001/2.png": "/assets/products/pantalon-ff001/2.png",
+    "/assets/products/pantalon-ff001/3.png": "/assets/products/pantalon-ff001/3.png",
+    "/assets/products/pantalon-rouge-framboise/0.png": "/assets/products/pantalon-rouge-framboise/0.png",
+    "/assets/products/pantalon-rouge-framboise/1.png": "/assets/products/pantalon-rouge-framboise/1.png",
+    "/assets/products/pantalon-rouge-framboise/2.png": "/assets/products/pantalon-rouge-framboise/2.png",
+    "/assets/products/pantalon-rouge-framboise/3.png": "/assets/products/pantalon-rouge-framboise/3.png",
+    "/assets/products/pantalon-rouge-framboise/4.png": "/assets/products/pantalon-rouge-framboise/4.png",
+    "/assets/products/pantalon-vc001/0.png": "/assets/products/pantalon-vc001/0.png",
+    "/assets/products/pantalon-vc001/1.png": "/assets/products/pantalon-vc001/1.png",
+    "/assets/products/pantalon-vc001/2.png": "/assets/products/pantalon-vc001/2.png",
+    "/assets/products/pantalon-vc001/3.png": "/assets/products/pantalon-vc001/3.png",
+    "/assets/products/sa/0.png": "/assets/products/sa/0.png",
+    "/assets/products/sa/1.png": "/assets/products/sa/1.png",
+    "/assets/products/sacoche/0.png": "/assets/products/sacoche/0.png",
+    "/assets/products/sacoche/1.png": "/assets/products/sacoche/1.png",
+    "/assets/products/sacoche/2.png": "/assets/products/sacoche/2.png",
+    "/assets/products/sacoche/3.png": "/assets/products/sacoche/3.png",
+    "/assets/products/sacoche/4.png": "/assets/products/sacoche/4.png",
+    "/assets/products/sc_0008/0.png": "/assets/products/sc_0008/0.png",
+    "/assets/products/sc_0008/1.png": "/assets/products/sc_0008/1.png",
+    "/assets/products/sc_0008/2.png": "/assets/products/sc_0008/2.png",
+    "/assets/products/sc_0008/3.png": "/assets/products/sc_0008/3.png",
+    "/assets/products/sc_0008/4.png": "/assets/products/sc_0008/4.png",
+    "/assets/products/short-coupe-évasée/0.png": "/assets/products/short-coupe-évasée/0.png",
+    "/assets/products/short-coupe-évasée/1.png": "/assets/products/short-coupe-évasée/1.png",
+    "/assets/products/short-coupe-évasée/2.png": "/assets/products/short-coupe-évasée/2.png",
+    "/assets/products/short-coupe-évasée/3.png": "/assets/products/short-coupe-évasée/3.png",
+    "/assets/products/short-coupe-évasée/4.png": "/assets/products/short-coupe-évasée/4.png",
+    "/assets/products/short-ge0001/0.png": "/assets/products/short-ge0001/0.png",
+    "/assets/products/short-ge0001/1.png": "/assets/products/short-ge0001/1.png",
+    "/assets/products/short-ge0001/2.png": "/assets/products/short-ge0001/2.png",
+    "/assets/products/short-ge0001/3.png": "/assets/products/short-ge0001/3.png",
+    "/assets/products/short-ml001/0.png": "/assets/products/short-ml001/0.png",
+    "/assets/products/short-ml001/1.png": "/assets/products/short-ml001/1.png",
+    "/assets/products/short-sg001/0.png": "/assets/products/short-sg001/0.png",
+    "/assets/products/short-sg001/1.png": "/assets/products/short-sg001/1.png",
+    "/assets/products/sma_0001/0.png": "/assets/products/sma_0001/0.png",
+    "/assets/products/sma_0001/1.png": "/assets/products/sma_0001/1.png",
+    "/assets/products/sma_0001/2.png": "/assets/products/sma_0001/2.png",
+    "/assets/products/sma_0001/3.png": "/assets/products/sma_0001/3.png",
+    "/assets/products/sma_0001/4.png": "/assets/products/sma_0001/4.png",
+    "/assets/products/sma_0003/0.png": "/assets/products/sma_0003/0.png",
+    "/assets/products/sma_0003/1.png": "/assets/products/sma_0003/1.png",
+    "/assets/products/sma_0004/0.png": "/assets/products/sma_0004/0.png",
+    "/assets/products/sma_0004/1.png": "/assets/products/sma_0004/1.png"
   }
 }

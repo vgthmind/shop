@@ -1,0 +1,49 @@
+name: Build shop
+
+# Rebuilds data/catalog.json (from data/products/*.json, the admin-editable
+# catalog Sveltia CMS commits to) then docs/ (the generated site, served by
+# GitHub Pages) whenever either the catalog or the theme/generator changes.
+# This is what makes admin/ (Sveltia CMS) a real "no code" workflow: an edit
+# saved there is a plain git commit to data/products/**, and this workflow
+# does the rest.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "data/products/**"
+      - "data/categories.json"
+      - "generator/**"
+      - "theme/**"
+      - "assets/**"
+      - "robots.txt"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: build-shop
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Build catalog + site
+        run: |
+          node generator/build-catalog.js
+          node generator/build.js
+
+      - name: Commit if changed
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add data/catalog.json docs/
+          git diff --staged --quiet || git commit -m "Reconstruit le site (catalogue/theme modifie)"
+          git push

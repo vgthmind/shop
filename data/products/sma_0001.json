@@ -1,0 +1,24 @@
+{
+  "name": "SMA_0001",
+  "slug": "sma_0001",
+  "price": 130,
+  "description": "Shorts sewn and then customized with an airbrush\r\n97% cotton, 3% spandex\r\nDark heather grey\r\nSizes M/L (Waist circumference approximately 78 to 100 cm)\r\n\r\nShort cousu puis customisé à l'aérographe\r\n97% coton 3% Elasthanne\r\nGris chiné foncé\r\nSize M/L (Tour de taille de 78 à 100cm environ)",
+  "images": [
+    "/assets/products/sma_0001/0.png",
+    "/assets/products/sma_0001/1.png",
+    "/assets/products/sma_0001/2.png",
+    "/assets/products/sma_0001/3.png",
+    "/assets/products/sma_0001/4.png"
+  ],
+  "categories": [
+    "pantsshorts"
+  ],
+  "latest_drop": true,
+  "unique": true,
+  "in_stock": false,
+  "position": 22,
+  "created_at": "2026-06-21T11:24:03.000Z",
+  "stripe_payment_link": "",
+  "shipping_fr": 4,
+  "shipping_intl": 8
+}

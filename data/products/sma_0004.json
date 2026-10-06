@@ -1,0 +1,21 @@
+{
+  "name": "SMA_0004",
+  "slug": "sma_0004",
+  "price": 130,
+  "description": "Shorts sewn and then customized with an airbrush\r\n97% cotton, 3% spandex\r\nWhite\r\nSizes S/M/L (Waist circumference approximately 74 to 102 cm)\r\n\r\nShort cousu puis customisé à l'aérographe\r\n97% coton 3% Elasthanne\r\nBlanc\r\nSize S/M/L (Tour de taille de 74 à 102cm environ)",
+  "images": [
+    "/assets/products/sma_0004/0.png",
+    "/assets/products/sma_0004/1.png"
+  ],
+  "categories": [
+    "pantsshorts"
+  ],
+  "latest_drop": true,
+  "unique": true,
+  "in_stock": true,
+  "position": 8,
+  "created_at": "2026-07-12T14:36:44.000Z",
+  "stripe_payment_link": "",
+  "shipping_fr": 5,
+  "shipping_intl": 30
+}

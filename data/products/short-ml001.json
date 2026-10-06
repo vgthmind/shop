@@ -1,0 +1,21 @@
+{
+  "name": "Short ML001",
+  "slug": "short-ml001",
+  "price": 105,
+  "description": "100% Textured Grey Cotton Fleece\r\nSize L, EU44/46/48\r\n62cm length from waistband to hem\r\n86cm leg opening\r\nThick\r\n\r\n100% Cotton Molleton Gris Texturé\r\nTaille L 44/46/48EU\r\n62cm de longueur du haut de la ceinture au bas de la jambe.\r\n86cm d'ouverture de jambe.\r\nÉpais",
+  "images": [
+    "/assets/products/short-ml001/0.png",
+    "/assets/products/short-ml001/1.png"
+  ],
+  "categories": [
+    "pantsshorts"
+  ],
+  "latest_drop": true,
+  "unique": true,
+  "in_stock": false,
+  "position": 26,
+  "created_at": "2025-07-23T12:29:39.000Z",
+  "stripe_payment_link": "",
+  "shipping_fr": 5.7,
+  "shipping_intl": 15.9
+}
