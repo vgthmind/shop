@@ -33,6 +33,10 @@ const OUT_DIR = path.join(ROOT, 'docs');
 // handles what scripts build at runtime. A future move to a dedicated domain
 // is just BASE_PATH = '' and a rebuild. Override with env BASE_PATH.
 const BASE_PATH = process.env.BASE_PATH !== undefined ? process.env.BASE_PATH : '/shop';
+// Launch switch (data/shop-settings.json): "public": true removes the noindex
+// tags and opens robots.txt; site_url = where the shop is served (sitemap).
+const SHOP_SETTINGS = Object.assign({ public: false, site_url: 'https://vgthmind.github.io/shop' },
+  JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'data', 'shop-settings.json'), 'utf8')));
 
 // Same file the BigCartel draft loads (Body <script src> + Layout preload).
 // A copy is served by this site, wrapped so it sees location.pathname without
@@ -287,7 +291,9 @@ function injectAround(html, parts, product) {
     return `<script>${wrapScript(body)}</script>`;
   });
   const headExtra = [
-    '<meta name="robots" content="noindex, nofollow">',
+    // Prototype: hidden from search engines until data/shop-settings.json
+    // says "public": true (launch day, see README).
+    SHOP_SETTINGS.public ? '' : '<meta name="robots" content="noindex, nofollow">',
     `<style>\n${parts.customCss}\n</style>`,
     parts.headCode,
     // vg-transitions-dev.css hides the menu's Home link with
@@ -478,7 +484,12 @@ async function main() {
   const sizedSrc = rel(ROOT, 'assets', 'products-sized');
   if (fs.existsSync(sizedSrc)) fs.cpSync(sizedSrc, rel(OUT_DIR, 'assets', 'products-sized'), { recursive: true });
   fs.cpSync(rel(ROOT, 'assets', 'theme'), rel(OUT_DIR, 'assets', 'theme'), { recursive: true });
-  fs.copyFileSync(rel(ROOT, 'robots.txt'), rel(OUT_DIR, 'robots.txt'));
+  // robots.txt: the prototype's "Disallow: /" until launch; then only the
+  // admin is blocked, plus the sitemap. (Only effective once the shop is at
+  // the root of its own domain - under /shop/, the noindex tag does the job.)
+  write('robots.txt', SHOP_SETTINGS.public
+    ? `User-agent: *\nDisallow: ${BASE_PATH}/admin/\nSitemap: ${SHOP_SETTINGS.site_url}/sitemap.xml\n`
+    : read(rel(ROOT, 'robots.txt')));
   // Admin (Sveltia CMS) : servi tel quel sous /shop/admin/ (page + config +
   // pages maison), jamais passé par le préfixe /shop (Sveltia lit
   // config.yml à côté de la page).
@@ -488,8 +499,9 @@ async function main() {
   // this is the official shop, see robots.txt), ready for launch day: a
   // crawler that ignores robots.txt entirely still gets correct, absolute
   // URLs rather than nothing.
-  const SITE_ORIGIN = 'https://vgthmind.github.io';
-  const today = new Date().toISOString().slice(0, 10);
+  const SITE_ORIGIN = new URL(SHOP_SETTINGS.site_url).origin;
+  // Catalogue date, not today's: an unchanged shop rebuilds identically.
+  const today = String(catalog.fetched_at || new Date().toISOString()).slice(0, 10);
   const urls = [
     `${BASE_PATH}/`, `${BASE_PATH}/products`,
     ...catalog.categories.map((c) => `${BASE_PATH}/category/${c.permalink}`),

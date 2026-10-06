@@ -13,6 +13,7 @@ on:
     paths:
       - "data/products/**"
       - "data/categories.json"
+      - "data/shop-settings.json"
       - "generator/**"
       - "theme/**"
       - "assets/**"

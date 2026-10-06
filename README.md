@@ -193,3 +193,11 @@ affiliation).
   (`generator/filters.js`), jamais via une concaténation HTML brute avec des
   données variables - empêche l'injection de code HTML/script depuis un
   champ produit.
+
+## Lancement (le jour où /shop/ devient la boutique officielle)
+
+`data/shop-settings.json` : `"public": true` (retire les `noindex`, ouvre
+`robots.txt` sauf l'admin, ajoute la ligne `Sitemap:`), et `site_url` = la
+vraie adresse si elle change (ex. domaine à soi : mettre aussi `BASE_PATH=''`
+au build). Paiement live : voir `checkout-worker/README.md` et la liste
+« Passage en live » du chantier.
