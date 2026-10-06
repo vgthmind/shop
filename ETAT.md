@@ -3,3 +3,4 @@ Fait : stock, ports, panier, admin, A, B, C ; D partiel (commité/poussé) : SEO
 Reste avant bascule : (1) adresse activité (CCI) ; (2) ligne Hébergement à changer le jour J ; (3) médiateur à choisir ; (4) paragraphe rétractation à faire valider ; (5) relire textes ajoutés ; og:image encore sur CDN BigCartel.
 Prochain pas : toi = coupon test dans Stripe + paiement test avec le code ; puis Stripe live (activation, clés, 1 € réel remboursé), shop.vgthmind.org en parallèle, DNS IONOS (jamais MX/SPF/DKIM).
 Bascule : BASE_PATH='' + site_url vgthmind.org + public:true. Règles : français simple, secrets jamais dans le chat ni le dépôt (public). Worker : checkout-worker/.
+Nuit legal : relecture juridique faite, rapport dans rapports-nuit/legal.md (branche nuit/legal, aucune page modifiée). Urgent : médiateur, mentions légales, rétractation/customs, délais de livraison, RGPD.
