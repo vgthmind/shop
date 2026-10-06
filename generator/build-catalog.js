@@ -62,7 +62,10 @@ function buildProduct(admin, imageMap) {
   const categories = [...realCats.map((perm) => byPermalink.get(perm)), ALL];
   if (admin.latest_drop) categories.push(LATEST_DROP);
 
-  const inStock = admin.in_stock !== false;
+  // quantity: pieces in stock (1 = one-of-a-kind, the default). 0 = sold out
+  // too, so the checkout Worker can count a small series down to zero.
+  const quantity = Number.isInteger(admin.quantity) && admin.quantity >= 0 ? admin.quantity : 1;
+  const inStock = admin.in_stock !== false && quantity > 0;
   const optionId = idFrom(admin.slug + ':option');
   return {
     id: idFrom(admin.slug),
@@ -106,6 +109,8 @@ function buildProduct(admin, imageMap) {
     // Not part of BigCartel's own shape: read by the front-end cart
     // (assets/vg-shop-cart.js) and left out of nothing templates render.
     stripe_payment_link: admin.stripe_payment_link || '',
+    // Also ours: read by the cart (max per order) and the checkout Worker.
+    quantity: inStock ? quantity : 0,
   };
 }
 

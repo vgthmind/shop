@@ -47,6 +47,7 @@ collections:
         hint: "Une piece peut etre dans plusieurs categories a la fois (ex: un hoodie customise est Tops ET Customs/Upcycling)."
       - { label: "Mettre en avant (Latest Drop)", name: "latest_drop", widget: "boolean", default: false }
       - { label: "En stock", name: "in_stock", widget: "boolean", default: true }
+      - { label: "Quantite en stock", name: "quantity", widget: "number", value_type: "int", default: 1, min: 0, required: false, hint: "1 = piece unique. Pour une petite serie, le nombre d exemplaires : il baisse tout seul a chaque vente, la piece passe en Sold out a 0." }
       - { label: "Frais de port France (EUR)", name: "shipping_fr", widget: "number", value_type: "float", default: 5 }
       - { label: "Livrable hors de France", name: "ships_intl", widget: "boolean", default: true }
       - { label: "Frais de port international (EUR, Canada inclus)", name: "shipping_intl", widget: "number", value_type: "float", default: 15 }

@@ -56,13 +56,18 @@
     });
   }
 
+  // Quantité d'une ligne : 1 pour une pièce unique ; jusqu'au stock
+  // (`max`, champ quantity de l'admin) pour une petite série.
+  function qty(it) { return Math.max(1, it.qty || 1); }
+  function lineTotal(it) { return (it.price || 0) * qty(it); }
+
   function updateBadges(items) {
     items = items || readCart();
-    var n = items.length;
+    var n = items.reduce(function (s, it) { return s + qty(it); }, 0);
     document.querySelectorAll('.header-item-count, .cart-num-items').forEach(function (el) {
       el.textContent = String(n);
     });
-    var subtotal = items.reduce(function (s, it) { return s + (it.price || 0); }, 0);
+    var subtotal = items.reduce(function (s, it) { return s + lineTotal(it); }, 0);
     document.querySelectorAll('.header-subtotal-amount').forEach(function (el) {
       el.textContent = money(subtotal);
     });
@@ -70,7 +75,14 @@
 
   function addItem(product) {
     var items = readCart();
-    if (items.some(function (it) { return it.slug === product.permalink; })) return items;
+    var max = Math.max(1, product.quantity || 1);
+    var existing = items.filter(function (it) { return it.slug === product.permalink; })[0];
+    if (existing) {
+      existing.max = max;
+      existing.qty = Math.min(max, qty(existing) + 1);
+      writeCart(items);
+      return items;
+    }
     var img = (product.images && product.images[0] && product.images[0].url) || (product.image && product.image.url) || '';
     items.push({
       slug: product.permalink,
@@ -79,8 +91,17 @@
       image: img,
       url: product.url,
       shipping: product.shipping || [],
-      stripe_payment_link: product.stripe_payment_link || ''
+      stripe_payment_link: product.stripe_payment_link || '',
+      qty: 1,
+      max: max
     });
+    writeCart(items);
+    return items;
+  }
+
+  function setQty(slug, n) {
+    var items = readCart();
+    items.forEach(function (it) { if (it.slug === slug) it.qty = Math.max(1, Math.min(it.max || 1, n)); });
     writeCart(items);
     return items;
   }
@@ -137,7 +158,7 @@
     var root = document.createElement('div');
     root.className = 'vg-cart-rendered';
 
-    function subtotal() { return items.reduce(function (s, it) { return s + (it.price || 0); }, 0); }
+    function subtotal() { return items.reduce(function (s, it) { return s + lineTotal(it); }, 0); }
     function franceOnly() { return items.filter(function (it) { return shippingFor(it, region) === null; }); }
     // Les frais de port BigCartel de ce catalogue ont tous
     // amount_with_others=0 : combiner des pièces ne coûte jamais plus que
@@ -164,7 +185,14 @@
         }
         li.innerHTML = img
           + '<span class="vg-cart-item-name"><a href="' + esc(it.url) + '">' + esc(it.name) + '</a></span>'
-          + '<span class="vg-cart-item-price">' + money(it.price) + '</span>'
+          + '<span class="vg-cart-item-price">' + money(lineTotal(it))
+          + ((it.max || 1) > 1
+            ? ' <select class="vg-cart-qty" data-slug="' + esc(it.slug) + '" aria-label="Quantity / Quantité">'
+              + Array.apply(null, Array(Math.min(it.max, 10))).map(function (_, i) {
+                return '<option value="' + (i + 1) + '"' + (qty(it) === i + 1 ? ' selected' : '') + '>× ' + (i + 1) + '</option>';
+              }).join('') + '</select>'
+            : '')
+          + '</span>'
           + extra
           + '<button type="button" class="vg-cart-remove" data-slug="' + esc(it.slug) + '" aria-label="Remove / Retirer">×</button>';
         list.appendChild(li);
@@ -200,6 +228,13 @@
           draw();
         });
       });
+      root.querySelectorAll('.vg-cart-qty').forEach(function (sel) {
+        sel.addEventListener('change', function () {
+          items = setQty(sel.getAttribute('data-slug'), parseInt(sel.value, 10) || 1);
+          message = '';
+          draw();
+        });
+      });
       root.querySelector('.vg-cart-region-select').addEventListener('change', function (e) {
         region = e.target.value;
         try { localStorage.setItem('vg-shop-region', region); } catch (err) {}
@@ -216,7 +251,7 @@
       fetch(ENDPOINT + '/checkout', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ items: items.map(function (it) { return it.slug; }), region: region, cart_id: cartId() }),
+        body: JSON.stringify({ items: items.map(function (it) { return { slug: it.slug, qty: qty(it) }; }), region: region, cart_id: cartId() }),
       })
         .then(function (r) { return r.json().then(function (data) { return { status: r.status, data: data }; }); })
         .then(function (res) {
@@ -230,11 +265,21 @@
             var heldNames = items.filter(function (it) { return held.indexOf(it.slug) !== -1; }).map(function (it) { return it.name; });
             var names = items.filter(function (it) { return gone.indexOf(it.slug) !== -1; }).map(function (it) { return it.name; });
             gone.forEach(function (slug) { items = removeItem(slug); });
+            // Petite série : il en reste moins que demandé -> quantité ramenée au stock.
+            var short = res.data.problems.filter(function (p) { return p.reason === 'stock'; });
+            short.forEach(function (p) {
+              var cart = readCart();
+              cart.forEach(function (it) { if (it.slug === p.slug) it.max = Math.max(1, p.available || 1); });
+              writeCart(cart);
+              items = setQty(p.slug, p.available || 1);
+            });
             message = names.length
               ? 'Sorry, already sold / Désolé, déjà vendu : ' + names.join(', ') + '. Removed from your cart / Retiré du panier.'
               : heldNames.length
                 ? 'Someone is paying for ' + heldNames.join(', ') + ' right now, try again in 30 min. / Quelqu’un est en train de payer ' + heldNames.join(', ') + ', réessaie dans 30 min.'
-                : 'France only / Livraison en France uniquement pour certaines pièces.';
+                : short.length
+                  ? 'Fewer left than requested, quantity updated. / Il en reste moins que demandé, quantité ajustée.'
+                  : 'France only / Livraison en France uniquement pour certaines pièces.';
             if (items.length === 0) { root.remove(); location.reload(); return; }
           } else {
             message = 'Payment unavailable right now / Paiement indisponible pour le moment (' + (res.data.error || 'erreur') + ').';
