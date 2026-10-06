@@ -135,8 +135,7 @@
 <!-- SECTION 6 POINT 4 (ajout) : indique au navigateur de commencer a charger
      theme.js (qui embarque lazysizes) en parallele du reste du <head>, au
      lieu d'attendre que le parseur atteigne le <script src> pres de
-     <script defer src="https://static.cloudflareinsights.com/beacon.min.js" data-cf-beacon='{"token": "ebb350ea66ad43c6a539b75d16af75d1"}'></script>
-</body> (apres jQuery + api.js, tous bloquants). Sur Products (grille
+     </body> (apres jQuery + api.js, tous bloquants). Sur Products (grille
      dense d'images), ca laisse les vignettes affichees plus longtemps dans
      leur etat blur-up (placeholder reel mais flou/petit, PAS une image
      blanche/vide -- verifie sur le HTML reel de /products) avant que
@@ -3401,6 +3400,7 @@ ul.categories li.page a:hover{color:#3d4045 !important;background:transparent !i
   </script>
   <script src="https://assets.bigcartel.com/theme_assets/91/2.3.4/theme.js?v=1"></script>
   
+<script defer src="https://static.cloudflareinsights.com/beacon.min.js" data-cf-beacon='{"token": "ebb350ea66ad43c6a539b75d16af75d1"}'></script>
 <script>(function (location) {
 
 window.__vgConfig = fetch('/assets/vg/products-config.json')

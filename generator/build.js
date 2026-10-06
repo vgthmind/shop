@@ -275,7 +275,11 @@ function injectAround(html, parts, product) {
   // est renseigné dans data/shop-settings.json (cf_analytics_token).
   const cfToken = String(SHOP_SETTINGS.cf_analytics_token || '').trim();
   if (/^[a-f0-9]{32}$/i.test(cfToken)) {
-    html = html.replace(/<\/body>/i, (m) => `<script defer src="https://static.cloudflareinsights.com/beacon.min.js" data-cf-beacon='{"token": "${cfToken}"}'></script>\n${m}`);
+    // Le DERNIER </body> : un commentaire du Layout contient aussi ce texte
+    // (le 1er remplacement y glissait le script, inactif).
+    const end = html.lastIndexOf('</body>');
+    const beacon = `<script defer src="https://static.cloudflareinsights.com/beacon.min.js" data-cf-beacon='{"token": "${cfToken}"}'></script>\n`;
+    if (end !== -1) html = html.slice(0, end) + beacon + html.slice(end);
   }
   // See headContent()/PRODUCT_META_OVERRIDES above: a product page already
   // got its real description/og/twitter tags from {{ head_content }}
