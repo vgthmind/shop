@@ -340,7 +340,12 @@ async function main() {
     products: { current: catalog.products },
   }));
   for (const cat of catalog.categories) {
-    if (cat.permalink === 'all') continue;
+    // "all" is a real page too (/category/all) - every product's categories
+    // list already includes it (see generator/build-catalog.js), and the
+    // nav (categories.active, theme/layout.html) links to it like any
+    // other category: skipping it here left a 404'ing "ALL" link in the
+    // header/footer/mobile menu on every single page (found by checking
+    // every generated href against the actual docs/ output, not assumed).
     const filtered = catalog.products.filter((p) => (p.categories || []).some((c) => c.permalink === cat.permalink));
     page(`category/${cat.permalink}/index.html`, src.products, Object.assign({}, base, {
       page: { name: cat.name, permalink: cat.permalink, category: 'products', full_url: `/category/${cat.permalink}` },
@@ -401,7 +406,7 @@ async function main() {
   const today = new Date().toISOString().slice(0, 10);
   const urls = [
     `${BASE_PATH}/`, `${BASE_PATH}/products`,
-    ...catalog.categories.filter((c) => c.permalink !== 'all').map((c) => `${BASE_PATH}/category/${c.permalink}`),
+    ...catalog.categories.map((c) => `${BASE_PATH}/category/${c.permalink}`),
     ...catalog.products.map((p) => `${BASE_PATH}${p.url}`),
     ...CUSTOM_PAGES.map((cp) => `${BASE_PATH}${cp.url}`),
   ];
