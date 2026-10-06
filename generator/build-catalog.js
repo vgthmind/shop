@@ -121,7 +121,10 @@ function main() {
   const files = fs.readdirSync(PRODUCTS_DIR).filter((f) => f.endsWith('.json'));
   const imageMap = {};
   const admins = files.map((f) => JSON.parse(fs.readFileSync(path.join(PRODUCTS_DIR, f), 'utf8')));
+  // archived: "Retirée du site" in the admin - the file stays (history,
+  // orders), the piece leaves every page, the search and the checkout.
   const products = admins
+    .filter((a) => a.archived !== true)
     .map((a) => buildProduct(a, imageMap))
     .sort((a, b) => a.position - b.position || a.name.localeCompare(b.name));
 
