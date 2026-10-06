@@ -997,6 +997,7 @@ window.__vgTrim = window.__vgTrim || (function () {
   }
 
   function sized(url, px) {
+    if (window.__vgSized) { var vgS = window.__vgSized(url, px); if (vgS) return vgS; }
     try {
       var u = new URL(url, location.href);
       u.searchParams.set('w', String(px));

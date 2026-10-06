@@ -25,6 +25,20 @@
     return BASE + u;
   }
   window.__vgFixUrl = fix;
+
+  // Photos produit demandées par vg-transitions-dev.js avec ?w=N (pops,
+  // compagnons de la section 3 : comme sur le CDN BigCartel) -> la variante
+  // WebP la plus proche (generator/resize-images.js), 800 px au plus, au
+  // lieu du PNG d'origine (~400 Ko chacun). build.js branche sized() dessus.
+  var SIZED = [24, 320, 540, 800];
+  window.__vgSized = function (url, px) {
+    var m = /^(?:https?:\/\/[^\/]+)?(\/[^?#]*?)?\/assets\/products\/([^?#]+)\.(png|jpe?g|webp)(?:[?#].*)?$/i.exec(String(url));
+    if (!m) return null;
+    var w = SIZED[SIZED.length - 1];
+    for (var i = 0; i < SIZED.length; i++) { if (SIZED[i] >= px) { w = SIZED[i]; break; } }
+    return BASE + '/assets/products-sized/' + w + '/' + m[2] + '.webp';
+  };
+
   if (!BASE) { window.__vgLoc = window.location; return; }
 
   var origFetch = window.fetch;

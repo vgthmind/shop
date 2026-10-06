@@ -39,6 +39,20 @@
     return BASE + u;
   }
   window.__vgFixUrl = fix;
+
+  // Photos produit demandées par vg-transitions-dev.js avec ?w=N (pops,
+  // compagnons de la section 3 : comme sur le CDN BigCartel) -> la variante
+  // WebP la plus proche (generator/resize-images.js), 800 px au plus, au
+  // lieu du PNG d'origine (~400 Ko chacun). build.js branche sized() dessus.
+  var SIZED = [24, 320, 540, 800];
+  window.__vgSized = function (url, px) {
+    var m = /^(?:https?:\/\/[^\/]+)?(\/[^?#]*?)?\/assets\/products\/([^?#]+)\.(png|jpe?g|webp)(?:[?#].*)?$/i.exec(String(url));
+    if (!m) return null;
+    var w = SIZED[SIZED.length - 1];
+    for (var i = 0; i < SIZED.length; i++) { if (SIZED[i] >= px) { w = SIZED[i]; break; } }
+    return BASE + '/assets/products-sized/' + w + '/' + m[2] + '.webp';
+  };
+
   if (!BASE) { window.__vgLoc = window.location; return; }
 
   var origFetch = window.fetch;
@@ -1717,10 +1731,10 @@ ul.categories li.page a:hover{color:#3d4045 !important;background:transparent !i
                     alt="Image 1 of CH_0002"
                     class="product-image lazyload"
                     fetchpriority="high"
-                    src="/shop/assets/products/ch_0002/0.png"
+                    src="/shop/assets/products-sized/320/ch_0002/0.webp"
                     data-srcset="
-                      /shop/assets/products/ch_0002/0.png 400w,
-                      /shop/assets/products/ch_0002/0.png 700w,
+                      /shop/assets/products-sized/540/ch_0002/0.webp 400w,
+                      /shop/assets/products-sized/800/ch_0002/0.webp 700w,
                       /shop/assets/products/ch_0002/0.png 1000w,
                       /shop/assets/products/ch_0002/0.png 1400w,
                       /shop/assets/products/ch_0002/0.png 2000w,
@@ -1743,10 +1757,10 @@ ul.categories li.page a:hover{color:#3d4045 !important;background:transparent !i
                     alt="Image 2 of CH_0002"
                     class="product-image lazyload"
                     loading="lazy"
-                    src="/shop/assets/products/ch_0002/1.png"
+                    src="/shop/assets/products-sized/320/ch_0002/1.webp"
                     data-srcset="
-                      /shop/assets/products/ch_0002/1.png 400w,
-                      /shop/assets/products/ch_0002/1.png 700w,
+                      /shop/assets/products-sized/540/ch_0002/1.webp 400w,
+                      /shop/assets/products-sized/800/ch_0002/1.webp 700w,
                       /shop/assets/products/ch_0002/1.png 1000w,
                       /shop/assets/products/ch_0002/1.png 1400w,
                       /shop/assets/products/ch_0002/1.png 2000w,
@@ -1773,10 +1787,10 @@ ul.categories li.page a:hover{color:#3d4045 !important;background:transparent !i
                 <img
                   alt=""
                   class="lazyload"
-                  src="/shop/assets/products/ch_0002/0.png"
+                  src="/shop/assets/products-sized/320/ch_0002/0.webp"
                   data-srcset="
-                    /shop/assets/products/ch_0002/0.png 250w,
-                    /shop/assets/products/ch_0002/0.png 300w
+                    /shop/assets/products-sized/320/ch_0002/0.webp 250w,
+                    /shop/assets/products-sized/320/ch_0002/0.webp 300w
                   "
                   data-sizes="auto"
                 >
@@ -1788,10 +1802,10 @@ ul.categories li.page a:hover{color:#3d4045 !important;background:transparent !i
                 <img
                   alt=""
                   class="lazyload"
-                  src="/shop/assets/products/ch_0002/1.png"
+                  src="/shop/assets/products-sized/320/ch_0002/1.webp"
                   data-srcset="
-                    /shop/assets/products/ch_0002/1.png 250w,
-                    /shop/assets/products/ch_0002/1.png 300w
+                    /shop/assets/products-sized/320/ch_0002/1.webp 250w,
+                    /shop/assets/products-sized/320/ch_0002/1.webp 300w
                   "
                   data-sizes="auto"
                 >
