@@ -1,0 +1,141 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="robots" content="noindex, nofollow">
+  <title>vgthmind — trafic</title>
+  <style>
+    :root { --bg: #f4f2ec; --ink: #171717; --muted: #6b6860; --line: rgba(0,0,0,.12); --card: rgba(255,255,255,.7); --bar: #171717; --live: #2f7d4a; --warn: #a23b2a; }
+    * { box-sizing: border-box; }
+    [hidden] { display: none !important; }
+    body { margin: 0; background: var(--bg); color: var(--ink); font: 16px/1.45 system-ui, -apple-system, "Segoe UI", sans-serif; -webkit-text-size-adjust: 100%; }
+    main { max-width: 760px; margin: 0 auto; padding: 20px 14px calc(56px + env(safe-area-inset-bottom)); }
+    h1 { font-size: 22px; letter-spacing: .04em; text-transform: uppercase; margin: 0 0 4px; }
+    h2 { font-size: 14px; text-transform: uppercase; letter-spacing: .04em; margin: 24px 0 8px; }
+    nav a { color: var(--muted); font-size: 14px; margin-right: 14px; display: inline-block; padding: 6px 0; }
+    .muted { color: var(--muted); font-size: 13px; }
+    .bar { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin: 12px 0; }
+    button { min-height: 44px; padding: 8px 16px; border-radius: 999px; border: 1px solid var(--line); background: #fff; color: var(--ink); font: inherit; cursor: pointer; }
+    button.on, button.primary { background: var(--ink); color: #fff; border-color: var(--ink); }
+    .card { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 14px 16px; }
+    .live { display: flex; align-items: center; gap: 14px; }
+    .live b { font-size: 44px; line-height: 1; }
+    .dot { width: 12px; height: 12px; border-radius: 50%; background: var(--live); animation: pulse 1.6s infinite; }
+    @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(47,125,74,.5); } 100% { box-shadow: 0 0 0 12px rgba(47,125,74,0); } }
+    .kpis { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px; }
+    .kpis b { font-size: 28px; display: block; }
+    .row { display: grid; grid-template-columns: 1fr auto; gap: 2px 10px; padding: 7px 0; border-bottom: 1px solid var(--line); }
+    .row:last-child { border-bottom: 0; }
+    .row .n { font-variant-numeric: tabular-nums; font-weight: 600; }
+    .row .name { overflow-wrap: anywhere; }
+    .row i { grid-column: 1 / -1; height: 5px; border-radius: 3px; background: var(--bar); opacity: .8; display: block; }
+    svg { width: 100%; height: 90px; display: block; }
+    #msg { min-height: 1.4em; }
+    @media (min-width: 700px) { .cols { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; } }
+  </style>
+</head>
+<body>
+<main>
+  <nav><a href="./">← Pièces</a><a href="stock.html">Stock</a><a href="commandes.html">Commandes</a></nav>
+  <h1>Trafic</h1>
+  <p class="muted">Visites sans cookie ni donnée personnelle. Mes visites (connecté) et les pages /admin ne sont pas comptées.</p>
+
+  <div class="bar" id="login" hidden><button type="button" class="primary" id="login-btn">Se connecter avec GitHub</button></div>
+
+  <div id="app" hidden>
+    <div class="card live"><span class="dot" aria-hidden="true"></span><div><b id="live">–</b><div class="muted">visiteurs en ce moment</div></div></div>
+
+    <div class="bar" id="ranges" role="group" aria-label="Période">
+      <button type="button" data-d="1">Aujourd'hui</button><button type="button" data-d="7">7 jours</button><button type="button" data-d="30">30 jours</button><button type="button" data-d="90">90 jours</button>
+    </div>
+    <div class="kpis"><div class="card"><b id="visitors">–</b><span class="muted">visiteurs</span></div><div class="card"><b id="views">–</b><span class="muted">pages vues</span></div></div>
+
+    <h2>Par jour</h2>
+    <div class="card"><svg id="chart" viewBox="0 0 300 90" preserveAspectRatio="none" role="img" aria-label="Visiteurs par jour"></svg><div class="muted" id="chart-cap"></div></div>
+
+    <h2>Pages les plus vues</h2><div class="card" id="pages"></div>
+    <div class="cols">
+      <div><h2>Provenance</h2><div class="card" id="sources"></div></div>
+      <div><h2>Pays</h2><div class="card" id="countries"></div></div>
+    </div>
+    <h2>Appareil</h2><div class="card" id="devices"></div>
+    <div class="bar"><button type="button" id="logout">Se déconnecter</button></div>
+  </div>
+  <p id="msg" role="status" aria-live="polite"></p>
+</main>
+<script src="vg-admin-auth.js"></script>
+<script>
+(function () {
+  'use strict';
+  var $ = function (id) { return document.getElementById(id); };
+  var days = 7, demo = /[?&]demo=1/.test(location.search), timer = null;
+  var DEVICE = { mobile: 'Mobile', desktop: 'Ordinateur', tablet: 'Tablette' };
+  function esc(s) { return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
+  function say(t) { $('msg').textContent = t || ''; }
+  function country(c) {
+    if (c === 'XX') return 'Inconnu';
+    try { return new Intl.DisplayNames(['fr'], { type: 'region' }).of(c) || c; } catch (e) { return c; }
+  }
+
+  function api(path) {
+    if (demo) return Promise.resolve(path.indexOf('live') !== -1 ? { live: 2 + Math.floor(Math.random() * 4) } : demoData());
+    return window.vgAdminApi(path);
+  }
+  function demoData() {
+    var s = [], t = new Date();
+    for (var i = days - 1; i >= 0; i--) { var d = new Date(t - i * 864e5).toISOString().slice(0, 10); s.push({ day: d, views: 40 + (i * 7) % 30, visitors: 18 + (i * 5) % 14 }); }
+    return { live: 3, views: 412, visitors: 187, series: s,
+      pages: [{ name: '/shop/', count: 140 }, { name: '/shop/product/cd-vgtape/', count: 66 }, { name: '/shop/cart/', count: 31 }],
+      sources: [{ name: 'Instagram', count: 98 }, { name: 'Direct', count: 51 }, { name: 'Google', count: 22 }],
+      countries: [{ name: 'FR', count: 120 }, { name: 'CA', count: 40 }, { name: 'XX', count: 5 }],
+      devices: [{ name: 'mobile', count: 150 }, { name: 'desktop', count: 33 }] };
+  }
+
+  function list(id, items, label) {
+    var max = items.length ? items[0].count : 1;
+    $(id).innerHTML = items.length ? items.map(function (it) {
+      return '<div class="row"><span class="name">' + esc(label ? label(it.name) : it.name) + '</span><span class="n">' + it.count + '</span><i style="width:' + Math.max(3, Math.round(it.count / max * 100)) + '%"></i></div>';
+    }).join('') : '<span class="muted">Pas encore de données.</span>';
+  }
+  function chart(series) {
+    var max = Math.max.apply(null, series.map(function (p) { return p.visitors; }).concat([1]));
+    var n = series.length, w = 300 / Math.max(n, 1);
+    $('chart').innerHTML = series.map(function (p, i) {
+      var h = Math.round(p.visitors / max * 84);
+      return '<rect x="' + (i * w + w * .12).toFixed(1) + '" y="' + (88 - h) + '" width="' + (w * .76).toFixed(1) + '" height="' + Math.max(h, 1) + '" rx="1.5" fill="#171717"><title>' + p.day + ' : ' + p.visitors + ' visiteurs, ' + p.views + ' pages vues</title></rect>';
+    }).join('');
+    $('chart-cap').textContent = n ? series[0].day + ' → ' + series[n - 1].day + ' · max ' + max + ' visiteurs/jour' : '';
+  }
+  function show(r) {
+    $('visitors').textContent = r.visitors; $('views').textContent = r.views; $('live').textContent = r.live;
+    chart(r.series);
+    list('pages', r.pages);
+    list('sources', r.sources); list('countries', r.countries, country);
+    list('devices', r.devices, function (k) { return DEVICE[k] || k; });
+  }
+  function load() {
+    if (!demo && !window.vgAdminToken()) { $('login').hidden = false; $('app').hidden = true; return; }
+    $('login').hidden = true; $('app').hidden = false;
+    Array.prototype.forEach.call($('ranges').children, function (b) { b.classList.toggle('on', +b.getAttribute('data-d') === days); });
+    api('/admin/traffic?days=' + days).then(function (r) { say(''); show(r); })
+      .catch(function (e) {
+        if (e.status === 401) { $('login').hidden = false; $('app').hidden = true; return; }
+        say(e.status === 404 ? 'Route /admin/traffic pas encore branchée dans le Worker (voir rapports-nuit/trafic.md). Essaie ?demo=1.' : 'Erreur : ' + e.message);
+      });
+  }
+  function poll() {
+    if (document.visibilityState !== 'visible' || $('app').hidden) return;
+    api('/admin/traffic/live').then(function (r) { $('live').textContent = r.live; }).catch(function () {});
+  }
+
+  $('ranges').addEventListener('click', function (e) { var d = +e.target.getAttribute('data-d'); if (d) { days = d; load(); } });
+  $('logout').addEventListener('click', function () { window.vgAdminLogout(); load(); });
+  $('login-btn').addEventListener('click', function () { window.vgAdminLogin().then(load).catch(function (e) { say(e.message); }); });
+  document.addEventListener('visibilitychange', poll);
+  timer = setInterval(poll, 10000);
+  load();
+})();
+</script>
+</body>
+</html>
