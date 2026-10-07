@@ -51,12 +51,27 @@ const DEV_CSS_URL = 'https://vgthmind.github.io/assets/bigcartel/vg-transitions-
 const LOCAL_DEV_CSS = '/assets/vg/vg-transitions-dev.css';
 let DEV_CSS_VERSION = '0'; // content hash, set in main()
 
-// BigCartel's own scripts, loaded from BigCartel's CDN exactly like the
-// draft does (jQuery is from cdnjs in the layout itself). Not copied into
-// this repo: they are BigCartel's code.
-const BC_THEME_JS = 'https://assets.bigcartel.com/theme_assets/91/2.3.4/theme.js?v=1';
-const BC_API_JS = 'https://assets.bigcartel.com/api/6/api.eur.js?v=1';
-filters.setThemeJsUrls({ theme: BC_THEME_JS, api: BC_API_JS });
+// Comportement du thème : notre propre code (assets/vg-theme.js) + Splide
+// (assets/vendor/, MIT). Plus rien n'est chargé depuis assets.bigcartel.com ni
+// depuis un CDN de jQuery : le Layout appelle {{ theme | theme_js_url }} et
+// {{ 'api' | theme_js_url }} ; la 2e balise (api.js, jQuery) est retirée à la
+// construction (voir ownScripts()), la 1re devient Splide + vg-theme.js.
+const OWN_THEME_JS = '/assets/vg-theme.js';
+const NO_API_JS = '/assets/vg-no-api.js'; // marqueur : la balise est supprimée
+filters.setThemeJsUrls({ theme: OWN_THEME_JS, api: NO_API_JS });
+
+// Scripts du Layout remplacés par les nôtres : jQuery (cdnjs) et api.js ne
+// servent plus (aucun code du site ne les utilise), le script « Product.find »
+// de la fiche produit non plus (pièces uniques, pas d'options). Le script du
+// thème devient Splide + vg-theme.js.
+function ownScripts(html) {
+  return html
+    .replace(/[ \t]*<script src="\/\/cdnjs\.cloudflare\.com\/ajax\/libs\/jquery\/[^"]*"><\/script>\r?\n?/g, '')
+    .replace(/[ \t]*<script src="[^"]*vg-no-api\.js[^"]*"><\/script>\r?\n?/g, '')
+    .replace(/[ \t]*<script>\s*\/\/ Detect if this is back\/forward navigation[\s\S]*?<\/script>\r?\n?/g, '')
+    .replace(/(<link rel="preload" as="script" href=")\/assets\/vg-theme\.js(")/, `$1${BASE_PATH}/assets/vg-theme.js$2`)
+    .replace(/<script src="(\/assets\/vg-theme\.js)"><\/script>/g, '<script src="/assets/vendor/splide.min.js"></script>\n  <script src="$1"></script>');
+}
 
 // Front-end cart (step 3, see assets/vg-shop-cart.js) - minimal styling in
 // the site's chrome/beige palette, additive like the rest of this file,
@@ -352,6 +367,7 @@ function injectAround(html, parts, product, relPath) {
   // on every load. Declare English (the shop's main language) and opt out of
   // translation (the pages already have their own English / French parts).
   html = html.replace(/<!DOCTYPE html>/i, (m) => `${m}\n<html lang="en" translate="no">`);
+  html = ownScripts(html);
   // The layout's own transition boot (arrival check: flag href vs current
   // path) must see the same /shop-less path as vg-transitions-dev.js.
   // Only that script: the theme's other inline scripts declare globals
@@ -579,6 +595,8 @@ async function main() {
   }
   write('assets/vg/search-keywords.json', JSON.stringify(mergedKeywords, null, 1));
   fs.copyFileSync(rel(ROOT, 'assets', 'vg-shop-cart.js'), rel(OUT_DIR, 'assets', 'vg-shop-cart.js'));
+  fs.copyFileSync(rel(ROOT, 'assets', 'vg-theme.js'), rel(OUT_DIR, 'assets', 'vg-theme.js'));
+  fs.cpSync(rel(ROOT, 'assets', 'vendor'), rel(OUT_DIR, 'assets', 'vendor'), { recursive: true });
   const productImagesSrc = rel(ROOT, 'assets', 'products');
   if (fs.existsSync(productImagesSrc)) fs.cpSync(productImagesSrc, rel(OUT_DIR, 'assets', 'products'), { recursive: true });
   // Product photo widths (generator/resize-images.js), used by `constrain`.
