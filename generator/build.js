@@ -396,9 +396,13 @@ function injectAround(html, parts, product, relPath) {
       const ld = {
         '@context': 'https://schema.org', '@type': 'Product', name: product.name,
         description: String(product.description || '').replace(/\s+/g, ' ').trim().slice(0, 500),
+        sku: product.permalink,
         image: imgs, brand: { '@type': 'Brand', name: 'vgthmind' },
-        offers: { '@type': 'Offer', url, priceCurrency: 'EUR', price: String(product.price),
-          availability: product.quantity === 0 ? 'https://schema.org/OutOfStock' : 'https://schema.org/InStock' },
+        // Le stock reel vit dans le Worker (Durable Object) et change a chaque vente sans reconstruction du
+        // site : on n'affiche donc que ce qui est sur (« epuise » a la construction) ; « en stock » est omis
+        // plutot que faux apres la 1re vente.
+        offers: Object.assign({ '@type': 'Offer', url, priceCurrency: 'EUR', price: String(product.price) },
+          product.quantity === 0 ? { availability: 'https://schema.org/OutOfStock' } : {}),
       };
       seoTags += `\n<script type="application/ld+json">${JSON.stringify(ld).replace(/</g, '\\u003c')}</script>`;
     }
