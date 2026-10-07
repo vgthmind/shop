@@ -179,8 +179,8 @@ const CART_CSS = `
 // Images que le thème/Body/dev JS chargent depuis le compte BigCartel
 // (assets.bigcartel.com/theme_images|product_images, liés au compte) :
 // servies depuis /shop/ pour que la boutique ne dépende plus de BigCartel.
-// (theme.js / api.js restent sur le CDN : fichiers génériques du thème,
-// pas liés au compte.) cover+clean.png est déjà en 404 chez BigCartel :
+// (theme.js / api.js sont remplacés par assets/vg-theme.js, voir ownScripts().)
+// cover+clean.png est déjà en 404 chez BigCartel :
 // remplacé par la 1re photo locale du CD.
 const SITE_ORIGIN_URL = new URL(SHOP_SETTINGS.site_url).origin; // suit site_url (bascule de domaine)
 const BC_IMAGE_MAP = [
@@ -614,11 +614,9 @@ async function main() {
 
   // Static stand-ins for BigCartel's JSON endpoints read by the scripts:
   // /products.json (Body: home category tiles; dev JS: pops, section 3),
-  // /product/<slug>.js (api.js Product.find, used by theme.js on product
-  // pages - also read directly by assets/vg-shop-cart.js on add-to-cart),
-  // /cart.js (api.js Cart - our own cart lives in localStorage instead,
-  // see vg-shop-cart.js, this stays empty/unused but is kept since
-  // theme.js/api.js, BigCartel's real scripts, may still request it).
+  // /product/<slug>.js (read by assets/vg-shop-cart.js on add-to-cart),
+  // /cart.js (our own cart lives in localStorage instead, see
+  // vg-shop-cart.js; this stays empty/unused, kept in case a script asks).
   const localized = catalog.products.map((p) => localizeProduct(p, imageMap));
   write('products.json', JSON.stringify(localized));
   for (const p of localized) write(`product/${p.permalink}.js`, JSON.stringify(p));

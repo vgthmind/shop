@@ -13,8 +13,11 @@ Le site est une **copie à l'identique du brouillon BigCartel** : un
 générateur Node rend les **vrais gabarits Liquid du thème** avec le **vrai
 catalogue**, puis ajoute ce que BigCartel injecte lui-même autour (Custom
 CSS + code Head avant `</head>`, code Body avant `</body>`). Les scripts du
-brouillon (`vg-transitions-dev.js`, le Body) et ceux de BigCartel (jQuery,
-`api.js`, `theme.js`) tournent sans modification de leur code.
+brouillon (`vg-transitions-dev.js`, le Body) tournent sans modification de
+leur code. Le comportement du thème (ex-`theme.js` / `api.js` de BigCartel,
+jQuery) est remplacé par `assets/vg-theme.js`, notre propre code, plus
+Splide (carrousel, MIT, dans `assets/vendor/`) : **le site ne charge plus rien
+depuis BigCartel.**
 
 ```
 theme/            gabarits RÉELS du brouillon, copiés à l'octet près depuis
@@ -118,12 +121,14 @@ remplacé par un renvoi vers les mentions légales de vgthmind.org).
   dans `<head>` (sinon il n'apparaissait qu'après les scripts : saut du
   titre et du prix à l'arrivée sur iPhone).
 - **Points d'accès BigCartel simulés** : `products.json`,
-  `product/<slug>.js` (lu par `api.js` / `theme.js` sur les fiches),
+  `product/<slug>.js` (lu par `assets/vg-shop-cart.js` à l'ajout au panier),
   `cart.js` (vide : le panier vit dans `localStorage`, voir `assets/vg-shop-cart.js`).
 - **`theme.css`** est lui-même un gabarit Liquid : rendu avec les réglages.
-- **jQuery, `api.js`, `theme.js`** : chargés depuis les CDN, comme sur le
-  brouillon (pas copiés ici, c'est le code de BigCartel). **À remplacer avant
-  un vrai lancement hors BigCartel** (dépendance à leur CDN).
+- **`assets/vg-theme.js`** remplace `theme.js` + `api.js` + jQuery (voir
+  `rapports-nuit/6-remplacement-theme-bigcartel.md` pour la liste de ce que
+  faisait l'original et de ce qui a été volontairement laissé de côté).
+  `assets/vendor/splide.min.js` : Splide 4.1.4 (MIT). `generator/build.js`
+  retire les balises jQuery / api.js du gabarit (`ownScripts()`).
 - Prix au format du brouillon (`money_format: code` → « 84,00 EUR ») ;
   pièces à option unique sans menu « Select variant » (comme BigCartel).
 
@@ -142,7 +147,7 @@ remplacé par un renvoi vers les mentions légales de vgthmind.org).
 
 ## Ce qui diffère encore de BigCartel
 
-- **jQuery, `api.js`, `theme.js`** toujours servis par leurs CDN.
+- Les reels vidéo (18 MP4) et les fichiers téléchargés au build (`vg-transitions-dev.js`/`.css`, `products-config.json`, `search-keywords.json`) viennent encore du dépôt `vgthmind.github.io`.
 - **Rebond « déjà sur la page »** et petites différences liées au
   sous-dossier : à vérifier en vidéo.
 - Liste complète et à jour : rubrique BACKLOG de `chantier/ETAT.md` (dépôt privé).
