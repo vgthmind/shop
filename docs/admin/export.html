@@ -1,0 +1,128 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex, nofollow">
+  <title>vgthmind — export des ventes</title>
+  <style>
+    :root { --bg: #f4f2ec; --ink: #171717; --muted: #6b6860; --line: rgba(0,0,0,.12); --card: rgba(255,255,255,.7); --warn: #a23b2a; }
+    * { box-sizing: border-box; }
+    [hidden] { display: none !important; }
+    body { margin: 0; background: var(--bg); color: var(--ink); font: 16px/1.45 system-ui, -apple-system, "Segoe UI", sans-serif; }
+    main { max-width: 720px; margin: 0 auto; padding: 24px 16px 64px; }
+    h1 { font-size: 22px; letter-spacing: .04em; text-transform: uppercase; margin: 0 0 4px; }
+    nav a { color: var(--muted); font-size: 14px; margin-right: 14px; display: inline-block; padding: 6px 0; }
+    .muted { color: var(--muted); font-size: 13px; }
+    .card { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 14px 16px; margin: 12px 0; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; }
+    label { display: flex; flex-direction: column; gap: 4px; font-size: 13px; color: var(--muted); }
+    select, input { min-height: 44px; padding: 8px 12px; border: 1px solid var(--line); border-radius: 10px; background: #fff; font: inherit; font-size: 16px; }
+    button { min-height: 44px; padding: 8px 18px; border-radius: 999px; border: 1px solid var(--line); background: #fff; font: inherit; cursor: pointer; }
+    button.primary { background: var(--ink); color: #fff; border-color: var(--ink); }
+    button:disabled { opacity: .5; cursor: default; }
+    .bar { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin: 12px 0; }
+    .big { font-size: 26px; font-weight: 700; }
+    .warn { color: var(--warn); }
+    table { width: 100%; border-collapse: collapse; font-size: 14px; }
+    td, th { padding: 6px 4px; border-bottom: 1px solid var(--line); text-align: left; }
+    td.n, th.n { text-align: right; white-space: nowrap; }
+    .scroll { overflow-x: auto; }
+  </style>
+</head>
+<body>
+<main>
+  <nav><a href="./">← Pièces</a><a href="commandes.html">Commandes &amp; stats</a><a href="stock.html">Stock</a></nav>
+  <h1>Export des ventes</h1>
+  <p class="muted">Fichier CSV pour le livre des recettes : séparateur « ; », virgule décimale, UTF-8 avec BOM (s'ouvre directement dans Excel FR). Aucune donnée client dedans : n° de commande, désignation, montants.</p>
+
+  <div class="bar" id="login" hidden><button type="button" class="primary" id="login-btn">Se connecter avec GitHub</button></div>
+
+  <div id="app" hidden>
+    <div class="card">
+      <div class="grid">
+        <label>Période<select id="type"><option value="month">Mois</option><option value="quarter">Trimestre</option><option value="year">Année</option></select></label>
+        <label>Année<select id="year"></select></label>
+        <label id="month-l">Mois<select id="month"></select></label>
+        <label id="quarter-l" hidden>Trimestre<select id="quarter"><option value="1">T1 (janv.–mars)</option><option value="2">T2 (avr.–juin)</option><option value="3">T3 (juil.–sept.)</option><option value="4">T4 (oct.–déc.)</option></select></label>
+      </div>
+      <label style="flex-direction:row;align-items:center;gap:8px;margin-top:10px"><input type="checkbox" id="test" style="min-height:auto"> Inclure les commandes de test Stripe</label>
+    </div>
+    <div class="card"><div class="big" id="total">–</div><div class="muted" id="count"></div>
+      <p class="warn" id="limit" hidden>Attention : le Worker ne renvoie que les 100 dernières commandes. Si la période en contient plus ou date d'avant, l'export est incomplet.</p></div>
+    <div class="bar"><button type="button" class="primary" id="dl" disabled>Télécharger le CSV</button><button type="button" id="logout">Se déconnecter</button></div>
+    <div class="card scroll"><table id="preview"></table></div>
+  </div>
+  <p id="msg" role="status" aria-live="polite"></p>
+</main>
+<script src="vg-admin-auth.js"></script>
+<script src="export-csv.js"></script>
+<script>
+(function () {
+  'use strict';
+  var $ = function (id) { return document.getElementById(id); };
+  var orders = [], demo = /[?&]demo=1/.test(location.search);
+  var MONTHS = ['janvier', 'février', 'mars', 'avril', 'mai', 'juin', 'juillet', 'août', 'septembre', 'octobre', 'novembre', 'décembre'];
+  function esc(s) { return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
+  function say(t, bad) { $('msg').textContent = t || ''; $('msg').className = bad ? 'warn' : ''; }
+
+  var now = new Date(), thisYear = now.getFullYear();
+  for (var y = thisYear; y >= thisYear - 5; y--) $('year').insertAdjacentHTML('beforeend', '<option>' + y + '</option>');
+  MONTHS.forEach(function (m, i) { $('month').insertAdjacentHTML('beforeend', '<option value="' + (i + 1) + '">' + m + '</option>'); });
+  // Par défaut : le mois précédent (cas courant d'une déclaration).
+  var pm = now.getMonth() === 0 ? 12 : now.getMonth();
+  $('month').value = pm; if (now.getMonth() === 0) $('year').value = thisYear - 1;
+
+  function period() {
+    return { type: $('type').value, year: +$('year').value, month: +$('month').value, quarter: +$('quarter').value };
+  }
+  function fmt(n) { return n.toFixed(2).replace('.', ',') + ' €'; }
+
+  function refresh() {
+    $('month-l').hidden = $('type').value !== 'month';
+    $('quarter-l').hidden = $('type').value !== 'quarter';
+    var r = window.VGExport.buildCsv(orders, period(), $('test').checked);
+    $('total').textContent = fmt(r.total);
+    $('count').textContent = r.count + ' vente(s) · ' + r.filename;
+    $('dl').disabled = r.count === 0;
+    $('limit').hidden = orders.length < 100;
+    var rows = window.VGExport.select(orders, period(), $('test').checked);
+    $('preview').innerHTML = '<tr><th>Date</th><th>N°</th><th class="n">Total</th></tr>' + rows.map(function (o) {
+      var t = window.VGExport.parisParts(o.created);
+      return '<tr><td>' + ('0' + t.d).slice(-2) + '/' + ('0' + t.m).slice(-2) + '/' + t.y + '</td><td>' + esc(o.ref) + '</td><td class="n">' + fmt(Number(o.total)) + '</td></tr>';
+    }).join('');
+  }
+
+  function load() {
+    if (demo) { orders = demoOrders(); show(); return; }
+    if (!window.vgAdminToken()) { $('login').hidden = false; $('app').hidden = true; return; }
+    window.vgAdminApi('/orders').then(function (d) { orders = d.orders || []; show(); })
+      .catch(function (e) {
+        if (e.status === 401) { $('login').hidden = false; $('app').hidden = true; return; }
+        say('Erreur : ' + e.message, true);
+      });
+  }
+  function show() { $('login').hidden = true; $('app').hidden = false; say(''); refresh(); }
+
+  function demoOrders() {
+    var base = Date.now() / 1000, out = [];
+    for (var i = 0; i < 12; i++) out.push({ id: 'd' + i, ref: 'VG-DEMO' + i, created: base - i * 9 * 86400, livemode: true, total: 25 + i * 3.5, shipping: 5, discount: 0,
+      items: [{ name: 'Pièce démo ' + i, qty: 1 + (i % 2) }] });
+    return out;
+  }
+
+  $('dl').addEventListener('click', function () {
+    var r = window.VGExport.buildCsv(orders, period(), $('test').checked);
+    var blob = new Blob([r.csv], { type: 'text/csv;charset=utf-8' });
+    var a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = r.filename;
+    document.body.appendChild(a); a.click(); a.remove();
+    say('Téléchargé : ' + r.filename);
+  });
+  ['type', 'year', 'month', 'quarter', 'test'].forEach(function (id) { $(id).addEventListener('change', refresh); });
+  $('logout').addEventListener('click', function () { window.vgAdminLogout(); load(); });
+  $('login-btn').addEventListener('click', function () { window.vgAdminLogin().then(load).catch(function (e) { say(e.message, true); }); });
+  load();
+})();
+</script>
+</body>
+</html>
