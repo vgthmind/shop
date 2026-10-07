@@ -116,9 +116,8 @@ function defaultPagination() {
 }
 
 function themeCssUrl() { return '/assets/theme.css'; }
-// {{ theme | theme_js_url }} -> theme.js, {{ 'api' | theme_js_url }} -> api.js:
-// BigCartel's own scripts, URLs set by build.js (loaded from BigCartel's CDN,
-// as on the draft).
+// {{ theme | theme_js_url }} / {{ 'api' | theme_js_url }} : URLs set by build.js
+// (our own assets/vg-theme.js; the api.js tag is removed at build time).
 let THEME_JS_URLS = { theme: '/assets/theme.js', api: '/assets/api.js' };
 function setThemeJsUrls(u) { THEME_JS_URLS = Object.assign({}, THEME_JS_URLS, u); }
 function themeJsUrl(v) { return v === 'api' ? THEME_JS_URLS.api : THEME_JS_URLS.theme; }
