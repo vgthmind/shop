@@ -481,7 +481,25 @@
     try { await navigator.share({ files: fl, title: r.slug }); } catch (e) { /* annulé */ }
   };
 
-  // Emplacement du futur branchement (voir rapports-nuit/studio-photo.md §4) :
-  // publish() enverra les fichiers de lastZip au Worker (/admin/studio/publish).
-  window.VGStudio = { publish: function () { throw new Error('Publication pas encore branchée.'); }, _state: function () { return { photos: photos, params: params }; } };
+  // ---------- publication (voir studio-publish.js) ----------
+  function pubSay(t) { $('pubMsg').textContent = t; }
+  $('bLogin').onclick = async function () {
+    try { await window.VGStudioPublish.login(); pubSay('Connecté à GitHub.'); $('bPublish').disabled = false; $('bLogin').textContent = 'Connecté ✓'; }
+    catch (e) { pubSay(e.message || String(e)); }
+  };
+  $('bPublish').onclick = async function () {
+    var n = exportable().length;
+    if (!n) { pubSay('Aucune photo validée.'); return; }
+    var slug = ($('slug').value || '').trim();
+    if (!slug) { pubSay('Renseigne le nom (slug) de la pièce.'); return; }
+    if (!confirm('Publier ' + n + ' photo(s) pour « ' + slug + ' » ' + ($('replace').checked ? '(remplace les photos actuelles)' : '(ajoutées aux photos actuelles)') + ' ?\nLe site sera reconstruit (1 à 2 min).')) return;
+    $('bPublish').disabled = true;
+    try {
+      var r = await buildFiles();
+      await window.VGStudioPublish.publish({ slug: slug, files: r.files, replace: $('replace').checked, onStatus: pubSay });
+    } catch (e) { pubSay('Échec : ' + (e.message || e)); }
+    $('bPublish').disabled = !window.VGStudioPublish.connected();
+  };
+
+  window.VGStudio = { _state: function () { return { photos: photos, params: params }; } };
 })();
