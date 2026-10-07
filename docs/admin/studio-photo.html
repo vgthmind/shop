@@ -124,10 +124,23 @@
     <span class="muted" id="exMsg"></span>
   </div>
   <div class="grid" id="preview"></div>
+
+  <h2>4 · Publier sur le site</h2>
+  <p class="muted">Même chemin que l'admin habituel : connexion GitHub (compte vgthmind), un seul commit sur <code>main</code> (photos + fiche de la pièce), puis le site se reconstruit tout seul (1 à 2 min). La pièce doit déjà exister (Pièces → Nouveau) ; le nom ci-dessus doit être son slug exact.</p>
+  <div class="bar">
+    <label class="muted"><input id="replace" type="checkbox" checked> Remplacer les photos actuelles de la pièce</label>
+  </div>
+  <div class="bar">
+    <button id="bLogin">Se connecter à GitHub</button>
+    <button id="bPublish" class="primary" disabled>Publier sur le site</button>
+    <span class="muted" id="pubMsg"></span>
+  </div>
 </main>
 <script src="studio-process.js"></script>
 <script src="studio-engine.js"></script>
 <script src="studio-webp.js"></script>
+<script src="vg-admin-auth.js"></script>
+<script src="studio-publish.js"></script>
 <script src="studio-photo.js"></script>
 </body>
 </html>
