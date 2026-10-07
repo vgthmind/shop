@@ -6,3 +6,4 @@ Règles : français simple, secrets jamais dans le chat ni le dépôt (public). 
 Prochain pas : relire la branche nuit/corrections (tester sur ton iPhone), la fusionner, puis appliquer rapports-nuit/5.
 Studio photo (branche nuit/studio-photo, non fusionnée) : prototype admin/studio-photo.html, rapport dans rapports-nuit/studio-photo.md ; vrai modèle à tester sur PC.
 Nuit legal (branche nuit/legal, aucune page modifiée) : rapport rapports-nuit/legal.md + brouillons FR/EN prêts à remplacer dans rapports-nuit/brouillons/ (README = infos à fournir, AVANT-APRES = relecture).
+Fait : stock, ports, panier, admin, A, B, C ; D partiel (commité/poussé) : SEO (canonical, og, JSON-LD), page légale (SIRET, email, données perso, douane). Codes promo déjà actifs dans le worker. Branche nuit/envoi-trafic (non branchée) : frais d'envoi par zone/poids + stats trafic maison, + sélecteur pays, compta Sheet, export CSV : voir rapports-nuit/envoi.md, trafic.md, compta-panier.md.

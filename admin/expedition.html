@@ -1,0 +1,273 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex, nofollow">
+  <title>vgthmind — frais d'envoi</title>
+  <style>
+    :root { --bg: #f4f2ec; --ink: #171717; --muted: #6b6860; --line: rgba(0,0,0,.12); --card: rgba(255,255,255,.6); --ok: #2f7d4a; --warn: #a23b2a; }
+    * { box-sizing: border-box; }
+    [hidden] { display: none !important; }
+    body { margin: 0; background: var(--bg); color: var(--ink); font: 15px/1.45 system-ui, -apple-system, "Segoe UI", sans-serif; }
+    main { max-width: 900px; margin: 0 auto; padding: 24px 16px 64px; }
+    h1 { font-size: 22px; letter-spacing: .04em; text-transform: uppercase; margin: 0 0 4px; }
+    h2 { font-size: 15px; text-transform: uppercase; letter-spacing: .04em; margin: 28px 0 8px; }
+    nav a { color: var(--muted); font-size: 13px; margin-right: 12px; }
+    .muted { color: var(--muted); font-size: 13px; }
+    .alert { background: #fff3cd; border: 1px solid #e0c36a; border-radius: 12px; padding: 10px 14px; font-weight: 600; }
+    .bar { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin: 12px 0; }
+    button, .btn { padding: 9px 14px; border-radius: 999px; border: 1px solid var(--line); background: #fff; color: var(--ink); font: inherit; cursor: pointer; }
+    button.primary { background: var(--ink); color: #fff; border-color: var(--ink); }
+    button.small { padding: 4px 10px; font-size: 13px; }
+    input, select, textarea { padding: 8px 10px; border: 1px solid var(--line); border-radius: 8px; background: #fff; font: inherit; max-width: 100%; }
+    input[type=number] { width: 90px; }
+    .card { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 14px 16px; margin-bottom: 12px; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 10px; }
+    .grid label { display: flex; flex-direction: column; gap: 4px; font-size: 13px; color: var(--muted); }
+    table { width: 100%; border-collapse: collapse; }
+    th, td { text-align: left; padding: 6px 6px; border-bottom: 1px solid var(--line); vertical-align: middle; }
+    th { font-size: 12px; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); }
+    #msg { min-height: 1.4em; }
+    .sim-out { font-size: 14px; }
+    .sim-out .total { font-size: 20px; font-weight: 700; }
+    .scroll { overflow-x: auto; }
+    @media (max-width: 560px) { input[type=number] { width: 76px; } }
+  </style>
+</head>
+<body>
+<main>
+  <nav><a href="./">← Pièces</a><a href="stock.html">Stock</a><a href="commandes.html">Commandes &amp; stats</a></nav>
+  <h1>Frais d'envoi</h1>
+  <p class="alert">À REMPLACER PAR MES VRAIS TARIFS — la grille fournie contient des exemples inventés.</p>
+  <p class="muted">Le prix dépend du pays et du poids total du colis. Au-delà du nombre de pièces (ou du poids) maximum, la commande est répartie en plusieurs colis, chacun payé selon sa tranche.</p>
+
+  <div class="bar" id="login" hidden><button type="button" class="primary" id="login-btn">Se connecter avec GitHub</button></div>
+
+  <div id="app" hidden>
+    <div class="bar">
+      <button type="button" class="primary" id="save">Enregistrer</button>
+      <button type="button" id="download">Télécharger le JSON</button>
+      <button type="button" id="logout">Se déconnecter</button>
+    </div>
+    <p id="msg" role="status" aria-live="polite"></p>
+
+    <h2>Réglages généraux</h2>
+    <div class="card grid" id="general"></div>
+
+    <h2>Formats de pièce</h2>
+    <div class="card"><div class="scroll"><table id="sizes"></table></div></div>
+
+    <h2>Zones et tarifs</h2>
+    <div id="zones"></div>
+    <button type="button" id="add-zone">+ Ajouter une zone</button>
+
+    <h2>Pièces : format et poids</h2>
+    <p class="muted">Choisis un format (petit / moyen / gros) ou un poids précis en grammes (le poids précis l'emporte). Sans réglage : format par défaut.</p>
+    <div class="bar"><input type="search" id="filter" placeholder="Chercher une pièce…" aria-label="Chercher une pièce"></div>
+    <div class="card"><div class="scroll"><table id="pieces"></table></div></div>
+
+    <h2>Simulateur</h2>
+    <div class="card">
+      <div class="grid">
+        <label>Pays (code à 2 lettres)<input id="sim-country" value="FR" maxlength="2" autocapitalize="characters"></label>
+        <label>Montant des pièces (€, pour la livraison offerte)<input id="sim-sub" type="number" min="0" step="1" value="50"></label>
+      </div>
+      <p class="muted">Quantités par pièce (0 = pas dans le panier) :</p>
+      <div class="scroll"><table id="sim-items"></table></div>
+      <div class="sim-out" id="sim-out" aria-live="polite"></div>
+    </div>
+  </div>
+</main>
+<script src="vg-admin-auth.js"></script>
+<script src="shipping-calc.js"></script>
+<script>
+(function () {
+  'use strict';
+  var $ = function (id) { return document.getElementById(id); };
+  var cfg = null, products = [], saveMode = 'worker';
+  function esc(s) { return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
+  function say(t, bad) { $('msg').textContent = t || ''; $('msg').style.color = bad ? 'var(--warn)' : 'var(--ink)'; }
+  function num(v) { var n = Number(String(v).replace(',', '.')); return isFinite(n) ? n : 0; }
+
+  function fetchLocalConfig() { return fetch('shipping-config.json', { cache: 'no-store' }).then(function (r) { return r.json(); }); }
+  function load() {
+    $('login').hidden = !!window.vgAdminToken() ; $('app').hidden = !window.vgAdminToken();
+    if (!window.vgAdminToken()) return;
+    // Le Worker garde la grille enregistree ; sinon le fichier du depot (route pas encore branchee).
+    window.vgAdminApi('/admin/shipping').then(function (d) { saveMode = 'worker'; return d; })
+      .catch(function (e) {
+        if (e.status === 401) { $('login').hidden = false; $('app').hidden = true; throw e; }
+        saveMode = 'file'; say('Route /admin/shipping du Worker pas encore branchée : modifications à télécharger (JSON), pas d\'enregistrement direct.', true);
+        return fetchLocalConfig();
+      })
+      .then(function (d) { cfg = d; cfg.items = cfg.items || {}; render(); })
+      .catch(function () {});
+    fetch('../products.json').then(function (r) { return r.json(); }).then(function (l) {
+      products = (Array.isArray(l) ? l : []).map(function (p) { return { slug: p.permalink, name: p.name, price: p.price }; });
+      renderPieces(); renderSim();
+    }).catch(function () { say('Catalogue illisible (products.json).', true); });
+  }
+
+  function render() { renderGeneral(); renderSizes(); renderZones(); renderPieces(); renderSim(); }
+
+  function field(label, path, type, extra) {
+    return '<label>' + label + '<input data-path="' + path + '" type="' + (type || 'number') + '" ' + (extra || 'step="any" min="0"') + '></label>';
+  }
+  function getp(path) { return path.split('.').reduce(function (o, k) { return o == null ? o : o[k]; }, cfg); }
+  function setp(path, v) { var k = path.split('.'), o = cfg; while (k.length > 1) { var s = k.shift(); o = o[s] = o[s] || {}; } o[k[0]] = v; }
+
+  function renderGeneral() {
+    var fs = cfg.free_shipping = cfg.free_shipping || {};
+    $('general').innerHTML =
+      '<label>Livraison offerte ?<select data-path="free_shipping.enabled" data-bool="1"><option value="0">Non</option><option value="1">Oui</option></select></label>'
+      + field('… à partir de (€ de pièces)', 'free_shipping.threshold')
+      + '<label>… zones concernées (ids, vide = toutes)<input data-path="free_shipping.zones" data-list="1" value="' + esc((fs.zones || []).join(', ')) + '"></label>'
+      + field('Max. de places par colis', 'max_pieces_per_parcel', 'number', 'step="1" min="1"')
+      + field('Poids max. par colis (g, 0 = aucun)', 'max_weight_g_per_parcel', 'number', 'step="10" min="0"')
+      + field('Emballage par colis (g)', 'parcel_tare_g', 'number', 'step="10" min="0"')
+      + '<label>Format par défaut<select data-path="default_size">' + ['petit', 'moyen', 'gros'].map(function (s) { return '<option>' + s + '</option>'; }).join('') + '</select></label>';
+    Array.prototype.forEach.call($('general').querySelectorAll('[data-path]'), function (el) {
+      var v = getp(el.getAttribute('data-path'));
+      if (el.hasAttribute('data-bool')) el.value = v ? '1' : '0';
+      else if (!el.hasAttribute('data-list')) el.value = v == null ? '' : v;
+    });
+  }
+  function renderSizes() {
+    var s = cfg.sizes = cfg.sizes || {};
+    $('sizes').innerHTML = '<tr><th>Format</th><th>Poids (g)</th><th>Places dans le colis</th></tr>' + ['petit', 'moyen', 'gros'].map(function (k) {
+      s[k] = s[k] || { weight_g: 500, slots: 1 };
+      return '<tr><td>' + k + '</td><td><input type="number" min="1" step="10" data-path="sizes.' + k + '.weight_g" value="' + s[k].weight_g + '"></td>'
+        + '<td><input type="number" min="1" step="1" data-path="sizes.' + k + '.slots" value="' + s[k].slots + '"></td></tr>';
+    }).join('');
+  }
+  function renderZones() {
+    $('zones').innerHTML = cfg.zones.map(function (z, zi) {
+      return '<div class="card" data-z="' + zi + '"><div class="grid">'
+        + '<label>Identifiant<input data-z="' + zi + '" data-k="id" value="' + esc(z.id) + '"></label>'
+        + '<label>Nom<input data-z="' + zi + '" data-k="name" value="' + esc(z.name) + '"></label>'
+        + '<label>Pays (codes séparés par des virgules ; * = reste du monde)<textarea rows="2" data-z="' + zi + '" data-k="countries">' + esc((z.countries || []).join(', ')) + '</textarea></label>'
+        + '<label>Supplément par kilo au-delà de la dernière tranche (€)<input type="number" min="0" step="any" data-z="' + zi + '" data-k="extra_per_kg" value="' + (z.extra_per_kg || 0) + '"></label></div>'
+        + '<div class="scroll"><table><tr><th>Jusqu\'à (g)</th><th>Prix (€)</th><th></th></tr>'
+        + z.brackets.map(function (b, bi) {
+          return '<tr><td><input type="number" min="1" step="10" data-z="' + zi + '" data-b="' + bi + '" data-k="max_g" value="' + b.max_g + '"></td>'
+            + '<td><input type="number" min="0" step="any" data-z="' + zi + '" data-b="' + bi + '" data-k="price" value="' + b.price + '"></td>'
+            + '<td><button type="button" class="small" data-delb="' + zi + ':' + bi + '">✕</button></td></tr>';
+        }).join('') + '</table></div>'
+        + '<div class="bar"><button type="button" class="small" data-addb="' + zi + '">+ tranche</button>'
+        + '<button type="button" class="small" data-delz="' + zi + '">Supprimer la zone</button></div></div>';
+    }).join('');
+  }
+  function renderPieces() {
+    if (!cfg) return;
+    var q = ($('filter').value || '').toLowerCase();
+    $('pieces').innerHTML = '<tr><th>Pièce</th><th>Format</th><th>Poids (g)</th></tr>' + products.filter(function (p) {
+      return !q || (p.name + ' ' + p.slug).toLowerCase().indexOf(q) !== -1;
+    }).map(function (p) {
+      var m = cfg.items[p.slug] || {};
+      return '<tr><td>' + esc(p.name) + '</td><td><select data-item="' + esc(p.slug) + '" data-k="size"><option value="">(défaut)</option>'
+        + ['petit', 'moyen', 'gros'].map(function (s) { return '<option' + (m.size === s ? ' selected' : '') + '>' + s + '</option>'; }).join('') + '</select></td>'
+        + '<td><input type="number" min="0" step="10" placeholder="auto" data-item="' + esc(p.slug) + '" data-k="weight_g" value="' + (m.weight_g || '') + '"></td></tr>';
+    }).join('');
+  }
+  function renderSim() {
+    if (!cfg) return;
+    var old = {};
+    Array.prototype.forEach.call($('sim-items').querySelectorAll('input'), function (i) { old[i.getAttribute('data-slug')] = i.value; });
+    $('sim-items').innerHTML = products.map(function (p) {
+      return '<tr><td>' + esc(p.name) + ' <span class="muted">' + p.price + ' €</span></td><td><input type="number" min="0" max="20" step="1" data-slug="' + esc(p.slug) + '" value="' + (old[p.slug] || 0) + '"></td></tr>';
+    }).join('');
+    simulate();
+  }
+  function simulate() {
+    var items = [], sub = 0;
+    Array.prototype.forEach.call($('sim-items').querySelectorAll('input'), function (i) {
+      var n = Math.floor(num(i.value)); if (n < 1) return;
+      var slug = i.getAttribute('data-slug'); items.push({ slug: slug, qty: n });
+      var p = products.filter(function (x) { return x.slug === slug; })[0]; if (p) sub += p.price * n;
+    });
+    if ($('sim-sub').getAttribute('data-touched') !== '1') $('sim-sub').value = Math.round(sub * 100) / 100;
+    var r = window.VGShipping.quoteShipping(cfg, { items: items, subtotal: num($('sim-sub').value) }, $('sim-country').value);
+    var out = $('sim-out');
+    if (!r.ok) { out.innerHTML = '<p style="color:var(--warn)">' + esc(r.message) + '</p>'; return; }
+    out.innerHTML = '<p class="total">' + r.total.toFixed(2) + ' € ' + (r.free ? '<span class="muted">(livraison offerte)</span>' : '') + '</p>'
+      + '<p class="muted">Zone : ' + esc(r.zoneName) + ' — ' + r.parcels.length + ' colis</p>'
+      + '<ul>' + r.parcels.map(function (p, i) { return '<li>Colis ' + (i + 1) + ' : ' + p.pieces + ' pièce(s), ' + p.weight_g + ' g → ' + p.price.toFixed(2) + ' €</li>'; }).join('') + '</ul>';
+  }
+
+  // Saisie : on range tout dans cfg au fil de l'eau.
+  document.addEventListener('input', function (e) {
+    var el = e.target; if (!cfg) return;
+    if (el.id === 'sim-sub') el.setAttribute('data-touched', '1');
+    if (el.hasAttribute('data-path')) {
+      var v = el.value;
+      if (el.hasAttribute('data-bool')) v = v === '1';
+      else if (el.hasAttribute('data-list')) v = v.split(',').map(function (s) { return s.trim(); }).filter(Boolean);
+      else if (el.type === 'number') v = num(v);
+      setp(el.getAttribute('data-path'), v);
+    } else if (el.hasAttribute('data-z')) {
+      var z = cfg.zones[+el.getAttribute('data-z')], k = el.getAttribute('data-k');
+      var tgt = el.hasAttribute('data-b') ? z.brackets[+el.getAttribute('data-b')] : z;
+      tgt[k] = k === 'countries' ? el.value.split(',').map(function (s) { return s.trim().toUpperCase(); }).filter(Boolean)
+        : (el.type === 'number' ? num(el.value) : el.value);
+    } else if (el.hasAttribute('data-item')) {
+      var slug = el.getAttribute('data-item'), m = cfg.items[slug] = cfg.items[slug] || {}, kk = el.getAttribute('data-k');
+      if (kk === 'weight_g') { if (num(el.value) > 0) m.weight_g = num(el.value); else delete m.weight_g; }
+      else { if (el.value) m.size = el.value; else delete m.size; }
+      if (!m.size && !m.weight_g) delete cfg.items[slug];
+    }
+    if (el.id === 'filter') renderPieces();
+    simulate();
+  });
+  document.addEventListener('click', function (e) {
+    var t = e.target; if (!cfg) return;
+    if (t.hasAttribute('data-addb')) { var z = cfg.zones[+t.getAttribute('data-addb')]; var l = z.brackets[z.brackets.length - 1] || { max_g: 0, price: 0 }; z.brackets.push({ max_g: l.max_g + 500, price: l.price }); renderZones(); simulate(); }
+    if (t.hasAttribute('data-delb')) { var p = t.getAttribute('data-delb').split(':'); cfg.zones[+p[0]].brackets.splice(+p[1], 1); renderZones(); simulate(); }
+    if (t.hasAttribute('data-delz')) { if (confirm('Supprimer cette zone ?')) { cfg.zones.splice(+t.getAttribute('data-delz'), 1); renderZones(); simulate(); } }
+  });
+  $('add-zone').addEventListener('click', function () {
+    cfg.zones.unshift({ id: 'ZONE' + (cfg.zones.length + 1), name: 'Nouvelle zone', countries: [], brackets: [{ max_g: 500, price: 10 }], extra_per_kg: 0 });
+    renderZones();
+  });
+  $('sim-country').addEventListener('input', simulate);
+  $('sim-sub').addEventListener('input', simulate);
+  $('sim-items').addEventListener('input', simulate);
+
+  function check() {
+    if (!cfg.zones.length) return 'Aucune zone.';
+    for (var i = 0; i < cfg.zones.length; i++) {
+      var z = cfg.zones[i];
+      if (!z.id || !z.countries.length || !z.brackets.length) return 'Zone incomplète : ' + (z.id || i + 1);
+      for (var j = 0; j < z.brackets.length; j++) if (!(z.brackets[j].max_g > 0) || z.brackets[j].price < 0) return 'Tranche invalide (zone ' + z.id + ').';
+    }
+    return '';
+  }
+  $('save').addEventListener('click', function () {
+    var bad = check(); if (bad) { say(bad, true); return; }
+    if (saveMode === 'file') { $('download').click(); return; }
+    cfg._ATTENTION = cfg._ATTENTION || '';
+    window.vgAdminApi('/admin/shipping', { method: 'POST', body: JSON.stringify({ config: cfg }) })
+      .then(function () { say('Enregistré.'); }).catch(function (err) { say('Échec : ' + err.message, true); });
+  });
+  $('download').addEventListener('click', function () {
+    var bad = check(); if (bad) { say(bad, true); return; }
+    var a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([JSON.stringify(cfg, null, 2)], { type: 'application/json' }));
+    a.download = 'shipping-config.json'; a.click();
+    say('Fichier téléchargé : remplace admin/shipping-config.json dans le dépôt.');
+  });
+  $('logout').addEventListener('click', function () { window.vgAdminLogout(); load(); });
+  $('login-btn').addEventListener('click', function () { window.vgAdminLogin().then(load).catch(function (e) { say(e.message, true); }); });
+
+  // Test local sans connexion : ?local=1 charge le fichier du dépôt (pas d'enregistrement).
+  if (/[?&]local=1/.test(location.search)) {
+    saveMode = 'file'; $('login').hidden = true; $('app').hidden = false;
+    fetchLocalConfig().then(function (d) { cfg = d; cfg.items = cfg.items || {}; render(); });
+    fetch('../products.json').then(function (r) { return r.json(); }).then(function (l) {
+      products = l.map(function (p) { return { slug: p.permalink, name: p.name, price: p.price }; }); renderPieces(); renderSim();
+    }).catch(function () {});
+  } else load();
+})();
+</script>
+</body>
+</html>

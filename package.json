@@ -4,6 +4,7 @@
   "description": "Generateur de la boutique /shop/ (voir README). Seule dependance : sharp, pour les tailles d'images.",
   "scripts": {
     "images": "node generator/resize-images.js",
+    "test": "node --test tests/*.test.mjs",
     "build": "node generator/build-catalog.js && node generator/resize-images.js && node generator/build.js"
   },
   "devDependencies": {
