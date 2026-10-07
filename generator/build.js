@@ -123,6 +123,11 @@ const CART_CSS = `
 .vg-track-parcel p{margin:0 0 14px;}
 .vg-track-parcel strong{letter-spacing:.04em;word-break:break-all;}
 .vg-track-parcel .button{margin:0 auto;}
+.vg-track-events{list-style:none;margin:18px 0 0;padding:0;text-align:left;}
+.vg-track-events li{padding:8px 0;border-top:1px solid rgba(0,0,0,.12);}
+.vg-track-events small{display:block;opacity:.65;}
+.vg-track-events a{text-decoration:underline;}
+.vg-track-note{opacity:.75;}
 .vg-track-again{margin-top:32px;text-align:center;}
 .vg-track-again .button{display:block;margin:0 auto;max-width:320px;}
 .vg-track-result .cart-items{margin:0;}

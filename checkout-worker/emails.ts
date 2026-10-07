@@ -7,7 +7,6 @@
 export const INSTAGRAM_URL = 'https://instagram.com/vgthmind';
 export const CONTACT_EMAIL = 'vgthm66@gmail.com';
 export const REPLY_TO = CONTACT_EMAIL;
-export const TRACKING_URL = 'https://www.laposte.fr/outils/suivre-vos-envois?code=';
 
 export type MailItem = {
   name: string;
@@ -182,16 +181,16 @@ export function customerEmail(o: OrderData) {
   return { subject, html, text };
 }
 
-// Mail « expediee » : numero de suivi + bouton, sans nom de transporteur.
+// Mail « expediee » : numero de suivi + bouton vers /suivi, sans nom de transporteur.
 export function shippedEmail(o: OrderData, tracking: string) {
   const l = langFor(o.country);
   const t = T[l];
   const first = (o.name || '').trim().split(/\s+/)[0] || '';
   const subject = t.shippedSubject(o.ref);
-  const url = tracking ? TRACKING_URL + encodeURIComponent(tracking) : '';
+  const url = o.orderUrl;
   const html = shell(l, subject,
     para(esc(t.hi(first))) + para(t.shippedLead)
-    + (tracking ? para(`${t.tracking} : <b>${esc(tracking)}</b>`) + button(url, t.track) : '')
+    + (tracking ? para(`${t.tracking} : <b>${esc(tracking)}</b>`) : '') + button(url, t.track)
     + `<p style="margin:18px 0 4px;font:13px ${FONT};color:${MUTED}">${t.ref} ${esc(o.ref)}</p>`
     + heading(t.order) + itemsTable(o, t, false)
     + heading(t.shipTo) + para(o.address.map(esc).join('<br>'))
@@ -200,7 +199,7 @@ export function shippedEmail(o: OrderData, tracking: string) {
     + signature(t));
   const text = [
     t.hi(first), '', t.shippedLead,
-    ...(tracking ? ['', `${t.tracking} : ${tracking}`, `${t.track} : ${url}`] : []), '',
+    ...(tracking ? ['', `${t.tracking} : ${tracking}`] : []), '', `${t.track} : ${url}`, '',
     `${t.ref} ${o.ref}`, ...itemLines(o, t), '',
     t.shipTo.toUpperCase(), ...o.address, '',
     t.help, '', t.thanksEnd, 'vgthmind', `Instagram : ${INSTAGRAM_URL}`, CONTACT_EMAIL,

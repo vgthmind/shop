@@ -49,6 +49,8 @@ interface Env {
   RESEND_API_KEY?: string; // secret : cle Resend
   ALERT_EMAIL?: string; // secret : adresse qui recoit l'alerte de commande
   MAIL_FROM?: string; // expediteur sur domaine verifie ; vide = pas d'email client
+  LAPOSTE_OKAPI_KEY?: string; // secret : cle de l'API de suivi colis (serveur uniquement)
+  LOCAL_DEV?: string; // "1" seulement dans .dev.vars (wrangler dev), jamais en prod
   GITHUB_TOKEN?: string; // ancien systeme : n'est plus utilise, a supprimer
   ALLOWED_ORIGIN: string; // https://vgthmind.github.io
   SITE_BASE: string; // https://vgthmind.github.io/shop
@@ -201,6 +203,7 @@ export default {
       // Sans cle Stripe.
       if (path === '/status') return await status(env);
       if (path === '/stock' && request.method === 'GET') return await publicStock(env, cors);
+      if (path === '/dev/parcel' && env.LOCAL_DEV === '1') return new Response(JSON.stringify(await parcelEvents(env, new URL(request.url).searchParams.get('n') || '')), { headers: { ...cors, 'Content-Type': 'application/json' } });
       if (path === '/auth') return await oauthStart(request, env);
       if (path === '/callback') return await oauthCallback(request, env);
       if (path.startsWith('/admin/')) {
@@ -721,6 +724,7 @@ async function listOrders(request: Request, env: Env, key: string, json: JsonFn)
       address: ship.address || null,
       items: (await mailItems(env, s.line_items?.data || [], (c) => String(c / 100), catalog)).map((i) => ({ ...i, amount: Number(i.amount), unit: i.unit ? Number(i.unit) : 0 })),
       shipped: shipped ? JSON.parse(shipped) : null,
+      parcel: shipped && JSON.parse(shipped).tracking ? await parcelEvents(env, JSON.parse(shipped).tracking) : null,
       preparing: preparing ? JSON.parse(preparing) : null,
     });
   }
@@ -736,7 +740,7 @@ async function markShipped(request: Request, env: Env, json: JsonFn): Promise<Re
     await env.HOLDS.delete('shipped:' + body.id);
     return json({ ok: true });
   }
-  const value = { at: Math.floor(Date.now() / 1000), tracking: String(body.tracking || '').trim().slice(0, 100) };
+  const value = { at: Math.floor(Date.now() / 1000), tracking: String(body.tracking || '').trim().replace(/s+/g, '').slice(0, 40) };
   await env.HOLDS.put('shipped:' + body.id, JSON.stringify(value));
   return json({ ok: true, shipped: value });
 }
@@ -839,8 +843,59 @@ async function trackOrder(request: Request, env: Env, key: string, json: JsonFn)
     shipping: (s.shipping_cost?.amount_total || 0) / 100,
     total: s.amount_total / 100,
     tracking,
-    trackUrl: tracking ? 'https://www.laposte.fr/outils/suivre-vos-envois?code=' + encodeURIComponent(tracking) : '',
+    parcel: tracking ? await parcelEvents(env, tracking) : null,
   });
+}
+
+// ---- Suivi colis : l'API est appelee ici seulement (cle = secret du Worker).
+// Le client ne recoit que des codes neutres + une date, jamais le texte de l'API.
+const PARCEL_FRESH = 30 * 60; // secondes : un colis non livre est relu au plus toutes les 30 min
+type ParcelEvent = { date: string; code: 'picked' | 'transit' | 'out' | 'pickup' | 'delivered' | 'issue' };
+type ParcelCache = { at: number; events: ParcelEvent[]; delivered: boolean };
+
+function parcelCode(code: string, label: string): ParcelEvent['code'] | null {
+  const c = code.toUpperCase();
+  if (c === 'DR1') return null; // simple pre-annonce, pas un evenement physique
+  if (c === 'DI1' || c === 'DI2') return 'delivered';
+  if (/^(ND|RE|PB|AN)/.test(c) || /retour|incident|anomalie|adresse|bloqu|refus|non distribu/i.test(label)) return 'issue';
+  if (c === 'AG1' || c === 'MD1' || c === 'MD2' || /point de retrait|bureau de poste|agence|relais|disposition/i.test(label)) return 'pickup';
+  if (c === 'DO1' || c === 'DO2' || /en cours de livraison|livraison en cours|pr[ée]par[ée] pour la livraison/i.test(label)) return 'out';
+  if (c === 'PC1' || c === 'PC2' || /pris en charge/i.test(label)) return 'picked';
+  return 'transit';
+}
+
+async function parcelEvents(env: Env, tracking: string): Promise<{ events: ParcelEvent[]; delivered: boolean } | null> {
+  const n = String(tracking || '').replace(/s+/g, '');
+  if (!/^[A-Za-z0-9]{8,30}$/.test(n)) return null;
+  const k = 'trk:' + n.toUpperCase();
+  let cached: ParcelCache | null = null;
+  try { const raw = await env.HOLDS.get(k); cached = raw ? JSON.parse(raw) : null; } catch (e) {}
+  if (cached && (cached.delivered || Date.now() / 1000 - cached.at < PARCEL_FRESH)) return { events: cached.events, delivered: cached.delivered };
+  const stale = cached ? { events: cached.events, delivered: cached.delivered } : null;
+  if (!env.LAPOSTE_OKAPI_KEY) return stale;
+  try {
+    const res = await fetch('https://api.laposte.fr/suivi/v2/idships/' + encodeURIComponent(n) + '?lang=fr_FR', {
+      headers: { 'X-Okapi-Key': env.LAPOSTE_OKAPI_KEY, Accept: 'application/json' },
+    });
+    // Numero inconnu (pas encore scanne) : resultat vide garde 30 min pour economiser le quota.
+    if (res.status !== 200 && res.status !== 404) return stale;
+    const data: any = res.status === 200 ? await res.json() : {};
+    const raw: any[] = data && data.shipment && Array.isArray(data.shipment.event) ? data.shipment.event : [];
+    const events: ParcelEvent[] = [];
+    for (const e of raw.slice().sort((a, b) => String(a.date).localeCompare(String(b.date)))) {
+      const code = parcelCode(String(e.code || ''), String(e.label || ''));
+      const date = String(e.date || '').slice(0, 10);
+      if (!code || !/^d{4}-d{2}-d{2}$/.test(date)) continue;
+      if (events.some((x) => x.code === code && x.date === date)) continue;
+      events.push({ date, code });
+    }
+    const delivered = events.some((e) => e.code === 'delivered');
+    const value: ParcelCache = { at: Math.floor(Date.now() / 1000), events, delivered };
+    await env.HOLDS.put(k, JSON.stringify(value)); // livre = garde pour toujours (plus aucun appel)
+    return { events, delivered };
+  } catch (e) {
+    return stale;
+  }
 }
 
 // Mail « expediee » HTML envoye au client (bouton admin), une fois par clic.

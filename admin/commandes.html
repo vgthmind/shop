@@ -141,6 +141,13 @@
       + '<p class="muted">Sur les 100 derniers paiements. Détail complet : tableau de bord Stripe (Paiements, Rapports). Visites : Cloudflare Web Analytics.</p>';
   }
 
+  var EV = { picked: 'Pris en charge', transit: 'En transit', out: 'En cours de livraison', pickup: 'Disponible au point de retrait', delivered: 'Livré', issue: 'Incident de livraison' };
+  function parcelHtml(o) {
+    if (!o.shipped || !o.shipped.tracking) return '';
+    if (!o.parcel) return '<div class="muted">Suivi colis : indisponible pour le moment.</div>';
+    if (!o.parcel.events.length) return '<div class="muted">Suivi colis : pas encore pris en charge.</div>';
+    return '<ul class="muted">' + o.parcel.events.map(function (e) { return '<li>' + esc(e.date) + ' · ' + esc(EV[e.code] || EV.transit) + '</li>'; }).join('') + '</ul>';
+  }
   function draw() {
     if (filter === 'stats') { drawStats(); return; }
     var needle = (($('q') && $('q').value) || '').trim().toLowerCase().replace(/^vg[\s-]*/, '');
@@ -163,6 +170,7 @@
         }).join('')
         + '<li class="muted"><span class="ph" style="visibility:hidden"></span><span class="nm">Livraison' + (o.discount ? ' · remise −' + money(o.discount) : '') + '</span><span class="pr">' + money(o.shipping) + '</span></li></ul>'
         + '<div class="muted">' + address(o.address) + '</div>'
+        + parcelHtml(o)
         + '<div class="actions">'
         + (o.shipped
           ? '<button type="button" data-mail>' + (o.shipped.notified ? 'Renvoyer le mail « expédiée »' : 'Envoyer le mail « expédiée » au client') + '</button><button type="button" data-undo>Annuler « expédiée »</button>'
