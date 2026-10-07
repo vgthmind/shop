@@ -462,7 +462,7 @@
       order: 'Commande', placed: 'passée le', steps: ['Reçue', 'En préparation', 'Expédiée'],
       s_received: 'Ta commande est bien reçue.', s_preparing: 'Ta commande est en cours de préparation.', s_shipped: 'Ta commande est partie.',
       items: 'Articles', size: 'Taille', qty: 'Qté', each: 'l\'unité', shipping: 'Livraison', total: 'Total', address: 'Adresse de livraison',
-      parcel: 'Numéro de suivi', trackBtn: 'Suivre mon colis', noTracking: 'Le numéro de suivi n\'est pas encore disponible.', again: 'Suivre une autre commande',
+      parcel: 'Numéro de suivi', ev_picked: 'Pris en charge', ev_transit: 'En transit', ev_out: 'En cours de livraison', ev_pickup: 'Disponible au point de retrait', ev_delivered: 'Livré', ev_issue: 'Incident de livraison, contactez-nous', noDetail: 'Le suivi détaillé n'est pas disponible pour le moment.', noEvents: 'Le colis n'a pas encore été pris en charge.', noTracking: 'Le numéro de suivi n\'est pas encore disponible.', again: 'Suivre une autre commande',
     },
     en: {
       title: 'Track my order', intro: 'Enter your order number (in your confirmation email) and the email address used for the order.',
@@ -473,7 +473,7 @@
       order: 'Order', placed: 'placed on', steps: ['Received', 'Being prepared', 'Shipped'],
       s_received: 'Your order has been received.', s_preparing: 'Your order is being prepared.', s_shipped: 'Your order is on its way.',
       items: 'Items', size: 'Size', qty: 'Qty', each: 'each', shipping: 'Shipping', total: 'Total', address: 'Delivery address',
-      parcel: 'Tracking number', trackBtn: 'Track my parcel', noTracking: 'The tracking number isn\'t available yet.', again: 'Track another order',
+      parcel: 'Tracking number', ev_picked: 'Picked up', ev_transit: 'In transit', ev_out: 'Out for delivery', ev_pickup: 'Available for pickup', ev_delivered: 'Delivered', ev_issue: 'Delivery issue, please contact us', noDetail: 'Detailed tracking isn't available right now.', noEvents: 'The parcel hasn't been picked up yet.', noTracking: 'The tracking number isn\'t available yet.', again: 'Track another order',
     },
   };
 
@@ -532,10 +532,20 @@
       }).join('');
       var parcel = '';
       if (d.status === 'shipped') {
-        var okUrl = d.trackUrl && d.trackUrl.indexOf('https://www.laposte.fr/') === 0;
+        var pc = d.parcel;
+        var detail = '';
+        if (!d.tracking) detail = '';
+        else if (!pc) detail = '<p class="vg-track-note">' + esc(t.noDetail) + '</p>';
+        else if (!pc.events || !pc.events.length) detail = '<p class="vg-track-note">' + esc(t.noEvents) + '</p>';
+        else detail = '<ol class="vg-track-events">' + pc.events.map(function (e) {
+          var ts = Date.parse(e.date + 'T12:00:00Z');
+          var label = esc(t['ev_' + e.code] || t.ev_transit);
+          if (e.code === 'issue') label = '<a href="../contact-914a3d">' + label + '</a>';
+          return '<li><small>' + esc(isNaN(ts) ? '' : fmtDate(ts / 1000)) + '</small> ' + label + '</li>';
+        }).join('') + '</ol>';
         parcel = '<div class="vg-track-parcel">'
           + (d.tracking ? '<p>' + esc(t.parcel) + '<br><strong>' + esc(d.tracking) + '</strong></p>' : '<p>' + esc(t.noTracking) + '</p>')
-          + (okUrl ? '<a class="button view-all-products" href="' + esc(d.trackUrl) + '" target="_blank" rel="noopener noreferrer">' + esc(t.trackBtn) + '</a>' : '')
+          + detail
           + '</div>';
       }
       result.innerHTML =
