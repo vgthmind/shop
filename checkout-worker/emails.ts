@@ -44,7 +44,10 @@ export function countryName(code: string, lang: string): string {
   if (!c) return '';
   try { return new Intl.DisplayNames([lang], { type: 'region' }).of(c) || c; } catch (e) { return c; }
 }
-export const langFor = (country: string) => (String(country).toUpperCase() === 'FR' ? 'fr' : 'en');
+// Pays francophones (France, DROM-COM, Monaco, Belgique, Luxembourg, Suisse) : e-mails en francais.
+// Le Canada reste en anglais (Quebec / reste du pays non distinguables par pays).
+const FR_COUNTRIES = ['FR', 'MC', 'BE', 'LU', 'CH', 'GP', 'MQ', 'GF', 'RE', 'YT', 'PM', 'BL', 'MF', 'NC', 'PF', 'WF'];
+export const langFor = (country: string) => (FR_COUNTRIES.includes(String(country).toUpperCase()) ? 'fr' : 'en');
 
 const T = {
   fr: {

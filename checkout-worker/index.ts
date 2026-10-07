@@ -78,7 +78,7 @@ const HOLD_MS = (SESSION_MINUTES + 2) * 60 * 1000;
 const BACKUP_DAYS = 180;
 
 // Pays proposes pour « International » : tous ceux qu'accepte Stripe pour
-// une adresse de livraison, sauf la France (decision de Jules, 2026-10-06).
+// une adresse de livraison, sauf la France (decision du 2026-10-06).
 const STRIPE_COUNTRIES = (
   'AC AD AE AF AG AI AL AM AO AQ AR AT AU AW AX AZ BA BB BD BE BF BG BH BI BJ BL BM BN BO BQ BR BS BT BV BW BY BZ '
   + 'CA CD CF CG CH CI CK CL CM CN CO CR CV CW CY CZ DE DJ DK DM DO DZ EC EE EG EH ER ES ET FI FJ FK FO GA GB GD GE '

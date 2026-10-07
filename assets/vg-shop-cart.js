@@ -267,7 +267,7 @@
           + '<div class="cart-item-detail"><a href="' + esc(it.url) + '"><div class="product-name">' + esc(it.name) + '</div></a>'
           + '<div class="option-name"><div class="cart-item-unit-price">' + money(it.price) + '</div></div>' + note + '</div>'
           + '<div class="cart-qty">' + qtySelect
-          + '<button type="button" class="vg-cart-remove cart-remove-item--link button minimal-button" data-slug="' + esc(it.slug) + '">Remove<span class="visually-hidden"> ' + esc(it.name) + '</span></button></div>'
+          + '<button type="button" class="vg-cart-remove cart-remove-item--link button minimal-button" data-slug="' + esc(it.slug) + '">Remove / Retirer<span class="visually-hidden"> ' + esc(it.name) + '</span></button></div>'
           + '<div class="cart-item-price"><span>' + money(lineTotal(it)) + '</span></div>';
         list.appendChild(li);
       });
@@ -321,7 +321,7 @@
 
     function checkout(btn) {
       btn.disabled = true;
-      btn.textContent = 'Un instant…';
+      btn.textContent = 'One moment… / Un instant…';
       fetch(ENDPOINT + '/checkout', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -356,7 +356,7 @@
                   : 'France only / Livraison en France uniquement pour certaines pièces.';
             if (items.length === 0) { root.remove(); location.reload(); return; }
           } else {
-            message = 'Payment unavailable right now / Paiement indisponible pour le moment (' + (res.data.error || 'erreur') + ').';
+            message = 'Payment unavailable right now / Paiement indisponible pour le moment.';
           }
           draw();
         })
