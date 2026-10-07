@@ -153,9 +153,9 @@ const CART_CSS = `
 // (theme.js / api.js restent sur le CDN : fichiers génériques du thème,
 // pas liés au compte.) cover+clean.png est déjà en 404 chez BigCartel :
 // remplacé par la 1re photo locale du CD.
-const SITE_ORIGIN_URL = 'https://vgthmind.github.io';
+const SITE_ORIGIN_URL = new URL(SHOP_SETTINGS.site_url).origin; // suit site_url (bascule de domaine)
 const BC_IMAGE_MAP = [
-  [/https:\/\/assets\.bigcartel\.com\/theme_images\/142638069\/Cover\.png(\?[^"'\s)]*)?/g, () => `${SITE_ORIGIN_URL}${BASE_PATH}/assets/theme/bc/cover.png`],
+  [/https:\/\/assets\.bigcartel\.com\/theme_images\/142638069\/Cover\.png(\?[^"'\s)]*)?/g, () => `${SITE_ORIGIN_URL}${BASE_PATH}/assets/theme/bc/cover-og.jpg`],
   [/https:\/\/assets\.bigcartel\.com\/theme_images\/122404563\/Illustration_sans_titre\+_1_\.PNG(\?[^"'\s)]*)?/g, () => `${BASE_PATH}/assets/theme/bc/logo-illustration.png`],
   [/https:\/\/assets\.bigcartel\.com\/product_images\/405517188\/cover\+clean\.png(\?[^"'\s)]*)?/g, () => `${BASE_PATH}/assets/products/cd-vgtape/0.png`],
 ];
@@ -305,7 +305,9 @@ function localizeProduct(p, imageMap) {
 // --- head / body injections (what BigCartel adds around the templates) ---
 function headContent(page, product, imageMap) {
   if (!product) return '';
-  const img = product.images && product.images[0] ? (imageMap[product.images[0].url] || product.images[0].url) : '';
+  const img0 = product.images && product.images[0] ? (imageMap[product.images[0].url] || product.images[0].url) : '';
+  // og:image / twitter:image doivent etre des adresses absolues (aperçus de partage).
+  const img = img0 && img0.startsWith('/') ? SITE_ORIGIN_URL + BASE_PATH + img0 : img0;
   const esc = (s) => String(s || '').replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
   const desc = esc((product.description || '').replace(/\s+/g, ' ').trim().slice(0, 300));
   return [
