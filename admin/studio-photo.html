@@ -1,0 +1,146 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="robots" content="noindex, nofollow">
+  <title>vgthmind — studio photo</title>
+  <style>
+    :root { --bg: #f4f2ec; --ink: #171717; --muted: #6b6860; --line: rgba(0,0,0,.12); --card: rgba(255,255,255,.6); --ok: #2f7d4a; --warn: #a23b2a; --thumb-bg: #f4f2ec; }
+    * { box-sizing: border-box; }
+    [hidden] { display: none !important; }
+    body { margin: 0; background: var(--bg); color: var(--ink); font: 15px/1.45 system-ui, -apple-system, "Segoe UI", sans-serif; -webkit-text-size-adjust: 100%; }
+    main { max-width: 1000px; margin: 0 auto; padding: 24px 16px 80px; }
+    h1 { font-size: 22px; letter-spacing: .04em; text-transform: uppercase; margin: 0 0 4px; }
+    h2 { font-size: 15px; text-transform: uppercase; letter-spacing: .04em; margin: 28px 0 8px; }
+    nav a { color: var(--muted); font-size: 13px; margin-right: 12px; }
+    .muted { color: var(--muted); font-size: 13px; }
+    .bar { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin: 10px 0; }
+    button, label.btn { padding: 10px 14px; border-radius: 999px; border: 1px solid var(--line); background: #fff; color: var(--ink); font: inherit; cursor: pointer; display: inline-block; touch-action: manipulation; }
+    button.primary { background: var(--ink); color: #fff; border-color: var(--ink); }
+    button.on { background: var(--ink); color: #fff; }
+    button:disabled { opacity: .45; cursor: default; }
+    input[type=text], select { padding: 9px 12px; border: 1px solid var(--line); border-radius: 10px; background: #fff; font: inherit; max-width: 100%; }
+    .drop { border: 2px dashed var(--line); border-radius: 14px; padding: 22px; text-align: center; background: var(--card); }
+    .drop.over { border-color: var(--ink); }
+    .notice { padding: 10px 14px; border-radius: 10px; background: rgba(255,226,122,.35); border: 1px solid rgba(0,0,0,.1); margin: 10px 0; }
+    .notice.err { background: rgba(162,59,42,.12); }
+    .strip { display: flex; gap: 10px; overflow-x: auto; padding: 4px 2px 10px; -webkit-overflow-scrolling: touch; }
+    .card { flex: 0 0 auto; width: 112px; border: 2px solid var(--line); border-radius: 12px; background: var(--card); padding: 6px; cursor: pointer; }
+    .card.sel { border-color: var(--ink); }
+    .card canvas { width: 100%; height: 96px; border-radius: 8px; background: var(--thumb-bg); object-fit: contain; display: block; }
+    .card .st { font-size: 11px; margin-top: 4px; min-height: 28px; }
+    .card .mv { display: flex; gap: 4px; margin-top: 2px; }
+    .card .mv button { padding: 2px 8px; font-size: 12px; flex: 1; }
+    .st.valid { color: var(--ok); } .st.err { color: var(--warn); }
+    .panels { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .panel { position: relative; border: 1px solid var(--line); border-radius: 14px; overflow: hidden; background: #e9e6df; min-height: 120px; display: flex; align-items: center; justify-content: center; }
+    .checker { background: #fff conic-gradient(#ddd 25%, #fff 0 50%, #ddd 0 75%, #fff 0) 0 0 / 20px 20px !important; }
+    .stage { position: relative; overflow: hidden; touch-action: none; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; width: 100%; }
+    .stage canvas { position: absolute; left: 0; top: 0; width: 100%; height: 100%; transform-origin: 0 0; }
+    #stageC { cursor: none; }
+    .panel .lbl { position: absolute; left: 8px; top: 8px; font-size: 11px; padding: 2px 8px; border-radius: 999px; background: rgba(255,255,255,.85); color: #171717; pointer-events: none; }
+    #cursor { position: absolute; border: 2px solid #fff; box-shadow: 0 0 0 1px #000; border-radius: 50%; pointer-events: none; transform: translate(-50%,-50%); display: none; }
+    .tools { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 10px 18px; margin: 12px 0; }
+    .tools label { display: block; font-size: 13px; color: var(--muted); }
+    .tools input[type=range] { width: 100%; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; }
+    .grid canvas { width: 100%; height: auto; border: 1px solid var(--line); border-radius: 10px; }
+    @media (pointer: coarse) { button, label.btn { padding: 12px 18px; min-height: 44px; } .tools input[type=range] { height: 34px; } }
+    @media (max-width: 640px) { .panels { grid-template-columns: 1fr; } main { padding: 16px 12px 80px; } }
+  </style>
+</head>
+<body>
+<main>
+  <h1>Studio photo</h1>
+  <nav><a href="index.html">← Pièces</a><a href="stock.html">Stock</a></nav>
+  <p class="muted">Détourage dans ton navigateur : les photos ne quittent pas cet appareil (aucun envoi, aucune clé). Prototype — non relié au menu de l'admin.</p>
+
+  <h2>1 · Photos de la pièce</h2>
+  <div class="drop" id="drop">
+    <p style="margin:0 0 10px">Glisse les photos ici, ou choisis-les (plusieurs à la fois, la 1re = photo principale).</p>
+    <label class="btn primary">Choisir des photos<input id="files" type="file" accept="image/*" multiple hidden></label>
+    <div class="bar" style="justify-content:center">
+      <label class="muted">Moteur de détourage
+        <select id="engine">
+          <option value="model">Modèle IA dans le navigateur (précis, 1er chargement long)</option>
+          <option value="simple">Fond uni (rapide, sans téléchargement)</option>
+          <option value="remote" disabled>Service payant (non activé)</option>
+        </select>
+      </label>
+    </div>
+    <div class="muted" id="status" aria-live="polite"></div>
+  </div>
+  <div id="notices"></div>
+  <div class="strip" id="strip"></div>
+
+  <section id="editor" hidden>
+    <h2>2 · Détourage et retouche — <span id="edName"></span></h2>
+    <div class="panels">
+      <div class="panel" id="origPanel"><span class="lbl">Original</span><div class="stage" id="stageO"><canvas id="orig"></canvas></div></div>
+      <div class="panel" id="cutPanel"><span class="lbl">Détouré</span><div class="stage" id="stageC"><canvas id="cut"></canvas><div id="cursor"></div></div></div>
+    </div>
+    <div class="bar">
+      <button id="bValid" class="primary">✓ Valider</button>
+      <button id="bOrig">Garder l'original</button>
+      <button id="bRedo">↻ Relancer</button>
+      <span class="muted" id="edMsg"></span>
+    </div>
+    <div class="bar">
+      <button id="mErase" class="on">Gommer</button>
+      <button id="mRestore">Restaurer</button>
+      <button id="mPan">✋ Déplacer</button>
+      <button id="bUndo" disabled>↶ Annuler</button>
+      <button id="zOut" aria-label="Dézoomer">−</button><button id="zIn" aria-label="Zoomer">+</button><button id="zFit">Ajuster</button><span class="muted" id="zoomV">×1</span>
+      <label class="muted">Aperçu sur
+        <select id="pvBg"></select>
+      </label>
+    </div>
+    <div class="tools">
+      <label>Pinceau décalé au-dessus du doigt <input id="offset" type="checkbox"></label>
+      <label>Taille du pinceau <input id="brush" type="range" min="1" max="20" value="4"></label>
+      <label>Bords : seuil bas <input id="pLo" type="range" min="0" max="120" value="12"></label>
+      <label>Bords : seuil haut <input id="pHi" type="range" min="130" max="255" value="235"></label>
+      <label>Contracter les bords (px) <input id="pShrink" type="range" min="0" max="4" value="0"></label>
+      <label>Anti-halo (px) <input id="pDefr" type="range" min="0" max="10" value="4"></label>
+    </div>
+    <p class="muted">Les réglages de bords s'appliquent à toutes les photos. Retouche : un doigt (ou la souris) gomme/restaure sur « Détouré » ; deux doigts = zoom et déplacement (souris : molette, ou barre d'espace/clic milieu + glisser, ou outil ✋). Zoomez pour retoucher les bords.</p>
+  </section>
+
+  <h2>3 · Export</h2>
+  <div class="tools">
+    <label>Nom de la pièce (slug) <input id="slug" type="text" placeholder="pantalon-denim-bleu" autocapitalize="off" autocomplete="off" spellcheck="false"></label>
+    <label>Fond <select id="bg"></select></label>
+    <label>Format <select id="ratio"><option value="0.8">4:5 (vertical)</option><option value="1">1:1 (carré)</option><option value="0.75">3:4 (vertical)</option></select></label>
+    <label>Largeur <select id="outW"><option>800</option><option selected>1000</option><option>1200</option></select> px</label>
+    <label>Marge <input id="margin" type="range" min="2" max="15" value="6"> <span id="marginV">6 %</span></label>
+    <label>Cadrage <select id="fit"><option value="each">chaque pièce remplit le cadre</option><option value="common">même échelle pour toutes</option></select></label>
+    <label>Poids max par photo <select id="maxKB"><option>100</option><option selected>150</option><option>250</option><option>400</option></select> Ko</label>
+  </div>
+  <div class="bar">
+    <button id="bPreview">Aperçu du cadrage</button>
+    <button id="bZip" class="primary">Télécharger le ZIP (WebP)</button>
+    <button id="bShare" hidden>Partager / enregistrer (iPhone)</button>
+    <span class="muted" id="exMsg"></span>
+  </div>
+  <div class="grid" id="preview"></div>
+
+  <h2>4 · Publier sur le site</h2>
+  <p class="muted">Même chemin que l'admin habituel : connexion GitHub (compte vgthmind), un seul commit sur <code>main</code> (photos + fiche de la pièce), puis le site se reconstruit tout seul (1 à 2 min). La pièce doit déjà exister (Pièces → Nouveau) ; le nom ci-dessus doit être son slug exact.</p>
+  <div class="bar">
+    <label class="muted"><input id="replace" type="checkbox" checked> Remplacer les photos actuelles de la pièce</label>
+  </div>
+  <div class="bar">
+    <button id="bLogin">Se connecter à GitHub</button>
+    <button id="bPublish" class="primary" disabled>Publier sur le site</button>
+    <span class="muted" id="pubMsg"></span>
+  </div>
+</main>
+<script src="studio-process.js"></script>
+<script src="studio-engine.js"></script>
+<script src="studio-webp.js"></script>
+<script src="vg-admin-auth.js"></script>
+<script src="studio-publish.js"></script>
+<script src="studio-photo.js"></script>
+</body>
+</html>
