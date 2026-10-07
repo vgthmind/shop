@@ -22,6 +22,6 @@
   "shipping_intl": 10.2,
   "weight_g": 550,
   "mode": "colis",
-  "alone": false,
+  "alone": true,
   "weight_estimated": true
 }
