@@ -1,31 +1,490 @@
 {
-  "_ATTENTION": "À REMPLACER PAR MES VRAIS TARIFS — tous les montants, poids et seuils ci-dessous sont des EXEMPLES inventés.",
-  "version": 1,
+  "version": 3,
   "currency": "EUR",
-  "free_shipping": { "enabled": false, "threshold": 150, "zones": ["FR"], "_note": "À REMPLACER PAR MES VRAIS TARIFS : livraison offerte dès ce montant de pièces (avant remise). zones vide = partout." },
-  "max_pieces_per_parcel": 4,
-  "max_weight_g_per_parcel": 2000,
-  "parcel_tare_g": 80,
-  "default_size": "moyen",
-  "sizes": {
-    "petit": { "weight_g": 150, "slots": 1 },
-    "moyen": { "weight_g": 500, "slots": 1 },
-    "gros":  { "weight_g": 1500, "slots": 3 }
+  "_sources": {
+    "verifie_le": "2026-10-07",
+    "colissimo": "https://www.laposte.fr/professionnel/tarif-colissimo  (France, zones A, B, C, Royaume-Uni = zone A + 4 EUR). Listes de pays par zone : https://www.tarif-lettre.com/tarif-colissimo-international (source tierce : La Poste ne publie pas la liste sur la page tarifs).",
+    "colissimo_outre_mer": "https://tarifs-postaux.fr/tarif-colissimo.htm  (SOURCE TIERCE, a recouper avec le catalogue officiel de La Poste avant de les activer)",
+    "lettre_verte_suivie": "https://www.laposte.fr/tarif-lettre-suivie  (France, affranchissement en ligne ; version timbre physique dans lettre.brackets_timbre)",
+    "pays_suspendus": "https://aide.laposte.fr/contenu/quelles-sont-les-destinations-internationales-suspendues-et-pourquoi  (+ Russie et Bielorussie : choix du vendeur)",
+    "prix_client": "Forfaits et regles : decisions du vendeur (outil de prix interne), 2026-10-07. Pays hors UE (Suisse, Royaume-Uni, Norvege…) = palier « reste du monde »."
+  },
+  "packaging": {
+    "carton_g": 138,
+    "envelope_g": 20,
+    "_note": "Ajoutes au poids des pieces (saisi SANS emballage) : carton 138 g une fois par colis, enveloppe 20 g pour une lettre. Modifiables."
+  },
+  "customer_pricing": {
+    "basis": "per_order",
+    "_note": "per_order : forfait pour le 1er colis (le plus lourd), colis en plus = vrai tarif La Poste. per_parcel : chaque colis paye le forfait.",
+    "tiers": [
+      {
+        "id": "FR",
+        "name": "France (Colissimo offert, port integre au prix des pieces)",
+        "countries": [
+          "FR",
+          "MC",
+          "AD"
+        ],
+        "colis_free": true,
+        "lettre_flat": 4
+      },
+      {
+        "id": "UE",
+        "name": "Union europeenne",
+        "countries": [
+          "AT",
+          "BE",
+          "BG",
+          "HR",
+          "CY",
+          "CZ",
+          "DK",
+          "EE",
+          "FI",
+          "DE",
+          "GR",
+          "HU",
+          "IE",
+          "IT",
+          "LV",
+          "LT",
+          "LU",
+          "MT",
+          "NL",
+          "PL",
+          "PT",
+          "RO",
+          "SK",
+          "SI",
+          "ES",
+          "SE"
+        ],
+        "first_flat": 15
+      },
+      {
+        "id": "MONDE",
+        "name": "Reste du monde (Canada, Etats-Unis, Royaume-Uni, Suisse…)",
+        "countries": [
+          "*"
+        ],
+        "first_flat": 29
+      }
+    ]
+  },
+  "free_shipping": {
+    "enabled": false,
+    "threshold": null,
+    "zones": [],
+    "_note": "Livraison offerte des ce montant de pieces (avant remise). Desactivee. zones vide = partout."
+  },
+  "blocked_countries": [
+    "RU",
+    "BY",
+    "KP",
+    "SY",
+    "YE",
+    "HT"
+  ],
+  "_blocked_note": "RU, BY : choix du vendeur. KP, SY, YE, HT : destinations suspendues par La Poste. La Crimee et Sebastopol (suspendues) n'ont pas de code pays propre : a refuser a la main si besoin.",
+  "lettre": {
+    "enabled": true,
+    "label": "Lettre verte suivie",
+    "countries": [
+      "FR"
+    ],
+    "max_weight_g": 2000,
+    "max_pieces": 1,
+    "_note": "Epaisseur max 3 cm et 2 kg (enveloppe comprise). 1 piece max par lettre, France seulement. Lettre suivie internationale : non activee (plus chere que Colissimo).",
+    "brackets": [
+      {
+        "max_g": 20,
+        "price": 1.99
+      },
+      {
+        "max_g": 100,
+        "price": 3.47
+      },
+      {
+        "max_g": 250,
+        "price": 5.68
+      },
+      {
+        "max_g": 500,
+        "price": 7.71
+      },
+      {
+        "max_g": 1000,
+        "price": 9.64
+      },
+      {
+        "max_g": 2000,
+        "price": 11.56
+      }
+    ],
+    "brackets_timbre": [
+      {
+        "max_g": 20,
+        "price": 2.02
+      },
+      {
+        "max_g": 100,
+        "price": 3.6
+      },
+      {
+        "max_g": 250,
+        "price": 5.74
+      },
+      {
+        "max_g": 500,
+        "price": 7.91
+      },
+      {
+        "max_g": 1000,
+        "price": 9.79
+      },
+      {
+        "max_g": 2000,
+        "price": 11.64
+      }
+    ]
   },
   "zones": [
-    { "id": "FR", "name": "France (À REMPLACER PAR MES VRAIS TARIFS)", "countries": ["FR", "MC"],
-      "brackets": [ { "max_g": 250, "price": 4.5 }, { "max_g": 500, "price": 6 }, { "max_g": 1000, "price": 8 }, { "max_g": 2000, "price": 11 } ], "extra_per_kg": 3 },
-    { "id": "UE", "name": "Union européenne (À REMPLACER PAR MES VRAIS TARIFS)",
-      "countries": ["AT","BE","BG","HR","CY","CZ","DK","EE","FI","DE","GR","HU","IE","IT","LV","LT","LU","MT","NL","PL","PT","RO","SK","SI","ES","SE"],
-      "brackets": [ { "max_g": 250, "price": 8 }, { "max_g": 500, "price": 11 }, { "max_g": 1000, "price": 15 }, { "max_g": 2000, "price": 20 } ], "extra_per_kg": 6 },
-    { "id": "CA", "name": "Canada (À REMPLACER PAR MES VRAIS TARIFS)", "countries": ["CA"],
-      "brackets": [ { "max_g": 250, "price": 14 }, { "max_g": 500, "price": 18 }, { "max_g": 1000, "price": 25 }, { "max_g": 2000, "price": 35 } ], "extra_per_kg": 12 },
-    { "id": "EU-HORS-UE", "name": "Europe hors UE (À REMPLACER PAR MES VRAIS TARIFS)", "countries": ["GB","CH","NO","IS","LI"],
-      "brackets": [ { "max_g": 250, "price": 10 }, { "max_g": 500, "price": 14 }, { "max_g": 1000, "price": 19 }, { "max_g": 2000, "price": 26 } ], "extra_per_kg": 8 },
-    { "id": "MONDE", "name": "Reste du monde (À REMPLACER PAR MES VRAIS TARIFS)", "countries": ["*"],
-      "brackets": [ { "max_g": 250, "price": 16 }, { "max_g": 500, "price": 22 }, { "max_g": 1000, "price": 30 }, { "max_g": 2000, "price": 42 } ], "extra_per_kg": 15 }
+    {
+      "id": "FR",
+      "name": "France (Colissimo domicile)",
+      "countries": [
+        "FR",
+        "MC",
+        "AD"
+      ],
+      "max_weight_g": 30000,
+      "brackets": [
+        {
+          "max_g": 250,
+          "price": 5.49
+        },
+        {
+          "max_g": 500,
+          "price": 7.59
+        },
+        {
+          "max_g": 750,
+          "price": 9.29
+        },
+        {
+          "max_g": 1000,
+          "price": 9.59
+        },
+        {
+          "max_g": 2000,
+          "price": 11.19
+        },
+        {
+          "max_g": 5000,
+          "price": 17.39
+        },
+        {
+          "max_g": 10000,
+          "price": 25.29
+        },
+        {
+          "max_g": 15000,
+          "price": 31.99
+        },
+        {
+          "max_g": 30000,
+          "price": 39.59
+        }
+      ]
+    },
+    {
+      "id": "A",
+      "name": "Zone A (UE, Suisse, Liechtenstein, Saint-Marin, Vatican)",
+      "max_weight_g": 30000,
+      "countries": [
+        "AT",
+        "BE",
+        "BG",
+        "HR",
+        "CY",
+        "CZ",
+        "DK",
+        "EE",
+        "FI",
+        "DE",
+        "GR",
+        "HU",
+        "IE",
+        "IT",
+        "LV",
+        "LT",
+        "LU",
+        "MT",
+        "NL",
+        "PL",
+        "PT",
+        "RO",
+        "SK",
+        "SI",
+        "ES",
+        "SE",
+        "CH",
+        "LI",
+        "SM",
+        "VA"
+      ],
+      "brackets": [
+        {
+          "max_g": 500,
+          "price": 14.99
+        },
+        {
+          "max_g": 1000,
+          "price": 19.39
+        },
+        {
+          "max_g": 2000,
+          "price": 22.19
+        },
+        {
+          "max_g": 5000,
+          "price": 28.59
+        },
+        {
+          "max_g": 10000,
+          "price": 46.99
+        },
+        {
+          "max_g": 15000,
+          "price": 67.99
+        },
+        {
+          "max_g": 30000,
+          "price": 87.99
+        }
+      ],
+      "sample_country": "DE"
+    },
+    {
+      "id": "UK",
+      "name": "Royaume-Uni (zone A + 4 EUR)",
+      "countries": [
+        "GB"
+      ],
+      "max_weight_g": 30000,
+      "brackets": [
+        {
+          "max_g": 500,
+          "price": 18.99
+        },
+        {
+          "max_g": 1000,
+          "price": 23.39
+        },
+        {
+          "max_g": 2000,
+          "price": 26.19
+        },
+        {
+          "max_g": 5000,
+          "price": 32.59
+        },
+        {
+          "max_g": 10000,
+          "price": 50.99
+        },
+        {
+          "max_g": 15000,
+          "price": 71.99
+        },
+        {
+          "max_g": 30000,
+          "price": 91.99
+        }
+      ]
+    },
+    {
+      "id": "B",
+      "name": "Zone B (Europe de l'Est hors UE, Maghreb, Norvege, Islande, Turquie)",
+      "sample_country": "NO",
+      "max_weight_g": 20000,
+      "countries": [
+        "AM",
+        "AL",
+        "DZ",
+        "AZ",
+        "BA",
+        "GE",
+        "IS",
+        "MK",
+        "MA",
+        "MD",
+        "ME",
+        "NO",
+        "RS",
+        "TN",
+        "TR",
+        "UA"
+      ],
+      "brackets": [
+        {
+          "max_g": 500,
+          "price": 23.79
+        },
+        {
+          "max_g": 1000,
+          "price": 28.39
+        },
+        {
+          "max_g": 2000,
+          "price": 31.09
+        },
+        {
+          "max_g": 5000,
+          "price": 39.89
+        },
+        {
+          "max_g": 10000,
+          "price": 66.09
+        },
+        {
+          "max_g": 15000,
+          "price": 89.59
+        },
+        {
+          "max_g": 20000,
+          "price": 109.49
+        }
+      ]
+    },
+    {
+      "id": "C",
+      "name": "Zone C (reste du monde : Canada, Etats-Unis, Afrique, Asie, Oceanie…)",
+      "sample_country": "US",
+      "max_weight_g": 20000,
+      "countries": [
+        "*"
+      ],
+      "brackets": [
+        {
+          "max_g": 500,
+          "price": 35.19
+        },
+        {
+          "max_g": 1000,
+          "price": 39.19
+        },
+        {
+          "max_g": 2000,
+          "price": 53.99
+        },
+        {
+          "max_g": 5000,
+          "price": 78.69
+        },
+        {
+          "max_g": 10000,
+          "price": 148.99
+        },
+        {
+          "max_g": 15000,
+          "price": 210.79
+        },
+        {
+          "max_g": 20000,
+          "price": 256.89
+        }
+      ]
+    },
+    {
+      "id": "OM1",
+      "name": "Outre-mer 1 (DESACTIVE)",
+      "enabled": false,
+      "max_weight_g": 30000,
+      "countries": [
+        "GP",
+        "MQ",
+        "GF",
+        "RE",
+        "YT",
+        "PM",
+        "MF",
+        "BL"
+      ],
+      "brackets": [
+        {
+          "max_g": 500,
+          "price": 12.02
+        },
+        {
+          "max_g": 1000,
+          "price": 19
+        },
+        {
+          "max_g": 2000,
+          "price": 25.89
+        },
+        {
+          "max_g": 5000,
+          "price": 38.9
+        },
+        {
+          "max_g": 10000,
+          "price": 62.32
+        },
+        {
+          "max_g": 15000,
+          "price": 130.2
+        },
+        {
+          "max_g": 30000,
+          "price": 143.02
+        }
+      ]
+    },
+    {
+      "id": "OM2",
+      "name": "Outre-mer 2 (DESACTIVE)",
+      "enabled": false,
+      "max_weight_g": 30000,
+      "countries": [
+        "NC",
+        "PF",
+        "WF",
+        "TF"
+      ],
+      "brackets": [
+        {
+          "max_g": 500,
+          "price": 12.21
+        },
+        {
+          "max_g": 1000,
+          "price": 18.95
+        },
+        {
+          "max_g": 2000,
+          "price": 33.49
+        },
+        {
+          "max_g": 5000,
+          "price": 55.96
+        },
+        {
+          "max_g": 10000,
+          "price": 109.58
+        },
+        {
+          "max_g": 15000,
+          "price": 249.99
+        },
+        {
+          "max_g": 30000,
+          "price": 287.23
+        }
+      ]
+    }
   ],
-  "items": {
-    "_exemple-slug": { "size": "petit", "weight_g": 120 }
-  }
+  "items": {}
 }
