@@ -79,3 +79,8 @@ test('centimes entiers (pas d\'erreur flottante)', () => {
 test('la grille d\'exemple est marquée « À REMPLACER »', () => {
   assert.match(base._ATTENTION, /À REMPLACER PAR MES VRAIS TARIFS/);
 });
+test('pays bloqués : refusés même avec une zone « reste du monde »', () => {
+  const c = cfg(); c.blocked_countries = ['ru', 'KP'];
+  assert.equal(q([{ slug: 'p', qty: 1 }], 'RU', {}, c).error, 'country_not_served');
+  assert.equal(q([{ slug: 'p', qty: 1 }], 'JP', {}, c).ok, true);
+});
