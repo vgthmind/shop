@@ -22,5 +22,9 @@
   "shipping_fr": 1.9,
   "shipping_intl": 1.9,
   "ships_intl": false,
-  "quantity": 0
+  "quantity": 0,
+  "weight_g": 300,
+  "mode": "colis",
+  "alone": false,
+  "weight_estimated": true
 }

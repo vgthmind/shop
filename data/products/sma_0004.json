@@ -17,5 +17,8 @@
   "created_at": "2026-07-12T14:36:44.000Z",
   "stripe_payment_link": "",
   "shipping_fr": 5,
-  "shipping_intl": 30
+  "shipping_intl": 30,
+  "weight_g": 420,
+  "mode": "colis",
+  "alone": false
 }

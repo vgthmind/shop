@@ -1,0 +1,176 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex, nofollow">
+  <title>vgthmind — pièces : poids et ports</title>
+  <style>
+    :root { --bg: #f4f2ec; --ink: #171717; --muted: #6b6860; --line: rgba(0,0,0,.12); --card: rgba(255,255,255,.6); --ok: #2f7d4a; --warn: #a23b2a; --est: #a86400; }
+    * { box-sizing: border-box; }
+    [hidden] { display: none !important; }
+    body { margin: 0; background: var(--bg); color: var(--ink); font: 15px/1.45 system-ui, -apple-system, "Segoe UI", sans-serif; }
+    main { max-width: 1040px; margin: 0 auto; padding: 24px 16px 64px; }
+    h1 { font-size: 22px; letter-spacing: .04em; text-transform: uppercase; margin: 0 0 4px; }
+    nav a { color: var(--muted); font-size: 13px; margin-right: 12px; }
+    .muted { color: var(--muted); font-size: 13px; }
+    .bar { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin: 16px 0; }
+    button { padding: 9px 14px; border-radius: 999px; border: 1px solid var(--line); background: #fff; color: var(--ink); font: inherit; cursor: pointer; }
+    button.primary { background: var(--ink); color: #fff; border-color: var(--ink); }
+    button:disabled { opacity: .5; cursor: default; }
+    input[type=search] { flex: 1 1 200px; padding: 9px 12px; border: 1px solid var(--line); border-radius: 999px; background: #fff; font: inherit; }
+    table { width: 100%; border-collapse: collapse; background: var(--card); border: 1px solid var(--line); border-radius: 14px; overflow: hidden; }
+    th, td { text-align: left; padding: 8px 12px; border-bottom: 1px solid var(--line); vertical-align: top; }
+    th { font-size: 12px; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); }
+    td input[type=number] { width: 84px; padding: 6px 8px; border: 1px solid var(--line); border-radius: 8px; font: inherit; }
+    td select { padding: 6px 8px; border: 1px solid var(--line); border-radius: 8px; font: inherit; background: #fff; }
+    tr.changed td { background: rgba(255,226,122,.25); }
+    tr.nowt td:first-child { box-shadow: inset 4px 0 0 var(--warn); }
+    .tag { font-size: 12px; padding: 2px 8px; border-radius: 999px; border: 1px solid var(--line); white-space: nowrap; display: inline-block; }
+    .tag.missing { color: #fff; background: var(--warn); border-color: var(--warn); font-weight: 600; }
+    .tag.est { color: var(--est); border-color: var(--est); }
+    .tag.ok { color: var(--ok); border-color: var(--ok); }
+    .ports { font-size: 13px; border-collapse: collapse; width: 100%; background: none; border: 0; }
+    .ports td, .ports th { padding: 2px 8px 2px 0; border: 0; white-space: nowrap; }
+    .num { text-align: right; font-variant-numeric: tabular-nums; }
+    .gain { color: var(--ok); } .perte { color: var(--warn); }
+    .advice { margin-top: 6px; font-size: 13px; padding: 6px 10px; border-left: 3px solid var(--est); background: rgba(168,100,0,.08); border-radius: 0 8px 8px 0; }
+    label.alone { display: flex; gap: 6px; align-items: center; margin-top: 6px; font-size: 13px; white-space: nowrap; }
+    #msg { min-height: 1.4em; }
+    @media (max-width: 760px) { .hide-sm { display: none; } td, th { padding: 8px 6px; } }
+  </style>
+</head>
+<body>
+<main>
+  <nav><a href="./">← Pièces (Sveltia)</a><a href="stock.html">Stock</a><a href="commandes.html">Commandes &amp; stats</a></nav>
+  <h1>Pièces : poids et ports</h1>
+  <p class="muted">Poids de chaque pièce <strong>sans emballage</strong> (le carton ou l'enveloppe s'ajoute tout seul). Mode « lettre » : petite pièce plate, France seulement. « Part seule » : trop volumineuse pour partager un carton. Les ports se recalculent en direct avec la grille de <a href="shipping-config.json">shipping-config.json</a>.</p>
+
+  <div class="bar" id="login">
+    <button type="button" class="primary" id="login-btn">Se connecter avec GitHub</button>
+  </div>
+
+  <div id="app" hidden>
+    <div class="bar">
+      <input type="search" id="filter" placeholder="Chercher une pièce…" aria-label="Chercher une pièce">
+      <button type="button" class="primary" id="save" disabled>Enregistrer</button>
+      <button type="button" id="refresh">Actualiser</button>
+      <span class="muted" id="count"></span>
+    </div>
+    <table>
+      <thead><tr><th>Pièce</th><th>Poids (g)</th><th>Envoi</th><th>Ports (coût réel · client · écart)</th></tr></thead>
+      <tbody id="rows"></tbody>
+    </table>
+  </div>
+
+  <p id="msg" role="status" aria-live="polite"></p>
+</main>
+<script src="shipping-calc.js"></script>
+<script src="pieces-view.js"></script>
+<script src="pieces-save.js"></script>
+<script src="studio-publish.js"></script>
+<script>
+(function () {
+  'use strict';
+  var $ = function (id) { return document.getElementById(id); };
+  var pieces = [], config = null, edits = {}; // edits : slug -> { weight_g, mode, alone } (valeurs de la ligne, si modifiée)
+
+  function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+  function say(t) { $('msg').textContent = t || ''; }
+  function eur(v) { return v.toFixed(2).replace('.', ',') + ' €'; }
+
+  function current(p) { // la fiche telle qu'affichée : enregistrée + saisie en cours
+    var e = edits[p.slug];
+    if (!e) return p;
+    var r = VGPieces.applyEdit(p, e);
+    if (r.product) return r.product;
+    var q = Object.assign({}, p); delete q.weight_g; q.mode = e.mode; q.alone = e.alone; return q; // poids invalide = manquant
+  }
+
+  function badge(state) {
+    return state === 'missing' ? '<span class="tag missing">SANS POIDS</span>'
+      : state === 'estimated' ? '<span class="tag est" title="Poids par défaut du type de pièce (outil Prix vgthmind) : corrige-le si tu l\'as pesé">estimé</span>'
+      : '<span class="tag ok">pesé</span>';
+  }
+
+  function portsHtml(d) {
+    if (d.state === 'missing') return '<span class="muted">Pas de poids : aucun port calculé. Le site garde l\'ancien port de la fiche.</span>';
+    var rows = d.zones.map(function (z) {
+      if (!z.ok) return '<tr><td>' + esc(z.label) + '</td><td colspan="3" class="perte">' + esc(z.message) + '</td></tr>';
+      var cls = z.gap >= 0 ? 'gain' : 'perte';
+      return '<tr><td>' + esc(z.label) + ' <span class="muted">(' + esc(z.country) + ', ' + (z.kind === 'lettre' ? 'lettre' : 'colis') + ')</span></td>'
+        + '<td class="num">' + eur(z.cost) + '</td><td class="num">' + (z.total === 0 ? 'offert' : eur(z.total)) + '</td>'
+        + '<td class="num ' + cls + '">' + (z.gap >= 0 ? '+' : '−') + eur(Math.abs(z.gap)) + '</td></tr>';
+    }).join('');
+    var a = d.advice ? '<div class="advice">' + (d.advice.better === 'colis'
+      ? 'Le colis revient moins cher que la lettre : colis ' + eur(d.advice.colis_cost) + ' · lettre ' + eur(d.advice.lettre_cost) + ' (France).'
+      : 'La lettre revient moins cher que le colis : lettre ' + eur(d.advice.lettre_cost) + ' · colis ' + eur(d.advice.colis_cost) + ' (France).') + '</div>' : '';
+    return '<table class="ports">' + rows + '</table>' + a;
+  }
+
+  function rowCells(p) {
+    var cur = current(p), d = VGPieces.describe(VGShipping, config, cur);
+    return { state: d.state, html: portsHtml(d), badge: badge(d.state) };
+  }
+
+  function rowHtml(p) {
+    var cur = current(p), c = rowCells(p), changed = !!edits[p.slug];
+    return '<tr data-slug="' + esc(p.slug) + '" class="' + (changed ? 'changed ' : '') + (c.state === 'missing' ? 'nowt' : '') + '">'
+      + '<td>' + esc(p.name || p.slug) + '<div class="muted">' + esc(p.slug) + '</div></td>'
+      + '<td><input type="number" min="1" step="1" data-f="weight_g" value="' + esc(edits[p.slug] ? edits[p.slug].weight_g : (cur.weight_g || '')) + '" aria-label="Poids de ' + esc(p.name || p.slug) + ' en grammes"><div class="b">' + c.badge + '</div></td>'
+      + '<td><select data-f="mode" aria-label="Mode d\'envoi"><option value="colis"' + (cur.mode !== 'lettre' ? ' selected' : '') + '>Colis</option><option value="lettre"' + (cur.mode === 'lettre' ? ' selected' : '') + '>Lettre</option></select>'
+      + '<label class="alone"><input type="checkbox" data-f="alone"' + (cur.alone ? ' checked' : '') + '> Part seule</label></td>'
+      + '<td class="pt">' + c.html + '</td></tr>';
+  }
+
+  function draw() {
+    var q = $('filter').value.trim().toLowerCase();
+    var list = pieces.filter(function (p) { return !q || p.slug.toLowerCase().indexOf(q) !== -1 || String(p.name || '').toLowerCase().indexOf(q) !== -1; });
+    $('rows').innerHTML = list.map(rowHtml).join('');
+    var missing = pieces.filter(function (p) { return VGPieces.weightState(current(p)) === 'missing'; }).length;
+    var est = pieces.filter(function (p) { return VGPieces.weightState(current(p)) === 'estimated'; }).length;
+    $('count').textContent = pieces.length + ' pièces · ' + missing + ' sans poids · ' + est + ' estimé' + (est > 1 ? 's' : '');
+    $('save').disabled = !Object.keys(edits).length;
+  }
+
+  $('rows').addEventListener('input', function (e) {
+    var tr = e.target.closest('tr'), f = e.target.getAttribute('data-f');
+    if (!tr || !f) return;
+    var p = pieces.filter(function (x) { return x.slug === tr.getAttribute('data-slug'); })[0];
+    var w = tr.querySelector('[data-f=weight_g]').value.trim();
+    edits[p.slug] = { weight_g: w === '' ? '' : Number(w), mode: tr.querySelector('[data-f=mode]').value, alone: tr.querySelector('[data-f=alone]').checked };
+    var same = String(edits[p.slug].weight_g) === String(p.weight_g || '') && edits[p.slug].mode === (p.mode || 'colis') && edits[p.slug].alone === (p.alone === true);
+    if (same) delete edits[p.slug];
+    var c = rowCells(p); // seules les cellules calculées changent : le champ gardé le focus
+    tr.querySelector('.pt').innerHTML = c.html; tr.querySelector('.b').innerHTML = c.badge;
+    tr.classList.toggle('changed', !!edits[p.slug]); tr.classList.toggle('nowt', c.state === 'missing');
+    $('save').disabled = !Object.keys(edits).length;
+  });
+
+  function load() {
+    say('Chargement des pièces…');
+    return Promise.all([
+      fetch('shipping-config.json').then(function (r) { if (!r.ok) throw new Error('shipping-config.json : ' + r.status); return r.json(); }),
+      VGPiecesSave.loadPieces(VGStudioPublish.api)
+    ]).then(function (res) {
+      config = res[0]; pieces = res[1]; edits = {};
+      $('login').hidden = true; $('app').hidden = false; draw(); say('');
+    }).catch(function (e) { say('Erreur : ' + e.message); });
+  }
+
+  $('save').addEventListener('click', function () {
+    $('save').disabled = true;
+    VGPiecesSave.savePieces(VGStudioPublish.api, edits, say).then(function (r) {
+      pieces = pieces.map(function (p) { return r.pieces[p.slug] ? Object.assign({}, r.pieces[p.slug], { slug: p.slug }) : p; });
+      edits = {}; draw(); say('Enregistré (' + r.saved.length + ' pièce' + (r.saved.length > 1 ? 's' : '') + '). Le site se reconstruit tout seul (1 à 2 min).');
+    }).catch(function (e) { say('Erreur : ' + e.message); $('save').disabled = false; });
+  });
+  $('filter').addEventListener('input', draw);
+  $('refresh').addEventListener('click', function () { if (!Object.keys(edits).length || confirm('Abandonner les modifications non enregistrées ?')) load(); });
+  $('login-btn').addEventListener('click', function () {
+    VGStudioPublish.login().then(load).catch(function (e) { say(e.message); });
+  });
+})();
+</script>
+</body>
+</html>

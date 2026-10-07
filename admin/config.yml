@@ -51,6 +51,10 @@ collections:
       - { label: "Frais de port France (EUR)", name: "shipping_fr", widget: "number", value_type: "float", default: 5 }
       - { label: "Livrable hors de France", name: "ships_intl", widget: "boolean", default: true }
       - { label: "Frais de port international (EUR, Canada inclus)", name: "shipping_intl", widget: "number", value_type: "float", default: 15 }
+      - { label: "Poids sans emballage (g) : page Pieces", name: "weight_g", widget: "number", value_type: "int", min: 1, required: false, hint: "A regler plutot dans la page « Pieces » (poids, mode, part seule, ports calcules). Garde ici pour que Sveltia ne les efface pas." }
+      - { label: "Mode d envoi", name: "mode", widget: "select", options: ["colis", "lettre"], default: "colis", required: false }
+      - { label: "Part seule (colis a elle)", name: "alone", widget: "boolean", default: false, required: false }
+      - { label: "Poids estime (a confirmer)", name: "weight_estimated", widget: "boolean", default: false, required: false }
       - label: "Lien de paiement Stripe"
         name: "stripe_payment_link"
         widget: "string"
