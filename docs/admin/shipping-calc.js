@@ -88,7 +88,8 @@
     if (!config || !Array.isArray(config.zones)) return { ok: false, error: 'bad_config', message: 'Grille invalide.' };
     var items = ((cart && cart.items) || []).filter(function (it) { return it && it.slug; });
     if (!items.length) return { ok: false, error: 'empty_cart', message: 'Panier vide.' };
-    var zone = findZone(config, country);
+    var blocked = (config.blocked_countries || []).map(function (c) { return String(c).toUpperCase(); });
+    var zone = blocked.indexOf(String(country || '').toUpperCase()) !== -1 ? null : findZone(config, country);
     if (!zone) return { ok: false, error: 'country_not_served', message: 'Pays non livré : ' + country };
 
     var parcels = pack(config, items).map(function (p) {
