@@ -202,12 +202,12 @@ const LEGAL_PAGES = [
 // Stripe Checkout return pages (success_url / cancel_url of checkout-worker/).
 const SHOP_PAGES_DIR = path.join(__dirname, 'shop-pages');
 const SHOP_PAGES = [
-  { name: 'Thank you', url: '/merci', permalink: 'merci' },
-  { name: 'Payment cancelled', url: '/paiement-annule', permalink: 'paiement-annule' },
+  { name: 'Thank you / Merci', url: '/merci', permalink: 'merci' },
+  { name: 'Payment cancelled / Paiement annulé', url: '/paiement-annule', permalink: 'paiement-annule' },
   // Suivi de commande (numero + e-mail) : lien discret du pied de page, jamais dans le sitemap, toujours noindex.
   { name: 'Track my order', url: '/suivi', permalink: 'suivi' },
   // GitHub Pages sert 404.html pour toute adresse inconnue sous /shop/.
-  { name: 'Page not found', url: '/404', permalink: '404', out: '404.html' },
+  { name: 'Page not found / Page introuvable', url: '/404', permalink: '404', out: '404.html' },
 ];
 
 function rel(...p) { return path.join(...p); }
