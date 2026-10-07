@@ -2,7 +2,19 @@
 (function () {
   'use strict';
   var P = window.VGStudioProcess, E = window.VGStudioEngine;
-  var SITE_BG = '#000000'; // fond du site (theme/settings.json : background_color)
+  // Fonds réels du site (vérifiés dans le thème) :
+  //  - beige #f4f2ec : fiches produit et grilles (theme/layout.html + custom-css.css : --bg, cadres transparents) et vignette des e-mails (BG dans emails.ts)
+  //  - noir  #000000 : zoom plein écran des photos (PhotoSwipe, --pswp-bg)
+  //  - blanc #ffffff : carte des e-mails (autour de la vignette)
+  var BGS = {
+    beige: { label: 'Beige du site (#f4f2ec) — fiches, grilles, vignette e-mail', color: '#f4f2ec' },
+    black: { label: 'Noir (#000000) — zoom plein écran', color: '#000000' },
+    white: { label: 'Blanc (#ffffff) — carte e-mail', color: '#ffffff' }
+  };
+  function applyBg(el, key) { // key : 'checker' | 'transparent' | clé de BGS
+    var checker = key === 'checker' || key === 'transparent';
+    el.classList.toggle('checker', checker); el.style.background = checker ? '' : BGS[key].color;
+  }
   var MAXSIDE = E.isIOS ? 1600 : 2000; // taille de travail (mémoire limitée sur iPhone)
   var $ = function (id) { return document.getElementById(id); };
 
@@ -12,6 +24,7 @@
   var brushMode = 'erase';
   var params = { lo: 12, hi: 235, shrink: 0, defr: 4 };
   var lastZip = null;
+  var FORCE_WASM = new URLSearchParams(location.search).get('webp') === 'wasm'; // test : force l'encodeur de secours (comme Safari)
 
   function setStatus(t) { $('status').textContent = t || ''; }
   function notice(t, err) {
@@ -147,19 +160,24 @@
   }
 
   // ---------- éditeur ----------
+  var view = { z: 1, tx: 0, ty: 0 }; // zoom partagé par les deux panneaux
+  var stageC = $('stageC'), stageO = $('stageO'), cutEl = $('cut'), origEl = $('orig');
+
   function select(i) {
     var prev = photos[sel];
     if (prev && prev !== photos[i] && prev.cut) { makeThumb(prev); releaseCut(prev); }
     sel = i; var p = photos[i]; if (!p) return;
     $('editor').hidden = false; $('edName').textContent = p.name; renderStrip();
+    view = { z: 1, tx: 0, ty: 0 };
     drawOrig(p);
     if (p.raw) { ensureCut(p); drawCut(p); } else { clearCut(); }
+    layoutStages();
     updateButtons(p);
     $('edMsg').textContent = p.status === 'error' ? p.msg : '';
   }
-  function drawOrig(p) { var c = $('orig'); c.width = p.w; c.height = p.h; c.getContext('2d').drawImage(p.src, 0, 0); }
-  function drawCut(p) { var c = $('cut'); c.width = p.w; c.height = p.h; c.getContext('2d').putImageData(p.cut, 0, 0); }
-  function clearCut() { var c = $('cut'); c.width = 4; c.height = 4; }
+  function drawOrig(p) { origEl.width = p.w; origEl.height = p.h; origEl.getContext('2d').drawImage(p.src, 0, 0); }
+  function drawCut(p) { cutEl.width = p.w; cutEl.height = p.h; cutEl.getContext('2d').putImageData(p.cut, 0, 0); }
+  function clearCut() { var p = photos[sel]; cutEl.width = p ? p.w : 4; cutEl.height = p ? p.h : 4; }
   function updateButtons(p) {
     var ok = !!(p && p.raw);
     ['bValid', 'bOrig', 'bRedo'].forEach(function (id) { $(id).disabled = !p || p.status === 'processing' || (!ok && id !== 'bRedo'); });
@@ -184,18 +202,55 @@
     if (n >= 0 && st !== 'review') select(n);
   }
 
-  // ---------- pinceau ----------
-  var drawing = false, last = null;
-  function toImg(ev) {
-    var c = $('cut'), r = c.getBoundingClientRect(), p = photos[sel];
-    return { x: (ev.clientX - r.left) * p.w / r.width, y: (ev.clientY - r.top) * p.h / r.height, k: r.width / p.w, rx: ev.clientX - $('cutPanel').getBoundingClientRect().left, ry: ev.clientY - $('cutPanel').getBoundingClientRect().top };
+  // Taille des deux panneaux : la photo entière, à son vrai rapport, sans dépasser 75 % de la hauteur d'écran.
+  function layoutStages() {
+    var p = photos[sel]; if (!p) return;
+    [['cutPanel', stageC], ['origPanel', stageO]].forEach(function (a) {
+      var panel = $(a[0]), maxW = panel.clientWidth - 2, w, h = maxW * p.h / p.w;
+      if (h > innerHeight * 0.75) { h = innerHeight * 0.75; }
+      w = h * p.w / p.h; a[1].style.width = w + 'px'; a[1].style.height = h + 'px'; panel.style.minHeight = h + 'px';
+    });
+    applyView();
   }
-  function radius(p) { return Math.max(1, $('brush').value / 100 * p.w / 2); }
+  function stageSize() { return { w: stageC.clientWidth, h: stageC.clientHeight }; }
+  function clampView() {
+    var s = stageSize(); view.z = Math.min(8, Math.max(1, view.z));
+    view.tx = Math.min(0, Math.max(s.w * (1 - view.z), view.tx)); view.ty = Math.min(0, Math.max(s.h * (1 - view.z), view.ty));
+  }
+  function applyView() {
+    clampView();
+    var t = 'translate(' + view.tx + 'px,' + view.ty + 'px) scale(' + view.z + ')';
+    cutEl.style.transform = t; origEl.style.transform = t;
+    $('zoomV').textContent = '×' + (Math.round(view.z * 10) / 10);
+  }
+  // Zoom centré sur le point (cx, cy) exprimé dans le repère du panneau.
+  function zoomAt(cx, cy, z2) {
+    z2 = Math.min(8, Math.max(1, z2)); var k = z2 / view.z;
+    view.tx = cx - (cx - view.tx) * k; view.ty = cy - (cy - view.ty) * k; view.z = z2; applyView();
+  }
+  $('zIn').onclick = function () { var s = stageSize(); zoomAt(s.w / 2, s.h / 2, view.z * 1.5); };
+  $('zOut').onclick = function () { var s = stageSize(); zoomAt(s.w / 2, s.h / 2, view.z / 1.5); };
+  $('zFit').onclick = function () { view = { z: 1, tx: 0, ty: 0 }; applyView(); };
+  window.addEventListener('resize', layoutStages);
+  window.addEventListener('orientationchange', function () { setTimeout(layoutStages, 250); });
 
+  // ---------- pinceau, déplacement, gestes ----------
+  var tool = 'erase'; // 'erase' | 'restore' | 'pan'
+  var spaceDown = false;
+  window.addEventListener('keydown', function (e) { if (e.code === 'Space' && !/INPUT|SELECT|TEXTAREA/.test((e.target || {}).tagName || '')) { spaceDown = true; e.preventDefault(); } });
+  window.addEventListener('keyup', function (e) { if (e.code === 'Space') spaceDown = false; });
+
+  function radius(p) { return Math.max(1, $('brush').value / 100 * p.w / 2); }
+  // Point image sous (clientX, clientY) ; le rect du canvas tient compte du zoom (transform).
+  function toImg(cxp, cyp) {
+    var p = photos[sel], r = cutEl.getBoundingClientRect();
+    return { x: (cxp - r.left) * p.w / r.width, y: (cyp - r.top) * p.h / r.height, k: r.width / p.w };
+  }
   function stamp(p, x, y, R) {
-    var f = Math.max(1.5, R * 0.2), mode = brushMode === 'erase' ? 1 : 2;
+    var f = Math.max(1.5, R * 0.2), mode = tool === 'erase' ? 1 : 2;
     var x0 = Math.max(0, Math.floor(x - R - 1)), x1 = Math.min(p.w - 1, Math.ceil(x + R + 1));
     var y0 = Math.max(0, Math.floor(y - R - 1)), y1 = Math.min(p.h - 1, Math.ceil(y + R + 1));
+    if (x1 < x0 || y1 < y0) return;
     var d = p.cut.data, X, Y, i, dist, cv;
     for (Y = y0; Y <= y1; Y++) for (X = x0; X <= x1; X++) {
       dist = Math.sqrt((X - x) * (X - x) + (Y - y) * (Y - y)); cv = (R - dist) / f; if (cv <= 0) continue;
@@ -203,38 +258,106 @@
       if (p.mode[i] === mode) { if (cv > p.cov[i]) p.cov[i] = cv; } else { p.mode[i] = mode; p.cov[i] = cv; }
       d[i * 4 + 3] = finalAlpha(p, i);
     }
-    $('cut').getContext('2d').putImageData(p.cut, 0, 0, x0, y0, x1 - x0 + 1, y1 - y0 + 1);
+    cutEl.getContext('2d').putImageData(p.cut, 0, 0, x0, y0, x1 - x0 + 1, y1 - y0 + 1);
     p.box = null;
   }
   function stroke(p, a, b) {
     var R = radius(p), step = Math.max(1, R / 3), dx = b.x - a.x, dy = b.y - a.y, n = Math.max(1, Math.ceil(Math.sqrt(dx * dx + dy * dy) / step));
     for (var k = 1; k <= n; k++) stamp(p, a.x + dx * k / n, a.y + dy * k / n, R);
   }
-  function showCursor(pt, p) {
-    var c = $('cursor'), s = radius(p) * 2 * pt.k; c.style.display = 'block'; c.style.width = c.style.height = s + 'px'; c.style.left = pt.rx + 'px'; c.style.top = pt.ry + 'px';
+
+  // Décalage du pinceau au-dessus du doigt (sinon le doigt cache ce qu'on retouche).
+  function fingerOffset(ev, p) {
+    if (ev.pointerType !== 'touch' || !$('offset').checked) return 0;
+    return Math.max(44, radius(p) * toImg(0, 0).k + 28);
   }
-  var cutEl = $('cut');
-  cutEl.addEventListener('pointerdown', function (ev) {
-    var p = photos[sel]; if (!p || !p.cut) return;
-    ev.preventDefault(); cutEl.setPointerCapture(ev.pointerId); drawing = true;
+  function showCursor(ev, p) {
+    var c = $('cursor'), r = stageC.getBoundingClientRect(), s = radius(p) * 2 * toImg(0, 0).k;
+    c.style.display = tool === 'pan' ? 'none' : 'block'; c.style.width = c.style.height = s + 'px';
+    c.style.left = (ev.clientX - r.left) + 'px'; c.style.top = (ev.clientY - fingerOffset(ev, p) - r.top) + 'px';
+  }
+
+  var ptrs = {}, nPtrs = 0, gest = null, brush = null, panFrom = null;
+  function stagePt(ev, stage) { var r = stage.getBoundingClientRect(); return { x: ev.clientX - r.left, y: ev.clientY - r.top }; }
+
+  function abortStroke(p) { // un 2e doigt arrive : c'est un geste de zoom, pas un trait
+    if (brush && brush.started && p && p.undo.length) {
+      var u = p.undo.pop(); p.mode = u.mode; p.cov = u.cov; buildCutout(p); drawCut(p); updateButtons(p);
+    }
+    brush = null;
+  }
+  function beginStroke(ev, p) {
+    brush = { started: false, startX: ev.clientX, startY: ev.clientY, last: null };
+    if (ev.pointerType !== 'touch') startStamp(ev, p); // souris/stylet : tout de suite
+  }
+  function startStamp(ev, p) {
     p.undo.push({ mode: p.mode.slice(), cov: p.cov.slice() }); if (p.undo.length > 8) p.undo.shift();
-    var pt = toImg(ev); last = pt; stamp(p, pt.x, pt.y, radius(p)); showCursor(pt, p); updateButtons(p);
-  });
-  cutEl.addEventListener('pointermove', function (ev) {
-    var p = photos[sel]; if (!p || !p.cut) return;
-    var pt = toImg(ev); showCursor(pt, p);
-    if (drawing) { stroke(p, last, pt); last = pt; }
-  });
-  function endStroke() {
-    if (!drawing) return; drawing = false; var p = photos[sel];
-    if (p) { makeThumb(p); renderStrip(); }
+    var pt = toImg(ev.clientX, ev.clientY - fingerOffset(ev, p)); brush.started = true; brush.last = pt;
+    stamp(p, pt.x, pt.y, radius(p)); updateButtons(p);
   }
-  cutEl.addEventListener('pointerup', endStroke); cutEl.addEventListener('pointercancel', endStroke);
-  cutEl.addEventListener('pointerleave', function () { if (!drawing) $('cursor').style.display = 'none'; });
+
+  function bindStage(stage, canBrush) {
+    stage.addEventListener('pointerdown', function (ev) {
+      var p = photos[sel]; if (!p) return;
+      if (ev.pointerType === 'mouse' && ev.button === 2) return;
+      ev.preventDefault(); try { stage.setPointerCapture(ev.pointerId); } catch (e) { /* ok */ }
+      ptrs[ev.pointerId] = stagePt(ev, stage); nPtrs = Object.keys(ptrs).length;
+      if (nPtrs >= 2) {
+        abortStroke(p); panFrom = null;
+        var ids = Object.keys(ptrs), a = ptrs[ids[0]], b = ptrs[ids[1]];
+        gest = { d: Math.hypot(a.x - b.x, a.y - b.y) || 1, mx: (a.x + b.x) / 2, my: (a.y + b.y) / 2, v: { z: view.z, tx: view.tx, ty: view.ty } };
+        return;
+      }
+      var wantPan = !canBrush || tool === 'pan' || spaceDown || (ev.pointerType === 'mouse' && ev.button === 1);
+      if (wantPan) { panFrom = { x: ev.clientX, y: ev.clientY, tx: view.tx, ty: view.ty }; stage.style.cursor = 'grabbing'; }
+      else { beginStroke(ev, p); showCursor(ev, p); }
+    });
+    stage.addEventListener('pointermove', function (ev) {
+      var p = photos[sel]; if (!p) return;
+      if (ptrs[ev.pointerId]) ptrs[ev.pointerId] = stagePt(ev, stage);
+      if (canBrush && !panFrom && !gest) { if (p.cut) showCursor(ev, p); }
+      if (gest && nPtrs >= 2) {
+        var ids = Object.keys(ptrs), a = ptrs[ids[0]], b = ptrs[ids[1]];
+        var d = Math.hypot(a.x - b.x, a.y - b.y) || 1, mx = (a.x + b.x) / 2, my = (a.y + b.y) / 2;
+        var z2 = Math.min(8, Math.max(1, gest.v.z * d / gest.d)), k = z2 / gest.v.z;
+        view.z = z2; view.tx = mx - (gest.mx - gest.v.tx) * k; view.ty = my - (gest.my - gest.v.ty) * k; applyView();
+        return;
+      }
+      if (panFrom && ptrs[ev.pointerId]) { view.tx = panFrom.tx + ev.clientX - panFrom.x; view.ty = panFrom.ty + ev.clientY - panFrom.y; applyView(); return; }
+      if (brush && p.cut && ptrs[ev.pointerId]) {
+        if (!brush.started) { if (Math.hypot(ev.clientX - brush.startX, ev.clientY - brush.startY) < 4) return; startStamp(ev, p); }
+        var pt = toImg(ev.clientX, ev.clientY - fingerOffset(ev, p)); stroke(p, brush.last, pt); brush.last = pt;
+      }
+    });
+    function up(ev) {
+      var p = photos[sel]; delete ptrs[ev.pointerId]; nPtrs = Object.keys(ptrs).length;
+      if (nPtrs < 2) gest = null;
+      if (nPtrs === 0) {
+        stage.style.cursor = '';
+        if (brush && p) { if (!brush.started && ev.type === 'pointerup') startStamp(ev, p); makeThumb(p); renderStrip(); }
+        brush = null; panFrom = null;
+      }
+    }
+    stage.addEventListener('pointerup', up); stage.addEventListener('pointercancel', up);
+    stage.addEventListener('pointerleave', function () { if (!brush) $('cursor').style.display = 'none'; });
+    stage.addEventListener('wheel', function (ev) {
+      if (!photos[sel]) return; ev.preventDefault();
+      var pt = stagePt(ev, stage); zoomAt(pt.x, pt.y, view.z * Math.exp(-ev.deltaY * 0.0015));
+    }, { passive: false });
+    stage.addEventListener('contextmenu', function (e) { e.preventDefault(); });
+  }
+  bindStage(stageC, true); bindStage(stageO, false);
 
   // ---------- boutons ----------
-  $('mErase').onclick = function () { brushMode = 'erase'; $('mErase').classList.add('on'); $('mRestore').classList.remove('on'); };
-  $('mRestore').onclick = function () { brushMode = 'restore'; $('mRestore').classList.add('on'); $('mErase').classList.remove('on'); };
+  function setTool(t) {
+    tool = t;
+    [['erase', 'mErase'], ['restore', 'mRestore'], ['pan', 'mPan']].forEach(function (x) { $(x[1]).classList.toggle('on', x[0] === t); });
+    stageC.style.touchAction = 'none'; $('cursor').style.display = 'none';
+  }
+  $('mErase').onclick = function () { setTool('erase'); };
+  $('mRestore').onclick = function () { setTool('restore'); };
+  $('mPan').onclick = function () { setTool('pan'); };
+  $('offset').checked = matchMedia('(pointer: coarse)').matches;
   $('bUndo').onclick = function () {
     var p = photos[sel]; if (!p || !p.undo.length) return;
     var u = p.undo.pop(); p.mode = u.mode; p.cov = u.cov; buildCutout(p); drawCut(p); makeThumb(p); renderStrip(); updateButtons(p);
@@ -247,7 +370,21 @@
   };
   function bindParam(id, key) { $(id).oninput = function () { params[key] = Number($(id).value); deferRefresh(); }; }
   bindParam('pLo', 'lo'); bindParam('pHi', 'hi'); bindParam('pShrink', 'shrink'); bindParam('pDefr', 'defr');
-  $('pvBg').onchange = function () { $('cutPanel').classList.toggle('checker', $('pvBg').value === 'checker'); };
+  (function fillBgs() {
+    var pv = $('pvBg'), ex = $('bg'), k;
+    pv.textContent = ''; ex.textContent = '';
+    function opt(sel, v, t) { var o = document.createElement('option'); o.value = v; o.textContent = t; sel.appendChild(o); }
+    for (k in BGS) opt(pv, k, BGS[k].label);
+    opt(pv, 'checker', 'Damier (transparent)');
+    opt(ex, 'transparent', 'Transparent (comme aujourd\'hui)');
+    for (k in BGS) opt(ex, k, BGS[k].label);
+  })();
+  function applyPreviewBg() {
+    var k = $('pvBg').value;
+    applyBg($('cutPanel'), k); applyBg(stageC, k);
+    document.documentElement.style.setProperty('--thumb-bg', k === 'checker' ? '#ddd' : BGS[k].color);
+  }
+  $('pvBg').onchange = applyPreviewBg; applyPreviewBg();
   $('engine').value = engineKind === 'simple' ? 'simple' : 'model';
   $('engine').onchange = function () { engineKind = $('engine').value; delete engines[engineKind]; };
   $('margin').oninput = function () { $('marginV').textContent = $('margin').value + ' %'; };
@@ -277,7 +414,7 @@
     return list.map(function (p, i) {
       var c = document.createElement('canvas'); c.width = outW; c.height = outH;
       var cx = c.getContext('2d'); cx.imageSmoothingEnabled = true; cx.imageSmoothingQuality = 'high';
-      if ($('bg').value === 'site') { cx.fillStyle = SITE_BG; cx.fillRect(0, 0, outW, outH); }
+      if ($('bg').value !== 'transparent') { cx.fillStyle = BGS[$('bg').value].color; cx.fillRect(0, 0, outW, outH); }
       var b = boxes[i], L = lay[i];
       if (b) cx.drawImage(srcCanvasOf(p), b.x, b.y, b.w, b.h, L.dx, L.dy, b.w * L.scale, b.h * L.scale);
       if (p !== photos[sel]) releaseCut(p);
@@ -286,8 +423,7 @@
   }
   $('bPreview').onclick = function () {
     var outs = renderOutputs(), g = $('preview'); g.textContent = '';
-    g.classList.toggle('checker', $('bg').value === 'transparent');
-    outs.forEach(function (c) { g.appendChild(c); });
+    outs.forEach(function (c) { applyBg(c, $('bg').value); g.appendChild(c); });
     $('exMsg').textContent = outs.length ? outs.length + ' photo(s) prête(s)' : 'Aucune photo validée (✓ Valider ou Garder l\'original).';
     var skipped = photos.length - outs.length; if (outs.length && skipped) $('exMsg').textContent += ' — ' + skipped + ' non validée(s) ignorée(s).';
   };
@@ -296,22 +432,21 @@
   async function encodeWebp(c, maxBytes) {
     var q = 0.85, b, tries = 0;
     for (;;) {
-      b = await toBlob(c, 'image/webp', q);
+      b = FORCE_WASM ? null : await toBlob(c, 'image/webp', q);
       if (!b || b.type !== 'image/webp') break;
       if (b.size <= maxBytes || q <= 0.5 || ++tries > 8) return { blob: b, ext: 'webp', q: q };
       q -= 0.07;
     }
-    // Safari/iPhone ne sait pas encoder le WebP via canvas : encodeur WASM (jSquash), sinon PNG.
+    // Safari/iPhone ne sait pas encoder le WebP via canvas : encodeur WebAssembly local (vendor/webp/), sinon PNG.
     try {
-      var m = await import('https://cdn.jsdelivr.net/npm/@jsquash/webp@1.5.0/encode.js');
-      var enc = m.default || m.encode, id = c.getContext('2d').getImageData(0, 0, c.width, c.height);
+      var id = c.getContext('2d').getImageData(0, 0, c.width, c.height);
       q = 85;
       for (tries = 0; tries < 8; tries++) {
-        var buf = await enc(id, { quality: q });
-        if (buf.byteLength <= maxBytes || q <= 50) return { blob: new Blob([buf], { type: 'image/webp' }), ext: 'webp', q: q / 100 };
+        var wb = await window.VGStudioWebP.encode(id, q);
+        if (wb.size <= maxBytes || q <= 50) return { blob: wb, ext: 'webp', q: q / 100 };
         q -= 7;
       }
-    } catch (e) { /* PNG ci-dessous */ }
+    } catch (e) { console.warn('Encodeur WebP de secours indisponible :', e); }
     return { blob: await toBlob(c, 'image/png'), ext: 'png', q: 1 };
   }
 
