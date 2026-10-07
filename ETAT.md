@@ -1,6 +1,6 @@
 # ETAT — boutique vgthmind/shop (Stripe test, LIVE_MODE = 0, ne pas changer)
-nuit/integration fusionnée dans main et poussée (47 tests OK, build GitHub OK, site en ligne sans erreur JS). Rapport : rapports-nuit/0-integration.md. Worker non redéployé.
-Branche suivi-colis = WIP suivi La Poste (apostrophes vg-shop-cart.js l.465, antislashs index.ts, clé LAPOSTE_OKAPI_KEY), en attente de validation de l'API.
-Prochaine étape : appliquer rapports-nuit/5-correctifs-a-appliquer.md, puis branchements compta-panier.md (sélecteur de pays, build.js l.498/646), puis retest iPhone du panier. Reste (toi) : remplir brouillons légaux + juriste ; médiateur, adresse, grille d'envoi + pays bloqués, tu/vous, TVA ; coupon test + Stripe live ; DNS IONOS (jamais MX/SPF/DKIM) ; BASE_PATH='' + site_url + public:true.
-Dépendances restantes : 18 reels + 4 fichiers du build sur vgthmind.github.io ; Sveltia (unpkg) sur /admin/ seulement.
+Fait : rapport 5 points 1, 2, 4, 10 commités et poussés (47 tests OK). Points 1 et 4 sont dans le Worker : NON déployés. Branche suivi-colis = WIP La Poste, en attente.
+Lot Worker à faire ensemble (redéploiement + test en mode test) : points 3, 5, 6, 7, 8, 9 du rapport 5 + branchement compta (secrets COMPTA_URL/COMPTA_SECRET, Apps Script, événements Stripe).
+Sélecteur de pays : NE PAS brancher avant mes vrais tarifs dans admin/shipping-config.json et le branchement du Worker sur la grille (envoi.md). Points CGV en [crochets] : attente du juriste.
+Reste (toi) : médiateur, adresse, grille d'envoi + pays bloqués, tu/vous, TVA ; coupon test + Stripe live ; DNS IONOS (jamais MX/SPF/DKIM) ; BASE_PATH='' + site_url + public:true.
 Règles : français simple, secrets jamais dans le chat ni le dépôt (public). Worker : checkout-worker/. Après admin/ ou theme/ : node generator/build.js.
