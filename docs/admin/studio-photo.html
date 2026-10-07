@@ -6,7 +6,7 @@
   <meta name="robots" content="noindex, nofollow">
   <title>vgthmind — studio photo</title>
   <style>
-    :root { --bg: #f4f2ec; --ink: #171717; --muted: #6b6860; --line: rgba(0,0,0,.12); --card: rgba(255,255,255,.6); --ok: #2f7d4a; --warn: #a23b2a; --site: #000000; }
+    :root { --bg: #f4f2ec; --ink: #171717; --muted: #6b6860; --line: rgba(0,0,0,.12); --card: rgba(255,255,255,.6); --ok: #2f7d4a; --warn: #a23b2a; --thumb-bg: #f4f2ec; }
     * { box-sizing: border-box; }
     [hidden] { display: none !important; }
     body { margin: 0; background: var(--bg); color: var(--ink); font: 15px/1.45 system-ui, -apple-system, "Segoe UI", sans-serif; -webkit-text-size-adjust: 100%; }
@@ -28,24 +28,25 @@
     .strip { display: flex; gap: 10px; overflow-x: auto; padding: 4px 2px 10px; -webkit-overflow-scrolling: touch; }
     .card { flex: 0 0 auto; width: 112px; border: 2px solid var(--line); border-radius: 12px; background: var(--card); padding: 6px; cursor: pointer; }
     .card.sel { border-color: var(--ink); }
-    .card canvas { width: 100%; height: 96px; border-radius: 8px; background: var(--site); object-fit: contain; display: block; }
+    .card canvas { width: 100%; height: 96px; border-radius: 8px; background: var(--thumb-bg); object-fit: contain; display: block; }
     .card .st { font-size: 11px; margin-top: 4px; min-height: 28px; }
     .card .mv { display: flex; gap: 4px; margin-top: 2px; }
     .card .mv button { padding: 2px 8px; font-size: 12px; flex: 1; }
     .st.valid { color: var(--ok); } .st.err { color: var(--warn); }
     .panels { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-    .panel { position: relative; border: 1px solid var(--line); border-radius: 14px; overflow: hidden; background: var(--site); min-height: 120px; }
-    .panel.checker { background: #fff conic-gradient(#ddd 25%, #fff 0 50%, #ddd 0 75%, #fff 0) 0 0 / 20px 20px; }
-    .panel canvas { display: block; width: 100%; height: auto; max-height: 70vh; object-fit: contain; margin: 0 auto; }
-    #cut { touch-action: none; cursor: none; }
+    .panel { position: relative; border: 1px solid var(--line); border-radius: 14px; overflow: hidden; background: #e9e6df; min-height: 120px; display: flex; align-items: center; justify-content: center; }
+    .checker { background: #fff conic-gradient(#ddd 25%, #fff 0 50%, #ddd 0 75%, #fff 0) 0 0 / 20px 20px !important; }
+    .stage { position: relative; overflow: hidden; touch-action: none; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; width: 100%; }
+    .stage canvas { position: absolute; left: 0; top: 0; width: 100%; height: 100%; transform-origin: 0 0; }
+    #stageC { cursor: none; }
     .panel .lbl { position: absolute; left: 8px; top: 8px; font-size: 11px; padding: 2px 8px; border-radius: 999px; background: rgba(255,255,255,.85); color: #171717; pointer-events: none; }
     #cursor { position: absolute; border: 2px solid #fff; box-shadow: 0 0 0 1px #000; border-radius: 50%; pointer-events: none; transform: translate(-50%,-50%); display: none; }
     .tools { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 10px 18px; margin: 12px 0; }
     .tools label { display: block; font-size: 13px; color: var(--muted); }
     .tools input[type=range] { width: 100%; }
     .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; }
-    .grid canvas { width: 100%; height: auto; border: 1px solid var(--line); border-radius: 10px; background: var(--site); }
-    .grid.checker canvas { background: #fff conic-gradient(#ddd 25%, #fff 0 50%, #ddd 0 75%, #fff 0) 0 0 / 16px 16px; }
+    .grid canvas { width: 100%; height: auto; border: 1px solid var(--line); border-radius: 10px; }
+    @media (pointer: coarse) { button, label.btn { padding: 12px 18px; min-height: 44px; } .tools input[type=range] { height: 34px; } }
     @media (max-width: 640px) { .panels { grid-template-columns: 1fr; } main { padding: 16px 12px 80px; } }
   </style>
 </head>
@@ -76,8 +77,8 @@
   <section id="editor" hidden>
     <h2>2 · Détourage et retouche — <span id="edName"></span></h2>
     <div class="panels">
-      <div class="panel"><span class="lbl">Original</span><canvas id="orig"></canvas></div>
-      <div class="panel" id="cutPanel"><span class="lbl">Détouré</span><canvas id="cut"></canvas><div id="cursor"></div></div>
+      <div class="panel" id="origPanel"><span class="lbl">Original</span><div class="stage" id="stageO"><canvas id="orig"></canvas></div></div>
+      <div class="panel" id="cutPanel"><span class="lbl">Détouré</span><div class="stage" id="stageC"><canvas id="cut"></canvas><div id="cursor"></div></div></div>
     </div>
     <div class="bar">
       <button id="bValid" class="primary">✓ Valider</button>
@@ -88,25 +89,28 @@
     <div class="bar">
       <button id="mErase" class="on">Gommer</button>
       <button id="mRestore">Restaurer</button>
+      <button id="mPan">✋ Déplacer</button>
       <button id="bUndo" disabled>↶ Annuler</button>
+      <button id="zOut" aria-label="Dézoomer">−</button><button id="zIn" aria-label="Zoomer">+</button><button id="zFit">Ajuster</button><span class="muted" id="zoomV">×1</span>
       <label class="muted">Aperçu sur
-        <select id="pvBg"><option value="site">fond du site (noir)</option><option value="checker">damier</option></select>
+        <select id="pvBg"></select>
       </label>
     </div>
     <div class="tools">
+      <label>Pinceau décalé au-dessus du doigt <input id="offset" type="checkbox"></label>
       <label>Taille du pinceau <input id="brush" type="range" min="1" max="20" value="4"></label>
       <label>Bords : seuil bas <input id="pLo" type="range" min="0" max="120" value="12"></label>
       <label>Bords : seuil haut <input id="pHi" type="range" min="130" max="255" value="235"></label>
       <label>Contracter les bords (px) <input id="pShrink" type="range" min="0" max="4" value="0"></label>
       <label>Anti-halo (px) <input id="pDefr" type="range" min="0" max="10" value="4"></label>
     </div>
-    <p class="muted">Les réglages de bords s'appliquent à toutes les photos. Gomme/restaure : au doigt ou à la souris sur l'image « Détouré ».</p>
+    <p class="muted">Les réglages de bords s'appliquent à toutes les photos. Retouche : un doigt (ou la souris) gomme/restaure sur « Détouré » ; deux doigts = zoom et déplacement (souris : molette, ou barre d'espace/clic milieu + glisser, ou outil ✋). Zoomez pour retoucher les bords.</p>
   </section>
 
   <h2>3 · Export</h2>
   <div class="tools">
     <label>Nom de la pièce (slug) <input id="slug" type="text" placeholder="pantalon-denim-bleu" autocapitalize="off" autocomplete="off" spellcheck="false"></label>
-    <label>Fond <select id="bg"><option value="transparent">transparent (comme aujourd'hui)</option><option value="site">fond du site (noir)</option></select></label>
+    <label>Fond <select id="bg"></select></label>
     <label>Format <select id="ratio"><option value="0.8">4:5 (vertical)</option><option value="1">1:1 (carré)</option><option value="0.75">3:4 (vertical)</option></select></label>
     <label>Largeur <select id="outW"><option>800</option><option selected>1000</option><option>1200</option></select> px</label>
     <label>Marge <input id="margin" type="range" min="2" max="15" value="6"> <span id="marginV">6 %</span></label>
@@ -123,6 +127,7 @@
 </main>
 <script src="studio-process.js"></script>
 <script src="studio-engine.js"></script>
+<script src="studio-webp.js"></script>
 <script src="studio-photo.js"></script>
 </body>
 </html>
