@@ -637,6 +637,8 @@ async function main() {
   // Product photo widths (generator/resize-images.js), used by `constrain`.
   const sizedSrc = rel(ROOT, 'assets', 'products-sized');
   if (fs.existsSync(sizedSrc)) fs.cpSync(sizedSrc, rel(OUT_DIR, 'assets', 'products-sized'), { recursive: true });
+  const themeSizedSrc = rel(ROOT, 'assets', 'theme-sized');
+  if (fs.existsSync(themeSizedSrc)) fs.cpSync(themeSizedSrc, rel(OUT_DIR, 'assets', 'theme-sized'), { recursive: true });
   fs.cpSync(rel(ROOT, 'assets', 'theme'), rel(OUT_DIR, 'assets', 'theme'), { recursive: true });
   // robots.txt: the prototype's "Disallow: /" until launch; then only the
   // admin is blocked, plus the sitemap. (Only effective once the shop is at

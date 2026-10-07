@@ -110,8 +110,14 @@
     }
     if (set && !img.getAttribute('srcset')) {
       if (img.getAttribute('data-sizes') === 'auto') {
-        var w = Math.round(img.getBoundingClientRect().width) || (img.parentElement && img.parentElement.clientWidth) || window.innerWidth;
-        img.setAttribute('sizes', w + 'px');
+        // Largeur d'affichage visee : celle de l'image, ou de son bloc (diaporama) si l'image n'a pas
+        // encore sa taille finale (miniature de 400 px avant chargement de la grande), jamais plus que l'ecran.
+        var w = Math.round(img.getBoundingClientRect().width);
+        if (img.closest('.splide, .welcome_image')) {
+          for (var el = img.parentElement, n = 0; el && n < 5; el = el.parentElement, n++) w = Math.max(w, el.clientWidth);
+        }
+        w = w || window.innerWidth;
+        img.setAttribute('sizes', Math.min(w, window.innerWidth) + 'px');
       } else if (img.getAttribute('data-sizes')) {
         img.setAttribute('sizes', img.getAttribute('data-sizes'));
       }

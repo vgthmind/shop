@@ -39,18 +39,27 @@ function productImageUrl(image, imageMap) {
 }
 
 // Widths made by generator/resize-images.js (assets/products-sized/<w>/…webp).
-const SIZED_WIDTHS = [24, 320, 540, 800];
-const SIZED_ROOT = require('path').join(__dirname, '..', 'assets', 'products-sized');
+// Photos redimensionnees (WebP) par generator/resize-images.js : photos produit
+// et image d'accueil. Meme logique que le CDN de BigCartel (?w=) : la plus petite
+// largeur disponible >= a celle demandee ; plus large que la plus grande = l'original.
+const SIZED_SETS = [
+  { re: /^\/assets\/products\/(.+)\.(png|jpe?g|webp)$/i, dir: 'products-sized', widths: [24, 320, 540, 800] },
+  { re: /^\/assets\/theme\/(cover)\.(png|jpe?g|webp)$/i, dir: 'theme-sized', widths: [400, 600, 800, 1400, 2000] },
+];
 
 function sizedProductImage(url, width) {
-  const m = /^\/assets\/products\/(.+)\.(png|jpe?g|webp)$/i.exec(url);
   const w = Number(width);
-  if (!m || !(w > 0)) return null;
-  const bucket = SIZED_WIDTHS.find((x) => x >= w);
-  if (!bucket) return null; // wider than the largest variant: the original
-  const rel = `${m[1]}.webp`;
-  if (!require('fs').existsSync(require('path').join(SIZED_ROOT, String(bucket), rel))) return null;
-  return `/assets/products-sized/${bucket}/${rel}`;
+  if (!(w > 0)) return null;
+  for (const set of SIZED_SETS) {
+    const m = set.re.exec(url);
+    if (!m) continue;
+    const bucket = set.widths.find((x) => x >= w);
+    if (!bucket) return null; // wider than the largest variant: the original
+    const rel = `${m[1]}.webp`;
+    if (!require('fs').existsSync(require('path').join(__dirname, '..', 'assets', set.dir, String(bucket), rel))) return null;
+    return `/assets/${set.dir}/${bucket}/${rel}`;
+  }
+  return null;
 }
 
 function constrain(url, width) {
