@@ -21,5 +21,6 @@
   "shipping_fr": 3.5,
   "shipping_intl": 4.5,
   "mode": "lettre",
-  "alone": false
+  "alone": false,
+  "weight_g": 50
 }
