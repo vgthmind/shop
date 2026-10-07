@@ -169,6 +169,7 @@
           {% if theme.images.logo_image != blank %}
             <img 
               class="store-logo"
+              width="{{ theme.images.logo_image.width }}" height="{{ theme.images.logo_image.height }}"
               alt="{{ store.name }} Home" 
               src="{{ theme.images.logo_image.url | constrain: '', logo_image_height_1x }}"
               srcset="{{ theme.images.logo_image.url | constrain: '', logo_image_height_2x }} 2x, {{ theme.images.logo_image.url | constrain: '', logo_image_height_1x }} 1x"
