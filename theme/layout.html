@@ -235,7 +235,7 @@
                   {% for image in theme.image_sets.slideshow %}
                     <li class="carousel-cell splide__slide">
                       <img
-                        alt="Slideshow image {{ forloop.index }}"
+                        alt="vgthmind — one-of-a-kind pieces made in France"
                         {% if theme.welcome_slideshow_link != blank %}title="{{ theme.welcome_slideshow_link }}"{% endif %}
                         class="slideshow-image lazyload "
                         src="{{ image.url | constrain: 400 }}"
