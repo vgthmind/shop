@@ -186,10 +186,13 @@ const SITE_ORIGIN_URL = new URL(SHOP_SETTINGS.site_url).origin; // suit site_url
 const BC_IMAGE_MAP = [
   [/https:\/\/assets\.bigcartel\.com\/theme_images\/142638069\/Cover\.png(\?[^"'\s)]*)?/g, () => `${SITE_ORIGIN_URL}${BASE_PATH}/assets/theme/bc/cover-og.jpg`],
   [/https:\/\/assets\.bigcartel\.com\/theme_images\/122404563\/Illustration_sans_titre\+_1_\.PNG(\?[^"'\s)]*)?/g, () => `${BASE_PATH}/assets/theme/bc/logo-illustration.png`],
+  // Icones des transitions / du menu : etaient servies par le depot vgthmind.github.io
+  // (cart-icon.png pesait 100 Ko, info-icon.png 373 Ko) ; copies allegees dans assets/theme/icons/.
+  [/https:\/\/vgthmind\.github\.io\/assets\/bigcartel\/((?:cart|products|info|contact|studio|suivi)-icon\.png)/g, (m, f) => `${BASE_PATH}/assets/theme/icons/${f}`],
   [/https:\/\/assets\.bigcartel\.com\/product_images\/405517188\/cover\+clean\.png(\?[^"'\s)]*)?/g, () => `${BASE_PATH}/assets/products/cd-vgtape/0.png`],
 ];
 function localizeBigCartelImages(text) {
-  if (typeof text !== 'string' || text.indexOf('assets.bigcartel.com') === -1) return text;
+  if (typeof text !== 'string' || (text.indexOf('assets.bigcartel.com') === -1 && text.indexOf('/assets/bigcartel/') === -1)) return text;
   return BC_IMAGE_MAP.reduce((t, [re, to]) => t.replace(re, to), text);
 }
 

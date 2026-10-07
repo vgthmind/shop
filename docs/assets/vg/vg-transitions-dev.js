@@ -247,14 +247,14 @@
     e.preventDefault();
     if (window.__vgTransitioning) return;
     var href = link.getAttribute('href') || '/cart';
-    window.pageTransition({ icon: 'https://vgthmind.github.io/assets/bigcartel/cart-icon.png', href: href, w: 280, h: 280, axis: 'y', persp: 1200 });
+    window.pageTransition({ icon: '/shop/assets/theme/icons/cart-icon.png', href: href, w: 280, h: 280, axis: 'y', persp: 1200 });
   }, true);
 
   document.addEventListener('click', function (e) {
     var btn = e.target.closest ? e.target.closest('form.product-form button[type="submit"]') : null;
     if (!btn || btn.disabled) return;
     if (window.__vgTransitioning) return;
-    window.pageTransition({ icon: 'https://vgthmind.github.io/assets/bigcartel/cart-icon.png', href: '/cart', w: 280, h: 280, axis: 'y', persp: 1200, passive: true });
+    window.pageTransition({ icon: '/shop/assets/theme/icons/cart-icon.png', href: '/cart', w: 280, h: 280, axis: 'y', persp: 1200, passive: true });
   }, true);
 })();
 
@@ -295,14 +295,14 @@
     if (!link) return;
     var href = link.getAttribute('href') || '';
     var icon = null;
-    if (href === '/products' || href.indexOf('/products?') === 0) icon = 'https://vgthmind.github.io/assets/bigcartel/products-icon.png';
-    else if (href.indexOf('/infos-conditions-generales') !== -1) icon = 'https://vgthmind.github.io/assets/bigcartel/info-icon.png';
-    else if (href.indexOf('/contact') !== -1) icon = 'https://vgthmind.github.io/assets/bigcartel/contact-icon.png';
+    if (href === '/products' || href.indexOf('/products?') === 0) icon = '/shop/assets/theme/icons/products-icon.png';
+    else if (href.indexOf('/infos-conditions-generales') !== -1) icon = '/shop/assets/theme/icons/info-icon.png';
+    else if (href.indexOf('/contact') !== -1) icon = '/shop/assets/theme/icons/contact-icon.png';
     // Page Studio : le logo vgthmind en version CHROMEE (distinct du logo
     // plat de l'accueil, qui garde sa propre transition).
-    else if (href.indexOf('/studio') !== -1) icon = 'https://vgthmind.github.io/assets/bigcartel/studio-icon.png';
+    else if (href.indexOf('/studio') !== -1) icon = '/shop/assets/theme/icons/studio-icon.png';
     // Page « Suivre ma commande » (lien discret du footer) : cube metal aux t-shirts.
-    else if (href.indexOf('/suivi') !== -1) icon = 'https://vgthmind.github.io/assets/bigcartel/suivi-icon.png';
+    else if (href.indexOf('/suivi') !== -1) icon = '/shop/assets/theme/icons/suivi-icon.png';
     if (!icon) return;
     e.preventDefault();
     if (window.__vgTransitioning) return;
