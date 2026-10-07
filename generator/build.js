@@ -89,6 +89,19 @@ function tagLanguages(content) {
   }).join('');
 }
 
+// Polices hebergees ici (assets/fonts/, licence SIL OFL) au lieu de Google Fonts :
+// le Custom CSS du brouillon commence par un @import vers fonts.googleapis.com,
+// remplace a la construction par les @font-face locaux (sous-ensemble latin,
+// qui couvre le francais). Plus d'appel a Google a chaque page.
+const FONT_FACES = [
+  ['Space Grotesk', 500, 'space-grotesk-latin-500'], ['Space Grotesk', 700, 'space-grotesk-latin-700'],
+  ['Inter', 400, 'inter-latin-400'], ['Inter', 500, 'inter-latin-500'],
+  ['IBM Plex Mono', 400, 'ibm-plex-mono-latin-400'], ['IBM Plex Mono', 500, 'ibm-plex-mono-latin-500'],
+].map(([family, weight, file]) => `@font-face{font-family:'${family}';font-style:normal;font-weight:${weight};font-display:swap;src:url('/assets/fonts/${file}-normal.woff2') format('woff2');}`).join('\n');
+function localFonts(css) {
+  return css.replace(/@import url\('https:\/\/fonts\.googleapis\.com[^)]*\);?/, FONT_FACES);
+}
+
 // Front-end cart (step 3, see assets/vg-shop-cart.js) - minimal styling in
 // the site's chrome/beige palette, additive like the rest of this file,
 // never part of theme/custom/custom-css.css (byte-identical to the draft).
@@ -492,7 +505,7 @@ async function main() {
   const src = { home: T('home.html'), products: T('products.html'), product: T('product.html'), contact: T('contact.html'), cart: T('cart.html') };
   const parts = {
     shim: read(rel(ROOT, 'assets', 'vg-shop-shim.js')),
-    customCss: read(rel(CUSTOM_DIR, 'custom-css.css')),
+    customCss: localFonts(read(rel(CUSTOM_DIR, 'custom-css.css'))),
     headCode: read(rel(CUSTOM_DIR, 'head.html')),
     // The Body reads products-config.json (portfolio) for, among others,
     // unique_mode: served from /shop/ with "force-no" added for the pieces
@@ -632,6 +645,7 @@ async function main() {
   fs.copyFileSync(rel(ROOT, 'assets', 'vg-shop-cart.js'), rel(OUT_DIR, 'assets', 'vg-shop-cart.js'));
   fs.copyFileSync(rel(ROOT, 'assets', 'vg-theme.js'), rel(OUT_DIR, 'assets', 'vg-theme.js'));
   fs.cpSync(rel(ROOT, 'assets', 'vendor'), rel(OUT_DIR, 'assets', 'vendor'), { recursive: true });
+  fs.cpSync(rel(ROOT, 'assets', 'fonts'), rel(OUT_DIR, 'assets', 'fonts'), { recursive: true });
   const productImagesSrc = rel(ROOT, 'assets', 'products');
   if (fs.existsSync(productImagesSrc)) fs.cpSync(productImagesSrc, rel(OUT_DIR, 'assets', 'products'), { recursive: true });
   // Product photo widths (generator/resize-images.js), used by `constrain`.
