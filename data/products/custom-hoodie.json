@@ -19,5 +19,9 @@
   "stripe_payment_link": "",
   "shipping_fr": 5,
   "shipping_intl": 9,
-  "quantity": 0
+  "quantity": 0,
+  "weight_g": 550,
+  "mode": "colis",
+  "alone": false,
+  "weight_estimated": true
 }

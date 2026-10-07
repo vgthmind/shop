@@ -106,5 +106,5 @@
     return { commit: nc.sha, added: newPaths, removed: removed };
   }
 
-  root.VGStudioPublish = { login: login, publish: publish, connected: function () { return !!token; }, logout: function () { token = ''; } };
+  root.VGStudioPublish = { login: login, publish: publish, api: gh, connected: function () { return !!token; }, logout: function () { token = ''; } };
 })(window);
