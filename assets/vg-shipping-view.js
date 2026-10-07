@@ -70,8 +70,8 @@
     }
     if (!q.ok) return Object.assign(base, { state: 'error', blocked: true, message: t.error });
     var n = q.parcels.length;
-    var summary = t.shipping + ' : ' + (q.free ? t.free : money(q.total)) + (n > 1 ? ' (' + n + ' ' + t.parcels + ')' : '');
-    return Object.assign(base, { state: 'ok', blocked: false, shipping: q.total, total: subtotal + q.total, free: q.free, parcels: n, summary: summary, message: '' });
+    var summary = t.shipping + ' : ' + (q.free || q.total === 0 ? t.free : money(q.total)) + (n > 1 ? ' (' + n + ' ' + t.parcels + ')' : '');
+    return Object.assign(base, { state: 'ok', blocked: false, shipping: q.total, total: Math.round((subtotal + q.total) * 100) / 100, free: q.free, parcels: n, summary: summary, message: '' });
   }
 
   return { buildView: buildView, countryList: countryList, countryName: countryName, text: text, money: money, langOf: langOf, STRIPE: STRIPE };

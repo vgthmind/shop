@@ -39,8 +39,7 @@
 <main>
   <nav><a href="./">← Pièces</a><a href="stock.html">Stock</a><a href="commandes.html">Commandes &amp; stats</a></nav>
   <h1>Frais d'envoi</h1>
-  <p class="alert">À REMPLACER PAR MES VRAIS TARIFS — la grille fournie contient des exemples inventés.</p>
-  <p class="muted">Le prix dépend du pays et du poids total du colis. Au-delà du nombre de pièces (ou du poids) maximum, la commande est répartie en plusieurs colis, chacun payé selon sa tranche.</p>
+  <p class="muted">Tarifs La Poste 2026 (sources dans le fichier de grille). Le poids d'une pièce se saisit SANS emballage : le carton (une fois par colis) ou l'enveloppe est ajouté par le calcul. Une pièce « part seule » a son propre colis ; les autres se partagent un colis jusqu'au poids maximum de la zone. Le client paie selon son pays (forfaits ci-dessous) ; le simulateur montre le vrai coût La Poste et l'écart.</p>
 
   <div class="bar" id="login" hidden><button type="button" class="primary" id="login-btn">Se connecter avec GitHub</button></div>
 
@@ -55,15 +54,12 @@
     <h2>Réglages généraux</h2>
     <div class="card grid" id="general"></div>
 
-    <h2>Formats de pièce</h2>
-    <div class="card"><div class="scroll"><table id="sizes"></table></div></div>
-
     <h2>Zones et tarifs</h2>
     <div id="zones"></div>
     <button type="button" id="add-zone">+ Ajouter une zone</button>
 
-    <h2>Pièces : format et poids</h2>
-    <p class="muted">Choisis un format (petit / moyen / gros) ou un poids précis en grammes (le poids précis l'emporte). Sans réglage : format par défaut.</p>
+    <h2>Pièces : poids, mode, part seule</h2>
+    <p class="muted">Poids de la pièce SANS emballage, mode d'envoi (colis ou lettre suivie) et « part seule » (trop volumineuse pour partager un carton). Une pièce sans poids bloque le calcul.</p>
     <div class="bar"><input type="search" id="filter" placeholder="Chercher une pièce…" aria-label="Chercher une pièce"></div>
     <div class="card"><div class="scroll"><table id="pieces"></table></div></div>
 
@@ -109,7 +105,7 @@
     }).catch(function () { say('Catalogue illisible (products.json).', true); });
   }
 
-  function render() { renderGeneral(); renderSizes(); renderZones(); renderPieces(); renderSim(); }
+  function render() { renderGeneral(); renderZones(); renderPieces(); renderSim(); }
 
   function field(label, path, type, extra) {
     return '<label>' + label + '<input data-path="' + path + '" type="' + (type || 'number') + '" ' + (extra || 'step="any" min="0"') + '></label>';
@@ -123,18 +119,32 @@
       '<label>Livraison offerte ?<select data-path="free_shipping.enabled" data-bool="1"><option value="0">Non</option><option value="1">Oui</option></select></label>'
       + field('… à partir de (€ de pièces)', 'free_shipping.threshold')
       + '<label>… zones concernées (ids, vide = toutes)<input data-path="free_shipping.zones" data-list="1" value="' + esc((fs.zones || []).join(', ')) + '"></label>'
-      + field('Max. de places par colis', 'max_pieces_per_parcel', 'number', 'step="1" min="1"')
-      + field('Poids max. par colis (g, 0 = aucun)', 'max_weight_g_per_parcel', 'number', 'step="10" min="0"')
-      + field('Emballage par colis (g)', 'parcel_tare_g', 'number', 'step="10" min="0"')
-      + '<label>Format par défaut<select data-path="default_size">' + ['petit', 'moyen', 'gros'].map(function (s) { return '<option>' + s + '</option>'; }).join('') + '</select></label>';
+      + field('Carton, par colis (g)', 'packaging.carton_g', 'number', 'step="1" min="0"')
+      + field('Enveloppe lettre (g)', 'packaging.envelope_g', 'number', 'step="1" min="0"')
+      + field('Lettre : nombre max de pièces', 'lettre.max_pieces', 'number', 'step="1" min="1"')
+      + field('Lettre : poids max, enveloppe comprise (g)', 'lettre.max_weight_g', 'number', 'step="10" min="1"')
+      + '<label>Forfait client : par commande ou par colis ?<select data-path="customer_pricing.basis"><option value="per_order">Par commande (1er colis = forfait, colis en plus = vrai coût)</option><option value="per_parcel">Par colis (chaque colis paie le forfait)</option></select></label>'
+      + tierFields();
     Array.prototype.forEach.call($('general').querySelectorAll('[data-path]'), function (el) {
       var v = getp(el.getAttribute('data-path'));
       if (el.hasAttribute('data-bool')) el.value = v ? '1' : '0';
       else if (!el.hasAttribute('data-list')) el.value = v == null ? '' : v;
     });
   }
+  // Forfaits payes par le client, par palier de pays (modifiables).
+  function tierFields() {
+    var tiers = (cfg.customer_pricing && cfg.customer_pricing.tiers) || [], out = '';
+    tiers.forEach(function (t, i) {
+      var p = 'customer_pricing.tiers.' + i + '.';
+      if (t.colis_free) out += '<label>' + esc(t.name) + ' : colis offert</label>';
+      else out += field('Forfait 1er colis : ' + esc(t.name) + ' (€)', p + 'first_flat', 'number', 'step="any" min="0"');
+      if (t.lettre_flat !== undefined) out += field('Forfait lettre suivie : ' + esc(t.name) + ' (€)', p + 'lettre_flat', 'number', 'step="any" min="0"');
+    });
+    return out;
+  }
   function renderSizes() {
-    var s = cfg.sizes = cfg.sizes || {};
+    if (!cfg.sizes) { $('sizes').innerHTML = '<tr><td class="muted">Plus de formats : le poids (emballage compris) se saisit sur chaque pièce.</td></tr>'; return; }
+    var s = cfg.sizes;
     $('sizes').innerHTML = '<tr><th>Format</th><th>Poids (g)</th><th>Places dans le colis</th></tr>' + ['petit', 'moyen', 'gros'].map(function (k) {
       s[k] = s[k] || { weight_g: 500, slots: 1 };
       return '<tr><td>' + k + '</td><td><input type="number" min="1" step="10" data-path="sizes.' + k + '.weight_g" value="' + s[k].weight_g + '"></td>'
@@ -147,7 +157,8 @@
         + '<label>Identifiant<input data-z="' + zi + '" data-k="id" value="' + esc(z.id) + '"></label>'
         + '<label>Nom<input data-z="' + zi + '" data-k="name" value="' + esc(z.name) + '"></label>'
         + '<label>Pays (codes séparés par des virgules ; * = reste du monde)<textarea rows="2" data-z="' + zi + '" data-k="countries">' + esc((z.countries || []).join(', ')) + '</textarea></label>'
-        + '<label>Supplément par kilo au-delà de la dernière tranche (€)<input type="number" min="0" step="any" data-z="' + zi + '" data-k="extra_per_kg" value="' + (z.extra_per_kg || 0) + '"></label></div>'
+        + '<label>Poids max. d\'un colis (g)<input type="number" min="0" step="100" data-z="' + zi + '" data-k="max_weight_g" value="' + (z.max_weight_g || 0) + '"></label>'
+        + '<label>Zone livrée ?<select data-z="' + zi + '" data-k="enabled"><option value="1"' + (z.enabled === false ? '' : ' selected') + '>Oui</option><option value="0"' + (z.enabled === false ? ' selected' : '') + '>Non (désactivée)</option></select></label></div>'
         + '<div class="scroll"><table><tr><th>Jusqu\'à (g)</th><th>Prix (€)</th><th></th></tr>'
         + z.brackets.map(function (b, bi) {
           return '<tr><td><input type="number" min="1" step="10" data-z="' + zi + '" data-b="' + bi + '" data-k="max_g" value="' + b.max_g + '"></td>'
@@ -161,13 +172,14 @@
   function renderPieces() {
     if (!cfg) return;
     var q = ($('filter').value || '').toLowerCase();
-    $('pieces').innerHTML = '<tr><th>Pièce</th><th>Format</th><th>Poids (g)</th></tr>' + products.filter(function (p) {
+    $('pieces').innerHTML = '<tr><th>Pièce</th><th>Poids sans emballage (g)</th><th>Mode</th><th>Part seule</th></tr>' + products.filter(function (p) {
       return !q || (p.name + ' ' + p.slug).toLowerCase().indexOf(q) !== -1;
     }).map(function (p) {
-      var m = cfg.items[p.slug] || {};
-      return '<tr><td>' + esc(p.name) + '</td><td><select data-item="' + esc(p.slug) + '" data-k="size"><option value="">(défaut)</option>'
-        + ['petit', 'moyen', 'gros'].map(function (s) { return '<option' + (m.size === s ? ' selected' : '') + '>' + s + '</option>'; }).join('') + '</select></td>'
-        + '<td><input type="number" min="0" step="10" placeholder="auto" data-item="' + esc(p.slug) + '" data-k="weight_g" value="' + (m.weight_g || '') + '"></td></tr>';
+      var m = cfg.items[p.slug] || {}, e = esc(p.slug);
+      return '<tr><td>' + esc(p.name) + '</td>'
+        + '<td><input type="number" min="0" step="1" placeholder="à saisir" data-item="' + e + '" data-k="weight_g" value="' + (m.weight_g || '') + '"></td>'
+        + '<td><select data-item="' + e + '" data-k="mode"><option value="colis"' + (m.mode === 'lettre' ? '' : ' selected') + '>Colis</option><option value="lettre"' + (m.mode === 'lettre' ? ' selected' : '') + '>Lettre suivie</option></select></td>'
+        + '<td><input type="checkbox" data-item="' + e + '" data-k="alone"' + (m.alone ? ' checked' : '') + '></td></tr>';
     }).join('');
   }
   function renderSim() {
@@ -190,9 +202,12 @@
     var r = window.VGShipping.quoteShipping(cfg, { items: items, subtotal: num($('sim-sub').value) }, $('sim-country').value);
     var out = $('sim-out');
     if (!r.ok) { out.innerHTML = '<p style="color:var(--warn)">' + esc(r.message) + '</p>'; return; }
-    out.innerHTML = '<p class="total">' + r.total.toFixed(2) + ' € ' + (r.free ? '<span class="muted">(livraison offerte)</span>' : '') + '</p>'
-      + '<p class="muted">Zone : ' + esc(r.zoneName) + ' — ' + r.parcels.length + ' colis</p>'
-      + '<ul>' + r.parcels.map(function (p, i) { return '<li>Colis ' + (i + 1) + ' : ' + p.pieces + ' pièce(s), ' + p.weight_g + ' g → ' + p.price.toFixed(2) + ' €</li>'; }).join('') + '</ul>';
+    var eur = function (n) { return n.toFixed(2).replace('.', ',') + ' €'; };
+    var gap = (r.gap > 0 ? '+' : '') + eur(r.gap);
+    out.innerHTML = '<table><tr><th>Coût réel La Poste</th><th>Payé par le client</th><th>Écart (gagné + / perdu −)</th></tr>'
+      + '<tr><td>' + eur(r.cost) + '</td><td>' + eur(r.total) + (r.free ? ' <span class="muted">(livraison offerte)</span>' : '') + '</td><td style="color:' + (r.gap < 0 ? 'var(--warn)' : 'inherit') + '">' + gap + '</td></tr></table>'
+      + '<p class="muted">Zone : ' + esc(r.zoneName) + ' · palier client : ' + esc(r.tier || '—') + ' — ' + r.parcels.length + ' colis</p>'
+      + '<ul>' + r.parcels.map(function (p, i) { return '<li>' + (p.kind === 'lettre' ? 'Lettre suivie' : 'Colis') + ' ' + (i + 1) + ' : ' + p.pieces + ' pièce(s), ' + p.weight_g + ' g (emballage compris) → coût ' + eur(p.price) + ', payé ' + eur(p.paid) + '</li>'; }).join('') + '</ul>';
   }
 
   // Saisie : on range tout dans cfg au fil de l'eau.
@@ -209,12 +224,13 @@
       var z = cfg.zones[+el.getAttribute('data-z')], k = el.getAttribute('data-k');
       var tgt = el.hasAttribute('data-b') ? z.brackets[+el.getAttribute('data-b')] : z;
       tgt[k] = k === 'countries' ? el.value.split(',').map(function (s) { return s.trim().toUpperCase(); }).filter(Boolean)
-        : (el.type === 'number' ? num(el.value) : el.value);
+        : k === 'enabled' ? el.value === '1' : (el.type === 'number' ? num(el.value) : el.value);
     } else if (el.hasAttribute('data-item')) {
       var slug = el.getAttribute('data-item'), m = cfg.items[slug] = cfg.items[slug] || {}, kk = el.getAttribute('data-k');
-      if (kk === 'weight_g') { if (num(el.value) > 0) m.weight_g = num(el.value); else delete m.weight_g; }
-      else { if (el.value) m.size = el.value; else delete m.size; }
-      if (!m.size && !m.weight_g) delete cfg.items[slug];
+      if (kk === 'weight_g') { if (num(el.value) > 0) m.weight_g = Math.floor(num(el.value)); else delete m.weight_g; }
+      else if (kk === 'mode') { if (el.value === 'lettre') m.mode = 'lettre'; else delete m.mode; }
+      else if (kk === 'alone') { if (el.checked) m.alone = true; else delete m.alone; }
+      if (!m.weight_g && !m.mode && !m.alone) delete cfg.items[slug];
     }
     if (el.id === 'filter') renderPieces();
     simulate();
@@ -226,7 +242,7 @@
     if (t.hasAttribute('data-delz')) { if (confirm('Supprimer cette zone ?')) { cfg.zones.splice(+t.getAttribute('data-delz'), 1); renderZones(); simulate(); } }
   });
   $('add-zone').addEventListener('click', function () {
-    cfg.zones.unshift({ id: 'ZONE' + (cfg.zones.length + 1), name: 'Nouvelle zone', countries: [], brackets: [{ max_g: 500, price: 10 }], extra_per_kg: 0 });
+    cfg.zones.unshift({ id: 'ZONE' + (cfg.zones.length + 1), name: 'Nouvelle zone', countries: [], brackets: [{ max_g: 500, price: 10 }], max_weight_g: 20000 });
     renderZones();
   });
   $('sim-country').addEventListener('input', simulate);
@@ -245,7 +261,6 @@
   $('save').addEventListener('click', function () {
     var bad = check(); if (bad) { say(bad, true); return; }
     if (saveMode === 'file') { $('download').click(); return; }
-    cfg._ATTENTION = cfg._ATTENTION || '';
     window.vgAdminApi('/admin/shipping', { method: 'POST', body: JSON.stringify({ config: cfg }) })
       .then(function () { say('Enregistré.'); }).catch(function (err) { say('Échec : ' + err.message, true); });
   });
