@@ -142,7 +142,7 @@
      lazysizes puisse les promouvoir en pleine resolution : c'est le "flou/
      delave a l'arrivee" deja connu (point 4). Le preload ne change aucun
      comportement, juste le moment ou le telechargement commence. -->
-<link rel="preload" as="script" href="https://assets.bigcartel.com/theme_assets/91/2.3.4/theme.js?v=1">
+<link rel="preload" as="script" href="/shop/assets/vg-theme.js">
 <style>
 #vg-transition-boot{position:fixed;inset:0;z-index:2147483646;background:#f4f2ec;pointer-events:none;transition:opacity .35s ease;}
 #vg-transition-boot.vg-boot-out{opacity:0;}
@@ -242,9 +242,9 @@
     
     <meta name="description" content="Données personnelles et prestataires de la boutique vgthmind. Personal data and service providers of the vgthmind shop.">
     <meta property="og:description" content="Données personnelles et prestataires de la boutique vgthmind. Personal data and service providers of the vgthmind shop.">
-    <meta property="og:image" content="https://vgthmind.github.io/shop/assets/theme/bc/cover.png">
+    <meta property="og:image" content="https://vgthmind.github.io/shop/assets/theme/bc/cover-og.jpg">
     <meta name="twitter:description" content="Données personnelles et prestataires de la boutique vgthmind. Personal data and service providers of the vgthmind shop.">
-    <meta name="twitter:image" content="https://vgthmind.github.io/shop/assets/theme/bc/cover.png">
+    <meta name="twitter:image" content="https://vgthmind.github.io/shop/assets/theme/bc/cover-og.jpg">
     <link href="/shop/assets/theme.css" media="screen" rel="stylesheet" type="text/css">
     
     <style>.preloader * { opacity: 0; }.transition-preloader * { transition: none !important }</style>
@@ -259,7 +259,12 @@
 <meta name="robots" content="noindex, nofollow">
 <script>(function(d){d.classList.add("vg-stock-pending");setTimeout(function(){d.classList.remove("vg-stock-pending")},2600)})(document.documentElement)</script><style>.vg-stock-pending #add-to-cart-form{visibility:hidden}</style>
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=Inter:wght@400;500&family=IBM+Plex+Mono:wght@400;500&display=swap');
+@font-face{font-family:'Space Grotesk';font-style:normal;font-weight:500;font-display:swap;src:url('/shop/assets/fonts/space-grotesk-latin-500-normal.woff2') format('woff2');}
+@font-face{font-family:'Space Grotesk';font-style:normal;font-weight:700;font-display:swap;src:url('/shop/assets/fonts/space-grotesk-latin-700-normal.woff2') format('woff2');}
+@font-face{font-family:'Inter';font-style:normal;font-weight:400;font-display:swap;src:url('/shop/assets/fonts/inter-latin-400-normal.woff2') format('woff2');}
+@font-face{font-family:'Inter';font-style:normal;font-weight:500;font-display:swap;src:url('/shop/assets/fonts/inter-latin-500-normal.woff2') format('woff2');}
+@font-face{font-family:'IBM Plex Mono';font-style:normal;font-weight:400;font-display:swap;src:url('/shop/assets/fonts/ibm-plex-mono-latin-400-normal.woff2') format('woff2');}
+@font-face{font-family:'IBM Plex Mono';font-style:normal;font-weight:500;font-display:swap;src:url('/shop/assets/fonts/ibm-plex-mono-latin-500-normal.woff2') format('woff2');}
 
 :root{
   --ink:#171717;
@@ -618,7 +623,8 @@ select, input[type="number"]{
 }
 select:focus, .product-form input:focus{
   border-color:var(--accent) !important;
-  outline:none !important;
+  outline:2px solid var(--accent) !important;
+  outline-offset:2px !important;
 }
 
 ul.social_icons a{
@@ -1193,7 +1199,7 @@ table.cart-table a, table.cart-table button,
 
 /* === PANIER EN OBJET 3D (icone reelle, libre de droits, CC0 3dicons.co) === */
 .cart-link svg{ display:none !important; }
-.cart-link::before{content:'';display:inline-block !important;margin-right:6px !important;background-image:url("https://vgthmind.github.io/assets/bigcartel/cart-icon.png") !important;background-size:contain !important;background-repeat:no-repeat !important;background-position:center !important;filter:drop-shadow(1px 3px 2px rgba(0,0,0,0.4)) !important;}
+.cart-link::before{content:'';display:inline-block !important;margin-right:6px !important;background-image:url("/shop/assets/theme/icons/cart-icon.png") !important;background-size:contain !important;background-repeat:no-repeat !important;background-position:center !important;filter:drop-shadow(1px 3px 2px rgba(0,0,0,0.4)) !important;}
 
 /* === PANIER : animation idle 3D + BOUTON ADD TO CART EN RELIEF 3D === */
 @keyframes vg-cart-spin{
@@ -1608,7 +1614,7 @@ ul.categories li.page a:hover{color:#3d4045 !important;background:transparent !i
 /* === SUPPRIME LE FLASH BLEU TACTILE (webkit-tap-highlight) (ajout) === */
 *{-webkit-tap-highlight-color:transparent !important;}
 </style>
-<script async src="https://www.instagram.com/embed.js"></script>
+
 <style>body #navigation-modal .page_list li:has(> a[href="/shop/"]){display:none !important;}</style>
 <style>
 .vg-back-link{display:inline-block !important;margin-bottom:10px !important;font-family:'IBM Plex Mono',monospace !important;font-size:11px !important;letter-spacing:0.05em !important;text-transform:uppercase !important;color:#8d929a !important;text-decoration:none !important;}
@@ -1702,6 +1708,7 @@ ul.categories li.page a:hover{color:#3d4045 !important;background:transparent !i
           
             <img 
               class="store-logo"
+              width="1600" height="1200"
               alt="vgthmind Home" 
               src="/shop/assets/theme/logo.png"
               srcset="/shop/assets/theme/logo.png 2x, /shop/assets/theme/logo.png 1x"
@@ -1754,11 +1761,15 @@ ul.categories li.page a:hover{color:#3d4045 !important;background:transparent !i
     <main id="main" class="content custom-content" data-bc-hook="content">
       <h1>Confidentialité</h1>
       <p class="vg-lang-sep"><span>English</span></p>
-<p><strong><span class="h3-fs">PERSONAL DATA</span></strong></p>
-<p>Information collected when ordering (name, address, email) is used solely to process and deliver your order. No data is shared with third parties beyond the necessary providers (carrier, payment). You have the right to access, correct and delete your data &mdash; contact me via Instagram DM to exercise it. Payments are processed by Stripe, order emails are sent through Resend, and visits are measured with Cloudflare Web Analytics, which sets no cookie and does not identify you. Order data is kept for the time needed to handle the order and for the legal accounting retention period (10 years). To exercise your rights, you can also write to vgthm66@gmail.com.</p>
+<p lang="en"><strong><span class="h3-fs">PERSONAL DATA</span></strong></p>
+<p lang="en">Information collected when ordering (name, address, email) is used solely to process and deliver your order. No data is shared with third parties beyond the necessary providers (carrier, payment). You have the right to access, correct and delete your data &mdash; contact me via Instagram DM to exercise it. Payments are processed by Stripe, order emails are sent through Resend, and visits are measured with Cloudflare Web Analytics, which sets no cookie and does not identify you. Order data is kept for the time needed to handle the order and for the legal accounting retention period (10 years). To exercise your rights, you can also write to vgthm66@gmail.com.</p>
+<p lang="en"><strong><span class="h3-fs">LEGAL BASIS, RECIPIENTS &amp; TRANSFERS</span></strong></p>
+<p lang="en">Your data is processed to perform the sales contract (taking payment, preparing and delivering the order) and to meet legal obligations (accounting). Only the providers needed for this receive it: Stripe (payment), Resend (order e-mails), Cloudflare (order service and anonymous visit statistics), GitHub (site hosting), and the carrier for delivery. Some of them are based in, or may process data in, the United States; these transfers rely on the safeguards provided by the GDPR (standard contractual clauses or the EU&ndash;US Data Privacy Framework). Watching a video on a product page loads Instagram (Meta) only after you click &ldquo;play&rdquo;. If you think your rights are not respected, you can complain to the CNIL (cnil.fr).</p>
 <p class="vg-lang-sep"><span>Fran&ccedil;ais</span></p>
-<p><strong><span class="h3-fs">DONN&Eacute;ES PERSONNELLES</span></strong></p>
-<p>Les informations recueillies lors de la commande (nom, adresse, email) servent uniquement au traitement et &agrave; la livraison de votre commande. Aucune donn&eacute;e n'est c&eacute;d&eacute;e &agrave; des tiers en dehors des prestataires n&eacute;cessaires (transporteur, paiement). Vous disposez d'un droit d'acc&egrave;s, de rectification et de suppression de vos donn&eacute;es &mdash; contactez-moi en DM Instagram pour l'exercer. Les paiements sont trait&eacute;s par Stripe, les emails de commande sont envoy&eacute;s via Resend et les visites sont mesur&eacute;es par Cloudflare Web Analytics, qui n’utilise aucun cookie et ne vous identifie pas. Les donn&eacute;es de commande sont conserv&eacute;es le temps du traitement de la commande et pendant la dur&eacute;e l&eacute;gale de conservation comptable (10 ans). Pour exercer vos droits, vous pouvez aussi &eacute;crire &agrave; vgthm66@gmail.com.</p>
+<p lang="fr"><strong><span class="h3-fs">DONN&Eacute;ES PERSONNELLES</span></strong></p>
+<p lang="fr">Les informations recueillies lors de la commande (nom, adresse, email) servent uniquement au traitement et &agrave; la livraison de votre commande. Aucune donn&eacute;e n'est c&eacute;d&eacute;e &agrave; des tiers en dehors des prestataires n&eacute;cessaires (transporteur, paiement). Vous disposez d'un droit d'acc&egrave;s, de rectification et de suppression de vos donn&eacute;es &mdash; contactez-moi en DM Instagram pour l'exercer. Les paiements sont trait&eacute;s par Stripe, les emails de commande sont envoy&eacute;s via Resend et les visites sont mesur&eacute;es par Cloudflare Web Analytics, qui n’utilise aucun cookie et ne vous identifie pas. Les donn&eacute;es de commande sont conserv&eacute;es le temps du traitement de la commande et pendant la dur&eacute;e l&eacute;gale de conservation comptable (10 ans). Pour exercer vos droits, vous pouvez aussi &eacute;crire &agrave; vgthm66@gmail.com.</p>
+<p lang="fr"><strong><span class="h3-fs">BASE L&Eacute;GALE, DESTINATAIRES &amp; TRANSFERTS</span></strong></p>
+<p lang="fr">Vos donn&eacute;es sont trait&eacute;es pour ex&eacute;cuter le contrat de vente (encaissement, pr&eacute;paration et livraison de la commande) et pour respecter une obligation l&eacute;gale (comptabilit&eacute;). Seuls les prestataires n&eacute;cessaires les re&ccedil;oivent : Stripe (paiement), Resend (e-mails de commande), Cloudflare (service de commande et statistiques de visite anonymes), GitHub (h&eacute;bergement du site), et le transporteur pour la livraison. Certains sont situ&eacute;s aux &Eacute;tats-Unis ou peuvent y traiter des donn&eacute;es ; ces transferts reposent sur les garanties pr&eacute;vues par le RGPD (clauses contractuelles types ou cadre de protection des donn&eacute;es UE&ndash;&Eacute;tats-Unis). Lire une vid&eacute;o sur une fiche produit ne charge Instagram (Meta) qu'apr&egrave;s votre clic sur &laquo;&nbsp;lecture&nbsp;&raquo;. Si vous estimez que vos droits ne sont pas respect&eacute;s, vous pouvez saisir la CNIL (cnil.fr).</p>
 
     </main>
   
@@ -2067,15 +2078,14 @@ ul.categories li.page a:hover{color:#3d4045 !important;background:transparent !i
       }
     </script>
   
-  <script src="//cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
-  <script src="https://assets.bigcartel.com/api/6/api.eur.js?v=1"></script>
   <script type="text/javascript">
     window.bigcartel = window.bigcartel || {};
     window.bigcartel.account = window.bigcartel.account || {};
     window.bigcartel.account.currency = window.bigcartel.account.currency || "EUR";
     window.bigcartel.account.moneyFormat = "code";
   </script>
-  <script src="https://assets.bigcartel.com/theme_assets/91/2.3.4/theme.js?v=1"></script>
+  <script src="/shop/assets/vendor/splide.min.js"></script>
+  <script src="/shop/assets/vg-theme.js"></script>
   
 <script defer src="https://static.cloudflareinsights.com/beacon.min.js" data-cf-beacon='{"token": "ebb350ea66ad43c6a539b75d16af75d1"}'></script>
 <script>(function (location) {

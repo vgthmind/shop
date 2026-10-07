@@ -51,12 +51,56 @@ const DEV_CSS_URL = 'https://vgthmind.github.io/assets/bigcartel/vg-transitions-
 const LOCAL_DEV_CSS = '/assets/vg/vg-transitions-dev.css';
 let DEV_CSS_VERSION = '0'; // content hash, set in main()
 
-// BigCartel's own scripts, loaded from BigCartel's CDN exactly like the
-// draft does (jQuery is from cdnjs in the layout itself). Not copied into
-// this repo: they are BigCartel's code.
-const BC_THEME_JS = 'https://assets.bigcartel.com/theme_assets/91/2.3.4/theme.js?v=1';
-const BC_API_JS = 'https://assets.bigcartel.com/api/6/api.eur.js?v=1';
-filters.setThemeJsUrls({ theme: BC_THEME_JS, api: BC_API_JS });
+// Comportement du thème : notre propre code (assets/vg-theme.js) + Splide
+// (assets/vendor/, MIT). Plus rien n'est chargé depuis assets.bigcartel.com ni
+// depuis un CDN de jQuery : le Layout appelle {{ theme | theme_js_url }} et
+// {{ 'api' | theme_js_url }} ; la 2e balise (api.js, jQuery) est retirée à la
+// construction (voir ownScripts()), la 1re devient Splide + vg-theme.js.
+const OWN_THEME_JS = '/assets/vg-theme.js';
+const NO_API_JS = '/assets/vg-no-api.js'; // marqueur : la balise est supprimée
+filters.setThemeJsUrls({ theme: OWN_THEME_JS, api: NO_API_JS });
+
+// Scripts du Layout remplacés par les nôtres : jQuery (cdnjs) et api.js ne
+// servent plus (aucun code du site ne les utilise), le script « Product.find »
+// de la fiche produit non plus (pièces uniques, pas d'options). Le script du
+// thème devient Splide + vg-theme.js.
+function ownScripts(html) {
+  return html
+    .replace(/[ \t]*<script src="\/\/cdnjs\.cloudflare\.com\/ajax\/libs\/jquery\/[^"]*"><\/script>\r?\n?/g, '')
+    .replace(/[ \t]*<script src="[^"]*vg-no-api\.js[^"]*"><\/script>\r?\n?/g, '')
+    .replace(/[ \t]*<script>\s*\/\/ Detect if this is back\/forward navigation[\s\S]*?<\/script>\r?\n?/g, '')
+    .replace(/(<link rel="preload" as="script" href=")\/assets\/vg-theme\.js(")/, `$1${BASE_PATH}/assets/vg-theme.js$2`)
+    .replace(/<script src="(\/assets\/vg-theme\.js)"><\/script>/g, '<script src="/assets/vendor/splide.min.js"></script>\n  <script src="$1"></script>');
+}
+
+// Pages bilingues (« English » puis « Français » separes par un <p class="vg-lang-sep">) :
+// chaque paragraphe recoit lang="en" ou lang="fr" (lecteurs d'ecran, correcteurs,
+// traduction). La page reste <html lang="en"> ; aucune structure HTML ajoutee.
+function tagLanguages(content) {
+  if (typeof content !== 'string' || content.indexOf('vg-lang-sep') === -1) return content;
+  const parts = content.split(/(<p class="vg-lang-sep">[\s\S]*?<\/p>)/);
+  let lang = '';
+  return parts.map((part) => {
+    if (/^<p class="vg-lang-sep">/.test(part)) {
+      lang = /English/i.test(part) ? 'en' : /Fran(?:&ccedil;|ç)ais/i.test(part) ? 'fr' : '';
+      return part;
+    }
+    return lang ? part.replace(/<p(?=[\s>])(?![^>]*\blang=)/g, `<p lang="${lang}"`) : part;
+  }).join('');
+}
+
+// Polices hebergees ici (assets/fonts/, licence SIL OFL) au lieu de Google Fonts :
+// le Custom CSS du brouillon commence par un @import vers fonts.googleapis.com,
+// remplace a la construction par les @font-face locaux (sous-ensemble latin,
+// qui couvre le francais). Plus d'appel a Google a chaque page.
+const FONT_FACES = [
+  ['Space Grotesk', 500, 'space-grotesk-latin-500'], ['Space Grotesk', 700, 'space-grotesk-latin-700'],
+  ['Inter', 400, 'inter-latin-400'], ['Inter', 500, 'inter-latin-500'],
+  ['IBM Plex Mono', 400, 'ibm-plex-mono-latin-400'], ['IBM Plex Mono', 500, 'ibm-plex-mono-latin-500'],
+].map(([family, weight, file]) => `@font-face{font-family:'${family}';font-style:normal;font-weight:${weight};font-display:swap;src:url('/assets/fonts/${file}-normal.woff2') format('woff2');}`).join('\n');
+function localFonts(css) {
+  return css.replace(/@import url\('https:\/\/fonts\.googleapis\.com[^)]*\);?/, FONT_FACES);
+}
 
 // Front-end cart (step 3, see assets/vg-shop-cart.js) - minimal styling in
 // the site's chrome/beige palette, additive like the rest of this file,
@@ -135,17 +179,20 @@ const CART_CSS = `
 // Images que le thème/Body/dev JS chargent depuis le compte BigCartel
 // (assets.bigcartel.com/theme_images|product_images, liés au compte) :
 // servies depuis /shop/ pour que la boutique ne dépende plus de BigCartel.
-// (theme.js / api.js restent sur le CDN : fichiers génériques du thème,
-// pas liés au compte.) cover+clean.png est déjà en 404 chez BigCartel :
+// (theme.js / api.js sont remplacés par assets/vg-theme.js, voir ownScripts().)
+// cover+clean.png est déjà en 404 chez BigCartel :
 // remplacé par la 1re photo locale du CD.
-const SITE_ORIGIN_URL = 'https://vgthmind.github.io';
+const SITE_ORIGIN_URL = new URL(SHOP_SETTINGS.site_url).origin; // suit site_url (bascule de domaine)
 const BC_IMAGE_MAP = [
-  [/https:\/\/assets\.bigcartel\.com\/theme_images\/142638069\/Cover\.png(\?[^"'\s)]*)?/g, () => `${SITE_ORIGIN_URL}${BASE_PATH}/assets/theme/bc/cover.png`],
+  [/https:\/\/assets\.bigcartel\.com\/theme_images\/142638069\/Cover\.png(\?[^"'\s)]*)?/g, () => `${SITE_ORIGIN_URL}${BASE_PATH}/assets/theme/bc/cover-og.jpg`],
   [/https:\/\/assets\.bigcartel\.com\/theme_images\/122404563\/Illustration_sans_titre\+_1_\.PNG(\?[^"'\s)]*)?/g, () => `${BASE_PATH}/assets/theme/bc/logo-illustration.png`],
+  // Icones des transitions / du menu : etaient servies par le depot vgthmind.github.io
+  // (cart-icon.png pesait 100 Ko, info-icon.png 373 Ko) ; copies allegees dans assets/theme/icons/.
+  [/https:\/\/vgthmind\.github\.io\/assets\/bigcartel\/((?:cart|products|info|contact|studio|suivi)-icon\.png)/g, (m, f) => `${BASE_PATH}/assets/theme/icons/${f}`],
   [/https:\/\/assets\.bigcartel\.com\/product_images\/405517188\/cover\+clean\.png(\?[^"'\s)]*)?/g, () => `${BASE_PATH}/assets/products/cd-vgtape/0.png`],
 ];
 function localizeBigCartelImages(text) {
-  if (typeof text !== 'string' || text.indexOf('assets.bigcartel.com') === -1) return text;
+  if (typeof text !== 'string' || (text.indexOf('assets.bigcartel.com') === -1 && text.indexOf('/assets/bigcartel/') === -1)) return text;
   return BC_IMAGE_MAP.reduce((t, [re, to]) => t.replace(re, to), text);
 }
 
@@ -171,12 +218,12 @@ const LEGAL_PAGES = [
 // Stripe Checkout return pages (success_url / cancel_url of checkout-worker/).
 const SHOP_PAGES_DIR = path.join(__dirname, 'shop-pages');
 const SHOP_PAGES = [
-  { name: 'Thank you', url: '/merci', permalink: 'merci' },
-  { name: 'Payment cancelled', url: '/paiement-annule', permalink: 'paiement-annule' },
+  { name: 'Thank you / Merci', url: '/merci', permalink: 'merci' },
+  { name: 'Payment cancelled / Paiement annulé', url: '/paiement-annule', permalink: 'paiement-annule' },
   // Suivi de commande (numero + e-mail) : lien discret du pied de page, jamais dans le sitemap, toujours noindex.
   { name: 'Track my order', url: '/suivi', permalink: 'suivi' },
   // GitHub Pages sert 404.html pour toute adresse inconnue sous /shop/.
-  { name: 'Page not found', url: '/404', permalink: '404', out: '404.html' },
+  { name: 'Page not found / Page introuvable', url: '/404', permalink: '404', out: '404.html' },
 ];
 
 function rel(...p) { return path.join(...p); }
@@ -276,6 +323,19 @@ function baseContext(catalog) {
   };
 }
 
+// Description pour les moteurs de recherche et les aperçus de partage : la fiche
+// est « anglais, ligne vide, français » ; on garde le 1er paragraphe (anglais),
+// ligne par ligne séparées par des virgules, sans tirets de liste, puis la
+// mention « pièce unique ». (Avant : tout le texte collé sans ponctuation.)
+function seoDescription(product, withFrench) {
+  const paras = String(product.description || '').split(/\r?\n\s*\r?\n/);
+  const flat = (t) => String(t || '').split(/\r?\n/).map((l) => l.replace(/^[\s-]+/, '').replace(/[\s.]+$/, '').trim()).filter(Boolean).join(', ');
+  const en = flat(paras[0]);
+  const fr = flat(paras[1]);
+  const base = withFrench && fr ? `${en}. ${fr}.` : `${en}.`;
+  return (base + ' One-of-a-kind piece made in France by vgthmind. / Pièce unique faite en France.').slice(0, 300);
+}
+
 // products.json / product/<slug>.js as BigCartel serves them, with our local
 // photos (prefixed: these are data, not passed through withBasePath).
 function localizeProduct(p, imageMap) {
@@ -290,9 +350,11 @@ function localizeProduct(p, imageMap) {
 // --- head / body injections (what BigCartel adds around the templates) ---
 function headContent(page, product, imageMap) {
   if (!product) return '';
-  const img = product.images && product.images[0] ? (imageMap[product.images[0].url] || product.images[0].url) : '';
+  const img0 = product.images && product.images[0] ? (imageMap[product.images[0].url] || product.images[0].url) : '';
+  // og:image / twitter:image doivent etre des adresses absolues (aperçus de partage).
+  const img = img0 && img0.startsWith('/') ? SITE_ORIGIN_URL + BASE_PATH + img0 : img0;
   const esc = (s) => String(s || '').replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
-  const desc = esc((product.description || '').replace(/\s+/g, ' ').trim().slice(0, 300));
+  const desc = esc(seoDescription(product, false));
   return [
     `<meta name="description" content="${desc}">`,
     `<meta property="og:type" content="product">`,
@@ -352,6 +414,7 @@ function injectAround(html, parts, product, relPath) {
   // on every load. Declare English (the shop's main language) and opt out of
   // translation (the pages already have their own English / French parts).
   html = html.replace(/<!DOCTYPE html>/i, (m) => `${m}\n<html lang="en" translate="no">`);
+  html = ownScripts(html);
   // The layout's own transition boot (arrival check: flag href vs current
   // path) must see the same /shop-less path as vg-transitions-dev.js.
   // Only that script: the theme's other inline scripts declare globals
@@ -377,10 +440,14 @@ function injectAround(html, parts, product, relPath) {
         .map((u) => (u.charAt(0) === '/' ? SHOP_SETTINGS.site_url.replace(/\/$/, '') + u : u));
       const ld = {
         '@context': 'https://schema.org', '@type': 'Product', name: product.name,
-        description: String(product.description || '').replace(/\s+/g, ' ').trim().slice(0, 500),
+        description: seoDescription(product, true).slice(0, 500),
+        sku: product.permalink,
         image: imgs, brand: { '@type': 'Brand', name: 'vgthmind' },
-        offers: { '@type': 'Offer', url, priceCurrency: 'EUR', price: String(product.price),
-          availability: product.quantity === 0 ? 'https://schema.org/OutOfStock' : 'https://schema.org/InStock' },
+        // Le stock reel vit dans le Worker (Durable Object) et change a chaque vente sans reconstruction du
+        // site : on n'affiche donc que ce qui est sur (« epuise » a la construction) ; « en stock » est omis
+        // plutot que faux apres la 1re vente.
+        offers: Object.assign({ '@type': 'Offer', url, priceCurrency: 'EUR', price: String(product.price) },
+          product.quantity === 0 ? { availability: 'https://schema.org/OutOfStock' } : {}),
       };
       seoTags += `\n<script type="application/ld+json">${JSON.stringify(ld).replace(/</g, '\\u003c')}</script>`;
     }
@@ -441,7 +508,7 @@ async function main() {
   const src = { home: T('home.html'), products: T('products.html'), product: T('product.html'), contact: T('contact.html'), cart: T('cart.html') };
   const parts = {
     shim: read(rel(ROOT, 'assets', 'vg-shop-shim.js')),
-    customCss: read(rel(CUSTOM_DIR, 'custom-css.css')),
+    customCss: localFonts(read(rel(CUSTOM_DIR, 'custom-css.css'))),
     headCode: read(rel(CUSTOM_DIR, 'head.html')),
     // The Body reads products-config.json (portfolio) for, among others,
     // unique_mode: served from /shop/ with "force-no" added for the pieces
@@ -537,7 +604,7 @@ async function main() {
     ...SHOP_PAGES.map((sp) => Object.assign({ file: rel(SHOP_PAGES_DIR, sp.permalink + '.html') }, sp)),
   ];
   for (const cp of pageSources) {
-    const content = read(cp.file);
+    const content = tagLanguages(read(cp.file));
     const ctx = Object.assign({}, base, {
       page: { name: cp.name, permalink: cp.permalink, category: 'custom', full_url: cp.url },
     });
@@ -547,11 +614,9 @@ async function main() {
 
   // Static stand-ins for BigCartel's JSON endpoints read by the scripts:
   // /products.json (Body: home category tiles; dev JS: pops, section 3),
-  // /product/<slug>.js (api.js Product.find, used by theme.js on product
-  // pages - also read directly by assets/vg-shop-cart.js on add-to-cart),
-  // /cart.js (api.js Cart - our own cart lives in localStorage instead,
-  // see vg-shop-cart.js, this stays empty/unused but is kept since
-  // theme.js/api.js, BigCartel's real scripts, may still request it).
+  // /product/<slug>.js (read by assets/vg-shop-cart.js on add-to-cart),
+  // /cart.js (our own cart lives in localStorage instead, see
+  // vg-shop-cart.js; this stays empty/unused, kept in case a script asks).
   const localized = catalog.products.map((p) => localizeProduct(p, imageMap));
   write('products.json', JSON.stringify(localized));
   for (const p of localized) write(`product/${p.permalink}.js`, JSON.stringify(p));
@@ -579,11 +644,16 @@ async function main() {
   }
   write('assets/vg/search-keywords.json', JSON.stringify(mergedKeywords, null, 1));
   fs.copyFileSync(rel(ROOT, 'assets', 'vg-shop-cart.js'), rel(OUT_DIR, 'assets', 'vg-shop-cart.js'));
+  fs.copyFileSync(rel(ROOT, 'assets', 'vg-theme.js'), rel(OUT_DIR, 'assets', 'vg-theme.js'));
+  fs.cpSync(rel(ROOT, 'assets', 'vendor'), rel(OUT_DIR, 'assets', 'vendor'), { recursive: true });
+  fs.cpSync(rel(ROOT, 'assets', 'fonts'), rel(OUT_DIR, 'assets', 'fonts'), { recursive: true });
   const productImagesSrc = rel(ROOT, 'assets', 'products');
   if (fs.existsSync(productImagesSrc)) fs.cpSync(productImagesSrc, rel(OUT_DIR, 'assets', 'products'), { recursive: true });
   // Product photo widths (generator/resize-images.js), used by `constrain`.
   const sizedSrc = rel(ROOT, 'assets', 'products-sized');
   if (fs.existsSync(sizedSrc)) fs.cpSync(sizedSrc, rel(OUT_DIR, 'assets', 'products-sized'), { recursive: true });
+  const themeSizedSrc = rel(ROOT, 'assets', 'theme-sized');
+  if (fs.existsSync(themeSizedSrc)) fs.cpSync(themeSizedSrc, rel(OUT_DIR, 'assets', 'theme-sized'), { recursive: true });
   fs.cpSync(rel(ROOT, 'assets', 'theme'), rel(OUT_DIR, 'assets', 'theme'), { recursive: true });
   // robots.txt: the prototype's "Disallow: /" until launch; then only the
   // admin is blocked, plus the sitemap. (Only effective once the shop is at

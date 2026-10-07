@@ -48,4 +48,21 @@ async function main() {
   console.log(`Images : ${files.length} photos, ${made} variantes creees, ${removed} supprimees (${WIDTHS.join('/')} px).`);
 }
 
-main().catch((e) => { console.error(e); process.exit(1); });
+// Image d'accueil (assets/theme/cover.png, 1,7 Mo) : variantes WebP, meme principe.
+async function themeImages() {
+  const src = path.join(ROOT, 'assets', 'theme', 'cover.png');
+  if (!fs.existsSync(src)) return;
+  const out = path.join(ROOT, 'assets', 'theme-sized');
+  const srcTime = fs.statSync(src).mtimeMs;
+  let made = 0;
+  for (const w of [400, 600, 800, 1400, 2000]) {
+    const dest = path.join(out, String(w), 'cover.webp');
+    if (fs.existsSync(dest) && fs.statSync(dest).mtimeMs >= srcTime) continue;
+    fs.mkdirSync(path.dirname(dest), { recursive: true });
+    await sharp(src).resize({ width: w, withoutEnlargement: true }).webp({ quality: 82, alphaQuality: 90 }).toFile(dest);
+    made++;
+  }
+  console.log(`Image d'accueil : ${made} variantes creees.`);
+}
+
+main().then(themeImages).catch((e) => { console.error(e); process.exit(1); });
