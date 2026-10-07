@@ -1,5 +1,6 @@
 # ETAT — boutique vgthmind/shop (Stripe test, LIVE_MODE = 0, ne pas changer)
-Fait : stock, ports, panier, admin, A, B, C ; D partiel (commité/poussé) : SEO (canonical, og, JSON-LD), page légale (SIRET, email, données perso, douane). Codes promo déjà actifs dans le worker.
-Reste avant bascule : (1) adresse activité (CCI) ; (2) ligne Hébergement à changer le jour J ; (3) médiateur à choisir ; (4) paragraphe rétractation à faire valider ; (5) relire textes ajoutés ; og:image encore sur CDN BigCartel.
-Prochain pas : toi = coupon test dans Stripe + paiement test avec le code ; puis Stripe live (activation, clés, 1 € réel remboursé), shop.vgthmind.org en parallèle, DNS IONOS (jamais MX/SPF/DKIM).
-Bascule : BASE_PATH='' + site_url vgthmind.org + public:true. Règles : français simple, secrets jamais dans le chat ni le dépôt (public). Worker : checkout-worker/.
+Branche nuit/corrections (non fusionnée) : site SANS aucun script BigCartel (assets/vg-theme.js + Splide), polices/icônes hébergées, images allégées, SEO/alt/lang corrigés. Détails : rapports-nuit/6 ; correctifs Worker/CGV/panier à appliquer à la main : rapports-nuit/5.
+Reste avant bascule : médiateur, adresse activité, validation juriste (rétractation/CGV), grille de frais d'envoi, remboursements (Worker), coupon test + Stripe live, shop.vgthmind.org (DNS IONOS, jamais MX/SPF/DKIM), BASE_PATH='' + site_url + public:true.
+Reste côté dépendances : 18 reels vidéo + fichiers téléchargés au build viennent encore du dépôt vgthmind.github.io.
+Règles : français simple, secrets jamais dans le chat ni le dépôt (public). Worker : checkout-worker/. Après admin/ ou theme/ : node generator/build.js.
+Prochain pas : relire la branche nuit/corrections (tester sur ton iPhone), la fusionner, puis appliquer rapports-nuit/5.
