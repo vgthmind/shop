@@ -4,3 +4,4 @@ Reste avant bascule : médiateur, adresse activité, validation juriste (rétrac
 Reste côté dépendances : 18 reels vidéo + fichiers téléchargés au build viennent encore du dépôt vgthmind.github.io.
 Règles : français simple, secrets jamais dans le chat ni le dépôt (public). Worker : checkout-worker/. Après admin/ ou theme/ : node generator/build.js.
 Prochain pas : relire la branche nuit/corrections (tester sur ton iPhone), la fusionner, puis appliquer rapports-nuit/5.
+Studio photo (branche nuit/studio-photo, non fusionnée) : prototype admin/studio-photo.html, rapport dans rapports-nuit/studio-photo.md ; vrai modèle à tester sur PC.
