@@ -291,6 +291,19 @@ function baseContext(catalog) {
   };
 }
 
+// Description pour les moteurs de recherche et les aperçus de partage : la fiche
+// est « anglais, ligne vide, français » ; on garde le 1er paragraphe (anglais),
+// ligne par ligne séparées par des virgules, sans tirets de liste, puis la
+// mention « pièce unique ». (Avant : tout le texte collé sans ponctuation.)
+function seoDescription(product, withFrench) {
+  const paras = String(product.description || '').split(/\r?\n\s*\r?\n/);
+  const flat = (t) => String(t || '').split(/\r?\n/).map((l) => l.replace(/^[\s-]+/, '').replace(/[\s.]+$/, '').trim()).filter(Boolean).join(', ');
+  const en = flat(paras[0]);
+  const fr = flat(paras[1]);
+  const base = withFrench && fr ? `${en}. ${fr}.` : `${en}.`;
+  return (base + ' One-of-a-kind piece made in France by vgthmind. / Pièce unique faite en France.').slice(0, 300);
+}
+
 // products.json / product/<slug>.js as BigCartel serves them, with our local
 // photos (prefixed: these are data, not passed through withBasePath).
 function localizeProduct(p, imageMap) {
@@ -309,7 +322,7 @@ function headContent(page, product, imageMap) {
   // og:image / twitter:image doivent etre des adresses absolues (aperçus de partage).
   const img = img0 && img0.startsWith('/') ? SITE_ORIGIN_URL + BASE_PATH + img0 : img0;
   const esc = (s) => String(s || '').replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
-  const desc = esc((product.description || '').replace(/\s+/g, ' ').trim().slice(0, 300));
+  const desc = esc(seoDescription(product, false));
   return [
     `<meta name="description" content="${desc}">`,
     `<meta property="og:type" content="product">`,
@@ -395,7 +408,7 @@ function injectAround(html, parts, product, relPath) {
         .map((u) => (u.charAt(0) === '/' ? SHOP_SETTINGS.site_url.replace(/\/$/, '') + u : u));
       const ld = {
         '@context': 'https://schema.org', '@type': 'Product', name: product.name,
-        description: String(product.description || '').replace(/\s+/g, ' ').trim().slice(0, 500),
+        description: seoDescription(product, true).slice(0, 500),
         sku: product.permalink,
         image: imgs, brand: { '@type': 'Brand', name: 'vgthmind' },
         // Le stock reel vit dans le Worker (Durable Object) et change a chaque vente sans reconstruction du
