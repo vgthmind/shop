@@ -73,6 +73,22 @@ function ownScripts(html) {
     .replace(/<script src="(\/assets\/vg-theme\.js)"><\/script>/g, '<script src="/assets/vendor/splide.min.js"></script>\n  <script src="$1"></script>');
 }
 
+// Pages bilingues (« English » puis « Français » separes par un <p class="vg-lang-sep">) :
+// chaque paragraphe recoit lang="en" ou lang="fr" (lecteurs d'ecran, correcteurs,
+// traduction). La page reste <html lang="en"> ; aucune structure HTML ajoutee.
+function tagLanguages(content) {
+  if (typeof content !== 'string' || content.indexOf('vg-lang-sep') === -1) return content;
+  const parts = content.split(/(<p class="vg-lang-sep">[\s\S]*?<\/p>)/);
+  let lang = '';
+  return parts.map((part) => {
+    if (/^<p class="vg-lang-sep">/.test(part)) {
+      lang = /English/i.test(part) ? 'en' : /Fran(?:&ccedil;|ç)ais/i.test(part) ? 'fr' : '';
+      return part;
+    }
+    return lang ? part.replace(/<p(?=[\s>])(?![^>]*\blang=)/g, `<p lang="${lang}"`) : part;
+  }).join('');
+}
+
 // Front-end cart (step 3, see assets/vg-shop-cart.js) - minimal styling in
 // the site's chrome/beige palette, additive like the rest of this file,
 // never part of theme/custom/custom-css.css (byte-identical to the draft).
@@ -572,7 +588,7 @@ async function main() {
     ...SHOP_PAGES.map((sp) => Object.assign({ file: rel(SHOP_PAGES_DIR, sp.permalink + '.html') }, sp)),
   ];
   for (const cp of pageSources) {
-    const content = read(cp.file);
+    const content = tagLanguages(read(cp.file));
     const ctx = Object.assign({}, base, {
       page: { name: cp.name, permalink: cp.permalink, category: 'custom', full_url: cp.url },
     });
