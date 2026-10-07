@@ -5,3 +5,4 @@ Reste côté dépendances : 18 reels vidéo + fichiers téléchargés au build v
 Règles : français simple, secrets jamais dans le chat ni le dépôt (public). Worker : checkout-worker/. Après admin/ ou theme/ : node generator/build.js.
 Prochain pas : relire la branche nuit/corrections (tester sur ton iPhone), la fusionner, puis appliquer rapports-nuit/5.
 Studio photo (branche nuit/studio-photo, non fusionnée) : prototype admin/studio-photo.html, rapport dans rapports-nuit/studio-photo.md ; vrai modèle à tester sur PC.
+Nuit legal (branche nuit/legal, aucune page modifiée) : rapport rapports-nuit/legal.md + brouillons FR/EN prêts à remplacer dans rapports-nuit/brouillons/ (README = infos à fournir, AVANT-APRES = relecture).
