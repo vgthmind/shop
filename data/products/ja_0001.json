@@ -23,6 +23,6 @@
   "shipping_intl": 9,
   "weight_g": 550,
   "mode": "colis",
-  "alone": false,
+  "alone": true,
   "weight_estimated": true
 }
