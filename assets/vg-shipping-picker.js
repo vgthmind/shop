@@ -80,6 +80,8 @@
     setText(err, v.state === 'ok' ? '' : v.message); err.hidden = v.state === 'ok';
     var lines = footer.querySelectorAll('.vg-cart-line .cart-subtotal__amount'); // sous-total, port, total
     if (lines.length >= 3 && v.state === 'ok') { setText(lines[1], v.free ? V.money(0) : V.money(v.shipping)); setText(lines[2], V.money(v.total)); }
+    // Pays non choisi / non livré : ne pas laisser le port du pays précédent affiché.
+    else if (lines.length >= 3) { setText(lines[1], '—'); setText(lines[2], V.money(v.subtotal)); }
     var btn = footer.querySelector('.vg-cart-checkout-all');
     if (btn) { var must = v.blocked; if (btn.disabled !== must && btn.textContent.indexOf('…') === -1) btn.disabled = must; }
   }
