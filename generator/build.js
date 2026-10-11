@@ -42,7 +42,6 @@ const SHOP_SETTINGS = Object.assign({ public: false, site_url: 'https://vgthmind
 // A copy is served by this site, wrapped so it sees location.pathname without
 // the /shop prefix (see wrapScript) - the code itself is not modified.
 const DEV_JS_URL = 'https://vgthmind.github.io/assets/bigcartel/vg-transitions-dev.js';
-const PRODUCTS_CONFIG_URL = 'https://vgthmind.github.io/assets/bigcartel/products-config.json';
 const DEV_KEYWORDS_URL = 'https://vgthmind.github.io/assets/bigcartel/search-keywords.json';
 const LOCAL_DEV_JS = '/assets/vg/vg-transitions-dev.js';
 // Same for the CSS (copied as is; its url()s are absolute): the shop no
@@ -517,9 +516,16 @@ async function main() {
       "fetch('https://vgthmind.github.io/assets/bigcartel/products-config.json')",
       "fetch('/assets/vg/products-config.json')"),
   };
-  const productsConfig = JSON.parse(await download(PRODUCTS_CONFIG_URL));
+  // Colour, reel and badge now live in each data/products/<slug>.json (written
+  // by the admin piece wizard): no more portfolio-hosted products-config.json.
+  const productsConfig = {};
   for (const p of catalog.products) {
-    if ((p.quantity || 0) > 1) productsConfig[p.permalink] = Object.assign({}, productsConfig[p.permalink], { unique_mode: 'force-no' });
+    const entry = {};
+    if (p.color_hex) entry.couleur_hex = p.color_hex;
+    if (p.color_name) entry.couleur_nom = p.color_name;
+    if (p.reel_url) entry.reel_url = p.reel_url;
+    if (p.unique === false || (p.quantity || 0) > 1) entry.unique_mode = 'force-no';
+    if (Object.keys(entry).length) productsConfig[p.permalink] = entry;
   }
 
   const devJs = await download(DEV_JS_URL);

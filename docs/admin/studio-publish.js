@@ -61,10 +61,18 @@
     var jsonPath = 'data/products/' + slug + '.json';
 
     say('Lecture de la fiche pièce…');
-    var cur;
+    var cur = null, product;
     try { cur = await gh('GET', '/contents/' + encodeURIComponent(jsonPath).replace(/%2F/g, '/') + '?ref=' + BRANCH); }
-    catch (e) { if (e.status === 404) throw new Error('La pièce « ' + slug + ' » n\'existe pas encore : crée-la d\'abord dans l\'admin (Pièces → Nouveau), puis publie ses photos ici.'); throw e; }
-    var product = JSON.parse(new TextDecoder().decode(fromB64(cur.content)));
+    catch (e) {
+      if (e.status !== 404) throw e;
+      if (!opts.piece) throw new Error('La pièce « ' + slug + ' » n\'existe pas encore : crée-la d\'abord avec l\'assistant « Nouvelle pièce ».');
+    }
+    // opts.piece (assistant) : fiche complète. Nouvelle pièce = création ; pièce existante = ses champs sont mis à jour.
+    if (cur) {
+      product = JSON.parse(new TextDecoder().decode(fromB64(cur.content)));
+      if (opts.piece && opts.isNew) throw new Error('Une pièce « ' + slug + ' » existe déjà : change le nom (slug) ou ouvre-la depuis la page Pièces.');
+      if (opts.piece) product = Object.assign({}, product, opts.piece, { images: product.images });
+    } else product = Object.assign({}, opts.piece, { slug: slug });
 
     var stamp = Date.now().toString(36); // noms uniques : pas de cache périmé, pas de conflit avec 0.png existant
     var dir = 'assets/products/' + slug + '/';
@@ -96,7 +104,7 @@
 
     say('Création du commit…');
     var newTree = await gh('POST', '/git/trees', { base_tree: commit.tree.sha, tree: tree });
-    var nc = await gh('POST', '/git/commits', { message: 'Photos de ' + slug + ' (Studio photo)', tree: newTree.sha, parents: [head] });
+    var nc = await gh('POST', '/git/commits', { message: (opts.piece && !cur ? 'Nouvelle pièce ' : 'Photos de ') + slug + ' (Studio photo)', tree: newTree.sha, parents: [head] });
     try { await gh('PATCH', '/git/refs/heads/' + BRANCH, { sha: nc.sha, force: false }); }
     catch (e) {
       if (e.status === 422 || e.status === 409) throw new Error('Le dépôt a changé pendant l\'envoi (autre enregistrement). Rien n\'a été publié : réessaie.');
@@ -106,5 +114,11 @@
     return { commit: nc.sha, added: newPaths, removed: removed };
   }
 
-  root.VGStudioPublish = { login: login, publish: publish, api: gh, connected: function () { return !!token; }, logout: function () { token = ''; } };
+  async function readJson(path) { var c = await gh('GET', '/contents/' + path + '?ref=' + BRANCH); return JSON.parse(new TextDecoder().decode(fromB64(c.content))); }
+  async function exists(slug) {
+    try { await gh('GET', '/contents/data/products/' + encodeURIComponent(slug) + '.json?ref=' + BRANCH); return true; }
+    catch (e) { if (e.status === 404) return false; throw e; }
+  }
+
+  root.VGStudioPublish = { login: login, publish: publish, api: gh, readJson: readJson, exists: exists, connected: function () { return !!token; }, logout: function () { token = ''; } };
 })(window);

@@ -20,5 +20,8 @@
   "shipping_intl": 30,
   "weight_g": 420,
   "mode": "colis",
-  "alone": true
+  "alone": true,
+  "color_hex": "#f2f2f2",
+  "color_name": "blanc",
+  "reel_url": "https://www.instagram.com/reel/DaViROPsAMG/"
 }

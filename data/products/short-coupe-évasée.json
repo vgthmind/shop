@@ -24,5 +24,8 @@
   "quantity": 0,
   "weight_g": 420,
   "mode": "colis",
-  "alone": true
+  "alone": true,
+  "color_hex": "#8a95a3",
+  "color_name": "gris",
+  "reel_url": "https://www.instagram.com/reel/DR43MPwDAC3/"
 }

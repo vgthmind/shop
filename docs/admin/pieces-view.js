@@ -12,6 +12,13 @@
 
   var ZONES = [{ id: 'FR', label: 'France' }, { id: 'A', label: 'UE' }, { id: 'C', label: 'Reste du monde' }];
 
+  // Lien Instagram (reel, post photo ou carrousel) ou YouTube, en https. Vide = pas de lien.
+  function reelError(url) {
+    if (!url) return null;
+    return /^https:\/\/(?:www\.|m\.)?(instagram\.com|youtube\.com|youtu\.be)\/\S+$/i.test(url)
+      ? null : 'Lien Instagram : adresse d\'un reel, d\'un post ou d\'un carrousel Instagram (ou YouTube) en https://.';
+  }
+
   function weightOf(p) { var w = Math.floor(Number(p && p.weight_g)); return isFinite(w) && w > 0 ? w : 0; }
 
   // 'missing' (pas de poids) | 'estimated' (poids par défaut du type) | 'ok'
@@ -55,8 +62,13 @@
     if (edit.mode !== 'colis' && edit.mode !== 'lettre') return { error: 'Mode invalide (colis ou lettre).' };
     p.mode = edit.mode;
     p.alone = edit.alone === true;
+    if (edit.reel_url !== undefined) { // facultatif : absent = inchangé, vide = lien retiré
+      var u = String(edit.reel_url || '').trim(), e = reelError(u);
+      if (e) return { error: e };
+      if (u) p.reel_url = u; else delete p.reel_url;
+    }
     return { product: p };
   }
 
-  return { ZONES: ZONES, weightOf: weightOf, weightState: weightState, describe: describe, applyEdit: applyEdit };
+  return { ZONES: ZONES, reelError: reelError, weightOf: weightOf, weightState: weightState, describe: describe, applyEdit: applyEdit };
 }));

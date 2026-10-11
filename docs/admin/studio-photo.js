@@ -487,19 +487,32 @@
     try { await window.VGStudioPublish.login(); pubSay('Connecté à GitHub.'); $('bPublish').disabled = false; $('bLogin').textContent = 'Connecté ✓'; }
     catch (e) { pubSay(e.message || String(e)); }
   };
+  // L'assistant (piece-wizard.js) fournit la fiche validée ; ici : encodage des photos puis un seul commit.
   $('bPublish').onclick = async function () {
     var n = exportable().length;
     if (!n) { pubSay('Aucune photo validée.'); return; }
-    var slug = ($('slug').value || '').trim();
-    if (!slug) { pubSay('Renseigne le nom (slug) de la pièce.'); return; }
-    if (!confirm('Publier ' + n + ' photo(s) pour « ' + slug + ' » ' + ($('replace').checked ? '(remplace les photos actuelles)' : '(ajoutées aux photos actuelles)') + ' ?\nLe site sera reconstruit (1 à 2 min).')) return;
+    var piece = window.VGWizard && window.VGWizard.collect();
+    if (!piece || piece.error) { pubSay(piece ? piece.error : 'Assistant indisponible.'); return; }
+    if (!confirm('Publier « ' + piece.product.name + ' » (' + n + ' photo(s)) ?\nLe site sera reconstruit (1 à 2 min).')) return;
     $('bPublish').disabled = true;
     try {
       var r = await buildFiles();
-      await window.VGStudioPublish.publish({ slug: slug, files: r.files, replace: $('replace').checked, onStatus: pubSay });
+      var isNew = !(await window.VGStudioPublish.exists(piece.product.slug));
+      await window.VGStudioPublish.publish({ slug: piece.product.slug, piece: piece.product, isNew: isNew, files: r.files, replace: $('replace').checked, onStatus: pubSay });
     } catch (e) { pubSay('Échec : ' + (e.message || e)); }
     $('bPublish').disabled = !window.VGStudioPublish.connected();
   };
 
-  window.VGStudio = { _state: function () { return { photos: photos, params: params }; } };
+  // Échantillon de la photo principale (réduit à 64 px) pour proposer une couleur dans la fiche.
+  function colorSample() {
+    var l = exportable(); if (!l.length) return null;
+    var p = l[0], c = srcCanvasOf(p), k = 64 / Math.max(c.width, c.height);
+    var t = document.createElement('canvas'); t.width = Math.max(1, Math.round(c.width * k)); t.height = Math.max(1, Math.round(c.height * k));
+    var cx = t.getContext('2d'); cx.drawImage(c, 0, 0, t.width, t.height);
+    var id = cx.getImageData(0, 0, t.width, t.height);
+    if (p !== photos[sel]) releaseCut(p);
+    return id;
+  }
+
+  window.VGStudio = { colorSample: colorSample, count: function () { return exportable().length; }, _state: function () { return { photos: photos, params: params }; } };
 })();

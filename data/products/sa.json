@@ -21,5 +21,8 @@
   "quantity": 0,
   "weight_g": 420,
   "mode": "colis",
-  "alone": true
+  "alone": true,
+  "color_hex": "#1a1a1a",
+  "color_name": "noir",
+  "reel_url": "https://www.instagram.com/reel/Daf1SYrspSJ/"
 }

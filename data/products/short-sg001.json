@@ -20,5 +20,7 @@
   "shipping_intl": 9.85,
   "weight_g": 420,
   "mode": "colis",
-  "alone": true
+  "alone": true,
+  "color_hex": "#7f92a3",
+  "color_name": "gris"
 }

@@ -23,5 +23,8 @@
   "shipping_intl": 15,
   "weight_g": 570,
   "mode": "colis",
-  "alone": true
+  "alone": true,
+  "color_hex": "#3d5a75",
+  "color_name": "bleu",
+  "reel_url": "https://www.instagram.com/reel/DRzv1AIjBMh/"
 }

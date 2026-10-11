@@ -53,7 +53,7 @@
       tree.push({ path: DIR + slugs[i] + '.json', mode: '100644', type: 'blob', sha: blob.sha });
     }
     var newTree = await gh('POST', '/git/trees', { base_tree: commit.tree.sha, tree: tree });
-    var nc = await gh('POST', '/git/commits', { message: 'Poids, mode et part seule : ' + slugs.join(', ') + ' (page Pièces)', tree: newTree.sha, parents: [head] });
+    var nc = await gh('POST', '/git/commits', { message: 'Fiches pièces (poids, envoi, lien Instagram) : ' + slugs.join(', ') + ' (page Pièces)', tree: newTree.sha, parents: [head] });
     try { await gh('PATCH', '/git/refs/heads/' + BRANCH, { sha: nc.sha, force: false }); }
     catch (e) {
       if (e.status === 422 || e.status === 409) throw new Error('Le dépôt a changé pendant l\'envoi. Rien n\'a été enregistré : réessaie.');

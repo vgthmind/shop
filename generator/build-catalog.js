@@ -121,6 +121,12 @@ function buildProduct(admin, imageMap) {
     // Also ours: starting stock, used by the Worker until the piece is sold
     // or set on the admin "Stock" page.
     quantity,
+    // Ours too: colour dot, "Unique piece" badge and reel, read by build.js to
+    // write assets/vg/products-config.json (replaces the portfolio-hosted copy).
+    unique: admin.unique !== false,
+    color_hex: admin.color_hex || '',
+    color_name: admin.color_name || '',
+    reel_url: admin.reel_url || '',
     // Merged into search-keywords.json by build.js (site search).
     search_keywords: Array.isArray(admin.keywords) ? admin.keywords : [],
   };

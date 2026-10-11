@@ -23,5 +23,7 @@
   "weight_g": 550,
   "mode": "colis",
   "alone": true,
-  "weight_estimated": true
+  "weight_estimated": true,
+  "color_hex": "#a3b0bd",
+  "color_name": "bleu"
 }

@@ -240,7 +240,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     
     
-                        <link href="/shop/assets/theme.css" media="screen" rel="stylesheet" type="text/css">
+    
+    
+    
+    
+    
+    <link href="/shop/assets/theme.css" media="screen" rel="stylesheet" type="text/css">
     <meta name="description" content="100% Polyester, Hooded longsleeve with burnt, textured overlay, Size M/L, The model is approximately 6'0&quot; (1.83m) tall, Lightweight. One-of-a-kind piece made in France by vgthmind. / Pièce unique faite en France.">
     <meta property="og:type" content="product">
     <meta property="og:title" content="Longsleeve TD002">
@@ -2442,6 +2447,8 @@ window.__vgConfig = fetch('/assets/vg/products-config.json')
     var embedPath = null;
     if (cfg[slug] && cfg[slug].reel_url) {
       reelUrl = cfg[slug].reel_url;
+      var igm = /instagram\.com\/((?:reel|p|tv)\/[\w-]+\/)/.exec(reelUrl);
+      if (igm) embedPath = igm[1];
     } else if (REEL_MAP[slug]) {
       embedPath = REEL_MAP[slug].split('?')[0];
       reelUrl = 'https://www.instagram.com/' + REEL_MAP[slug];
@@ -2455,7 +2462,7 @@ window.__vgConfig = fetch('/assets/vg/products-config.json')
 
     var label = document.createElement('span');
     label.className = 'ig-reel-label';
-    label.textContent = 'Voir la piece portee \u00b7 @vgthmind';
+    label.textContent = /\/p\//.test(reelUrl) ? 'Voir le post \u00b7 @vgthmind' : 'Voir la piece portee \u00b7 @vgthmind';
 
     var extLink = document.createElement('a');
     extLink.className = 'ig-reel-extlink';

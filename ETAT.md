@@ -1,5 +1,5 @@
 # ETAT — boutique vgthmind/shop (Stripe test, LIVE_MODE = 0, ne pas changer)
-Fait : lots 1 et 2 poussés. Lot 2 = page admin/pieces.html (« Poids & ports » : poids, mode, part seule, ports FR/UE/monde, modeAdvice) ; poids préremplis sur data/products ; 74 tests OK ; Worker/paiement intacts.
-Reste : peser cd-vgtape (lettre, poids vide) ; short-ge0001 (400 g estimé) et les autres « estimés » à corriger dans la page ; régler « part seule » pièce par pièce ; puis lot 3 (fusion Ajout pièce + studio), lots 4-10.
-Notes : lot 4 = quoteOrFallback ; règle US du 17 sept 2026 ; « Prix vgthmind » (Outre-mer étiqueté UE) ; relancer workflow "Build shop" (196e5ce). Reste (toi) : médiateur, adresse, CGV [crochets], tu/vous, TVA, Stripe live, DNS IONOS (jamais MX/SPF/DKIM), BASE_PATH='' + site_url + public:true.
-Prochain pas : vérifier le rendu de https://vgthmind.github.io/shop/admin/pieces.html (connexion GitHub), puis lot 3.
+Fait (non poussé, en attente de ton OK) : lot 3 = assistant « Nouvelle pièce » (admin/studio-photo.html : photos, détourage, fiche, ports, publier) ; couleur/reel/pastille/badge désormais dans data/products/*.json (migrés depuis body.html), products-config.json généré par le build ; workflow : git pull --rebase avant push. 81 tests OK ; Worker/paiement intacts.
+Reste : tester la publication d'une pièce fictive (téléphone puis PC), archiver ; manquants : pas de couleur pour cd-vgtape (pastille image), reels absents pour pantalon-dd001/ff001/vc001, sacoche, sc_0008, short-ml001/sg001 ; quantités de départ non écrites (défaut 1 ; cd-vgtape à préciser) ; poids « estimés » + cd-vgtape ; nouvelle pièce : ports Worker = lot 4.
+Notes : lot 4 = quoteOrFallback ; règle US 17 sept 2026 ; relancer workflow "Build shop". Reste (toi) : médiateur, adresse, CGV, tu/vous, TVA, Stripe live, DNS IONOS, BASE_PATH='' + site_url + public:true.
+Prochain pas : ton OK → commit/push, test pièce fictive, puis lot 4.

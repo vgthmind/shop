@@ -58,7 +58,7 @@
       <span class="muted" id="count"></span>
     </div>
     <table>
-      <thead><tr><th>Pièce</th><th>Poids (g)</th><th>Envoi</th><th>Ports (coût réel · client · écart)</th></tr></thead>
+      <thead><tr><th>Pièce</th><th>Poids (g)</th><th>Envoi</th><th>Lien Instagram</th><th>Ports (coût réel · client · écart)</th></tr></thead>
       <tbody id="rows"></tbody>
     </table>
   </div>
@@ -83,6 +83,9 @@
     var e = edits[p.slug];
     if (!e) return p;
     var r = VGPieces.applyEdit(p, e);
+    if (r.product) return r.product;
+    var e2 = Object.assign({}, e); delete e2.reel_url; // lien invalide : on le signale à part, le poids reste jugé seul
+    r = VGPieces.applyEdit(p, e2);
     if (r.product) return r.product;
     var q = Object.assign({}, p); delete q.weight_g; q.mode = e.mode; q.alone = e.alone; return q; // poids invalide = manquant
   }
@@ -120,6 +123,7 @@
       + '<td><input type="number" min="1" step="1" data-f="weight_g" value="' + esc(edits[p.slug] ? edits[p.slug].weight_g : (cur.weight_g || '')) + '" aria-label="Poids de ' + esc(p.name || p.slug) + ' en grammes"><div class="b">' + c.badge + '</div></td>'
       + '<td><select data-f="mode" aria-label="Mode d\'envoi"><option value="colis"' + (cur.mode !== 'lettre' ? ' selected' : '') + '>Colis</option><option value="lettre"' + (cur.mode === 'lettre' ? ' selected' : '') + '>Lettre</option></select>'
       + '<label class="alone"><input type="checkbox" data-f="alone"' + (cur.alone ? ' checked' : '') + '> Part seule</label></td>'
+      + '<td><input type="text" data-f="reel_url" inputmode="url" class="reel" placeholder="https://www.instagram.com/p/…" value="' + esc(edits[p.slug] && edits[p.slug].reel_url !== undefined ? edits[p.slug].reel_url : (p.reel_url || '')) + '" aria-label="Lien Instagram de ' + esc(p.name || p.slug) + '"><div class="muted reelmsg"></div></td>'
       + '<td class="pt">' + c.html + '</td></tr>';
   }
 
@@ -138,8 +142,11 @@
     if (!tr || !f) return;
     var p = pieces.filter(function (x) { return x.slug === tr.getAttribute('data-slug'); })[0];
     var w = tr.querySelector('[data-f=weight_g]').value.trim();
-    edits[p.slug] = { weight_g: w === '' ? '' : Number(w), mode: tr.querySelector('[data-f=mode]').value, alone: tr.querySelector('[data-f=alone]').checked };
-    var same = String(edits[p.slug].weight_g) === String(p.weight_g || '') && edits[p.slug].mode === (p.mode || 'colis') && edits[p.slug].alone === (p.alone === true);
+    edits[p.slug] = { weight_g: w === '' ? '' : Number(w), mode: tr.querySelector('[data-f=mode]').value, alone: tr.querySelector('[data-f=alone]').checked, reel_url: tr.querySelector('[data-f=reel_url]').value.trim() };
+    var re = VGPieces.reelError(edits[p.slug].reel_url);
+    tr.querySelector('.reelmsg').textContent = re || '';
+    tr.querySelector('.reelmsg').className = 'reelmsg ' + (re ? 'perte' : 'muted');
+    var same = String(edits[p.slug].weight_g) === String(p.weight_g || '') && edits[p.slug].mode === (p.mode || 'colis') && edits[p.slug].alone === (p.alone === true) && edits[p.slug].reel_url === (p.reel_url || '');
     if (same) delete edits[p.slug];
     var c = rowCells(p); // seules les cellules calculées changent : le champ gardé le focus
     tr.querySelector('.pt').innerHTML = c.html; tr.querySelector('.b').innerHTML = c.badge;

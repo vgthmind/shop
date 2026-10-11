@@ -23,5 +23,8 @@
   "weight_g": 300,
   "mode": "colis",
   "alone": false,
-  "weight_estimated": true
+  "weight_estimated": true,
+  "color_hex": "#1a1a1a",
+  "color_name": "noir",
+  "reel_url": "https://www.instagram.com/p/DPHLT6DjLHL/"
 }

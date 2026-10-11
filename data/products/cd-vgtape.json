@@ -13,7 +13,7 @@
     "merch"
   ],
   "latest_drop": true,
-  "unique": true,
+  "unique": false,
   "in_stock": true,
   "position": 19,
   "created_at": "2025-06-06T11:27:33.000Z",
@@ -22,5 +22,7 @@
   "shipping_intl": 4.5,
   "mode": "lettre",
   "alone": false,
-  "weight_g": 50
+  "weight_g": 50,
+  "reel_url": "https://www.instagram.com/reel/DKkEQYzI6pF/",
+  "quantity": 5
 }

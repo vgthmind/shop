@@ -24,5 +24,8 @@
   "weight_g": 550,
   "mode": "colis",
   "alone": true,
-  "weight_estimated": true
+  "weight_estimated": true,
+  "color_hex": "#b3315c",
+  "color_name": "rouge",
+  "reel_url": "https://www.instagram.com/reel/DSQKH0oDNJ8/"
 }

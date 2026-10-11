@@ -24,5 +24,8 @@
   "weight_g": 550,
   "mode": "colis",
   "alone": true,
-  "weight_estimated": true
+  "weight_estimated": true,
+  "color_hex": "#e9e3d6",
+  "color_name": "blanc cassé",
+  "reel_url": "https://www.instagram.com/reel/DZVLUk7skMC/"
 }

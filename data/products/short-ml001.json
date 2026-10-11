@@ -21,5 +21,7 @@
   "quantity": 0,
   "weight_g": 420,
   "mode": "colis",
-  "alone": true
+  "alone": true,
+  "color_hex": "#8a8a8a",
+  "color_name": "gris"
 }
