@@ -32,17 +32,33 @@
     });
   }
 
-  function gh(method, path, body) {
-    return fetch(API + '/repos/' + REPO + path, {
-      method: method,
-      headers: { Authorization: 'Bearer ' + token, Accept: 'application/vnd.github+json', 'Content-Type': 'application/json' },
-      body: body ? JSON.stringify(body) : undefined
-    }).then(function (r) {
-      return r.json().catch(function () { return {}; }).then(function (d) {
-        if (!r.ok) { var e = new Error((d && d.message) || ('GitHub ' + r.status)); e.status = r.status; throw e; }
-        return d;
-      });
-    });
+  // Connexion coupée / GitHub qui hoquette (502, 503, 504) : on réessaie 3 fois (1 s, 2 s). Sans danger : lire, créer un blob
+  // (identifié par son contenu), un arbre ou un commit peut se refaire ; la mise à jour de la branche est revérifiée à part.
+  var RETRY_MS = root.VG_RETRY_MS !== undefined ? root.VG_RETRY_MS : 1000;
+  function wait(ms) { return new Promise(function (ok) { setTimeout(ok, ms); }); }
+  function netError(cause) {
+    var e = new Error('Connexion coupée pendant l’envoi. Rien n’est publié tant que le dernier pas n’est pas fait : vérifie ta connexion puis recommence (la page Pièces montrera si la pièce est déjà là).');
+    e.code = 'network'; e.cause = cause; return e;
+  }
+  async function gh(method, path, body) {
+    var payload = body ? JSON.stringify(body) : undefined;
+    for (var attempt = 0; ; attempt++) {
+      var r;
+      try {
+        r = await fetch(API + '/repos/' + REPO + path, {
+          method: method,
+          headers: { Authorization: 'Bearer ' + token, Accept: 'application/vnd.github+json', 'Content-Type': 'application/json' },
+          body: payload
+        });
+      } catch (err) {
+        if (attempt >= 3) throw netError(err);
+        await wait(RETRY_MS * (attempt + 1)); continue;
+      }
+      if ((r.status === 502 || r.status === 503 || r.status === 504) && attempt < 3) { await wait(RETRY_MS * (attempt + 1)); continue; }
+      var d = await r.json().catch(function () { return {}; });
+      if (!r.ok) { var e = new Error((d && d.message) || ('GitHub ' + r.status)); e.status = r.status; throw e; }
+      return d;
+    }
   }
 
   function b64(bytes) { // Uint8Array -> base64
@@ -116,8 +132,12 @@
     var nc = await gh('POST', '/git/commits', { message: (opts.piece && !cur ? 'Nouvelle pièce ' : 'Photos de ') + slug + ' (Studio photo)', tree: newTree.sha, parents: [head] });
     try { await gh('PATCH', '/git/refs/heads/' + BRANCH, { sha: nc.sha, force: false }); }
     catch (e) {
-      if (e.status === 422 || e.status === 409) throw new Error('Le dépôt a changé pendant l\'envoi (autre enregistrement). Rien n\'a été publié : réessaie.');
-      throw e;
+      if (e.code === 'network') { // la réponse s'est peut-être perdue alors que la branche a bien avancé
+        var now = null;
+        try { now = await gh('GET', '/git/ref/heads/' + BRANCH); } catch (e2) { /* toujours coupé */ }
+        if (now && now.object && now.object.sha === nc.sha) { /* c'est passé */ } else throw e;
+      } else if (e.status === 422 || e.status === 409) throw new Error('Le dépôt a changé pendant l\'envoi (autre enregistrement). Rien n\'a été publié : réessaie.');
+      else throw e;
     }
     say('Publié. Le site se reconstruit tout seul (1 à 2 min).');
     return { commit: nc.sha, added: newPaths, removed: removed };

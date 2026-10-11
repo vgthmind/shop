@@ -19,7 +19,7 @@
   try {
     var hp = new URLSearchParams((location.hash || '').replace(/^#/, ''));
     var hs = (hp.get('srv') || '').trim().replace(/[/]$/, ''), hk = (hp.get('k') || '').trim();
-    if (/^https:[/][/][a-z0-9.-]+$/i.test(hs)) { localStorage.setItem(KEY, hs); SERVER_URL = hs; }
+    if (/^https:[/][/][a-z0-9-]+[.]trycloudflare[.]com$/i.test(hs)) { localStorage.setItem(KEY, hs); SERVER_URL = hs; }
     if (/^[A-Za-z0-9_-]{16,128}$/.test(hk)) localStorage.setItem(TOKEN_KEY, hk);
     if (hs || hk) history.replaceState(null, '', location.pathname + location.search);
     TOKEN = localStorage.getItem(TOKEN_KEY) || '';
