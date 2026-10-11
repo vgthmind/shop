@@ -1,98 +1,66 @@
-/* Studio photo — moteurs de détourage. Aucune clé, aucun envoi de photo.
-   Un moteur = { name, segment(canvas) -> Promise<{ alpha: Uint8ClampedArray, w, h }> }
-   (alpha à la taille du canvas fourni).
+/* Studio photo — moteurs de détourage.
+   Un moteur = { name, segment(canvas) -> Promise<{ alpha: Uint8ClampedArray, w, h }> } (alpha à la taille du canvas).
 
-   - 'model'  : vrai modèle BiRefNet « lite » (MIT) exécuté DANS le navigateur avec
-                transformers.js (Apache-2.0). Téléchargé au moment de l'usage depuis
-                Hugging Face (puis mis en cache par le navigateur). Essaie plusieurs
-                configurations (WebGPU fp16, puis WASM fp32 : seuls fichiers du dépôt).
-   - 'simple' : repli sans téléchargement : fond uni détecté sur les bords de la photo.
-                Sert aussi de moteur de test de l'interface (?engine=simple).
-   - 'remote' : EMPLACEMENT du service payant (désactivé, sans clé, voir REMOTE). */
+   - 'remote' : serveur de détourage vgthmind (Espace Hugging Face gratuit, BiRefNet lite, licence MIT ; code : hf-space/).
+                Même qualité sur iPhone et sur PC. Aucune clé : le serveur n'accepte que les appels venant de ce site.
+                Il s'endort après quelques jours sans visite : on le réveille (1 à 3 min) au lieu de planter.
+   - 'simple' : dernier recours, choisi à la main : fond uni détecté sur les bords (jamais lancé automatiquement). */
 (function (root) {
   'use strict';
 
-  var TRANSFORMERS_URL = 'https://cdn.jsdelivr.net/npm/@huggingface/transformers@3.8.1';
-  var MODEL_ID = 'onnx-community/BiRefNet_lite-ONNX';
+  // Adresse de l'Espace Hugging Face : https://<compte>-<nom-de-l-espace>.hf.space (voir hf-space/LISEZMOI.md).
+  var SPACE_URL = 'https://vgthmind-detourage.hf.space';
+  var WAKE_TIMEOUT_MS = 6 * 60 * 1000;
+  if (/^(localhost|127.0.0.1)$/.test(location.hostname)) { var qs = new URLSearchParams(location.search).get('space'); if (qs) SPACE_URL = qs; var wk = Number(new URLSearchParams(location.search).get('wake')); if (wk) WAKE_TIMEOUT_MS = wk * 1000; } // test local uniquement
 
   var isIOS = /iP(hone|ad|od)/.test(navigator.userAgent) ||
     (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
 
-  // ---- Vrai modèle -------------------------------------------------------
-  var loaded = null; // { lib, model, processor, label }
-
-  function configs() {
-    var list = [];
-    // WebGPU : rapide, mais encore fragile sur iPhone -> WASM d'abord là-bas.
-    if (navigator.gpu && !isIOS) list.push({ device: 'webgpu', dtype: 'fp16', label: 'WebGPU (précis)' });
-    // Le dépôt ne fournit que model.onnx (fp32) et model_fp16.onnx : pas de version « q8 ».
-    list.push({ device: 'wasm', dtype: 'fp32', label: 'Processeur' });
-    return list;
+  function unavailable(msg) { var err = new Error(msg); err.code = 'unavailable'; return err; }
+  function sleep(ms) { return new Promise(function (ok) { setTimeout(ok, ms); }); }
+  function fetchTimeout(url, opt, ms) {
+    var ctl = new AbortController(), t = setTimeout(function () { ctl.abort(); }, ms);
+    opt = opt || {}; opt.signal = ctl.signal;
+    return fetch(url, opt).finally(function () { clearTimeout(t); });
   }
 
-  async function loadModel(onStatus, modelId) {
-    if (loaded) return loaded;
-    onStatus('Chargement de la bibliothèque…');
-    var lib = await import(/* @vite-ignore */ TRANSFORMERS_URL);
-    lib.env.allowLocalModels = false;
-    var errors = [], cfgs = configs(), i, cfg;
-    for (i = 0; i < cfgs.length; i++) {
-      cfg = cfgs[i];
+  // Attend que le serveur réponde « prêt ». Endormi : l'appel le réveille ; on réessaie en affichant un message clair.
+  var awakeUntil = 0;
+  async function ensureAwake(onStatus) {
+    if (Date.now() < awakeUntil) return;
+    var t0 = Date.now(), shown = false;
+    for (;;) {
       try {
-        onStatus('Téléchargement du modèle — ' + cfg.label + ' (1re fois seulement, quelques dizaines de Mo)…');
-        var progress = function (p) {
-          if (p && p.status === 'progress' && p.total) onStatus('Téléchargement du modèle : ' + Math.round(p.loaded / p.total * 100) + ' %');
-        };
-        var model = await lib.AutoModel.from_pretrained(modelId, { device: cfg.device, dtype: cfg.dtype, progress_callback: progress });
-        var processor = await lib.AutoProcessor.from_pretrained(modelId);
-        loaded = { lib: lib, model: model, processor: processor, label: cfg.label };
-        return loaded;
-      } catch (e) {
-        errors.push(cfg.label + ' : ' + (e && e.message ? e.message : e));
-      }
+        var r = await fetchTimeout(SPACE_URL + '/health', { cache: 'no-store' }, 10000);
+        var j = r.ok ? await r.json() : null;
+        if (j && j.ready) { awakeUntil = Date.now() + 5 * 60 * 1000; return; }
+        if (j && j.error) throw unavailable('Le serveur de détourage a un problème : ' + j.error);
+      } catch (e) { if (e && e.code === 'unavailable') throw e; }
+      if (Date.now() - t0 > WAKE_TIMEOUT_MS) throw unavailable('Le serveur de détourage ne répond pas.');
+      shown = true;
+      onStatus('Réveil du serveur de détourage, 1 à 3 min (' + Math.round((Date.now() - t0) / 1000) + ' s)…');
+      await sleep(5000);
     }
-    var err = new Error('Modèle indisponible. ' + errors.join(' | '));
-    err.code = 'model-unavailable';
-    throw err;
   }
 
-  // Exécute le modèle. Les noms d'entrée/sortie viennent du modèle ONNX ; si
-  // une version change, c'est ICI (une dizaine de lignes) qu'il faut ajuster.
-  async function runModel(m, canvas) {
-    var blob = await new Promise(function (ok) { canvas.toBlob(ok, 'image/png'); });
-    var image = await m.lib.RawImage.fromBlob(blob);
-    var inputs = await m.processor(image);
-    var feed = inputs.pixel_values;
-    var out;
-    try { out = await m.model({ input_image: feed }); }
-    catch (e) { out = await m.model({ pixel_values: feed }); }
-    var t = out.output_image || out.alphas || Object.values(out)[0];
-    var dims = t.dims, mh = dims[dims.length - 2], mw = dims[dims.length - 1];
-    var src = t.data, n = mw * mh, off = src.length - n; // dernier plan = masque
-    var small = document.createElement('canvas'); small.width = mw; small.height = mh;
-    var sctx = small.getContext('2d'), id = sctx.createImageData(mw, mh), k, v;
-    for (k = 0; k < n; k++) {
-      v = 255 / (1 + Math.exp(-src[off + k])); // sigmoïde
-      id.data[k * 4] = id.data[k * 4 + 1] = id.data[k * 4 + 2] = v; id.data[k * 4 + 3] = 255;
-    }
-    sctx.putImageData(id, 0, 0);
-    // Mise à l'échelle lissée vers la taille de la photo.
-    var big = document.createElement('canvas'); big.width = canvas.width; big.height = canvas.height;
-    var bctx = big.getContext('2d'); bctx.imageSmoothingEnabled = true; bctx.imageSmoothingQuality = 'high';
-    bctx.drawImage(small, 0, 0, big.width, big.height);
-    var px = bctx.getImageData(0, 0, big.width, big.height).data, alpha = new Uint8ClampedArray(big.width * big.height);
-    for (k = 0; k < alpha.length; k++) alpha[k] = px[k * 4];
-    return { alpha: alpha, w: big.width, h: big.height };
-  }
-
-  function modelEngine(onStatus, modelId) {
+  function remoteEngine(onStatus) {
     return {
-      name: 'model',
+      name: 'remote',
       async segment(canvas) {
-        var m = await loadModel(onStatus, modelId || MODEL_ID);
-        onStatus('Détourage en cours (' + m.label + ')…');
-        // L'inférence travaille en 1024 px : on lui donne la photo telle quelle.
-        return runModel(m, canvas);
+        await ensureAwake(onStatus);
+        onStatus('Détourage en cours…');
+        var blob = await new Promise(function (ok) { canvas.toBlob(ok, 'image/jpeg', 0.92); });
+        var r;
+        try { r = await fetchTimeout(SPACE_URL + '/cut', { method: 'POST', headers: { 'Content-Type': 'image/jpeg' }, body: blob }, 180000); }
+        catch (e) { awakeUntil = 0; throw unavailable('Le serveur de détourage ne répond pas.'); }
+        if (!r.ok) { awakeUntil = 0; throw unavailable('Le serveur de détourage a répondu une erreur (' + r.status + ').'); }
+        var bmp = await createImageBitmap(await r.blob());
+        var c = document.createElement('canvas'); c.width = canvas.width; c.height = canvas.height;
+        var cx = c.getContext('2d'); cx.drawImage(bmp, 0, 0, c.width, c.height);
+        if (bmp.close) bmp.close();
+        var px = cx.getImageData(0, 0, c.width, c.height).data, a = new Uint8ClampedArray(c.width * c.height);
+        for (var k = 0; k < a.length; k++) a[k] = px[k * 4]; // masque gris : 255 = pièce
+        return { alpha: a, w: c.width, h: c.height };
       }
     };
   }
@@ -122,38 +90,13 @@
     };
   }
 
-  // ---- Emplacement du service payant (désactivé) ------------------------------
-  // À activer plus tard (voir rapports-nuit/studio-photo.md §4). La clé n'est
-  // JAMAIS ici : elle vit dans un secret du Worker ; la page n'appelle que le
-  // Worker, avec la session admin (vgAdminToken()).
-  var REMOTE = { enabled: false, url: '' /* ex. VG_ENDPOINT + '/admin/studio/remove-bg' */ };
-  function remoteEngine() {
-    return {
-      name: 'remote',
-      async segment(canvas) {
-        if (!REMOTE.enabled) throw new Error('Service payant non activé.');
-        var blob = await new Promise(function (ok) { canvas.toBlob(ok, 'image/png'); });
-        var r = await fetch(REMOTE.url, { method: 'POST', headers: { Authorization: 'Bearer ' + (root.vgAdminToken ? root.vgAdminToken() : ''), 'Content-Type': 'image/png' }, body: blob });
-        if (!r.ok) throw new Error('Service payant : erreur ' + r.status);
-        var bmp = await createImageBitmap(await r.blob()); // PNG détouré renvoyé par le Worker
-        var c = document.createElement('canvas'); c.width = canvas.width; c.height = canvas.height;
-        var cx = c.getContext('2d'); cx.drawImage(bmp, 0, 0, c.width, c.height);
-        var px = cx.getImageData(0, 0, c.width, c.height).data, a = new Uint8ClampedArray(c.width * c.height);
-        for (var k = 0; k < a.length; k++) a[k] = px[k * 4 + 3];
-        return { alpha: a, w: c.width, h: c.height };
-      }
-    };
-  }
-
   root.VGStudioEngine = {
-    remote: REMOTE,
     isIOS: isIOS,
-    MODEL_ID: MODEL_ID,
-    create: function (kind, onStatus, modelId) {
+    SPACE_URL: SPACE_URL,
+    create: function (kind, onStatus) {
       onStatus = onStatus || function () {};
       if (kind === 'simple') return simpleEngine();
-      if (kind === 'remote') return remoteEngine();
-      return modelEngine(onStatus, modelId);
+      return remoteEngine(onStatus);
     }
   };
 })(window);

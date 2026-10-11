@@ -23,3 +23,5 @@ checkout-worker/.dev.vars
 # generator dependencies
 node_modules/
 apercu-emails/
+node_modules/
+models/

@@ -101,7 +101,8 @@
     el.className = 'notice';
     el.innerHTML = '<strong>' + esc(p.name) + '</strong> (' + esc(p.slug) + ') · ' + p.price + ' € · quantité ' + p.quantity + (p.unique ? ' · badge UNIQUE PIECE' : '')
       + '<br>' + esc(p.categories.join(', ')) + (p.color_name ? ' · couleur ' + esc(p.color_name) : '') + (p.reel_url ? ' · reel' : '') + ' · ' + p.weight_g + ' g (' + p.mode + (p.alone ? ', part seule' : '') + ')'
-      + '<br>' + window.VGStudio.count() + ' photo(s) validée(s).';
+      + '<br>' + window.VGStudio.count() + ' photo(s) validée(s).'
+      + (window.VGStudio.pending() ? '<br><strong>' + window.VGStudio.pending() + ' photo(s) à détourer ou à valider : pièce non publiable pour l’instant (étape 2).</strong>' : '');
   }
 
   function init() {

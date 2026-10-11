@@ -79,13 +79,13 @@
     <div class="bar" style="justify-content:center">
       <label class="muted">Moteur de détourage
         <select id="engine">
-          <option value="model">Modèle IA dans le navigateur (précis, 1er chargement long)</option>
+          <option value="remote">Serveur de détourage IA (BiRefNet, même qualité partout)</option>
           <option value="simple">Fond uni (dernier recours : fond blanc uni seulement, efface le blanc de la pièce)</option>
-          <option value="remote" disabled>Service payant (non activé)</option>
-        </select>
+                  </select>
       </label>
     </div>
     <div class="muted" id="status" aria-live="polite"></div>
+    <button id="bRetry" hidden>↻ Relancer le détourage des photos « à détourer »</button>
   </div>
   <div id="notices"></div>
   <div class="strip" id="strip"></div>

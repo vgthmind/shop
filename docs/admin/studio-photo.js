@@ -19,7 +19,7 @@
   var $ = function (id) { return document.getElementById(id); };
 
   var photos = [], sel = -1, busy = false, nextId = 1;
-  var engineKind = new URLSearchParams(location.search).get('engine') || 'model';
+  var engineKind = new URLSearchParams(location.search).get('engine') || 'remote';
   var engines = {};
   var brushMode = 'erase';
   var params = { lo: 12, hi: 235, shrink: 0, defr: 4 };
@@ -71,6 +71,10 @@
         var p = photos.find(function (x) { return x.status === 'queued'; });
         if (!p) break;
         await segmentPhoto(p);
+        if (p.status === 'todo') { // serveur indisponible : inutile d'attendre à nouveau pour chaque photo
+          photos.forEach(function (x) { if (x.status === 'queued') { x.status = 'todo'; x.msg = p.msg; } });
+          renderStrip(); break;
+        }
       }
     } finally { busy = false; setStatus(''); }
   }
@@ -81,10 +85,9 @@
     try {
       r = await getEngine().segment(p.src);
     } catch (e) {
-      // Jamais de bascule automatique vers « fond uni » (plis du drap gardés, détails blancs effacés) : on signale l'échec, vgthmind choisit.
-      if (engineKind === 'model') notice('Le modèle IA n’a pas pu s’exécuter : ' + (e && e.message ? e.message : e) + '. Tu peux relancer (↻) ; « fond uni » reste dans la liste, en dernier recours.', true);
-      r = null;
-      if (!r) { p.status = 'error'; p.msg = 'Échec du détourage : ' + (e && e.message ? e.message : e); renderStrip(); return; }
+      // Jamais de bascule automatique vers « fond uni » : la photo reste « à détourer », on relance plus tard.
+      if (e && e.code === 'unavailable') { p.status = 'todo'; p.msg = (e.message || 'serveur indisponible') + ' Relance plus tard.'; notice(p.msg, true); renderStrip(); if (photos[sel] === p) $('edMsg').textContent = p.msg; return; }
+      p.status = 'error'; p.msg = 'Échec du détourage : ' + (e && e.message ? e.message : e); renderStrip(); return;
     }
     p.raw = r.alpha; p.mode = new Uint8Array(p.w * p.h); p.cov = new Uint8Array(p.w * p.h); p.undo = []; p.box = null;
     p.status = 'review';
@@ -123,9 +126,10 @@
   }
 
   // ---------- liste des photos ----------
-  var STATUS = { queued: 'En attente…', processing: 'Détourage…', review: 'À valider', valid: '✓ Validée', original: 'Original gardé', error: 'Erreur' };
+  var STATUS = { queued: 'En attente…', processing: 'Détourage…', review: 'À valider', valid: '✓ Validée', original: 'Original gardé', error: 'Erreur', todo: 'À détourer' };
   function renderStrip() {
     var strip = $('strip'); strip.textContent = '';
+    $('bRetry').hidden = !waitingCount();
     photos.forEach(function (p, i) {
       var c = document.createElement('div'); c.className = 'card' + (i === sel ? ' sel' : '');
       var cv = document.createElement('canvas'); cv.width = 112; cv.height = 96;
@@ -133,7 +137,7 @@
       var src = p.thumb && p.thumb.width ? p.thumb : null;
       if (!src) { var t = document.createElement('canvas'); t.width = 96; t.height = 96; var s = 96 / Math.max(p.w, p.h); cx.drawImage(p.src, 0, 0, p.w * s, p.h * s); }
       else { var k = Math.min(112 / src.width, 96 / src.height); cx.drawImage(src, (112 - src.width * k) / 2, (96 - src.height * k) / 2, src.width * k, src.height * k); }
-      var st = document.createElement('div'); st.className = 'st ' + (p.status === 'valid' ? 'valid' : p.status === 'error' ? 'err' : ''); st.textContent = (i === 0 ? '★ ' : '') + (STATUS[p.status] || '') + (p.msg ? ' — ' + p.msg : '');
+      var st = document.createElement('div'); st.className = 'st ' + (p.status === 'valid' ? 'valid' : p.status === 'error' || p.status === 'todo' ? 'err' : ''); st.textContent = (i === 0 ? '★ ' : '') + (STATUS[p.status] || '') + (p.msg ? ' — ' + p.msg : '');
       var mv = document.createElement('div'); mv.className = 'mv';
       [['←', -1], ['→', 1], ['✕', 0]].forEach(function (b) {
         var bt = document.createElement('button'); bt.textContent = b[0]; bt.title = b[1] ? 'Déplacer' : 'Retirer';
@@ -150,6 +154,12 @@
     var cur = photos[sel]; var t = photos[i]; photos[i] = photos[j]; photos[j] = t;
     sel = photos.indexOf(cur); renderStrip();
   }
+  function pendingCount() { return photos.filter(function (p) { return p.status !== 'valid' && p.status !== 'original'; }).length; }
+  function waitingCount() { return photos.filter(function (p) { return p.status === 'todo' || p.status === 'error'; }).length; }
+  $('bRetry').onclick = function () {
+    photos.forEach(function (p) { if (p.status === 'todo' || p.status === 'error') { p.status = 'queued'; p.msg = ''; } });
+    renderStrip(); runQueue();
+  };
   function remove(i) {
     var cur = photos[sel]; photos.splice(i, 1);
     sel = photos.indexOf(cur); if (sel < 0) { sel = -1; if (photos.length) select(Math.min(i, photos.length - 1)); else $('editor').hidden = true; }
@@ -170,7 +180,7 @@
     if (p.raw) { ensureCut(p); drawCut(p); } else { clearCut(); }
     layoutStages();
     updateButtons(p);
-    $('edMsg').textContent = p.status === 'error' ? p.msg : '';
+    $('edMsg').textContent = p.status === 'error' || p.status === 'todo' ? p.msg : '';
   }
   function drawOrig(p) { origEl.width = p.w; origEl.height = p.h; origEl.getContext('2d').drawImage(p.src, 0, 0); }
   function drawCut(p) { cutEl.width = p.w; cutEl.height = p.h; cutEl.getContext('2d').putImageData(p.cut, 0, 0); }
@@ -382,7 +392,7 @@
     document.documentElement.style.setProperty('--thumb-bg', k === 'checker' ? '#ddd' : BGS[k].color);
   }
   $('pvBg').onchange = applyPreviewBg; applyPreviewBg();
-  $('engine').value = engineKind === 'simple' ? 'simple' : 'model';
+  $('engine').value = engineKind === 'simple' ? 'simple' : 'remote';
   $('engine').onchange = function () { engineKind = $('engine').value; delete engines[engineKind]; };
   $('margin').oninput = function () { $('marginV').textContent = $('margin').value + ' %'; };
   $('files').onchange = function (e) { addFiles(e.target.files); e.target.value = ''; };
@@ -488,6 +498,7 @@
   $('bPublish').onclick = async function () {
     var n = exportable().length;
     if (!n) { pubSay('Aucune photo validée.'); return; }
+    if (pendingCount()) { pubSay(pendingCount() + ' photo(s) à détourer ou à valider : publication impossible tant que ce n’est pas fait (étape 2).'); return; }
     var piece = window.VGWizard && window.VGWizard.collect();
     if (!piece || piece.error) { pubSay(piece ? piece.error : 'Assistant indisponible.'); return; }
     if (!confirm('Publier « ' + piece.product.name + ' » (' + n + ' photo(s)) ?\nLe site sera reconstruit (1 à 2 min).')) return;
@@ -511,5 +522,5 @@
     return id;
   }
 
-  window.VGStudio = { colorSample: colorSample, count: function () { return exportable().length; }, _state: function () { return { photos: photos, params: params }; } };
+  window.VGStudio = { colorSample: colorSample, count: function () { return exportable().length; }, pending: pendingCount, _state: function () { return { photos: photos, params: params }; } };
 })();
