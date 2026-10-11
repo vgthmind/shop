@@ -1,10 +1,10 @@
 {
   "name": "test a supprimer",
   "slug": "test-a-supprimer",
-  "price": 7,
+  "price": 9,
   "description": "test\r\n\r\ntest",
   "images": [
-    "/assets/products/test-a-supprimer/vmv4f3av8-0.webp"
+    "/assets/products/test-a-supprimer/vmv4fr9no-0.webp"
   ],
   "categories": [
     "tops"
@@ -13,13 +13,14 @@
   "unique": true,
   "in_stock": true,
   "position": 0,
-  "created_at": "2026-10-11T22:51:14.040Z",
+  "created_at": "2026-10-11T23:09:52.359Z",
   "stripe_payment_link": "",
   "quantity": 1,
   "color_name": "blanc cassé",
   "color_hex": "#e9e3d6",
   "reel_url": "https://www.instagram.com/vgthmind/reel/DZc4XSpsmhA/",
-  "weight_g": 500,
+  "weight_g": 5000,
   "mode": "colis",
-  "alone": false
+  "alone": false,
+  "reel_video": "/assets/products/test-a-supprimer/reel-mv4fr9no.mp4"
 }
