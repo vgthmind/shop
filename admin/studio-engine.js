@@ -1,17 +1,22 @@
 /* Studio photo — moteurs de détourage.
    Un moteur = { name, segment(canvas) -> Promise<{ alpha: Uint8ClampedArray, w, h }> } (alpha à la taille du canvas).
 
-   - 'remote' : serveur de détourage vgthmind (Google Cloud Run, BiRefNet lite, licence MIT ; code : detourage-server/).
+   - 'remote' : serveur de détourage vgthmind (BiRefNet lite, licence MIT ; code : detourage-server/, lancé sur le PC ou sur un hébergeur).
                 Même qualité sur iPhone et sur PC. Aucune clé : le serveur n'accepte que les appels venant de ce site.
                 Il s'endort après quelques jours sans visite : on le réveille (1 à 3 min) au lieu de planter.
    - 'simple' : dernier recours, choisi à la main : fond uni détecté sur les bords (jamais lancé automatiquement). */
 (function (root) {
   'use strict';
 
-  // Adresse du service Cloud Run (voir detourage-server/LISEZMOI.md) : à remplacer par l'adresse donnée par Google.
-  var SERVER_URL = 'https://A-REMPLACER.a.run.app';
-  var WAKE_TIMEOUT_MS = 6 * 60 * 1000;
-  if (/^(localhost|127.0.0.1)$/.test(location.hostname)) { var qs = new URLSearchParams(location.search).get('space'); if (qs) SERVER_URL = qs; var wk = Number(new URLSearchParams(location.search).get('wake')); if (wk) WAKE_TIMEOUT_MS = wk * 1000; } // test local uniquement
+  // Serveur de détourage : par défaut celui qui tourne sur ce PC (Lancer-detourage.bat, dossier detourage-server/).
+  // Pour un autre serveur (tunnel pour l'iPhone, Cloud Run…) : champ « Serveur de détourage » de la page, mémorisé dans ce navigateur.
+  var DEFAULT_URL = 'http://localhost:7860', KEY = 'vg-detourage-url';
+  var SERVER_URL = DEFAULT_URL;
+  try { SERVER_URL = (localStorage.getItem(KEY) || DEFAULT_URL).replace(/[/]$/, ''); } catch (x) {}
+  var WAKE_TIMEOUT_MS = null; // null = selon le serveur (court en local, long à distance)
+  if (/^(localhost|127.0.0.1)$/.test(location.hostname)) { var qs = new URLSearchParams(location.search).get('space'); if (qs) SERVER_URL = qs; var wk = Number(new URLSearchParams(location.search).get('wake')); if (wk) WAKE_TIMEOUT_MS = wk * 1000; }
+  function isLocalServer() { return /^https?:[/][/](localhost|127[.]0[.]0[.]1)(:|[/]|$)/.test(SERVER_URL); }
+  function wakeLimit() { return WAKE_TIMEOUT_MS || (isLocalServer() ? 20000 : 6 * 60 * 1000); } // test local uniquement
 
   var isIOS = /iP(hone|ad|od)/.test(navigator.userAgent) ||
     (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
@@ -36,9 +41,9 @@
         if (j && j.ready) { awakeUntil = Date.now() + 5 * 60 * 1000; return; }
         if (j && j.error) throw unavailable('Le serveur de détourage a un problème : ' + j.error);
       } catch (e) { if (e && e.code === 'unavailable') throw e; }
-      if (Date.now() - t0 > WAKE_TIMEOUT_MS) throw unavailable('Le serveur de détourage ne répond pas.');
+      if (Date.now() - t0 > wakeLimit()) throw unavailable(isLocalServer() ? 'Le serveur de détourage ne tourne pas sur ce PC : double-clique sur « Lancer-detourage.bat » (dossier detourage-server), puis relance.' : 'Le serveur de détourage ne répond pas.');
       shown = true;
-      onStatus('Réveil du serveur de détourage, 1 à 3 min (' + Math.round((Date.now() - t0) / 1000) + ' s)…');
+      onStatus(isLocalServer() ? 'Recherche du serveur de détourage sur ce PC…' : 'Réveil du serveur de détourage, 1 à 3 min (' + Math.round((Date.now() - t0) / 1000) + ' s)…');
       await sleep(5000);
     }
   }
@@ -92,7 +97,8 @@
 
   root.VGStudioEngine = {
     isIOS: isIOS,
-    SERVER_URL: SERVER_URL,
+    getUrl: function () { return SERVER_URL; },
+    setUrl: function (u) { u = (u || '').trim().replace(/[/]$/, ''); SERVER_URL = u || DEFAULT_URL; awakeUntil = 0; try { if (u && u !== DEFAULT_URL) localStorage.setItem(KEY, u); else localStorage.removeItem(KEY); } catch (x) {} },
     create: function (kind, onStatus) {
       onStatus = onStatus || function () {};
       if (kind === 'simple') return simpleEngine();

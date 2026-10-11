@@ -45,6 +45,7 @@ function cors(req, res) {
     res.setHeader('Vary', 'Origin');
     res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
     res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+    res.setHeader('Access-Control-Allow-Private-Network', 'true'); // site https -> serveur sur ce PC (Chrome)
     res.setHeader('Access-Control-Max-Age', '600');
   }
   return o ? ALLOWED.indexOf(o) >= 0 : ALLOW_NO_ORIGIN; // un navigateur envoie toujours Origin ; sans Origin : tests locaux seulement

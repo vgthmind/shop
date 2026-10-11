@@ -393,6 +393,7 @@
   }
   $('pvBg').onchange = applyPreviewBg; applyPreviewBg();
   $('engine').value = engineKind === 'simple' ? 'simple' : 'remote';
+  $('srvUrl').value = E.getUrl(); $('srvUrl').onchange = function () { E.setUrl($('srvUrl').value); $('srvUrl').value = E.getUrl(); };
   $('engine').onchange = function () { engineKind = $('engine').value; delete engines[engineKind]; };
   $('margin').oninput = function () { $('marginV').textContent = $('margin').value + ' %'; };
   $('files').onchange = function (e) { addFiles(e.target.files); e.target.value = ''; };

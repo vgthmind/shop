@@ -1,4 +1,23 @@
-# Serveur de détourage (Google Cloud Run) — mise en route, console web uniquement
+# Serveur de détourage — lancé sur ton PC (mode actuel)
+
+Rôle : détourer les photos avec BiRefNet « lite » (licence MIT, usage commercial permis). Gratuit, sans compte ni carte, rien ne sort de ton PC.
+Ne touche ni au Worker de paiement ni à Stripe.
+
+## Utilisation (PC, Chrome)
+1. Dans le dossier `vgthmind-shopdetourage-server`, **double-clique sur `Lancer-detourage.bat`**.
+   La 1re fois : installation (quelques minutes) et téléchargement du modèle (224 Mo). Ensuite, ça démarre en ~10 s.
+   Node.js doit être installé (c'est déjà le cas sur ton PC).
+2. Laisse la fenêtre noire ouverte (elle affiche « Serveur de detourage lance… »). Ferme-la pour arrêter.
+3. Ouvre le studio photo (« Nouvelle pièce ») dans **Chrome** : le champ « Serveur de détourage » doit contenir `http://localhost:7860` (valeur par défaut).
+4. Chrome peut demander l'autorisation d'accéder aux appareils/réseau local : **Autoriser** (c'est ton propre PC).
+5. Ajoute tes photos : le détourage part tout seul (~10 s par photo). Si le serveur n'est pas lancé, les photos restent « à détourer » ; lance le .bat puis clique ↻.
+
+## iPhone
+Un iPhone ne peut pas joindre `localhost` (c'est lui-même). Pour l'instant : sur iPhone tu peux ajouter les photos et remplir la fiche, mais le détourage se fait sur le PC.
+Pour détourer depuis l'iPhone, il faudra exposer ce serveur par un tunnel https gratuit (à mettre en place plus tard), puis coller son adresse dans le champ « Serveur de détourage ».
+
+---
+# Autre mode : Google Cloud Run (non utilisé pour l'instant)
 
 Rôle : détourer les photos avec BiRefNet « lite » (licence MIT) pour l'iPhone comme pour le PC.
 Ne touche ni au Worker de paiement ni à Stripe. Aucune photo n'est conservée.
