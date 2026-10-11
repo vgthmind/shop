@@ -1,17 +1,17 @@
 /* Studio photo — moteurs de détourage.
    Un moteur = { name, segment(canvas) -> Promise<{ alpha: Uint8ClampedArray, w, h }> } (alpha à la taille du canvas).
 
-   - 'remote' : serveur de détourage vgthmind (Espace Hugging Face gratuit, BiRefNet lite, licence MIT ; code : hf-space/).
+   - 'remote' : serveur de détourage vgthmind (Google Cloud Run, BiRefNet lite, licence MIT ; code : detourage-server/).
                 Même qualité sur iPhone et sur PC. Aucune clé : le serveur n'accepte que les appels venant de ce site.
                 Il s'endort après quelques jours sans visite : on le réveille (1 à 3 min) au lieu de planter.
    - 'simple' : dernier recours, choisi à la main : fond uni détecté sur les bords (jamais lancé automatiquement). */
 (function (root) {
   'use strict';
 
-  // Adresse de l'Espace Hugging Face : https://<compte>-<nom-de-l-espace>.hf.space (voir hf-space/LISEZMOI.md).
-  var SPACE_URL = 'https://vgthmind-detourage.hf.space';
+  // Adresse du service Cloud Run (voir detourage-server/LISEZMOI.md) : à remplacer par l'adresse donnée par Google.
+  var SERVER_URL = 'https://A-REMPLACER.a.run.app';
   var WAKE_TIMEOUT_MS = 6 * 60 * 1000;
-  if (/^(localhost|127.0.0.1)$/.test(location.hostname)) { var qs = new URLSearchParams(location.search).get('space'); if (qs) SPACE_URL = qs; var wk = Number(new URLSearchParams(location.search).get('wake')); if (wk) WAKE_TIMEOUT_MS = wk * 1000; } // test local uniquement
+  if (/^(localhost|127.0.0.1)$/.test(location.hostname)) { var qs = new URLSearchParams(location.search).get('space'); if (qs) SERVER_URL = qs; var wk = Number(new URLSearchParams(location.search).get('wake')); if (wk) WAKE_TIMEOUT_MS = wk * 1000; } // test local uniquement
 
   var isIOS = /iP(hone|ad|od)/.test(navigator.userAgent) ||
     (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
@@ -31,7 +31,7 @@
     var t0 = Date.now(), shown = false;
     for (;;) {
       try {
-        var r = await fetchTimeout(SPACE_URL + '/health', { cache: 'no-store' }, 10000);
+        var r = await fetchTimeout(SERVER_URL + '/health', { cache: 'no-store' }, 10000);
         var j = r.ok ? await r.json() : null;
         if (j && j.ready) { awakeUntil = Date.now() + 5 * 60 * 1000; return; }
         if (j && j.error) throw unavailable('Le serveur de détourage a un problème : ' + j.error);
@@ -51,7 +51,7 @@
         onStatus('Détourage en cours…');
         var blob = await new Promise(function (ok) { canvas.toBlob(ok, 'image/jpeg', 0.92); });
         var r;
-        try { r = await fetchTimeout(SPACE_URL + '/cut', { method: 'POST', headers: { 'Content-Type': 'image/jpeg' }, body: blob }, 180000); }
+        try { r = await fetchTimeout(SERVER_URL + '/cut', { method: 'POST', headers: { 'Content-Type': 'image/jpeg' }, body: blob }, 180000); }
         catch (e) { awakeUntil = 0; throw unavailable('Le serveur de détourage ne répond pas.'); }
         if (!r.ok) { awakeUntil = 0; throw unavailable('Le serveur de détourage a répondu une erreur (' + r.status + ').'); }
         var bmp = await createImageBitmap(await r.blob());
@@ -92,7 +92,7 @@
 
   root.VGStudioEngine = {
     isIOS: isIOS,
-    SPACE_URL: SPACE_URL,
+    SERVER_URL: SERVER_URL,
     create: function (kind, onStatus) {
       onStatus = onStatus || function () {};
       if (kind === 'simple') return simpleEngine();
