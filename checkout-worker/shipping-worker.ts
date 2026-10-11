@@ -10,7 +10,10 @@
 // @ts-ignore  (module JS sans types, UMD : esbuild le gere)
 import calc from '../admin/shipping-calc.js';
 
-const { quoteShipping } = calc as { quoteShipping: (cfg: any, cart: any, country: string) => any };
+const { quoteShipping, quoteOrFallback } = calc as {
+  quoteShipping: (cfg: any, cart: any, country: string) => any;
+  quoteOrFallback: (cfg: any, cart: any, country: string) => any;
+};
 
 interface KVLike {
   get(key: string): Promise<string | null>;
@@ -85,4 +88,70 @@ export async function shippingRoutes(
     return json({ ok: true });
   }
   return null;
+}
+
+// ---------------------------------------------------------------------------
+// Port du paiement (lot 4). Appele par POST /checkout dans index.ts.
+//   - Pieces « anciennes » (port fixe saisi sur la fiche : shipping_fr / shipping_intl) : regle d'avant,
+//     le port le plus eleve du panier. Rien ne change pour elles.
+//   - Pieces sans port fixe (ajoutees depuis le studio) : calcul sur la grille (poids, mode, colis).
+//   - Panier mixte : le plus eleve des deux. Jamais 0 € par erreur : sans poids ni port, on refuse.
+// `region` 'fr' -> France. 'intl' sans pays precise -> le pire cas des zones livrees (Stripe fixe le prix
+// avant que le client donne son adresse) ; avec un pays valide -> le prix de ce pays.
+export interface CheckoutProduct {
+  permalink: string;
+  price: number;
+  weight_g?: number;
+  mode?: string;
+  alone?: boolean;
+  shipping_derived?: boolean; // port affiche calcule par le build : le Worker ne s'y fie pas
+  shipping: { amount_alone: number; country?: { code: string } }[];
+}
+export type CheckoutShipping =
+  | { ok: true; cents: number; source: 'legacy' | 'grid' | 'mixed'; country: string | null }
+  | { ok: false; error: string; message: string; slugs?: string[] };
+
+function fixedPort(p: CheckoutProduct, region: 'fr' | 'intl'): number | null {
+  if (p.shipping_derived) return null;
+  const line = (p.shipping || []).find((s) => (region === 'fr' ? s.country && s.country.code === 'FR' : !s.country));
+  const v = line ? Number(line.amount_alone) : 0;
+  return v > 0 ? v : null;
+}
+
+export async function checkoutShipping(
+  env: ShipEnv, products: CheckoutProduct[], wanted: Map<string, number>, region: 'fr' | 'intl', country?: string,
+): Promise<CheckoutShipping> {
+  const fixed: number[] = [];
+  const gridItems: any[] = [];
+  for (const p of products) {
+    const v = fixedPort(p, region);
+    if (v !== null) { fixed.push(Math.round(v * 100)); continue; }
+    gridItems.push({ slug: p.permalink, qty: wanted.get(p.permalink) || 1, weight_g: p.weight_g, mode: p.mode, alone: p.alone === true, legacy: { fr: null, intl: null } });
+  }
+  const legacyCents = fixed.length ? Math.max(...fixed) : 0;
+  if (gridItems.length === 0) return { ok: true, cents: legacyCents, source: 'legacy', country: null };
+
+  let config: any;
+  try { config = await loadShippingConfig(env); } catch (e) {
+    return { ok: false, error: 'config_unavailable', message: 'Grille des frais d’envoi indisponible.' };
+  }
+  const subtotal = products.reduce((s, p) => s + p.price * (wanted.get(p.permalink) || 1), 0);
+  const cart = { items: gridItems, subtotal };
+  let countries: string[];
+  if (region === 'fr') countries = ['FR'];
+  else if (country && /^[A-Z]{2}$/.test(country)) countries = [country];
+  else {
+    countries = (config.zones || []).filter((z: any) => z.enabled !== false && z.id !== 'FR')
+      .map((z: any) => z.sample_country || (z.countries || []).filter((c: string) => c !== '*' && c !== 'FR')[0] || 'US');
+  }
+  let best: { cents: number; country: string } | null = null;
+  let lastError: any = null;
+  for (const c of countries) {
+    const r = quoteOrFallback(config, cart, c);
+    if (r.ok) { if (!best || r.totalCents > best.cents) best = { cents: r.totalCents, country: c }; }
+    else if (r.error === 'country_not_served') lastError = r;
+    else return { ok: false, error: r.error, message: r.message, slugs: r.slugs };
+  }
+  if (!best) return { ok: false, error: (lastError && lastError.error) || 'country_not_served', message: (lastError && lastError.message) || 'Livraison impossible.', slugs: lastError && lastError.slugs };
+  return { ok: true, cents: Math.max(best.cents, legacyCents), source: fixed.length ? 'mixed' : 'grid', country: region === 'fr' || country ? best.country : null };
 }

@@ -31,6 +31,7 @@
 //   GET  /orders ; POST /orders/preparing ; POST /orders/shipped ; POST /orders/shipped-mail
 
 import { DurableObject } from 'cloudflare:workers';
+import { checkoutShipping } from './shipping-worker';
 import { customerEmail, sellerEmail, shippedEmail, REPLY_TO, langFor, countryName, type MailItem, type OrderData } from './emails';
 
 interface KV {
@@ -305,7 +306,7 @@ async function backupStock(env: Env) {
 
 // --- Paiement --------------------------------------------------------------
 async function checkout(request: Request, env: Env, key: string, json: JsonFn): Promise<Response> {
-  let body: { items?: unknown; region?: unknown; cart_id?: unknown };
+  let body: { items?: unknown; region?: unknown; cart_id?: unknown; country?: unknown };
   try {
     body = await request.json();
   } catch (e) {
@@ -322,6 +323,7 @@ async function checkout(request: Request, env: Env, key: string, json: JsonFn): 
   if (slugs.length === 0) return json({ error: 'Panier vide.' }, 400);
   if (slugs.length > MAX_ITEMS) return json({ error: 'Trop de pièces dans le panier.' }, 400);
   const region = body.region === 'intl' ? 'intl' : 'fr';
+  const country = /^[A-Za-z]{2}$/.test(String(body.country || '')) ? String(body.country).toUpperCase() : '';
   const cartId = /^[A-Za-z0-9-]{8,64}$/.test(String(body.cart_id || '')) ? String(body.cart_id) : 'anon-' + crypto.randomUUID();
 
   let catalog: Product[];
@@ -344,12 +346,14 @@ async function checkout(request: Request, env: Env, key: string, json: JsonFn): 
   const held = await stub.reserve(cartId, items, catalogDefaults(catalog));
   if (!held.ok) return json({ error: 'Panier à mettre à jour.', problems: held.problems }, 409);
 
-  // Meme regle que BigCartel (amount_with_others = 0 partout) : la commande
-  // paie une seule fois le tarif le plus eleve du panier pour sa zone.
-  const shipping = Math.max(0, ...products.map((p) => {
-    const line = region === 'fr' ? frLine(p) : intlLine(p);
-    return line ? line.amount_alone : 0;
-  }));
+  // Port : pieces a port fixe = regle d'avant (le plus eleve du panier) ; pieces du studio = grille (poids,
+  // mode, colis). Voir shipping-worker.ts. Jamais 0 € par erreur : sans poids ni port, on refuse.
+  const quote = await checkoutShipping(env as any, products as any, wanted, region, country);
+  if (!quote.ok) {
+    await stub.release(cartId);
+    return json({ error: quote.message, code: quote.error, slugs: quote.slugs }, quote.error === 'config_unavailable' ? 502 : 409);
+  }
+  const shipping = quote.cents / 100;
 
   const origin = new URL(env.SITE_BASE).origin;
   const slugList = products.map((p) => p.permalink).join(',').slice(0, 500);
@@ -381,7 +385,7 @@ async function checkout(request: Request, env: Env, key: string, json: JsonFn): 
   // Stripe preselectionne le 1er pays de la liste quand celui du client n'y
   // est pas : le Canada et les voisins d'abord.
   const FIRST = ['CA', 'BE', 'CH', 'LU', 'DE', 'GB', 'US'];
-  const countries = region === 'fr' ? ['FR'] : [...FIRST, ...STRIPE_COUNTRIES.filter((c) => !FIRST.includes(c))];
+  const countries = region === 'fr' ? ['FR'] : country && quote.country === country ? [country] : [...FIRST, ...STRIPE_COUNTRIES.filter((c) => !FIRST.includes(c))];
   countries.forEach((c, i) => params.set(`shipping_address_collection[allowed_countries][${i}]`, c));
   params.set('shipping_options[0][shipping_rate_data][type]', 'fixed_amount');
   params.set('shipping_options[0][shipping_rate_data][display_name]', region === 'fr' ? 'Livraison France' : 'Livraison internationale');

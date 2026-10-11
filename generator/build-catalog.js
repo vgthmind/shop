@@ -21,6 +21,23 @@ const PRODUCTS_DIR = path.join(ROOT, 'data', 'products');
 const CATEGORIES_PATH = path.join(ROOT, 'data', 'categories.json');
 const CATALOG_PATH = path.join(ROOT, 'data', 'catalog.json');
 
+const SHIPPING = require('../admin/shipping-calc.js');
+const SHIPPING_CONFIG = JSON.parse(fs.readFileSync(path.join(ROOT, 'admin', 'shipping-config.json'), 'utf8'));
+
+// Port AFFICHE dans le panier pour une piece sans port fixe (ajoutee depuis le studio) : sa grille, seule.
+// France = zone FR ; international = la zone la plus chere (le Worker recalcule et fait foi).
+// Pas de poids -> null (le panier affichera 0 mais le Worker refusera le paiement : jamais gratuit par erreur).
+function derivedShipping(admin) {
+  const w = Math.floor(Number(admin.weight_g));
+  if (!(w > 0)) return null;
+  const rows = SHIPPING.quoteByZone(SHIPPING_CONFIG, { slug: admin.slug, weight_g: w, mode: admin.mode === 'lettre' ? 'lettre' : 'colis', alone: admin.alone === true });
+  const ok = rows.filter((r) => r.ok);
+  const fr = ok.find((r) => r.zone === 'FR');
+  if (!fr) return null;
+  const intl = ok.filter((r) => r.zone !== 'FR').map((r) => r.total);
+  return { fr: fr.total, intl: intl.length ? Math.max(...intl) : null };
+}
+
 const CATEGORIES = JSON.parse(fs.readFileSync(CATEGORIES_PATH, 'utf8'));
 const byPermalink = new Map(CATEGORIES.map((c) => [c.permalink, c]));
 const ALL = byPermalink.get('all');
@@ -56,6 +73,8 @@ function buildProduct(admin, imageMap) {
   for (const perm of realCats) {
     if (!byPermalink.has(perm)) throw new Error(`Produit "${admin.name}": categorie "${perm}" inconnue (voir data/categories.json)`);
   }
+  const fixedPort = admin.shipping_fr != null || admin.shipping_intl != null;
+  const derived = fixedPort ? null : derivedShipping(admin);
   const images = (admin.images || []).map((url) => {
     const dims = imageDims(url);
     imageMap[url] = url; // identity: already-local paths, see generator/filters.js productImageUrl()
@@ -112,9 +131,12 @@ function buildProduct(admin, imageMap) {
     // BigCartel for SC_0008/SC_0009): the cart and the checkout Worker
     // refuse these pieces for an international delivery.
     shipping: [
-      { amount_alone: admin.shipping_fr || 0, amount_with_others: 0, country: { id: 15, name: 'France', code: 'FR' } },
-      ...(admin.ships_intl === false ? [] : [{ amount_alone: admin.shipping_intl != null ? admin.shipping_intl : (admin.shipping_fr || 0), amount_with_others: 0 }]),
+      { amount_alone: (derived ? derived.fr : admin.shipping_fr) || 0, amount_with_others: 0, country: { id: 15, name: 'France', code: 'FR' } },
+      ...(admin.ships_intl === false || (derived && derived.intl === null) ? [] : [{ amount_alone: derived ? derived.intl : admin.shipping_intl != null ? admin.shipping_intl : (admin.shipping_fr || 0), amount_with_others: 0 }]),
     ],
+    // Lot 4 : de quoi calculer le port sur la grille cote Worker (poids de la piece SANS emballage).
+    ...(admin.weight_g ? { weight_g: admin.weight_g, mode: admin.mode === 'lettre' ? 'lettre' : 'colis', alone: admin.alone === true } : {}),
+    ...(derived || (!fixedPort && admin.weight_g) ? { shipping_derived: true } : {}),
     // Not part of BigCartel's own shape: read by the front-end cart
     // (assets/vg-shop-cart.js) and left out of nothing templates render.
     stripe_payment_link: admin.stripe_payment_link || '',

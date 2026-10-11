@@ -1,5 +1,5 @@
 {
-  "fetched_at": "2026-10-11T23:13:36.677Z",
+  "fetched_at": "2026-10-11T23:26:15.873Z",
   "source": "data/products/*.json (admin)",
   "store": {
     "name": "vgthmind",
@@ -84,6 +84,9 @@
           "amount_with_others": 0
         }
       ],
+      "weight_g": 550,
+      "mode": "colis",
+      "alone": false,
       "stripe_payment_link": "",
       "quantity": 1,
       "unique": true,
@@ -181,6 +184,9 @@
           "amount_with_others": 0
         }
       ],
+      "weight_g": 550,
+      "mode": "colis",
+      "alone": false,
       "stripe_payment_link": "",
       "quantity": 1,
       "unique": true,
@@ -278,6 +284,9 @@
           "amount_with_others": 0
         }
       ],
+      "weight_g": 550,
+      "mode": "colis",
+      "alone": false,
       "stripe_payment_link": "",
       "quantity": 1,
       "unique": true,
@@ -375,6 +384,9 @@
           "amount_with_others": 0
         }
       ],
+      "weight_g": 550,
+      "mode": "colis",
+      "alone": false,
       "stripe_payment_link": "",
       "quantity": 1,
       "unique": true,
@@ -472,6 +484,9 @@
           "amount_with_others": 0
         }
       ],
+      "weight_g": 550,
+      "mode": "colis",
+      "alone": false,
       "stripe_payment_link": "",
       "quantity": 1,
       "unique": true,
@@ -563,6 +578,9 @@
           "amount_with_others": 0
         }
       ],
+      "weight_g": 420,
+      "mode": "colis",
+      "alone": true,
       "stripe_payment_link": "",
       "quantity": 0,
       "unique": true,
@@ -654,6 +672,9 @@
           "amount_with_others": 0
         }
       ],
+      "weight_g": 420,
+      "mode": "colis",
+      "alone": true,
       "stripe_payment_link": "",
       "quantity": 1,
       "unique": true,
@@ -745,6 +766,9 @@
           "amount_with_others": 0
         }
       ],
+      "weight_g": 420,
+      "mode": "colis",
+      "alone": true,
       "stripe_payment_link": "",
       "quantity": 1,
       "unique": true,
@@ -851,6 +875,9 @@
           "amount_with_others": 0
         }
       ],
+      "weight_g": 550,
+      "mode": "colis",
+      "alone": true,
       "stripe_payment_link": "",
       "quantity": 1,
       "unique": true,
@@ -953,6 +980,9 @@
           "amount_with_others": 0
         }
       ],
+      "weight_g": 180,
+      "mode": "colis",
+      "alone": false,
       "stripe_payment_link": "",
       "quantity": 1,
       "unique": true,
@@ -1059,6 +1089,9 @@
           "amount_with_others": 0
         }
       ],
+      "weight_g": 550,
+      "mode": "colis",
+      "alone": true,
       "stripe_payment_link": "",
       "quantity": 1,
       "unique": true,
@@ -1165,6 +1198,9 @@
           "amount_with_others": 0
         }
       ],
+      "weight_g": 570,
+      "mode": "colis",
+      "alone": true,
       "stripe_payment_link": "",
       "quantity": 1,
       "unique": true,
@@ -1266,6 +1302,9 @@
           "amount_with_others": 0
         }
       ],
+      "weight_g": 300,
+      "mode": "colis",
+      "alone": false,
       "stripe_payment_link": "",
       "quantity": 1,
       "unique": true,
@@ -1367,6 +1406,9 @@
           "amount_with_others": 0
         }
       ],
+      "weight_g": 550,
+      "mode": "colis",
+      "alone": true,
       "stripe_payment_link": "",
       "quantity": 1,
       "unique": true,
@@ -1468,6 +1510,9 @@
           "amount_with_others": 0
         }
       ],
+      "weight_g": 550,
+      "mode": "colis",
+      "alone": true,
       "stripe_payment_link": "",
       "quantity": 1,
       "unique": true,
@@ -1569,6 +1614,9 @@
           "amount_with_others": 0
         }
       ],
+      "weight_g": 550,
+      "mode": "colis",
+      "alone": true,
       "stripe_payment_link": "",
       "quantity": 1,
       "unique": true,
@@ -1670,6 +1718,9 @@
           "amount_with_others": 0
         }
       ],
+      "weight_g": 400,
+      "mode": "colis",
+      "alone": true,
       "stripe_payment_link": "",
       "quantity": 1,
       "unique": true,
@@ -1761,6 +1812,9 @@
           "amount_with_others": 0
         }
       ],
+      "weight_g": 420,
+      "mode": "colis",
+      "alone": true,
       "stripe_payment_link": "",
       "quantity": 1,
       "unique": true,
@@ -1862,6 +1916,9 @@
           "amount_with_others": 0
         }
       ],
+      "weight_g": 50,
+      "mode": "lettre",
+      "alone": false,
       "stripe_payment_link": "",
       "quantity": 5,
       "unique": false,
@@ -1958,6 +2015,9 @@
           }
         }
       ],
+      "weight_g": 300,
+      "mode": "colis",
+      "alone": false,
       "stripe_payment_link": "",
       "quantity": 1,
       "unique": true,
@@ -2053,6 +2113,9 @@
           "amount_with_others": 0
         }
       ],
+      "weight_g": 550,
+      "mode": "colis",
+      "alone": true,
       "stripe_payment_link": "",
       "quantity": 1,
       "unique": true,
@@ -2159,6 +2222,9 @@
           "amount_with_others": 0
         }
       ],
+      "weight_g": 420,
+      "mode": "colis",
+      "alone": true,
       "stripe_payment_link": "",
       "quantity": 0,
       "unique": true,
@@ -2256,6 +2322,9 @@
           "amount_with_others": 0
         }
       ],
+      "weight_g": 550,
+      "mode": "colis",
+      "alone": false,
       "stripe_payment_link": "",
       "quantity": 0,
       "unique": true,
@@ -2362,6 +2431,9 @@
           "amount_with_others": 0
         }
       ],
+      "weight_g": 420,
+      "mode": "colis",
+      "alone": true,
       "stripe_payment_link": "",
       "quantity": 0,
       "unique": true,
@@ -2468,6 +2540,9 @@
           "amount_with_others": 0
         }
       ],
+      "weight_g": 48,
+      "mode": "lettre",
+      "alone": false,
       "stripe_payment_link": "",
       "quantity": 0,
       "unique": false,
@@ -2559,6 +2634,9 @@
           "amount_with_others": 0
         }
       ],
+      "weight_g": 420,
+      "mode": "colis",
+      "alone": true,
       "stripe_payment_link": "",
       "quantity": 0,
       "unique": true,
@@ -2655,6 +2733,9 @@
           }
         }
       ],
+      "weight_g": 300,
+      "mode": "colis",
+      "alone": false,
       "stripe_payment_link": "",
       "quantity": 0,
       "unique": true,
