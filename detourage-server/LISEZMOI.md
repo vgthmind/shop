@@ -12,9 +12,13 @@ Ne touche ni au Worker de paiement ni à Stripe.
 4. Chrome peut demander l'autorisation d'accéder aux appareils/réseau local : **Autoriser** (c'est ton propre PC).
 5. Ajoute tes photos : le détourage part tout seul (~10 s par photo). Si le serveur n'est pas lancé, les photos restent « à détourer » ; lance le .bat puis clique ↻.
 
-## iPhone
-Un iPhone ne peut pas joindre `localhost` (c'est lui-même). Pour l'instant : sur iPhone tu peux ajouter les photos et remplir la fiche, mais le détourage se fait sur le PC.
-Pour détourer depuis l'iPhone, il faudra exposer ce serveur par un tunnel https gratuit (à mettre en place plus tard), puis coller son adresse dans le champ « Serveur de détourage ».
+## iPhone (tunnel Cloudflare)
+Double-clique sur **`Lancer-detourage-iphone.bat`** : il lance le serveur (écoute seulement sur ce PC) ET un tunnel Cloudflare « rapide » (gratuit, sans compte),
+puis fabrique un lien à ouvrir sur l'iPhone (adresse du tunnel + mot de passe dans la partie après `#`, jamais envoyée à un site). Pas à pas : voir `A-FAIRE.md` à la racine.
+- Sécurité : de l'extérieur, `/cut` exige le mot de passe (fichier `.token`, créé au premier lancement, ignoré par git) ; 20 refus par heure maximum, puis blocage ; en plus, seul le site vgthmind peut appeler le serveur depuis un navigateur.
+- Depuis ce PC (`localhost:7860`), aucun mot de passe : comportement d'avant.
+- L'adresse change à chaque lancement (tunnel sans compte) : renvoyer le nouveau lien à l'iPhone.
+- Mode hébergeur (Docker / Cloud Run) : `DETOURAGE_OPEN=1` (déjà dans le Dockerfile) = pas de mot de passe, contrôle d'origine seulement.
 
 ---
 # Autre mode : Google Cloud Run (non utilisé pour l'instant)
