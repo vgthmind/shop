@@ -7,6 +7,5 @@ RUN npm install --omit=dev --no-audit --no-fund
 COPY server.js ./
 RUN chown -R node:node /app
 USER node
-ENV PORT=7860
-EXPOSE 7860
+ENV ORT_THREADS=4
 CMD ["node", "server.js"]
