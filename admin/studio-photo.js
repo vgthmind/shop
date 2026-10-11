@@ -81,12 +81,9 @@
     try {
       r = await getEngine().segment(p.src);
     } catch (e) {
-      if (engineKind === 'model') {
-        // Repli : le modèle n'a pas pu se charger (réseau, mémoire…) -> fond uni.
-        notice('Modèle indisponible (' + (e && e.message ? e.message : e) + '). Repli automatique : détourage « fond uni » + retouche manuelle. Tu peux réessayer le modèle en le re-choisissant dans la liste.', true);
-        engineKind = 'simple'; $('engine').value = 'simple';
-        try { r = await getEngine().segment(p.src); } catch (e2) { r = null; }
-      }
+      // Jamais de bascule automatique vers « fond uni » (plis du drap gardés, détails blancs effacés) : on signale l'échec, vgthmind choisit.
+      if (engineKind === 'model') notice('Le modèle IA n’a pas pu s’exécuter : ' + (e && e.message ? e.message : e) + '. Tu peux relancer (↻) ; « fond uni » reste dans la liste, en dernier recours.', true);
+      r = null;
       if (!r) { p.status = 'error'; p.msg = 'Échec du détourage : ' + (e && e.message ? e.message : e); renderStrip(); return; }
     }
     p.raw = r.alpha; p.mode = new Uint8Array(p.w * p.h); p.cov = new Uint8Array(p.w * p.h); p.undo = []; p.box = null;

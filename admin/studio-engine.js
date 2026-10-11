@@ -5,7 +5,7 @@
    - 'model'  : vrai modèle BiRefNet « lite » (MIT) exécuté DANS le navigateur avec
                 transformers.js (Apache-2.0). Téléchargé au moment de l'usage depuis
                 Hugging Face (puis mis en cache par le navigateur). Essaie plusieurs
-                configurations (WebGPU, puis WASM quantifié, puis WASM complet).
+                configurations (WebGPU fp16, puis WASM fp32 : seuls fichiers du dépôt).
    - 'simple' : repli sans téléchargement : fond uni détecté sur les bords de la photo.
                 Sert aussi de moteur de test de l'interface (?engine=simple).
    - 'remote' : EMPLACEMENT du service payant (désactivé, sans clé, voir REMOTE). */
@@ -25,8 +25,8 @@
     var list = [];
     // WebGPU : rapide, mais encore fragile sur iPhone -> WASM d'abord là-bas.
     if (navigator.gpu && !isIOS) list.push({ device: 'webgpu', dtype: 'fp16', label: 'WebGPU (précis)' });
-    list.push({ device: 'wasm', dtype: 'q8', label: 'Processeur (quantifié)' });
-    if (!isIOS) list.push({ device: 'wasm', dtype: 'fp32', label: 'Processeur (complet)' }); // trop gourmand pour Safari iPhone
+    // Le dépôt ne fournit que model.onnx (fp32) et model_fp16.onnx : pas de version « q8 ».
+    list.push({ device: 'wasm', dtype: 'fp32', label: 'Processeur' });
     return list;
   }
 
