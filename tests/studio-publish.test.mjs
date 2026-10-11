@@ -95,3 +95,10 @@ test('slug invalide ou aucune photo : refusé avant tout envoi', async () => {
   await assert.rejects(P.publish(opts({ files: [] })), /Aucune photo/);
   assert.equal(w.st.calls.length, 0);
 });
+
+test('vidéo de plus de 40 Mo : refusée avant tout envoi', async () => {
+  const w = world(), P = await load(w.fetch);
+  await assert.rejects(P.publish(opts({ reelVideo: { data: new Uint8Array(40 * 1024 * 1024 + 1) } })), /Vidéo trop lourde/);
+  assert.equal(w.st.calls.length, 0);
+  assert.equal((await P.publish(opts({ reelVideo: { data: new Uint8Array(1024) } }))).commit, 'c1');
+});

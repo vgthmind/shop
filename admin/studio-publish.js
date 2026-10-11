@@ -74,6 +74,7 @@
     if (!token) throw new Error('Pas connecté à GitHub.');
     if (!/^[^\s\/\\.][^\s\/\\]*$/.test(slug)) throw new Error('Slug invalide (pas d\'espace, de point ni de barre).');
     if (!opts.files.length) throw new Error('Aucune photo à publier.');
+    if (opts.reelVideo && opts.reelVideo.data.length > 40 * 1024 * 1024) throw new Error('Vidéo trop lourde (' + Math.round(opts.reelVideo.data.length / 1048576) + ' Mo, 40 Mo maximum) : exporte-la en plus léger.');
     var jsonPath = 'data/products/' + slug + '.json';
 
     say('Lecture de la fiche pièce…');
