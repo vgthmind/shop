@@ -1,5 +1,5 @@
 {
-  "fetched_at": "2026-10-11T22:33:54.246Z",
+  "fetched_at": "2026-10-11T22:51:28.863Z",
   "source": "data/products/*.json (admin)",
   "store": {
     "name": "vgthmind",
@@ -10,22 +10,22 @@
   "products": [
     {
       "id": 1806937371,
-      "name": "TEST a supprimer",
+      "name": "test a supprimer",
       "permalink": "test-a-supprimer",
       "position": 0,
       "url": "/product/test-a-supprimer",
       "status": "active",
-      "created_at": "2026-10-11T22:33:39.580Z",
+      "created_at": "2026-10-11T22:51:14.040Z",
       "has_password_protection": false,
       "images": [
         {
-          "url": "/assets/products/test-a-supprimer/vmv4egp2l-0.webp",
+          "url": "/assets/products/test-a-supprimer/vmv4f3av8-0.webp",
           "width": 1000,
           "height": 1250
         }
       ],
-      "price": 9,
-      "default_price": 9,
+      "price": 7,
+      "default_price": 7,
       "tax": 0,
       "on_sale": false,
       "description": "test\r\n\r\ntest",
@@ -33,8 +33,8 @@
       "options": [
         {
           "id": 125789700,
-          "name": "TEST a supprimer",
-          "price": 9,
+          "name": "test a supprimer",
+          "price": 7,
           "sold_out": false,
           "has_custom_price": false,
           "option_group_values": [],
@@ -88,7 +88,7 @@
       "reel_poster": "",
       "search_keywords": [],
       "image": {
-        "url": "/assets/products/test-a-supprimer/vmv4egp2l-0.webp",
+        "url": "/assets/products/test-a-supprimer/vmv4f3av8-0.webp",
         "width": 1000,
         "height": 1250
       },
@@ -2895,6 +2895,6 @@
     "/assets/products/sma_0003/1.png": "/assets/products/sma_0003/1.png",
     "/assets/products/sma_0004/0.png": "/assets/products/sma_0004/0.png",
     "/assets/products/sma_0004/1.png": "/assets/products/sma_0004/1.png",
-    "/assets/products/test-a-supprimer/vmv4egp2l-0.webp": "/assets/products/test-a-supprimer/vmv4egp2l-0.webp"
+    "/assets/products/test-a-supprimer/vmv4f3av8-0.webp": "/assets/products/test-a-supprimer/vmv4f3av8-0.webp"
   }
 }
