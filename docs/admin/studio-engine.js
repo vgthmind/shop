@@ -26,7 +26,7 @@
     // WebGPU : rapide, mais encore fragile sur iPhone -> WASM d'abord là-bas.
     if (navigator.gpu && !isIOS) list.push({ device: 'webgpu', dtype: 'fp16', label: 'WebGPU (précis)' });
     list.push({ device: 'wasm', dtype: 'q8', label: 'Processeur (quantifié)' });
-    list.push({ device: 'wasm', dtype: 'fp32', label: 'Processeur (complet)' });
+    if (!isIOS) list.push({ device: 'wasm', dtype: 'fp32', label: 'Processeur (complet)' }); // trop gourmand pour Safari iPhone
     return list;
   }
 

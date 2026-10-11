@@ -15,7 +15,7 @@
     var checker = key === 'checker' || key === 'transparent';
     el.classList.toggle('checker', checker); el.style.background = checker ? '' : BGS[key].color;
   }
-  var MAXSIDE = E.isIOS ? 1600 : 2000; // taille de travail (mémoire limitée sur iPhone)
+  var MAXSIDE = E.isIOS ? 1280 : 2000; // taille de travail (mémoire limitée sur iPhone)
   var $ = function (id) { return document.getElementById(id); };
 
   var photos = [], sel = -1, busy = false, nextId = 1;
