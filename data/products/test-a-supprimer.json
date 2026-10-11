@@ -4,8 +4,8 @@
   "price": 9,
   "description": "test\r\n\r\ntest",
   "images": [
-    "/assets/products/test-a-supprimer/vmv4d76u9-0.webp",
-    "/assets/products/test-a-supprimer/vmv4d76u9-1.webp"
+    "/assets/products/test-a-supprimer/vmv4e6yu9-0.webp",
+    "/assets/products/test-a-supprimer/vmv4e6yu9-1.webp"
   ],
   "categories": [
     "tops"
@@ -14,7 +14,7 @@
   "unique": true,
   "in_stock": true,
   "position": 0,
-  "created_at": "2026-10-11T21:58:14.514Z",
+  "created_at": "2026-10-11T22:26:04.863Z",
   "stripe_payment_link": "",
   "quantity": 1,
   "color_name": "blanc cassé",
