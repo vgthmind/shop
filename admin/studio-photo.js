@@ -543,8 +543,6 @@
     if (pendingCount()) { pubSay(pendingCount() + ' photo(s) à détourer ou à valider : publication impossible tant que ce n’est pas fait (étape 2).'); return; }
     var piece = window.VGWizard && window.VGWizard.collect();
     if (!piece || piece.error) { pubSay(piece ? piece.error : 'Assistant indisponible.'); return; }
-    var rl = piece.product.reel_url, hasRp = !!reelPoster;
-    if (rl && !hasRp && !confirm('Aucune image de reel choisie : la carte « Voir la pièce portée » sera sombre (sans image) sauf si la pièce en a déjà une. Publier quand même ?')) return;
     if (!confirm('Publier « ' + piece.product.name + ' » (' + n + ' photo(s)) ?\nLe site sera reconstruit (1 à 2 min).')) return;
     $('bPublish').disabled = true;
     try {
