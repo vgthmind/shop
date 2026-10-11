@@ -13,10 +13,24 @@
   var DEFAULT_URL = 'http://localhost:7860', KEY = 'vg-detourage-url';
   var SERVER_URL = DEFAULT_URL;
   try { SERVER_URL = (localStorage.getItem(KEY) || DEFAULT_URL).replace(/[/]$/, ''); } catch (x) {}
+  // Lien du lanceur « iPhone » : ...studio-photo.html#srv=<adresse du tunnel>&k=<mot de passe>.
+  // Le fragment (#...) ne part jamais vers un serveur ; on le range dans ce navigateur puis on l'efface de la barre d'adresse.
+  var TOKEN_KEY = 'vg-detourage-token', TOKEN = '';
+  try {
+    var hp = new URLSearchParams((location.hash || '').replace(/^#/, ''));
+    var hs = (hp.get('srv') || '').trim().replace(/[/]$/, ''), hk = (hp.get('k') || '').trim();
+    if (/^https:[/][/][a-z0-9.-]+$/i.test(hs)) { localStorage.setItem(KEY, hs); SERVER_URL = hs; }
+    if (/^[A-Za-z0-9_-]{16,128}$/.test(hk)) localStorage.setItem(TOKEN_KEY, hk);
+    if (hs || hk) history.replaceState(null, '', location.pathname + location.search);
+    TOKEN = localStorage.getItem(TOKEN_KEY) || '';
+  } catch (x) {}
   var WAKE_TIMEOUT_MS = null; // null = selon le serveur (court en local, long à distance)
   if (/^(localhost|127.0.0.1)$/.test(location.hostname)) { var qs = new URLSearchParams(location.search).get('space'); if (qs) SERVER_URL = qs; var wk = Number(new URLSearchParams(location.search).get('wake')); if (wk) WAKE_TIMEOUT_MS = wk * 1000; }
   function isLocalServer() { return /^https?:[/][/](localhost|127[.]0[.]0[.]1)(:|[/]|$)/.test(SERVER_URL); }
-  function wakeLimit() { return WAKE_TIMEOUT_MS || (isLocalServer() ? 20000 : 6 * 60 * 1000); } // test local uniquement
+  function isTunnel() { return /^https:[/][/][a-z0-9-]+[.]trycloudflare[.]com(:|[/]|$)/i.test(SERVER_URL); }
+  // local : 20 s ; tunnel du PC : 30 s (le PC répond tout de suite ou est éteint) ; hébergeur endormi : 6 min
+  function wakeLimit() { return WAKE_TIMEOUT_MS || (isLocalServer() ? 20000 : isTunnel() ? 30000 : 6 * 60 * 1000); }
+  function authHeaders(h) { h = h || {}; if (TOKEN && !isLocalServer()) h['X-VG-Token'] = TOKEN; return h; } // test local uniquement
 
   var isIOS = /iP(hone|ad|od)/.test(navigator.userAgent) ||
     (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
@@ -36,12 +50,12 @@
     var t0 = Date.now(), shown = false;
     for (;;) {
       try {
-        var r = await fetchTimeout(SERVER_URL + '/health', { cache: 'no-store' }, 10000);
+        var r = await fetchTimeout(SERVER_URL + '/health', { cache: 'no-store', headers: authHeaders() }, 10000);
         var j = r.ok ? await r.json() : null;
         if (j && j.ready) { awakeUntil = Date.now() + 5 * 60 * 1000; return; }
         if (j && j.error) throw unavailable('Le serveur de détourage a un problème : ' + j.error);
       } catch (e) { if (e && e.code === 'unavailable') throw e; }
-      if (Date.now() - t0 > wakeLimit()) throw unavailable(isLocalServer() ? 'Le serveur de détourage ne tourne pas sur ce PC : double-clique sur « Lancer-detourage.bat » (dossier detourage-server), puis relance.' : 'Le serveur de détourage ne répond pas.');
+      if (Date.now() - t0 > wakeLimit()) throw unavailable(isLocalServer() ? 'Le serveur de détourage ne tourne pas sur ce PC : double-clique sur « Lancer-detourage.bat » (dossier detourage-server), puis relance.' : isTunnel() ? 'Le PC ne répond pas. Vérifie qu’il est allumé, que la fenêtre « Détourage iPhone » est ouverte, puis rouvre le DERNIER lien envoyé (l’adresse change à chaque lancement).' : 'Le serveur de détourage ne répond pas.');
       shown = true;
       onStatus(isLocalServer() ? 'Recherche du serveur de détourage sur ce PC…' : 'Réveil du serveur de détourage, 1 à 3 min (' + Math.round((Date.now() - t0) / 1000) + ' s)…');
       await sleep(5000);
@@ -56,8 +70,9 @@
         onStatus('Détourage en cours…');
         var blob = await new Promise(function (ok) { canvas.toBlob(ok, 'image/jpeg', 0.92); });
         var r;
-        try { r = await fetchTimeout(SERVER_URL + '/cut', { method: 'POST', headers: { 'Content-Type': 'image/jpeg' }, body: blob }, 180000); }
+        try { r = await fetchTimeout(SERVER_URL + '/cut', { method: 'POST', headers: authHeaders({ 'Content-Type': 'image/jpeg' }), body: blob }, 180000); }
         catch (e) { awakeUntil = 0; throw unavailable('Le serveur de détourage ne répond pas.'); }
+        if (r.status === 401 || r.status === 429) { awakeUntil = 0; throw unavailable(r.status === 401 ? 'Le PC refuse le mot de passe : rouvre le dernier lien « Détourage iPhone » envoyé depuis le PC.' : 'Trop d’essais refusés : réessaie dans une heure.'); }
         if (!r.ok) { awakeUntil = 0; throw unavailable('Le serveur de détourage a répondu une erreur (' + r.status + ').'); }
         var bmp = await createImageBitmap(await r.blob());
         var c = document.createElement('canvas'); c.width = canvas.width; c.height = canvas.height;

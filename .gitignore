@@ -25,3 +25,8 @@ node_modules/
 apercu-emails/
 node_modules/
 models/
+
+# detourage-server : mot de passe local, binaire du tunnel, lien genere
+detourage-server/.token
+detourage-server/cloudflared.exe
+detourage-server/lien-iphone.html

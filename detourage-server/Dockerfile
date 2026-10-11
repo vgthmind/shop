@@ -8,4 +8,5 @@ COPY server.js ./
 RUN chown -R node:node /app
 USER node
 ENV ORT_THREADS=4
+ENV DETOURAGE_OPEN=1
 CMD ["node", "server.js"]
