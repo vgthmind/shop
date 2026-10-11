@@ -169,26 +169,37 @@
   // ---------- image du reel (tirée de la vidéo) ----------
   var reelPoster = null; // { data: Uint8Array, ext }
   (function () {
-    var rv = $('rpVideo'), rt = $('rpTime'), url = null;
-    function grab() {
-      var c = document.createElement('canvas'), k = Math.min(1, 800 / Math.max(rv.videoWidth, rv.videoHeight));
-      c.width = Math.round(rv.videoWidth * k); c.height = Math.round(rv.videoHeight * k);
-      c.getContext('2d').drawImage(rv, 0, 0, c.width, c.height);
+    var rv = $('rpVideo'), rt = $('rpTime'), url = null, isImg = false;
+    function msg(t, err) { $('rpMsg').textContent = t; $('rpMsg').style.color = err ? '#a23b2a' : ''; }
+    function save(src, w, h) { // src : <video> ou <img>
+      var c = document.createElement('canvas'), k = Math.min(1, 800 / Math.max(w, h));
+      c.width = Math.round(w * k); c.height = Math.round(h * k);
+      c.getContext('2d').drawImage(src, 0, 0, c.width, c.height);
+      // Image noire = vidéo non décodée (ex. vidéo iPhone HEVC dans Chrome) : on refuse plutôt que de publier du noir.
+      var px = c.getContext('2d').getImageData(0, 0, c.width, c.height).data, sum = 0, n = 0, i;
+      for (i = 0; i < px.length; i += 40) { sum += px[i] + px[i + 1] + px[i + 2]; n += 3; }
+      if (sum / n < 6) { reelPoster = null; msg('Image noire : choisis un autre moment avec le curseur, ou une capture d’écran du reel.', true); return; }
       c.toBlob(async function (b) {
-        if (!b) return;
+        if (!b) { reelPoster = null; msg('Image illisible.', true); return; }
         reelPoster = { data: new Uint8Array(await b.arrayBuffer()), ext: b.type === 'image/webp' ? 'webp' : 'jpg' };
-        $('rpMsg').textContent = 'Image prête (' + Math.round(reelPoster.data.length / 1024) + ' Ko).';
+        msg('Image prête (' + Math.round(reelPoster.data.length / 1024) + ' Ko).');
       }, 'image/webp', 0.85);
     }
-    rv.addEventListener('seeked', grab);
-    rv.addEventListener('loadedmetadata', function () { rt.max = rv.duration || 1; rt.value = 0; rv.currentTime = 0.1; });
+    rv.addEventListener('seeked', function () { if (rv.videoWidth) save(rv, rv.videoWidth, rv.videoHeight); else { reelPoster = null; msg('Cette vidéo ne peut pas être lue par ce navigateur (vidéo iPhone HEVC ?). Choisis plutôt une capture d’écran du reel, ou une vidéo MP4.', true); } });
+    rv.addEventListener('loadedmetadata', function () { rt.max = rv.duration || 1; rt.value = 0; rv.currentTime = Math.min(0.5, (rv.duration || 1) / 2); });
+    rv.addEventListener('error', function () { reelPoster = null; msg('Cette vidéo ne peut pas être lue par ce navigateur. Choisis plutôt une capture d’écran du reel, ou une vidéo MP4.', true); });
     rt.oninput = function () { rv.currentTime = Number(rt.value); };
     $('fReelVideo').onchange = function (e) {
       var f = e.target.files[0]; if (!f) return;
       if (url) URL.revokeObjectURL(url);
-      url = URL.createObjectURL(f); rv.src = url; $('rpBox').hidden = false; $('rpMsg').textContent = 'Lecture de la vidéo…';
+      reelPoster = null; url = URL.createObjectURL(f); $('rpBox').hidden = false; msg('Lecture…');
+      isImg = f.type.indexOf('image/') === 0;
+      if (isImg) { // capture d’écran : utilisée telle quelle (réduite)
+        rv.removeAttribute('src'); rv.hidden = true; rt.parentNode.hidden = true;
+        var im = new Image(); im.onload = function () { save(im, im.naturalWidth, im.naturalHeight); }; im.onerror = function () { msg('Image illisible.', true); }; im.src = url;
+      } else { rv.hidden = false; rt.parentNode.hidden = false; rv.src = url; rv.load(); }
     };
-    $('rpClear').onclick = function () { reelPoster = null; $('rpBox').hidden = true; $('fReelVideo').value = ''; $('rpMsg').textContent = ''; if (url) { URL.revokeObjectURL(url); url = null; } };
+    $('rpClear').onclick = function () { reelPoster = null; $('rpBox').hidden = true; $('fReelVideo').value = ''; msg(''); if (url) { URL.revokeObjectURL(url); url = null; } };
   })();
   function remove(i) {
     var cur = photos[sel]; photos.splice(i, 1);
@@ -532,6 +543,8 @@
     if (pendingCount()) { pubSay(pendingCount() + ' photo(s) à détourer ou à valider : publication impossible tant que ce n’est pas fait (étape 2).'); return; }
     var piece = window.VGWizard && window.VGWizard.collect();
     if (!piece || piece.error) { pubSay(piece ? piece.error : 'Assistant indisponible.'); return; }
+    var rl = piece.product.reel_url, hasRp = !!reelPoster;
+    if (rl && !hasRp && !confirm('Aucune image de reel choisie : la carte « Voir la pièce portée » sera sombre (sans image) sauf si la pièce en a déjà une. Publier quand même ?')) return;
     if (!confirm('Publier « ' + piece.product.name + ' » (' + n + ' photo(s)) ?\nLe site sera reconstruit (1 à 2 min).')) return;
     $('bPublish').disabled = true;
     try {
