@@ -45,11 +45,12 @@
   }
 
   async function addFiles(list) {
+    draftOff = false;
     var files = Array.prototype.slice.call(list).filter(function (f) { return /^image\//.test(f.type) || /\.(heic|heif|jpe?g|png|webp)$/i.test(f.name); });
     for (var i = 0; i < files.length; i++) {
       try {
         var src = await decode(files[i]);
-        photos.push({ id: nextId++, name: files[i].name, src: src, w: src.width, h: src.height, status: 'queued', raw: null, ref: null, mode: null, cov: null, undo: [], cut: null, box: null, thumb: null, msg: '' });
+        photos.push({ id: nextId++, file: files[i], name: files[i].name, src: src, w: src.width, h: src.height, status: 'queued', raw: null, ref: null, mode: null, cov: null, undo: [], cut: null, box: null, thumb: null, msg: '' });
       } catch (e) {
         notice('Photo illisible : ' + files[i].name + ' (les HEIC se lisent sur iPhone/Safari ; sinon exporte en JPEG).', true);
       }
@@ -128,6 +129,7 @@
   // ---------- liste des photos ----------
   var STATUS = { queued: 'En attente…', processing: 'Détourage…', review: 'À valider', valid: '✓ Validée', original: 'Original gardé', error: 'Erreur', todo: 'À détourer' };
   function renderStrip() {
+    scheduleDraft();
     var strip = $('strip'); strip.textContent = '';
     $('bRetry').hidden = !waitingCount(); $('bRedoAll').hidden = !photos.length;
     photos.forEach(function (p, i) {
@@ -176,7 +178,7 @@
       if (f.size > MAX) { msg('Vidéo trop lourde (' + Math.round(f.size / 1048576) + ' Mo, 40 Mo maximum) : exporte-la en plus léger.', true); return; }
       var v = document.createElement('video'), u = URL.createObjectURL(f);
       v.muted = true; v.preload = 'metadata';
-      v.onloadedmetadata = function () { URL.revokeObjectURL(u); reelFile = f; msg('Vidéo prête (' + Math.round(f.size / 1048576 * 10) / 10 + ' Mo, ' + Math.round(v.duration) + ' s).'); };
+      v.onloadedmetadata = function () { URL.revokeObjectURL(u); reelFile = f; scheduleDraft(); msg('Vidéo prête (' + Math.round(f.size / 1048576 * 10) / 10 + ' Mo, ' + Math.round(v.duration) + ' s).'); };
       v.onerror = function () { URL.revokeObjectURL(u); msg('Cette vidéo ne peut pas être lue par ce navigateur (vidéo iPhone HEVC ?) : exporte-la en MP4 H.264.', true); };
       v.src = u; msg('Lecture…');
     };
@@ -530,6 +532,7 @@
       var rv = reelFile ? { data: new Uint8Array(await reelFile.arrayBuffer()) } : null;
       var isNew = !(await window.VGStudioPublish.exists(piece.product.slug));
       await window.VGStudioPublish.publish({ slug: piece.product.slug, piece: piece.product, isNew: isNew, files: r.files, reelVideo: rv, replace: $('replace').checked, onStatus: pubSay });
+      draftOff = true; Draft.clear(); // publié : plus besoin du brouillon (et on n'en refait pas un à la fermeture)
     } catch (e) { pubSay('Échec : ' + (e.message || e)); }
     $('bPublish').disabled = !window.VGStudioPublish.connected();
   };
@@ -544,6 +547,65 @@
     if (p !== photos[sel]) releaseCut(p);
     return id;
   }
+
+  // ---------- brouillon local (studio-draft.js) ----------
+  // Photos originales + vidéo + fiche gardées dans ce navigateur : si la page se ferme, on les propose à la réouverture.
+  var Draft = window.VGStudioDraft ? window.VGStudioDraft.create() : { save: async function () { return { ok: false }; }, load: async function () { return null; }, clear: async function () {}, isEmpty: function () { return true; } };
+  var DRAFT_IDS = ['fName', 'slug', 'fPrice', 'fQty', 'fUnique', 'fDrop', 'fEn', 'fFr', 'fColorOther', 'fReel', 'fWeight', 'fMode', 'fAlone'];
+  var draftTimer = null, draftPending = false, draftOff = false;
+  function draftFields() {
+    var f = {};
+    DRAFT_IDS.forEach(function (id) { var el = $(id); if (el) f[id] = el.type === 'checkbox' ? el.checked : el.value; });
+    var col = document.querySelector('input[name=fColor]:checked'); f.color = col ? col.value : '';
+    f.cats = Array.prototype.map.call(document.querySelectorAll('input[name=fCat]:checked'), function (i) { return i.value; });
+    return f;
+  }
+  function scheduleDraft() {
+    if (draftPending || draftOff) return; // brouillon retrouvé pas encore repris ou effacé : on ne l'écrase pas
+    clearTimeout(draftTimer);
+    draftTimer = setTimeout(async function () {
+      if (draftPending || draftOff) return; // revérifié au déclenchement : le brouillon retrouvé ne doit jamais être écrasé
+      var r = await Draft.save({ files: photos.map(function (p) { return p.file; }).filter(Boolean), reel: reelFile, fields: draftFields() });
+      var m = $('draftMsg'); if (m) m.textContent = r.ok ? (r.empty ? '' : 'Brouillon sauvegardé sur cet appareil.') : 'Brouillon non sauvegardé (' + (r.error || 'stockage refusé') + ').';
+    }, 800);
+  }
+  function setField(id, v) {
+    var el = $(id); if (!el || v === undefined) return;
+    if (el.type === 'checkbox') el.checked = !!v; else el.value = v;
+    el.dispatchEvent(new Event('input', { bubbles: true })); el.dispatchEvent(new Event('change', { bubbles: true }));
+  }
+  function restoreFields(f) {
+    DRAFT_IDS.forEach(function (id) { setField(id, f[id]); }); // fName avant slug : le slug enregistré l'emporte
+    var radio = f.color && document.querySelector('input[name=fColor][value="' + f.color + '"]');
+    if (radio) { radio.checked = true; radio.dispatchEvent(new Event('change', { bubbles: true })); }
+    var tries = 0; // catégories : chargées depuis le réseau, parfois après nous
+    (function cats() {
+      var boxes = document.querySelectorAll('input[name=fCat]');
+      if (!boxes.length && ++tries < 20) return setTimeout(cats, 500);
+      Array.prototype.forEach.call(boxes, function (b) { b.checked = (f.cats || []).indexOf(b.value) >= 0; });
+    })();
+  }
+  (async function offerDraft() {
+    draftPending = true;
+    var d = await Draft.load();
+    if (!d) { draftPending = false; return; }
+    var box = document.createElement('div'); box.className = 'notice'; box.id = 'draftBox';
+    var when = new Date(d.savedAt).toLocaleString('fr-FR', { dateStyle: 'short', timeStyle: 'short' });
+    var nm = d.fields && d.fields.fName ? ' « ' + d.fields.fName + ' »' : '';
+    box.appendChild(document.createTextNode('Brouillon retrouvé' + nm + ' (' + (d.files || []).length + ' photo(s)' + (d.reel ? ', vidéo' : '') + ', ' + when + '). '));
+    var yes = document.createElement('button'); yes.type = 'button'; yes.textContent = 'Reprendre';
+    var no = document.createElement('button'); no.type = 'button'; no.textContent = 'Effacer'; no.style.marginLeft = '8px';
+    box.appendChild(yes); box.appendChild(no); $('notices').appendChild(box);
+    yes.onclick = async function () {
+      box.remove(); draftPending = false;
+      restoreFields(d.fields || {});
+      if (d.reel) { reelFile = d.reel; $('rpMsg').textContent = 'Vidéo reprise du brouillon (' + Math.round(d.reel.size / 1048576 * 10) / 10 + ' Mo).'; }
+      await addFiles(d.files || []);
+      scheduleDraft();
+    };
+    no.onclick = function () { box.remove(); draftPending = false; Draft.clear(); };
+  })();
+  document.addEventListener('input', scheduleDraft); document.addEventListener('change', scheduleDraft);
 
   window.VGStudio = { colorSample: colorSample, count: function () { return exportable().length; }, pending: pendingCount, _state: function () { return { photos: photos, params: params }; } };
 })();
