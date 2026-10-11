@@ -1,5 +1,5 @@
 {
-  "fetched_at": "2026-10-11T23:06:38.515Z",
+  "fetched_at": "2026-10-11T23:10:10.956Z",
   "source": "data/products/*.json (admin)",
   "store": {
     "name": "vgthmind",
@@ -15,17 +15,17 @@
       "position": 0,
       "url": "/product/test-a-supprimer",
       "status": "active",
-      "created_at": "2026-10-11T22:51:14.040Z",
+      "created_at": "2026-10-11T23:09:52.359Z",
       "has_password_protection": false,
       "images": [
         {
-          "url": "/assets/products/test-a-supprimer/vmv4f3av8-0.webp",
+          "url": "/assets/products/test-a-supprimer/vmv4fr9no-0.webp",
           "width": 1000,
           "height": 1250
         }
       ],
-      "price": 7,
-      "default_price": 7,
+      "price": 9,
+      "default_price": 9,
       "tax": 0,
       "on_sale": false,
       "description": "test\r\n\r\ntest",
@@ -34,7 +34,7 @@
         {
           "id": 125789700,
           "name": "test a supprimer",
-          "price": 7,
+          "price": 9,
           "sold_out": false,
           "has_custom_price": false,
           "option_group_values": [],
@@ -85,10 +85,10 @@
       "color_hex": "#e9e3d6",
       "color_name": "blanc cassé",
       "reel_url": "https://www.instagram.com/vgthmind/reel/DZc4XSpsmhA/",
-      "reel_video": "",
+      "reel_video": "/assets/products/test-a-supprimer/reel-mv4fr9no.mp4",
       "search_keywords": [],
       "image": {
-        "url": "/assets/products/test-a-supprimer/vmv4f3av8-0.webp",
+        "url": "/assets/products/test-a-supprimer/vmv4fr9no-0.webp",
         "width": 1000,
         "height": 1250
       },
@@ -2895,6 +2895,6 @@
     "/assets/products/sma_0003/1.png": "/assets/products/sma_0003/1.png",
     "/assets/products/sma_0004/0.png": "/assets/products/sma_0004/0.png",
     "/assets/products/sma_0004/1.png": "/assets/products/sma_0004/1.png",
-    "/assets/products/test-a-supprimer/vmv4f3av8-0.webp": "/assets/products/test-a-supprimer/vmv4f3av8-0.webp"
+    "/assets/products/test-a-supprimer/vmv4fr9no-0.webp": "/assets/products/test-a-supprimer/vmv4fr9no-0.webp"
   }
 }
