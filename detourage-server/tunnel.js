@@ -68,7 +68,7 @@ async function main() {
   let tunnel = null;
   const stop = () => { try { server.kill(); } catch (e) { /* déjà arrêté */ } try { if (tunnel) tunnel.kill(); } catch (e) { /* idem */ } };
   process.on('exit', stop); process.on('SIGINT', () => process.exit(0)); process.on('SIGTERM', () => process.exit(0));
-  server.on('exit', (c) => { console.error('Le serveur de détourage s’est arrêté (code ' + c + ').'); process.exit(1); });
+  server.on('exit', (c) => { console.error('Le serveur de détourage s’est arrêté (code ' + c + '). Si « Lancer-detourage.bat » est déjà ouvert, ferme-le et relance.'); process.exit(1); });
   await waitHealth(PORT, 60000);
   console.log('Serveur de détourage démarré. Ouverture du tunnel…');
 
