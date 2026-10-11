@@ -91,13 +91,19 @@ export async function shippingRoutes(
 }
 
 // ---------------------------------------------------------------------------
-// Port du paiement (lot 4). Appele par POST /checkout dans index.ts.
-//   - Pieces « anciennes » (port fixe saisi sur la fiche : shipping_fr / shipping_intl) : regle d'avant,
-//     le port le plus eleve du panier. Rien ne change pour elles.
-//   - Pieces sans port fixe (ajoutees depuis le studio) : calcul sur la grille (poids, mode, colis).
-//   - Panier mixte : le plus eleve des deux. Jamais 0 € par erreur : sans poids ni port, on refuse.
-// `region` 'fr' -> France. 'intl' sans pays precise -> le pire cas des zones livrees (Stripe fixe le prix
-// avant que le client donne son adresse) ; avec un pays valide -> le prix de ce pays.
+// Port du paiement. Appele par POST /checkout et POST /shipping/quote (index.ts) : MEME calcul, donc le prix
+// affiche dans le panier est celui de Stripe.
+//   - Le client choisit son pays AVANT de payer ; on calcule le port exact pour ce pays sur la grille.
+//   - Pieces « anciennes » (port fixe sur la fiche : shipping_fr / shipping_intl) SEULES : regle d'avant, le port
+//     fixe le plus eleve du panier, quel que soit le pays (France ou « international »).
+//   - Des qu'une piece du studio (sans port fixe) est dans le panier : grille sur le POIDS TOTAL (colis partages),
+//     anciennes pieces avec poids comprises. Une ancienne piece SANS poids garde son port fixe : le resultat est
+//     alors le plus eleve entre la grille et ces ports fixes.
+//   - Jamais 0 € par erreur : sans poids ni port, refus. Pays non livre (grille: zones, pays bloques) : refus.
+//   - Sans pays : France si region « fr » ; « intl » sans pays = ancien comportement, seulement pour des
+//     anciennes pieces seules ; sinon erreur « country_required ».
+const { findZone } = calc as { findZone: (cfg: any, country: string) => any };
+
 export interface CheckoutProduct {
   permalink: string;
   price: number;
@@ -108,7 +114,7 @@ export interface CheckoutProduct {
   shipping: { amount_alone: number; country?: { code: string } }[];
 }
 export type CheckoutShipping =
-  | { ok: true; cents: number; source: 'legacy' | 'grid' | 'mixed'; country: string | null }
+  | { ok: true; cents: number; source: 'legacy' | 'grid' | 'mixed'; country: string | null; free: boolean }
   | { ok: false; error: string; message: string; slugs?: string[] };
 
 function fixedPort(p: CheckoutProduct, region: 'fr' | 'intl'): number | null {
@@ -118,40 +124,49 @@ function fixedPort(p: CheckoutProduct, region: 'fr' | 'intl'): number | null {
   return v > 0 ? v : null;
 }
 
+function served(config: any, country: string): boolean {
+  const blocked = (config.blocked_countries || []).map((c: string) => String(c).toUpperCase());
+  if (blocked.includes(country)) return false;
+  const z = findZone(config, country);
+  return !!z && z.enabled !== false;
+}
+
 export async function checkoutShipping(
   env: ShipEnv, products: CheckoutProduct[], wanted: Map<string, number>, region: 'fr' | 'intl', country?: string,
 ): Promise<CheckoutShipping> {
-  const fixed: number[] = [];
-  const gridItems: any[] = [];
+  const cc = country && /^[A-Za-z]{2}$/.test(country) ? country.toUpperCase() : '';
+  if (cc) region = cc === 'FR' ? 'fr' : 'intl';
+  const fixed: { p: CheckoutProduct; cents: number }[] = [];
+  const fresh: CheckoutProduct[] = [];
   for (const p of products) {
     const v = fixedPort(p, region);
-    if (v !== null) { fixed.push(Math.round(v * 100)); continue; }
-    gridItems.push({ slug: p.permalink, qty: wanted.get(p.permalink) || 1, weight_g: p.weight_g, mode: p.mode, alone: p.alone === true, legacy: { fr: null, intl: null } });
+    if (v === null) fresh.push(p); else fixed.push({ p, cents: Math.round(v * 100) });
   }
-  const legacyCents = fixed.length ? Math.max(...fixed) : 0;
-  if (gridItems.length === 0) return { ok: true, cents: legacyCents, source: 'legacy', country: null };
+  const loadGrid = async () => { try { return await loadShippingConfig(env); } catch (e) { return null; } };
 
-  let config: any;
-  try { config = await loadShippingConfig(env); } catch (e) {
-    return { ok: false, error: 'config_unavailable', message: 'Grille des frais d’envoi indisponible.' };
+  if (fresh.length === 0) { // anciennes pieces seules : port fixe d'avant
+    const legacy = fixed.length ? Math.max(...fixed.map((f) => f.cents)) : 0;
+    if (cc && cc !== 'FR') { // meme ici, un pays refuse reste refuse (quand la grille est lisible)
+      const config = await loadGrid();
+      if (config && !served(config, cc)) return { ok: false, error: 'country_not_served', message: 'Pays non livré : ' + cc };
+    }
+    return { ok: true, cents: legacy, source: 'legacy', country: cc || null, free: false };
   }
+
+  if (region === 'intl' && !cc) return { ok: false, error: 'country_required', message: 'Choisis ton pays de livraison.' };
+  const config = await loadGrid();
+  if (!config) return { ok: false, error: 'config_unavailable', message: 'Grille des frais d’envoi indisponible.' };
+
+  const weightless = fixed.filter((f) => !(Number(f.p.weight_g) > 0));
+  const inGrid = [...fresh, ...fixed.filter((f) => Number(f.p.weight_g) > 0).map((f) => f.p)];
+  const gridItems = inGrid.map((p) => ({ slug: p.permalink, qty: wanted.get(p.permalink) || 1, weight_g: p.weight_g, mode: p.mode, alone: p.alone === true }));
   const subtotal = products.reduce((s, p) => s + p.price * (wanted.get(p.permalink) || 1), 0);
   const cart = { items: gridItems, subtotal };
-  let countries: string[];
-  if (region === 'fr') countries = ['FR'];
-  else if (country && /^[A-Z]{2}$/.test(country)) countries = [country];
-  else {
-    countries = (config.zones || []).filter((z: any) => z.enabled !== false && z.id !== 'FR')
-      .map((z: any) => z.sample_country || (z.countries || []).filter((c: string) => c !== '*' && c !== 'FR')[0] || 'US');
-  }
-  let best: { cents: number; country: string } | null = null;
-  let lastError: any = null;
-  for (const c of countries) {
-    const r = quoteOrFallback(config, cart, c);
-    if (r.ok) { if (!best || r.totalCents > best.cents) best = { cents: r.totalCents, country: c }; }
-    else if (r.error === 'country_not_served') lastError = r;
-    else return { ok: false, error: r.error, message: r.message, slugs: r.slugs };
-  }
-  if (!best) return { ok: false, error: (lastError && lastError.error) || 'country_not_served', message: (lastError && lastError.message) || 'Livraison impossible.', slugs: lastError && lastError.slugs };
-  return { ok: true, cents: Math.max(best.cents, legacyCents), source: fixed.length ? 'mixed' : 'grid', country: region === 'fr' || country ? best.country : null };
+  const legacyCents = weightless.length ? Math.max(...weightless.map((f) => f.cents)) : 0;
+
+  const countries = cc ? [cc] : ['FR'];
+  let r: any = null;
+  for (const c of countries) r = quoteShipping(config, cart, c);
+  if (!r.ok) return { ok: false, error: r.error, message: r.message, slugs: r.slugs };
+  return { ok: true, cents: Math.max(r.totalCents, legacyCents), source: weightless.length ? 'mixed' : 'grid', country: cc || 'FR', free: !!r.free };
 }

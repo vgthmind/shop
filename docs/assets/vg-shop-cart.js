@@ -309,6 +309,11 @@
           draw();
         });
       });
+      document.addEventListener('vg-shipping-change', function () { // pays choisi dans le sélecteur du panier
+        if (!root.isConnected) return;
+        try { region = localStorage.getItem('vg-shop-region') === 'intl' ? 'intl' : 'fr'; } catch (err) {}
+        message = ''; draw();
+      });
       root.querySelector('.vg-cart-region-select').addEventListener('change', function (e) {
         region = e.target.value;
         try { localStorage.setItem('vg-shop-region', region); } catch (err) {}
@@ -325,7 +330,7 @@
       fetch(ENDPOINT + '/checkout', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ items: items.map(function (it) { return { slug: it.slug, qty: qty(it) }; }), region: region, cart_id: cartId() }),
+        body: JSON.stringify({ items: items.map(function (it) { return { slug: it.slug, qty: qty(it) }; }), region: region, country: (window.VGShippingPicker && window.VGShippingPicker.country()) || undefined, cart_id: cartId() }),
       })
         .then(function (r) { return r.json().then(function (data) { return { status: r.status, data: data }; }); })
         .then(function (res) {
@@ -355,6 +360,12 @@
                   ? 'Fewer left than requested, quantity updated. / Il en reste moins que demandé, quantité ajustée.'
                   : 'France only / Livraison en France uniquement pour certaines pièces.';
             if (items.length === 0) { root.remove(); location.reload(); return; }
+          } else if (res.data.code === 'country_not_served') {
+            message = 'We do not deliver to this country yet. / Pays non livré pour le moment.';
+          } else if (res.data.code === 'country_required') {
+            message = 'Choose your country first. / Choisis d’abord ton pays de livraison.';
+          } else if (res.data.code === 'missing_weight') {
+            message = 'Shipping unavailable for one piece, contact me on Instagram. / Livraison indisponible pour une pièce, écris-moi sur Instagram.';
           } else {
             message = 'Payment unavailable right now / Paiement indisponible pour le moment.';
           }

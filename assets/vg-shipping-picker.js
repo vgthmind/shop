@@ -1,44 +1,49 @@
 /* Sélecteur de pays du panier (avant paiement) + prix de livraison en direct.
-   Module AUTONOME, non branché : voir rapports-nuit/compta-panier.md.
-   Dépend de : vg-shipping-calc.js (copie de admin/shipping-calc.js) et
-   vg-shipping-view.js, chargés avant. Ne modifie pas vg-shop-cart.js : il lit
-   le panier (localStorage), s'insère dans .cart-footer, remplace les montants
-   « Shipping » et « Total » affichés, bloque le bouton Checkout si le pays n'est
-   pas livré. Le Worker recalcule le vrai prix (le navigateur n'est qu'un affichage).
-   Expose window.VGShippingPicker.country() pour l'envoyer à POST /checkout. */
+   Dépend de vg-shipping-view.js (chargé avant). Lit le panier (localStorage), s'insère dans .cart-footer,
+   remplace les montants « Shipping » et « Total », bloque le bouton Checkout tant que le pays n'est pas
+   choisi ou pas livré. Le prix vient du Worker (POST /shipping/quote) : même calcul que le paiement Stripe.
+   Expose window.VGShippingPicker.country() : envoyé à POST /checkout, qui limite l'adresse à ce pays. */
 (function () {
   'use strict';
   var ENDPOINT = window.VG_SHOP_CHECKOUT_ENDPOINT !== undefined
     ? window.VG_SHOP_CHECKOUT_ENDPOINT
     : 'https://vgthmind-shop-checkout.vgthm66.workers.dev';
   var CART_KEY = 'vg-shop-cart-v1', COUNTRY_KEY = 'vg-shop-country';
-  var calc = window.VGShipping, V = window.VGShippingView;
-  if (!calc || !V) return;
+  var V = window.VGShippingView;
+  if (!V || !ENDPOINT) return;
 
   var lang = V.langOf((document.documentElement.lang || navigator.language || 'fr'));
-  var config = null, cfgFailed = false, country = '';
+  var country = '', quote = null, quoteKey = '', quoteFailedAt = 0;
   try { country = localStorage.getItem(COUNTRY_KEY) || ''; } catch (e) {}
   if (!/^[A-Z]{2}$/.test(country)) {
     var legacy = '';
     try { legacy = localStorage.getItem('vg-shop-region'); } catch (e) {}
-    country = legacy === 'intl' ? '' : 'FR'; // ancien choix « International » : à préciser
+    country = legacy === 'intl' || !/^fr(-FR)?$/i.test(navigator.language || '') ? '' : 'FR'; // pas de pays par défaut hors navigateur français : le client choisit AVANT de payer
   }
 
   function readCart() { try { return JSON.parse(localStorage.getItem(CART_KEY)) || []; } catch (e) { return []; } }
 
-  function loadConfig() {
-    var timeout = new Promise(function (r) { setTimeout(function () { r(null); }, 3000); });
-    var worker = ENDPOINT ? fetch(ENDPOINT + '/shipping/config').then(function (r) { return r.ok ? r.json() : null; }).catch(function () { return null; }) : Promise.resolve(null);
-    return Promise.race([worker, timeout]).then(function (c) {
-      if (c && Array.isArray(c.zones)) return c;
-      return fetch('/admin/shipping-config.json').then(function (r) { return r.ok ? r.json() : null; }).catch(function () { return null; });
-    }).then(function (c) { config = c; cfgFailed = !c; schedule(); });
+  function cartSig(cart) { return country + '|' + cart.map(function (it) { return it.slug + ':' + (it.qty || 1); }).join(','); }
+
+  // Demande le prix au Worker quand le pays ou le panier change (la dernière demande gagne).
+  function requestQuote(cart) {
+    var key = cartSig(cart);
+    if (key === quoteKey && !(quote && quote.network && Date.now() - quoteFailedAt > 10000)) return;
+    quoteKey = key; quote = null;
+    var ctl = typeof AbortController === 'function' ? new AbortController() : null, t = ctl && setTimeout(function () { ctl.abort(); }, 8000);
+    fetch(ENDPOINT + '/shipping/quote', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' }, signal: ctl ? ctl.signal : undefined,
+      body: JSON.stringify({ country: country, items: cart.map(function (it) { return { slug: it.slug, qty: Math.max(1, Math.floor(it.qty || 1)) }; }) })
+    }).then(function (r) { return r.json(); })
+      .then(function (q) { if (quoteKey === key) { quote = q; schedule(); } })
+      .catch(function () { if (quoteKey === key) { quote = { ok: false, error: 'network', network: true }; quoteFailedAt = Date.now(); schedule(); } })
+      .then(function () { if (t) clearTimeout(t); });
   }
 
   function view() {
-    var v = V.buildView(calc, config, readCart(), country, lang);
-    if (cfgFailed) { v.state = 'error'; v.blocked = true; v.message = V.text(lang).error; }
-    return v;
+    var cart = readCart(), subtotal = cart.reduce(function (s, it) { return s + (it.price || 0) * Math.max(1, Math.floor(it.qty || 1)); }, 0);
+    if (country && cart.length) requestQuote(cart);
+    return V.fromQuote(quote, subtotal, country, lang);
   }
 
   function el(tag, cls, txt) { var e = document.createElement(tag); if (cls) e.className = cls; if (txt != null) e.textContent = txt; return e; }
@@ -87,11 +92,11 @@
   }
 
   var pending = false;
-  function schedule() { if (pending) return; pending = true; requestAnimationFrame(function () { pending = false; update(); }); }
+  function schedule() { if (pending) return; pending = true; setTimeout(function () { pending = false; update(); }, 30); } // pas requestAnimationFrame : gelé dans un onglet en arrière-plan
 
   window.VGShippingPicker = {
     country: function () { return country; },
-    ready: function () { return !!config && !view().blocked; },
+    ready: function () { return !view().blocked; },
   };
 
   function start() {
@@ -102,7 +107,6 @@
       + '.vg-ship-summary,.vg-ship-note,.vg-ship-error{margin:0;font-size:.85em}.vg-ship-note{opacity:.65}'
       + '.vg-ship-error{color:#a23b2a;font-weight:600}.vg-ship-error[hidden]{display:none}';
     document.head.appendChild(css);
-    loadConfig();
     new MutationObserver(schedule).observe(document.body, { childList: true, subtree: true });
     window.addEventListener('storage', schedule);
     schedule();

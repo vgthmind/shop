@@ -46,3 +46,17 @@ test('liste de pays : France, Canada en tête, noms localisés', () => {
 test('langue : fr-CA -> fr, tout le reste -> en', () => {
   assert.equal(V.langOf('fr-CA'), 'fr'); assert.equal(V.langOf('de'), 'en'); assert.equal(V.langOf(undefined), 'en');
 });
+
+test('fromQuote : prix du Worker affiché, états de blocage', () => {
+  assert.equal(V.fromQuote(null, 20, '', 'fr').state, 'choose');
+  assert.equal(V.fromQuote(null, 20, 'BE', 'fr').state, 'loading');
+  const ok = V.fromQuote({ ok: true, total: 15 }, 20, 'BE', 'fr');
+  assert.deepEqual([ok.state, ok.blocked, ok.shipping, ok.total, ok.summary], ['ok', false, 15, 35, 'Livraison : 15,00 EUR']);
+  assert.equal(V.fromQuote({ ok: true, total: 0 }, 20, 'FR', 'en').summary, 'Shipping : free');
+  const ru = V.fromQuote({ ok: false, error: 'country_not_served' }, 20, 'RU', 'fr');
+  assert.deepEqual([ru.state, ru.blocked], ['not_served', true]); assert.match(ru.message, /Russie/);
+  assert.match(V.fromQuote({ ok: false, error: 'france_uniquement' }, 20, 'CA', 'en').message, /France only/);
+  assert.equal(V.fromQuote({ ok: false, error: 'country_required' }, 20, 'CA', 'fr').state, 'choose');
+  const net = V.fromQuote({ ok: false, error: 'network' }, 20, 'CA', 'fr');
+  assert.deepEqual([net.state, net.blocked], ['error', true]);
+});

@@ -22,6 +22,7 @@
       country: 'Pays de livraison', shipping: 'Livraison', free: 'offerte', parcel: 'colis', parcels: 'colis',
       choose: 'Choisis ton pays', loading: 'Calcul…',
       notServed: function (n) { return 'Je ne livre pas encore en ' + n + '. Choisis un autre pays, ou écris-moi en DM Instagram : on trouvera une solution.'; },
+      franceOnly: 'Une pièce de ton panier part uniquement en France. Retire-la pour livrer à l’étranger.',
       error: 'Frais de livraison indisponibles pour le moment, réessaie dans un instant.',
       note: 'Le montant définitif est confirmé au paiement.'
     },
@@ -29,6 +30,7 @@
       country: 'Shipping country', shipping: 'Shipping', free: 'free', parcel: 'parcel', parcels: 'parcels',
       choose: 'Choose your country', loading: 'Calculating…',
       notServed: function (n) { return 'I don\'t ship to ' + n + ' yet. Pick another country, or DM me on Instagram and we\'ll work something out.'; },
+      franceOnly: 'One piece in your cart ships to France only. Remove it to ship abroad.',
       error: 'Shipping cost unavailable right now, please try again in a moment.',
       note: 'The final amount is confirmed at payment.'
     }
@@ -74,5 +76,21 @@
     return Object.assign(base, { state: 'ok', blocked: false, shipping: q.total, total: Math.round((subtotal + q.total) * 100) / 100, free: q.free, parcels: n, summary: summary, message: '' });
   }
 
-  return { buildView: buildView, countryList: countryList, countryName: countryName, text: text, money: money, langOf: langOf, STRIPE: STRIPE };
+  // Même état d'affichage, à partir de la réponse du Worker (POST /shipping/quote) : le prix affiché est celui de Stripe.
+  // quote : null (en attente) | { ok:true, total } | { ok:false, error }.
+  function fromQuote(quote, subtotal, country, lang) {
+    var t = text(lang), base = { subtotal: subtotal, shipping: 0, total: subtotal, message: '', summary: '' };
+    if (!country) return Object.assign(base, { state: 'choose', blocked: true, message: t.choose });
+    if (!quote) return Object.assign(base, { state: 'loading', blocked: true, message: t.loading });
+    if (quote.ok) {
+      var ship = Number(quote.total) || 0;
+      return Object.assign(base, { state: 'ok', blocked: false, shipping: ship, total: Math.round((subtotal + ship) * 100) / 100, free: ship === 0, summary: t.shipping + ' : ' + (ship === 0 ? t.free : money(ship)) });
+    }
+    if (quote.error === 'country_not_served') return Object.assign(base, { state: 'not_served', blocked: true, message: t.notServed(countryName(country, lang) || country) });
+    if (quote.error === 'france_uniquement') return Object.assign(base, { state: 'not_served', blocked: true, message: t.franceOnly });
+    if (quote.error === 'country_required') return Object.assign(base, { state: 'choose', blocked: true, message: t.choose });
+    return Object.assign(base, { state: 'error', blocked: true, message: t.error });
+  }
+
+  return { fromQuote: fromQuote, buildView: buildView, countryList: countryList, countryName: countryName, text: text, money: money, langOf: langOf, STRIPE: STRIPE };
 }));

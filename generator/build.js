@@ -494,7 +494,8 @@ function injectAround(html, parts, product, relPath) {
     `<script src="${LOCAL_DEV_JS}"></script>`);
   // Front-end cart, after the Body/dev-JS scripts (step 3, see
   // assets/vg-shop-cart.js - not part of the real draft).
-  const cartScript = '<script src="/assets/vg-shop-cart.js" defer></script>';
+  // + the country picker of the cart (vg-shipping-picker.js: price from the Worker, same calculation as the payment).
+  const cartScript = '<script src="/assets/vg-shop-cart.js" defer></script>\n<script src="/assets/vg-shipping-view.js" defer></script>\n<script src="/assets/vg-shipping-picker.js" defer></script>';
   const i = html.lastIndexOf('</body>');
   return html.slice(0, i) + body + '\n' + cartScript + '\n' + html.slice(i);
 }
@@ -651,6 +652,8 @@ async function main() {
   }
   write('assets/vg/search-keywords.json', JSON.stringify(mergedKeywords, null, 1));
   fs.copyFileSync(rel(ROOT, 'assets', 'vg-shop-cart.js'), rel(OUT_DIR, 'assets', 'vg-shop-cart.js'));
+  fs.copyFileSync(rel(ROOT, 'assets', 'vg-shipping-view.js'), rel(OUT_DIR, 'assets', 'vg-shipping-view.js'));
+  fs.copyFileSync(rel(ROOT, 'assets', 'vg-shipping-picker.js'), rel(OUT_DIR, 'assets', 'vg-shipping-picker.js'));
   fs.copyFileSync(rel(ROOT, 'assets', 'vg-theme.js'), rel(OUT_DIR, 'assets', 'vg-theme.js'));
   fs.cpSync(rel(ROOT, 'assets', 'vendor'), rel(OUT_DIR, 'assets', 'vendor'), { recursive: true });
   fs.cpSync(rel(ROOT, 'assets', 'fonts'), rel(OUT_DIR, 'assets', 'fonts'), { recursive: true });

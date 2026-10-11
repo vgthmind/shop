@@ -228,6 +228,9 @@ export default {
         return json({ error: 'Not found' }, 404);
       }
 
+      // Prix de livraison d'un panier pour un pays (affichage du panier) : meme calcul que le paiement.
+      if (path === '/shipping/quote' && request.method === 'POST') return await shippingQuote(request, env, json);
+
       // Avec cle Stripe.
       const key = stripeKey(env);
       if (!key.ok) return json({ error: key.error }, 503);
@@ -304,6 +307,32 @@ async function backupStock(env: Env) {
   return { ok: true, date, count: Object.keys(stock).length };
 }
 
+// --- Frais de livraison (affichage du panier) ---
+async function shippingQuote(request: Request, env: Env, json: JsonFn): Promise<Response> {
+  const body: any = await request.json().catch(() => ({}));
+  const country = /^[A-Za-z]{2}$/.test(String(body.country || '')) ? String(body.country).toUpperCase() : '';
+  if (!country) return json({ ok: false, error: 'country_required', message: 'Choisis ton pays de livraison.' });
+  if (country !== 'FR' && !STRIPE_COUNTRIES.includes(country)) return json({ ok: false, error: 'country_not_served', message: 'Pays non livré : ' + country });
+  const wanted = new Map<string, number>();
+  for (const it of Array.isArray(body.items) ? body.items : []) {
+    const slug = String(it && (it as any).slug);
+    wanted.set(slug, Math.min(99, (wanted.get(slug) || 0) + Math.max(1, Math.floor(Number((it as any).qty) || 1))));
+  }
+  if (wanted.size === 0 || wanted.size > MAX_ITEMS) return json({ error: 'Requête invalide.' }, 400);
+  let catalog: Product[];
+  try { catalog = await loadCatalog(env); } catch (e) { return json({ ok: false, error: 'catalog_unavailable', message: 'Catalogue indisponible.' }, 502); }
+  const bySlug = new Map(catalog.map((p) => [p.permalink, p]));
+  const products: Product[] = [];
+  for (const slug of wanted.keys()) {
+    const p = bySlug.get(slug);
+    if (!p) return json({ ok: false, error: 'introuvable', message: 'Pièce introuvable : ' + slug, slugs: [slug] });
+    if (country !== 'FR' && !intlLine(p)) return json({ ok: false, error: 'france_uniquement', message: 'Livraison en France uniquement : ' + slug, slugs: [slug] });
+    products.push(p);
+  }
+  const q = await checkoutShipping(env as any, products as any, wanted, country === 'FR' ? 'fr' : 'intl', country);
+  return json(q.ok ? { ok: true, cents: q.cents, total: q.cents / 100, free: q.free, source: q.source, country: q.country } : q);
+}
+
 // --- Paiement --------------------------------------------------------------
 async function checkout(request: Request, env: Env, key: string, json: JsonFn): Promise<Response> {
   let body: { items?: unknown; region?: unknown; cart_id?: unknown; country?: unknown };
@@ -322,8 +351,10 @@ async function checkout(request: Request, env: Env, key: string, json: JsonFn): 
   const slugs = [...wanted.keys()];
   if (slugs.length === 0) return json({ error: 'Panier vide.' }, 400);
   if (slugs.length > MAX_ITEMS) return json({ error: 'Trop de pièces dans le panier.' }, 400);
-  const region = body.region === 'intl' ? 'intl' : 'fr';
   const country = /^[A-Za-z]{2}$/.test(String(body.country || '')) ? String(body.country).toUpperCase() : '';
+  if (country && country !== 'FR' && !STRIPE_COUNTRIES.includes(country)) return json({ error: 'Pays non livré : ' + country, code: 'country_not_served' }, 409);
+  // Pays choisi dans le panier (prioritaire) : FR = France, sinon international POUR CE PAYS. Sans pays : ancien champ « region ».
+  const region: 'fr' | 'intl' = country ? (country === 'FR' ? 'fr' : 'intl') : body.region === 'intl' ? 'intl' : 'fr';
   const cartId = /^[A-Za-z0-9-]{8,64}$/.test(String(body.cart_id || '')) ? String(body.cart_id) : 'anon-' + crypto.randomUUID();
 
   let catalog: Product[];
@@ -371,6 +402,7 @@ async function checkout(request: Request, env: Env, key: string, json: JsonFn): 
   params.set('metadata[slugs]', slugList);
   params.set('metadata[items]', itemList);
   params.set('metadata[region]', region);
+  if (country) params.set('metadata[country]', country);
   params.set('metadata[cart_id]', cartId);
   params.set('payment_intent_data[metadata][slugs]', slugList);
   products.forEach((p, i) => {
@@ -385,7 +417,8 @@ async function checkout(request: Request, env: Env, key: string, json: JsonFn): 
   // Stripe preselectionne le 1er pays de la liste quand celui du client n'y
   // est pas : le Canada et les voisins d'abord.
   const FIRST = ['CA', 'BE', 'CH', 'LU', 'DE', 'GB', 'US'];
-  const countries = region === 'fr' ? ['FR'] : country && quote.country === country ? [country] : [...FIRST, ...STRIPE_COUNTRIES.filter((c) => !FIRST.includes(c))];
+  // Le pays choisi AVANT le paiement est le seul accepte pour l'adresse (sinon : port de la France, livraison au Canada).
+  const countries = country ? [country] : region === 'fr' ? ['FR'] : [...FIRST, ...STRIPE_COUNTRIES.filter((c) => !FIRST.includes(c))];
   countries.forEach((c, i) => params.set(`shipping_address_collection[allowed_countries][${i}]`, c));
   params.set('shipping_options[0][shipping_rate_data][type]', 'fixed_amount');
   params.set('shipping_options[0][shipping_rate_data][display_name]', region === 'fr' ? 'Livraison France' : 'Livraison internationale');
