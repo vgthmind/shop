@@ -1,10 +1,10 @@
 {
-  "name": "TEST a supprimer",
+  "name": "test a supprimer",
   "slug": "test-a-supprimer",
-  "price": 9,
+  "price": 7,
   "description": "test\r\n\r\ntest",
   "images": [
-    "/assets/products/test-a-supprimer/vmv4egp2l-0.webp"
+    "/assets/products/test-a-supprimer/vmv4f3av8-0.webp"
   ],
   "categories": [
     "tops"
@@ -13,7 +13,7 @@
   "unique": true,
   "in_stock": true,
   "position": 0,
-  "created_at": "2026-10-11T22:33:39.580Z",
+  "created_at": "2026-10-11T22:51:14.040Z",
   "stripe_payment_link": "",
   "quantity": 1,
   "color_name": "blanc cassé",
