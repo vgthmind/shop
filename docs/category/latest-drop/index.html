@@ -3508,13 +3508,12 @@ window.__vgConfig = fetch('/assets/vg/products-config.json')
     extLink.rel = 'noopener';
     extLink.textContent = 'Voir sur Instagram \u2192';
 
-    var videoUrl = REEL_VIDEO_MAP[slug];
+    var videoUrl = REEL_VIDEO_MAP[slug] || (cfg[slug] && cfg[slug].reel_video) || '';
     if (videoUrl) {
       wrap.classList.add('ig-reel-has-video');
       var video = document.createElement('video');
       video.className = 'ig-reel-video';
       video.src = videoUrl + '#t=0.1'; // iOS : affiche la 1re image de la vidéo même avant lecture
-      if (cfg[slug] && cfg[slug].reel_poster) video.poster = cfg[slug].reel_poster;
       video.muted = true;
       video.autoplay = true;
       video.loop = true;
@@ -3526,8 +3525,8 @@ window.__vgConfig = fetch('/assets/vg/products-config.json')
     } else {
       wrap.setAttribute('role', 'button');
       wrap.setAttribute('tabindex', '0');
-      // Vignette = image tirée de la vidéo du reel (champ reel_poster). Jamais une photo de la pièce : sans image, carte sombre.
-      var posterUrl = (cfg[slug] && cfg[slug].reel_poster) || '';
+      // Sans vidéo MP4 : carte sombre (jamais une photo de la pièce) ; le reel Instagram s'ouvre au clic.
+      var posterUrl = '';
       var posterSpan = document.createElement('span');
       posterSpan.className = 'ig-reel-poster';
       if (posterUrl) posterSpan.style.backgroundImage = "url('" + posterUrl + "')";

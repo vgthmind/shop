@@ -90,13 +90,14 @@
       tree.push({ path: newPaths[i], mode: '100644', type: 'blob', sha: blob.sha });
     }
 
-    if (opts.reelPoster) { // image tirée de la vidéo du reel : remplace l'ancienne, jamais une photo de la pièce
-      var rpPath = dir + 'reel-' + stamp + '.' + opts.reelPoster.ext;
-      var rpBlob = await gh('POST', '/git/blobs', { content: b64(opts.reelPoster.data), encoding: 'base64' });
-      tree.push({ path: rpPath, mode: '100644', type: 'blob', sha: rpBlob.sha });
-      var oldRp = (product.reel_poster || '').replace(/^[/]/, '');
-      if (oldRp && oldRp.indexOf(dir) === 0) tree.push({ path: oldRp, mode: '100644', type: 'blob', sha: null });
-      product.reel_poster = '/' + rpPath;
+    if (opts.reelVideo) { // vidéo MP4 du reel : jouée toute seule sur la page ; remplace l'ancienne
+      var rvPath = dir + 'reel-' + stamp + '.mp4';
+      say('Envoi de la vidéo du reel…');
+      var rvBlob = await gh('POST', '/git/blobs', { content: b64(opts.reelVideo.data), encoding: 'base64' });
+      tree.push({ path: rvPath, mode: '100644', type: 'blob', sha: rvBlob.sha });
+      var oldRv = (product.reel_video || '').replace(/^[/]/, '');
+      if (oldRv && oldRv.indexOf(dir) === 0) tree.push({ path: oldRv, mode: '100644', type: 'blob', sha: null });
+      product.reel_video = '/' + rvPath;
     }
     var oldImages = (product.images || []).filter(function (u) { return typeof u === 'string'; });
     var kept = [], removed = [];

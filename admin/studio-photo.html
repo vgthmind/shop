@@ -166,11 +166,9 @@
         <div class="muted" id="fColorHint"></div>
       </fieldset>
       <div class="wide" id="rpWrap">
-        <label>Image du reel (facultatif) : choisis la vidéo du reel (ou une capture d'écran du reel) <input id="fReelVideo" type="file" accept="video/*,image/*"></label>
-        <div id="rpBox" hidden style="margin-top:8px"><video id="rpVideo" muted playsinline preload="auto" style="max-width:220px;border-radius:8px;display:block"></video>
-          <label class="muted">Image à utiliser <input id="rpTime" type="range" min="0" max="1" step="0.05" value="0"></label>
-          <button type="button" id="rpClear">Retirer l'image</button> <span class="muted" id="rpMsg"></span></div>
-        <p class="muted" style="margin:6px 0 0">Cette image sert de vignette à la carte « Voir la pièce portée » : tirée de la vidéo, jamais d'une photo de la pièce. Seule l'image est envoyée, pas la vidéo.</p>
+        <label>Vidéo du reel (MP4, facultatif) : elle se lance toute seule sur la page de la pièce <input id="fReelVideo" type="file" accept="video/mp4,video/*"></label>
+        <div class="muted" id="rpMsg"></div>
+        <p class="muted" style="margin:6px 0 0">Format MP4 (H.264), 40 Mo maximum. Sans vidéo, le lien Instagram ci-dessous s'ouvre au clic sur une carte sombre.</p>
       </div>
       <label class="wide">Reel (lien Instagram ou YouTube, facultatif) <input id="fReel" type="text" inputmode="url" placeholder="https://www.instagram.com/reel/…"></label>
     </div>
