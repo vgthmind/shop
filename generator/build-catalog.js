@@ -127,6 +127,7 @@ function buildProduct(admin, imageMap) {
     color_hex: admin.color_hex || '',
     color_name: admin.color_name || '',
     reel_url: admin.reel_url || '',
+    reel_poster: admin.reel_poster || '', // image tirée de la vidéo du reel (jamais une photo de la pièce)
     // Merged into search-keywords.json by build.js (site search).
     search_keywords: Array.isArray(admin.keywords) ? admin.keywords : [],
   };

@@ -90,6 +90,14 @@
       tree.push({ path: newPaths[i], mode: '100644', type: 'blob', sha: blob.sha });
     }
 
+    if (opts.reelPoster) { // image tirée de la vidéo du reel : remplace l'ancienne, jamais une photo de la pièce
+      var rpPath = dir + 'reel-' + stamp + '.' + opts.reelPoster.ext;
+      var rpBlob = await gh('POST', '/git/blobs', { content: b64(opts.reelPoster.data), encoding: 'base64' });
+      tree.push({ path: rpPath, mode: '100644', type: 'blob', sha: rpBlob.sha });
+      var oldRp = (product.reel_poster || '').replace(/^[/]/, '');
+      if (oldRp && oldRp.indexOf(dir) === 0) tree.push({ path: oldRp, mode: '100644', type: 'blob', sha: null });
+      product.reel_poster = '/' + rpPath;
+    }
     var oldImages = (product.images || []).filter(function (u) { return typeof u === 'string'; });
     var kept = [], removed = [];
     oldImages.forEach(function (u) {

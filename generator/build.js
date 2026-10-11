@@ -524,6 +524,7 @@ async function main() {
     if (p.color_hex) entry.couleur_hex = p.color_hex;
     if (p.color_name) entry.couleur_nom = p.color_name;
     if (p.reel_url) entry.reel_url = p.reel_url;
+    if (p.reel_poster) entry.reel_poster = BASE_PATH + p.reel_poster;
     if (p.unique === false || (p.quantity || 0) > 1) entry.unique_mode = 'force-no';
     if (Object.keys(entry).length) productsConfig[p.permalink] = entry;
   }

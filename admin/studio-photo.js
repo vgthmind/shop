@@ -129,7 +129,7 @@
   var STATUS = { queued: 'En attente…', processing: 'Détourage…', review: 'À valider', valid: '✓ Validée', original: 'Original gardé', error: 'Erreur', todo: 'À détourer' };
   function renderStrip() {
     var strip = $('strip'); strip.textContent = '';
-    $('bRetry').hidden = !waitingCount();
+    $('bRetry').hidden = !waitingCount(); $('bRedoAll').hidden = !photos.length;
     photos.forEach(function (p, i) {
       var c = document.createElement('div'); c.className = 'card' + (i === sel ? ' sel' : '');
       var cv = document.createElement('canvas'); cv.width = 112; cv.height = 96;
@@ -160,6 +160,36 @@
     photos.forEach(function (p) { if (p.status === 'todo' || p.status === 'error') { p.status = 'queued'; p.msg = ''; } });
     renderStrip(); runQueue();
   };
+  // Refait le détourage de TOUTES les photos (après une amélioration du serveur, par ex.) : remplace aussi les photos déjà validées.
+  $('bRedoAll').onclick = function () {
+    if (!confirm('Refaire le détourage de toutes les photos ? Les retouches manuelles seront perdues.')) return;
+    photos.forEach(function (p) { p.status = 'queued'; p.msg = ''; p.raw = null; p.cut = null; p.ref = null; p.undo = []; p.box = null; p.thumb = null; });
+    clearCut(); renderStrip(); runQueue();
+  };
+  // ---------- image du reel (tirée de la vidéo) ----------
+  var reelPoster = null; // { data: Uint8Array, ext }
+  (function () {
+    var rv = $('rpVideo'), rt = $('rpTime'), url = null;
+    function grab() {
+      var c = document.createElement('canvas'), k = Math.min(1, 800 / Math.max(rv.videoWidth, rv.videoHeight));
+      c.width = Math.round(rv.videoWidth * k); c.height = Math.round(rv.videoHeight * k);
+      c.getContext('2d').drawImage(rv, 0, 0, c.width, c.height);
+      c.toBlob(async function (b) {
+        if (!b) return;
+        reelPoster = { data: new Uint8Array(await b.arrayBuffer()), ext: b.type === 'image/webp' ? 'webp' : 'jpg' };
+        $('rpMsg').textContent = 'Image prête (' + Math.round(reelPoster.data.length / 1024) + ' Ko).';
+      }, 'image/webp', 0.85);
+    }
+    rv.addEventListener('seeked', grab);
+    rv.addEventListener('loadedmetadata', function () { rt.max = rv.duration || 1; rt.value = 0; rv.currentTime = 0.1; });
+    rt.oninput = function () { rv.currentTime = Number(rt.value); };
+    $('fReelVideo').onchange = function (e) {
+      var f = e.target.files[0]; if (!f) return;
+      if (url) URL.revokeObjectURL(url);
+      url = URL.createObjectURL(f); rv.src = url; $('rpBox').hidden = false; $('rpMsg').textContent = 'Lecture de la vidéo…';
+    };
+    $('rpClear').onclick = function () { reelPoster = null; $('rpBox').hidden = true; $('fReelVideo').value = ''; $('rpMsg').textContent = ''; if (url) { URL.revokeObjectURL(url); url = null; } };
+  })();
   function remove(i) {
     var cur = photos[sel]; photos.splice(i, 1);
     sel = photos.indexOf(cur); if (sel < 0) { sel = -1; if (photos.length) select(Math.min(i, photos.length - 1)); else $('editor').hidden = true; }
@@ -507,7 +537,7 @@
     try {
       var r = await buildFiles();
       var isNew = !(await window.VGStudioPublish.exists(piece.product.slug));
-      await window.VGStudioPublish.publish({ slug: piece.product.slug, piece: piece.product, isNew: isNew, files: r.files, replace: $('replace').checked, onStatus: pubSay });
+      await window.VGStudioPublish.publish({ slug: piece.product.slug, piece: piece.product, isNew: isNew, files: r.files, reelPoster: reelPoster, replace: $('replace').checked, onStatus: pubSay });
     } catch (e) { pubSay('Échec : ' + (e.message || e)); }
     $('bPublish').disabled = !window.VGStudioPublish.connected();
   };
