@@ -28,14 +28,24 @@ function enqueue(fn) { const p = chain.then(fn, fn); chain = p.catch(function ()
 async function cut(buf) {
   const img = sharp(buf, { failOn: 'none' }).rotate(); // respecte l'orientation EXIF
   const meta = await img.clone().metadata();
-  const raw = await img.clone().removeAlpha().resize(SIZE, SIZE, { fit: 'fill' }).raw().toBuffer();
+  const w = meta.autoOrient ? meta.autoOrient.width : meta.width, h = meta.autoOrient ? meta.autoOrient.height : meta.height;
+  // On complète l'image en CARRÉ (bords en miroir) au lieu de l'écraser : écrasée, la pièce est déformée et le modèle
+  // garde du fond (drap) autour. Le masque est ensuite recadré à la taille d'origine.
+  const side = Math.max(w, h), padL = Math.floor((side - w) / 2), padT = Math.floor((side - h) / 2);
+  let sq = img.clone();
+  if (side !== w || side !== h) {
+    const ext = function (how) { return img.clone().extend({ left: padL, right: side - w - padL, top: padT, bottom: side - h - padT, extendWith: how }); };
+    try { sq = sharp(await ext('mirror').toBuffer()); } catch (e) { sq = sharp(await ext('copy').toBuffer()); }
+  }
+  const raw = await sq.removeAlpha().resize(SIZE, SIZE, { fit: 'fill' }).raw().toBuffer();
   const n = SIZE * SIZE, f = new Float32Array(3 * n);
   for (let i = 0; i < n; i++) for (let c = 0; c < 3; c++) f[c * n + i] = (raw[i * 3 + c] / 255 - MEAN[c]) / STD[c];
   const out = await session.run({ [session.inputNames[0]]: new ort.Tensor('float32', f, [1, 3, SIZE, SIZE]) });
   const d = out[session.outputNames[0]].data, m = Buffer.alloc(n);
   for (let i = 0; i < n; i++) m[i] = Math.round(255 / (1 + Math.exp(-d[i])));
-  const w = meta.autoOrient ? meta.autoOrient.width : meta.width, h = meta.autoOrient ? meta.autoOrient.height : meta.height;
-  return sharp(m, { raw: { width: SIZE, height: SIZE, channels: 1 } }).resize(w, h, { kernel: 'cubic' }).toColourspace('b-w').png({ compressionLevel: 6 }).toBuffer();
+  let mask = sharp(m, { raw: { width: SIZE, height: SIZE, channels: 1 } }).resize(side, side, { kernel: 'cubic' });
+  if (side !== w || side !== h) mask = sharp(await mask.png().toBuffer()).extract({ left: padL, top: padT, width: w, height: h });
+  return mask.toColourspace('b-w').png({ compressionLevel: 6 }).toBuffer();
 }
 
 function cors(req, res) {
