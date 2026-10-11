@@ -1,5 +1,5 @@
 {
-  "fetched_at": "2026-10-11T22:32:39.000Z",
+  "fetched_at": "2026-10-11T22:33:54.246Z",
   "source": "data/products/*.json (admin)",
   "store": {
     "name": "vgthmind",
@@ -15,11 +15,11 @@
       "position": 0,
       "url": "/product/test-a-supprimer",
       "status": "active",
-      "created_at": "2026-10-11T22:32:23.503Z",
+      "created_at": "2026-10-11T22:33:39.580Z",
       "has_password_protection": false,
       "images": [
         {
-          "url": "/assets/products/test-a-supprimer/vmv4ef2bi-0.webp",
+          "url": "/assets/products/test-a-supprimer/vmv4egp2l-0.webp",
           "width": 1000,
           "height": 1250
         }
@@ -88,7 +88,7 @@
       "reel_poster": "",
       "search_keywords": [],
       "image": {
-        "url": "/assets/products/test-a-supprimer/vmv4ef2bi-0.webp",
+        "url": "/assets/products/test-a-supprimer/vmv4egp2l-0.webp",
         "width": 1000,
         "height": 1250
       },
@@ -2895,6 +2895,6 @@
     "/assets/products/sma_0003/1.png": "/assets/products/sma_0003/1.png",
     "/assets/products/sma_0004/0.png": "/assets/products/sma_0004/0.png",
     "/assets/products/sma_0004/1.png": "/assets/products/sma_0004/1.png",
-    "/assets/products/test-a-supprimer/vmv4ef2bi-0.webp": "/assets/products/test-a-supprimer/vmv4ef2bi-0.webp"
+    "/assets/products/test-a-supprimer/vmv4egp2l-0.webp": "/assets/products/test-a-supprimer/vmv4egp2l-0.webp"
   }
 }
