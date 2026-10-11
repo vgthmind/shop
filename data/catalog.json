@@ -1,5 +1,5 @@
 {
-  "fetched_at": "2026-10-11T22:30:57.402Z",
+  "fetched_at": "2026-10-11T22:32:39.000Z",
   "source": "data/products/*.json (admin)",
   "store": {
     "name": "vgthmind",
@@ -15,16 +15,11 @@
       "position": 0,
       "url": "/product/test-a-supprimer",
       "status": "active",
-      "created_at": "2026-10-11T22:26:04.863Z",
+      "created_at": "2026-10-11T22:32:23.503Z",
       "has_password_protection": false,
       "images": [
         {
-          "url": "/assets/products/test-a-supprimer/vmv4e6yu9-0.webp",
-          "width": 1000,
-          "height": 1250
-        },
-        {
-          "url": "/assets/products/test-a-supprimer/vmv4e6yu9-1.webp",
+          "url": "/assets/products/test-a-supprimer/vmv4ef2bi-0.webp",
           "width": 1000,
           "height": 1250
         }
@@ -89,11 +84,11 @@
       "unique": true,
       "color_hex": "#e9e3d6",
       "color_name": "blanc cassé",
-      "reel_url": "https://www.instagram.com/vgthmind/reel/DR43MPwDAC3/",
+      "reel_url": "https://www.instagram.com/vgthmind/reel/DZc4XSpsmhA/",
       "reel_poster": "",
       "search_keywords": [],
       "image": {
-        "url": "/assets/products/test-a-supprimer/vmv4e6yu9-0.webp",
+        "url": "/assets/products/test-a-supprimer/vmv4ef2bi-0.webp",
         "width": 1000,
         "height": 1250
       },
@@ -2900,7 +2895,6 @@
     "/assets/products/sma_0003/1.png": "/assets/products/sma_0003/1.png",
     "/assets/products/sma_0004/0.png": "/assets/products/sma_0004/0.png",
     "/assets/products/sma_0004/1.png": "/assets/products/sma_0004/1.png",
-    "/assets/products/test-a-supprimer/vmv4e6yu9-0.webp": "/assets/products/test-a-supprimer/vmv4e6yu9-0.webp",
-    "/assets/products/test-a-supprimer/vmv4e6yu9-1.webp": "/assets/products/test-a-supprimer/vmv4e6yu9-1.webp"
+    "/assets/products/test-a-supprimer/vmv4ef2bi-0.webp": "/assets/products/test-a-supprimer/vmv4ef2bi-0.webp"
   }
 }
