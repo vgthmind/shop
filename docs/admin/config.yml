@@ -27,6 +27,7 @@ collections:
       - { label: "Slug (URL, sans espaces ni accents)", name: "slug", widget: "string", hint: "ex: pantalon-denim-bleu — ne plus changer une fois la piece publiee (change son URL)" }
       - { label: "Prix (EUR)", name: "price", widget: "number", value_type: "float" }
       - { label: "Description (anglais puis francais, separes par une ligne vide)", name: "description", widget: "text" }
+      - { label: "Taille (facultatif)", name: "size", widget: "string", required: false, hint: "ex: M, 42, Unique. Ajoutee en fin de description (Size M / Taille M) si la description ne donne pas deja une taille." }
       - { label: "Mots-cles de recherche", name: "keywords", widget: "list", required: false, hint: "Mots en plus du nom et de la description, separes par des virgules (ex: hoodie, sweat, capuche). Sans accents ni majuscules." }
       - label: "Photos"
         name: "images"
@@ -46,6 +47,12 @@ collections:
           - { label: "Accessories", value: "accessories" }
         hint: "Une piece peut etre dans plusieurs categories a la fois (ex: un hoodie customise est Tops ET Customs/Upcycling)."
       - { label: "Retiree du site (archivee)", name: "archived", widget: "boolean", default: false, required: false, hint: "Cache la piece partout (pages, recherche, paiement) sans supprimer sa fiche. Prefere ceci a Supprimer." }
+      - { label: "Badge UNIQUE PIECE", name: "unique", widget: "boolean", default: true, required: false, hint: "Affiche le badge « Unique piece » (masque automatiquement si la quantite de depart est superieure a 1)." }
+      - { label: "En vente", name: "in_stock", widget: "boolean", default: true, required: false, hint: "Decocher = Sold out a la main. Sinon le Sold out est automatique quand le stock (page « Stock ») arrive a 0." }
+      - { label: "Pastille couleur : nom", name: "color_name", widget: "string", required: false, hint: "ex: noir, blanc casse, bleu, rouge, vert, beige, gris, multicolore. Vide = pas de pastille." }
+      - { label: "Pastille couleur : teinte", name: "color_hex", widget: "color", required: false, hint: "Couleur de la pastille. Teintes habituelles : noir #1a1a1a, blanc #f2f2f2, blanc casse #e9e3d6, gris #8a8a8a, beige #c19a6b, bleu #3d5a75, rouge #b3315c, vert #7a7a52, multicolore #c8a2c8." }
+      - { label: "Reel (lien Instagram ou YouTube)", name: "reel_url", widget: "string", required: false, hint: "https://www.instagram.com/reel/... Vide = pas de reel." }
+      - { label: "Video du reel (MP4, posee par le studio)", name: "reel_video", widget: "string", required: false, hint: "Rempli par le studio « Nouvelle piece ». Ne pas modifier a la main." }
       - { label: "Mettre en avant (Latest Drop)", name: "latest_drop", widget: "boolean", default: false }
       - { label: "Quantite de depart (nouvelle piece)", name: "quantity", widget: "number", value_type: "int", default: 1, min: 0, required: false, hint: "Stock de depart d une NOUVELLE piece (1 = piece unique). Ensuite, le stock se regle dans « Stock » (bouton en bas a droite) : chaque vente le baisse, Sold out a 0." }
       - { label: "Frais de port France (EUR)", name: "shipping_fr", widget: "number", value_type: "float", default: 5 }

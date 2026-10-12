@@ -111,7 +111,7 @@ function buildProduct(admin, imageMap) {
     default_price: admin.price,
     tax: 0,
     on_sale: false,
-    description: admin.description || '',
+    description: withSize(admin.description || '', admin.size),
     has_option_groups: false,
     options: [{
       id: optionId,
@@ -149,10 +149,20 @@ function buildProduct(admin, imageMap) {
     color_hex: admin.color_hex || '',
     color_name: admin.color_name || '',
     reel_url: admin.reel_url || '',
+    size: String(admin.size || '').trim(),
     reel_video: admin.reel_video || '', // vidéo MP4 du reel, jouée toute seule sur la page
     // Merged into search-keywords.json by build.js (site search).
     search_keywords: Array.isArray(admin.keywords) ? admin.keywords : [],
   };
+}
+
+// Champ « Taille » de l'admin : ajouté en fin de description (« Size M / Taille M »)
+// sauf si la description donne déjà une taille. Le Worker lit la taille dans
+// la description (mails, commandes), comme pour les fiches importées de BigCartel.
+function withSize(description, size) {
+  const sz = String(size || '').trim();
+  if (!sz || /\b(size|taille)\b/i.test(description)) return description;
+  return (description ? description.replace(/\s+$/, '') + '\r\n\r\n' : '') + `Size ${sz} / Taille ${sz}`;
 }
 
 function main() {
@@ -190,4 +200,5 @@ function main() {
   console.log(`Wrote ${CATALOG_PATH} (${catalog.products.length} produits, ${catalog.categories.length} categories) depuis ${files.length} fichier(s) admin.`);
 }
 
-main();
+if (require.main === module) main();
+module.exports = { withSize };

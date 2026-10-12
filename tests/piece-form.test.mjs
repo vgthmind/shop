@@ -87,3 +87,12 @@ test('corrections de vgthmind : ja_0001 blanc cassé, cd-vgtape ×5, cache-cou s
   assert.equal(read('cd-vgtape').quantity, 5); assert.equal(read('cd-vgtape').unique, false);
   assert.equal(read('cache-cou').unique, false); assert.equal(read('cache-cou').quantity, 0);
 });
+
+test('taille : écrite sur la fiche, ajoutée à la description au build sauf si déjà présente', () => {
+  assert.equal(F.buildPiece(Object.assign({}, ok, { size: ' M ' }), cats).product.size, 'M');
+  assert.equal(F.buildPiece(ok, cats).product.size, undefined);
+  const { withSize } = require('../generator/build-catalog.js');
+  assert.equal(withSize('Black hoodie\r\n\r\nHoodie noir', 'M'), 'Black hoodie\r\n\r\nHoodie noir\r\n\r\nSize M / Taille M');
+  assert.equal(withSize('Hoodie\r\nSize L', 'M'), 'Hoodie\r\nSize L');
+  assert.equal(withSize('Hoodie', ''), 'Hoodie');
+});

@@ -551,7 +551,7 @@
   // ---------- brouillon local (studio-draft.js) ----------
   // Photos originales + vidéo + fiche gardées dans ce navigateur : si la page se ferme, on les propose à la réouverture.
   var Draft = window.VGStudioDraft ? window.VGStudioDraft.create() : { save: async function () { return { ok: false }; }, load: async function () { return null; }, clear: async function () {}, isEmpty: function () { return true; } };
-  var DRAFT_IDS = ['fName', 'slug', 'fPrice', 'fQty', 'fUnique', 'fDrop', 'fEn', 'fFr', 'fColorOther', 'fReel', 'fWeight', 'fMode', 'fAlone'];
+  var DRAFT_IDS = ['fName', 'slug', 'fPrice', 'fQty', 'fSize', 'fUnique', 'fDrop', 'fEn', 'fFr', 'fColorOther', 'fReel', 'fWeight', 'fMode', 'fAlone'];
   var draftTimer = null, draftPending = false, draftOff = false;
   function draftFields() {
     var f = {};

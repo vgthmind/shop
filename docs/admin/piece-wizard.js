@@ -16,7 +16,7 @@
       name: $('fName').value, slug: $('slug').value, price: $('fPrice').value, quantity: $('fQty').value === '' ? '' : Number($('fQty').value),
       unique: $('fUnique').checked, latest_drop: $('fDrop').checked, categories: checked('fCat'),
       description_en: $('fEn').value, description_fr: $('fFr').value, color: col, color_other: $('fColorOther').value,
-      reel_url: $('fReel').value, weight_g: $('fWeight').value === '' ? '' : Number($('fWeight').value), mode: $('fMode').value, alone: $('fAlone').checked
+      reel_url: $('fReel').value, size: $('fSize') ? $('fSize').value : '', weight_g: $('fWeight').value === '' ? '' : Number($('fWeight').value), mode: $('fMode').value, alone: $('fAlone').checked
     };
   }
   function cats() { return categories.map(function (c) { return c.permalink; }); }

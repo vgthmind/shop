@@ -89,7 +89,7 @@
   }
 
   // form : { name, slug, price, quantity, unique, categories[], latest_drop, color, color_other, description_en,
-  //          description_fr, reel_url, weight_g, mode, alone }
+  //          description_fr, reel_url, size, weight_g, mode, alone }
   // categoryPermalinks : permaliens valides (data/categories.json). Renvoie { product } ou { error }.
   function buildPiece(form, categoryPermalinks, now) {
     var name = String(form.name || '').trim();
@@ -128,6 +128,8 @@
     };
     if (color_name) { base.color_name = color_name; base.color_hex = color_hex; }
     if (reel) base.reel_url = reel;
+    var size = String(form.size || '').trim().slice(0, 20);
+    if (size) base.size = size;
     if (form.weight_g === "" || form.weight_g === null || form.weight_g === undefined) return { error: "Poids manquant (étape Ports)." };
     var w = View.applyEdit(base, { weight_g: form.weight_g, mode: form.mode || 'colis', alone: form.alone === true });
     if (w.error) return { error: w.error };
