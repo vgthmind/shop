@@ -214,7 +214,7 @@ export function shippedEmail(o: OrderData, tracking: string) {
   const t = T[l];
   const first = (o.name || '').trim().split(/\s+/)[0] || '';
   const subject = t.shippedSubject(o.ref);
-  const url = tracking ? TRACKING_URL + encodeURIComponent(tracking) : '';
+  const url = tracking ? TRACKING_URL + encodeURIComponent(tracking.replace(/\s+/g, '')) : '';
   const html = shell(l, subject,
     para(esc(t.hi(first))) + para(t.shippedLead)
     + (tracking ? para(`${t.tracking} : <b>${esc(tracking)}</b>`) + button(url, t.track) : '')

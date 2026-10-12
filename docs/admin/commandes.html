@@ -22,7 +22,7 @@
     .order header { display: flex; justify-content: space-between; gap: 8px; flex-wrap: wrap; }
     .order .total { font-weight: 600; }
     .muted { color: var(--muted); font-size: 13px; }
-    .tag { font-size: 12px; padding: 2px 8px; border-radius: 999px; border: 1px solid var(--line); }
+    .tag { display: inline-block; font-size: 12px; padding: 2px 8px; border-radius: 999px; border: 1px solid var(--line); }
     .tag.ok { color: var(--ok); border-color: var(--ok); }
     .tag.ref { font-weight: 700; letter-spacing: .04em; color: var(--ink); border-color: var(--ink); }
     .tag.prep { color: #8a5a00; border-color: #8a5a00; }
@@ -148,12 +148,16 @@
       if (needle && [o.ref, o.name, o.email].join(' ').toLowerCase().replace(/vg-/g, '').indexOf(needle) === -1) return false;
       return filter === 'all' || needle || (filter === 'todo' ? !o.shipped : !!o.shipped);
     });
+    // Lien de suivi La Poste (simple lien, pas d'API) : même adresse que dans le mail « expédiée ».
+    function laPoste(n) { return 'https://www.laposte.fr/outils/suivre-vos-envois?code=' + encodeURIComponent(String(n).replace(/\s+/g, '')); }
     $('orders').innerHTML = list.length ? list.map(function (o) {
       return '<article class="order" data-id="' + esc(o.id) + '">'
         + '<header><div><span class="tag ref">' + esc(o.ref || '') + '</span> <strong>' + esc(o.name || o.email) + '</strong> '
         + (o.livemode ? '' : '<span class="tag test">test</span> ')
+        + (o.shipped ? '' : '<span class="tag">payée</span> ')
         + (o.preparing && !o.shipped ? '<span class="tag prep">en préparation depuis le ' + esc(date(o.preparing.at)) + '</span> ' : '')
-        + (o.shipped ? '<span class="tag ok">expédiée le ' + esc(date(o.shipped.at)) + (o.shipped.tracking ? ' · suivi ' + esc(o.shipped.tracking) : '') + (o.shipped.notified ? ' · client prévenu' : '') + '</span>' : '')
+        + (o.shipped ? '<span class="tag ok">expédiée le ' + esc(date(o.shipped.at)) + (o.shipped.notified ? ' · client prévenu' : '') + '</span>'
+          + (o.shipped.tracking ? ' <a class="tag" target="_blank" rel="noopener noreferrer" href="' + esc(laPoste(o.shipped.tracking)) + '">suivi ' + esc(o.shipped.tracking) + ' ↗</a>' : '') : '')
         + '<div class="muted">' + esc(date(o.created)) + ' · ' + esc(o.email) + (o.phone ? ' · ' + esc(o.phone) : '') + '</div></div>'
         + '<div class="total">' + money(o.total) + '</div></header>'
         + '<ul class="items">' + o.items.map(function (it) {
