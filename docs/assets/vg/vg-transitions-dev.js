@@ -1552,11 +1552,20 @@ window.__vgTrim = window.__vgTrim || (function () {
 
   // --- Clic sur une categorie (tuile de l'accueil OU bouton de la boutique) : une piece de la categorie, au hasard parmi
   // les pieces disponibles (en stock, non masquees), apparait en grand AU CENTRE de l'ecran. Une autre a chaque clic.
-  var stockNow = null;
-  Promise.resolve(window.__vgStock).then(function (s) { stockNow = s || null; });
+  var stockNow = null, stockAsked = false;
+  // Le stock réel est posé par vg-shop-cart.js (window.__vgStock), chargé APRÈS ce script : on le demande dès qu'il existe.
+  function askStock() {
+    if (stockAsked || !window.__vgStock) return;
+    stockAsked = true;
+    Promise.resolve(window.__vgStock).then(function (s) { stockNow = s || null; });
+  }
+  askStock();
+  document.addEventListener('DOMContentLoaded', askStock);
+  window.addEventListener('load', askStock);
   var CAT_LINK = '.vg-category-tile, ul.categories a[href*="/category/"]';
   var lastPick = {};
   function pickPiece(slug) {
+    askStock();
     var products = productsNow || [];
     var pool = products.filter(function (p) {
       if (p.hidden || p.status === 'sold-out') return false;
