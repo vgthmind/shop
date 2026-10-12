@@ -18,6 +18,7 @@ const catalog = [
   { permalink: 'hood', name: 'Custom Hoodie', price: 120, status: 'active', categories: [{ permalink: 'tops' }, { permalink: 'customsupcycling' }], images: [], shipping: [] },
   { permalink: 'pant', name: 'Pantalon FF001', price: 170, status: 'active', categories: [{ permalink: 'pantsshorts' }], images: [], shipping: [] },
   { permalink: 'short', name: 'Short SG001', price: 85, status: 'active', categories: [{ permalink: 'pantsshorts' }], images: [], shipping: [] },
+  { permalink: 'ch2', name: 'CH_0002', price: 84, status: 'active', categories: [{ permalink: 'tops' }], images: [], shipping: [] }, // comme la boutique : haut cousu le moins cher
   { permalink: 'ls', name: 'Longsleeve TD002', price: 210, status: 'active', categories: [{ permalink: 'tops' }], images: [], shipping: [] },
 ];
 const WH = 'whsec_test123', SECRET = 'sess-secret';
@@ -289,7 +290,8 @@ test('réglages : prix sous le prix boutique équivalent refusés, délais et ac
   const cur = await admin('/admin/requests/settings', null, 'GET');
   assert.equal(cur.settings.prices.custom.tshirt, 75);
   assert.equal(cur.floors['custom.hoodie'].price, 104, 'CH_ = hoodies');
-assert.equal(cur.floors['custom.chemise'], null);
+  assert.equal(cur.floors['custom.autre'], undefined, 'pas de comparaison pour « Autre pièce »');
+  assert.equal(cur.floors['surmesure.haut'].price, 84);
   assert.equal(cur.floors['surmesure.pantalon'].price, 170);
   const low = structuredClone(cur.settings); low.prices.custom.hoodie = 100;
   const bad = await admin('/admin/requests/settings', { settings: low });

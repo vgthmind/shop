@@ -21,7 +21,7 @@
     fabrication: ['Being made', 'En fabrication'], validation: ['Waiting for your approval', 'En attente de ta validation'], solde: ['Balance paid', 'Solde payé'],
     envoyee: ['Shipped', 'Envoyée'], terminee: ['Completed', 'Terminée'], refusee: ['Closed', 'Close'], brouillon: ['Sending', 'Envoi en cours'],
   };
-  var PIECE = { tshirt: ['T-shirt', 'T-shirt'], chemise: ['Shirt', 'Chemise'], hoodie: ['Sweatshirt / hoodie', 'Sweat / hoodie'], veste: ['Jacket', 'Veste'], short: ['Shorts', 'Short'], pantalon: ['Trousers', 'Pantalon'], haut: ['Top', 'Haut'] };
+  var PIECE = { tshirt: ['T-shirt', 'T-shirt'], hoodie: ['Sweatshirt / hoodie', 'Sweat / hoodie'], veste: ['Jacket', 'Veste'], autre: ['Another piece', 'Autre pièce'], short: ['Shorts', 'Short'], pantalon: ['Trousers', 'Pantalon'], haut: ['Top', 'Haut'] };
   var TYPE = { custom: 'Custom', surmesure: ['Made to measure', 'Sur-mesure'], production: ['Visual production', 'Production visuelle'], collab: 'Collab' };
   function t2(v) { return Array.isArray(v) ? L(v[0], v[1]) : v || ''; }
 

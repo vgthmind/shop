@@ -16,13 +16,13 @@
   function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
 
   // Réglages (prix « à partir de », photos changées dans l'admin) : valeurs par défaut, remplacées par celles du Worker.
-  var cfg = { prices: { custom: { tshirt: 75, chemise: 100, hoodie: 140, veste: 160 }, surmesure: { short: 150, pantalon: 240, haut: 240, veste: 320 }, paintFrom: 10 },
+  var cfg = { prices: { custom: { tshirt: 75, hoodie: 140, veste: 160, autre: 75 }, surmesure: { short: 150, pantalon: 220, haut: 200, veste: 320 }, paintFrom: 10 },
     depositPct: 30, retouchesIncluded: 1, forfeitDays: 30, cards: {}, uploads: true, limits: { photos: 8, photoBytes: 10485760, videos: 1, videoBytes: 52428800 } };
   var PIECES = {
-    custom: [['tshirt', 'T-shirt', 'T-shirt'], ['chemise', 'Shirt', 'Chemise'], ['hoodie', 'Sweatshirt / hoodie', 'Sweat / hoodie'], ['veste', 'Jacket / jeans', 'Veste / jean']],
+    custom: [['tshirt', 'T-shirt', 'T-shirt'], ['hoodie', 'Sweatshirt / hoodie', 'Sweat / hoodie'], ['veste', 'Jacket / jeans / joggers', 'Veste / jean / jogging'], ['autre', 'Another piece', 'Autre pièce']],
     surmesure: [['short', 'Shorts', 'Short'], ['pantalon', 'Trousers', 'Pantalon'], ['haut', 'Top', 'Haut'], ['veste', 'Jacket', 'Veste']],
   };
-  var NO_PHOTO = { 'custom.chemise': 1, 'custom.veste': 1 }; // aucune photo adaptée pour l'instant : carte en texte seul
+  var NO_PHOTO = {}; // une clé ici = carte en texte seul
   var PROJECTS = [['Music video', 'Clip'], ['Stage / concert', 'Scène / concert'], ['Photo shoot', 'Shooting photo'], ['Video / YouTube', 'Vidéo / YouTube'], ['Other', 'Autre']];
   var COLLABS = [['Artist / music', 'Artiste / musique'], ['Video / YouTube', 'Vidéo / YouTube'], ['Brand', 'Marque'], ['Art project', 'Projet artistique'], ['Other', 'Autre']];
   var COUNTRIES = ('FR BE CH LU MC DE AT IT ES PT NL IE GB DK SE NO FI PL CZ SK HU RO BG GR HR SI EE LV LT CY MT IS US CA MX BR AR CL CO PE AU NZ JP KR CN HK TW SG TH VN MY ID PH IN AE SA QA IL TR MA DZ TN SN CI CM ZA EG GP MQ GF RE YT PM BL MF NC PF WF').split(' ');
@@ -100,7 +100,7 @@
       html: function () {
         var list = PIECES[st.kind] || [];
         var h = head(L('Which piece?', 'Quelle pièce ?'), L('Starting prices: the final price is in the quote.', 'Prix de départ : le prix final est précisé dans le devis.')) + '<div class="vgd-cards">'
-          + list.map(function (p, i) { return card('piece', p[0], st.kind + '.' + p[0], L(p[1], p[2]), '', from((cfg.prices[st.kind] || {})[p[0]]), i); }).join('') + '</div>';
+          + list.map(function (p, i) { return card('piece', p[0], st.kind + '.' + p[0], L(p[1], p[2]), p[0] === 'autre' ? L('Describe it or send a photo', 'Décris-la ou envoie une photo') : '', from((cfg.prices[st.kind] || {})[p[0]]), i); }).join('') + '</div>';
         if (st.kind === 'surmesure') {
           h += '<div class="vgd-fields" style="margin-top:16px"><label class="vgd-check"><input type="checkbox" data-f="paint"' + (st.paint ? ' checked' : '') + '><span><b>' + esc(L('Add painting', 'Peinture en plus')) + '</b> · ' + esc(from(cfg.prices.paintFrom))
             + '<br><small style="color:#6b6860">' + esc(L('Final price depends on the size and complexity of the design, given in the quote.', 'Prix final selon la taille et la complexité du motif, précisé dans le devis.')) + '</small></span></label></div>';
@@ -418,7 +418,7 @@
   // Réglages publics (prix, photos des cartes), sans bloquer l'affichage.
   fetch(EP + '/requests/settings').then(function (r) { return r.ok ? r.json() : null; }).then(function (d) {
     if (!d) return;
-    cfg.prices = d.prices || cfg.prices; cfg.depositPct = d.depositPct || cfg.depositPct; cfg.cards = d.cards || {}; cfg.uploads = d.uploads !== false; cfg.limits = d.limits || cfg.limits;
+    if (d.prices) ['custom', 'surmesure'].forEach(function (t) { cfg.prices[t] = Object.assign({}, cfg.prices[t], d.prices[t] || {}); }), cfg.prices.paintFrom = d.prices.paintFrom != null ? d.prices.paintFrom : cfg.prices.paintFrom; // jamais de prix vide cfg.depositPct = d.depositPct || cfg.depositPct; cfg.cards = d.cards || {}; cfg.uploads = d.uploads !== false; cfg.limits = d.limits || cfg.limits;
     if (!sending && STEPS[path()[cur]].cards) render(); // jamais pendant une saisie (le curseur serait perdu)
   }).catch(function () {});
 

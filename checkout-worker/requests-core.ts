@@ -43,9 +43,9 @@ const CLOSED = ['terminee', 'refusee'];
 export const PIECES: Record<string, { key: string; fr: string; en: string; weight_g: number }[]> = {
   custom: [
     { key: 'tshirt', fr: 'T-shirt', en: 'T-shirt', weight_g: 250 },
-    { key: 'chemise', fr: 'Chemise', en: 'Shirt', weight_g: 350 },
     { key: 'hoodie', fr: 'Sweat / hoodie', en: 'Sweatshirt / hoodie', weight_g: 700 },
-    { key: 'veste', fr: 'Veste / jean', en: 'Jacket / jeans', weight_g: 900 },
+    { key: 'veste', fr: 'Veste / jean / jogging', en: 'Jacket / jeans / joggers', weight_g: 900 },
+    { key: 'autre', fr: 'Autre pièce', en: 'Another piece', weight_g: 600 }, // le client la décrit ou envoie une photo
   ],
   surmesure: [
     { key: 'short', fr: 'Short', en: 'Shorts', weight_g: 400 },
@@ -66,9 +66,9 @@ export interface Settings {
 }
 // Cartes avec photo du parcours (page « Sur demande »). Photo changeable dans l'admin (Réglages).
 export const CARD_KEYS = ['piece', 'production', 'collab', 'custom', 'surmesure', 'know', 'guide', 'location', 'creation',
-  'custom.tshirt', 'custom.chemise', 'custom.hoodie', 'custom.veste', 'surmesure.short', 'surmesure.pantalon', 'surmesure.haut', 'surmesure.veste'];
+  'custom.tshirt', 'custom.hoodie', 'custom.veste', 'custom.autre', 'surmesure.short', 'surmesure.pantalon', 'surmesure.haut', 'surmesure.veste'];
 export const DEFAULT_SETTINGS: Settings = {
-  prices: { custom: { tshirt: 75, chemise: 100, hoodie: 140, veste: 160 }, surmesure: { short: 150, pantalon: 240, haut: 240, veste: 320 }, paintFrom: 10 },
+  prices: { custom: { tshirt: 75, hoodie: 140, veste: 160, autre: 75 }, surmesure: { short: 150, pantalon: 220, haut: 200, veste: 320 }, paintFrom: 10 },
   depositPct: 30, remindDays: 7, alertDays: 14, forfeitDays: 30, retouchesIncluded: 1, cards: {},
 };
 
@@ -165,7 +165,6 @@ export function newRequest(v: any, id: string, k: string, now: number) {
 // Custom = pièces de la catégorie Customs/Upcycling ; sur-mesure = les autres pièces cousues.
 const FAMILIES: Record<string, { custom: boolean; re: RegExp; cat?: string }> = {
   'custom.tshirt': { custom: true, re: /tee|t-shirt|tshirt/i },
-  'custom.chemise': { custom: true, re: /chemise/i }, // pas de chemise peinte en boutique pour l'instant (les CH_ sont des hoodies)
   'custom.hoodie': { custom: true, re: /hoodie|sweat|^CH_/i }, // CH_ = hoodies zippés peints
   'custom.veste': { custom: true, re: /veste|jacket|jean/i },
   'surmesure.short': { custom: false, re: /^short/i },

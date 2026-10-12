@@ -110,10 +110,10 @@
   var list = [], settings = null, floors = {}, uploads = true, filter = 'open', open = new URLSearchParams(location.search).get('id') || '';
   var STATUS = [['nouvelle', 'Nouvelle'], ['discussion', 'En discussion'], ['devis', 'Devis envoyé'], ['acompte', 'Acompte payé'], ['fabrication', 'En fabrication'], ['validation', 'En attente de validation client'], ['solde', 'Solde payé'], ['envoyee', 'Envoyée'], ['terminee', 'Terminée'], ['refusee', 'Refusée']];
   var LABEL = {}; STATUS.forEach(function (s) { LABEL[s[0]] = s[1]; }); LABEL.brouillon = 'Envoi en cours';
-  var PIECES = { custom: [['tshirt', 'T-shirt'], ['chemise', 'Chemise'], ['hoodie', 'Sweat / hoodie'], ['veste', 'Veste / jean']], surmesure: [['short', 'Short'], ['pantalon', 'Pantalon'], ['haut', 'Haut'], ['veste', 'Veste']] };
+  var PIECES = { custom: [['tshirt', 'T-shirt'], ['hoodie', 'Sweat / hoodie'], ['veste', 'Veste / jean / jogging'], ['autre', 'Autre pièce']], surmesure: [['short', 'Short'], ['pantalon', 'Pantalon'], ['haut', 'Haut'], ['veste', 'Veste']] };
   var CARDS = [['piece', 'Une pièce pour moi'], ['production', 'Production visuelle'], ['collab', 'Collab'], ['custom', 'Custom'], ['surmesure', 'Sur-mesure'], ['know', 'Je sais ce que je veux'], ['guide', 'Guide-moi'], ['location', 'Location'], ['creation', 'Création pour le projet'],
-    ['custom.tshirt', 'Custom · T-shirt'], ['custom.chemise', 'Custom · Chemise'], ['custom.hoodie', 'Custom · Sweat / hoodie'], ['custom.veste', 'Custom · Veste / jean'], ['surmesure.short', 'Sur-mesure · Short'], ['surmesure.pantalon', 'Sur-mesure · Pantalon'], ['surmesure.haut', 'Sur-mesure · Haut'], ['surmesure.veste', 'Sur-mesure · Veste']];
-  var NO_DEFAULT = { 'custom.chemise': 1, 'custom.veste': 1 };
+    ['custom.tshirt', 'Custom · T-shirt'], ['custom.hoodie', 'Custom · Sweat / hoodie'], ['custom.veste', 'Custom · Veste / jean / jogging'], ['custom.autre', 'Custom · Autre pièce'], ['surmesure.short', 'Sur-mesure · Short'], ['surmesure.pantalon', 'Sur-mesure · Pantalon'], ['surmesure.haut', 'Sur-mesure · Haut'], ['surmesure.veste', 'Sur-mesure · Veste']];
+  var NO_DEFAULT = {};
   function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
   function money(n) { return (Math.round((n || 0) * 100) / 100).toFixed(2).replace('.', ',') + ' €'; }
   function date(ms) { return new Date(ms).toLocaleString('fr-FR', { dateStyle: 'medium', timeStyle: 'short' }); }
