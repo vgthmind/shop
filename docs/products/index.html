@@ -1616,6 +1616,13 @@ ul.categories li.page a:hover{color:#3d4045 !important;background:transparent !i
 
 /* === SUPPRIME LE FLASH BLEU TACTILE (webkit-tap-highlight) (ajout) === */
 *{-webkit-tap-highlight-color:transparent !important;}
+/* === MOBILE : ZONES TACTILES >= 44 px + FOCUS CLAVIER VISIBLE (ajout) === */
+@media (max-width:640px){
+  .open-search-button,.open-mobile-navigation{min-width:44px !important;min-height:44px !important;}
+  footer a{display:inline-block !important;padding:10px 4px !important;}
+}
+a:focus-visible,button:focus-visible,input:focus-visible,textarea:focus-visible,select:focus-visible{outline:2px solid var(--accent) !important;outline-offset:2px !important;}
+
 </style>
 
 <style>body #navigation-modal .page_list li:has(> a[href="/shop/"]){display:none !important;}</style>
