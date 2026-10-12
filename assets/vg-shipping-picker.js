@@ -48,19 +48,44 @@
 
   function el(tag, cls, txt) { var e = document.createElement(tag); if (cls) e.className = cls; if (txt != null) e.textContent = txt; return e; }
 
+  function plain(x) { return String(x).normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim(); }
+
   function build() {
     var t = V.text(lang), box = el('div', 'vg-ship-picker');
     var label = el('label', 'vg-ship-label', t.country); label.setAttribute('for', 'vg-ship-country');
     var sel = el('select'); sel.id = 'vg-ship-country';
-    var ph = el('option', '', t.choose); ph.value = ''; sel.appendChild(ph);
-    V.countryList(lang).forEach(function (c) { var o = el('option', '', c.name); o.value = c.code; sel.appendChild(o); });
-    sel.value = country;
-    sel.addEventListener('change', function () {
-      country = sel.value;
+    var all = V.countryList(lang);
+    // Recherche par nom (sans accent, ni majuscule) : la liste se réduit ; un seul résultat = choisi tout de suite.
+    function fill(q) {
+      var keep = country, f = plain(q || '');
+      sel.innerHTML = '';
+      var ph = el('option', '', t.choose); ph.value = ''; sel.appendChild(ph);
+      var n = 0, last = null;
+      all.forEach(function (c) {
+        var hit = !f || plain(c.name).indexOf(f) !== -1;
+        if (!hit && c.code !== keep) return;
+        var o = el('option', '', c.name); o.value = c.code; sel.appendChild(o);
+        if (hit) { n++; last = c; }
+      });
+      sel.value = keep;
+      return f && n === 1 && last ? last.code : '';
+    }
+    function choose(code) {
+      country = code;
       try { localStorage.setItem(COUNTRY_KEY, country); localStorage.setItem('vg-shop-region', country === 'FR' ? 'fr' : 'intl'); } catch (e) {}
       try { document.dispatchEvent(new CustomEvent('vg-shipping-change', { detail: { country: country } })); } catch (e) {}
       update();
+    }
+    var search = el('input', 'vg-ship-search'); search.type = 'search'; search.id = 'vg-ship-search';
+    search.placeholder = lang === 'fr' ? 'Rechercher un pays…' : 'Search a country…';
+    search.setAttribute('aria-label', search.placeholder); search.autocomplete = 'off';
+    search.addEventListener('input', function () {
+      var only = fill(search.value);
+      if (only && only !== country) choose(only);
     });
+    fill('');
+    sel.addEventListener('change', function () { choose(sel.value); });
+    label.appendChild(search);
     label.appendChild(sel);
     box.appendChild(label);
     box.appendChild(el('p', 'vg-ship-summary'));
@@ -80,6 +105,7 @@
     var legacySel = footer.querySelector('.vg-cart-region'); // ancien choix France / International
     if (legacySel) legacySel.style.display = 'none';
     var sel = box.querySelector('select'); if (sel.value !== country) sel.value = country;
+    box.classList.toggle('vg-ship-need', !country); // pays pas encore choisi : cadre bien visible
     setText(box.querySelector('.vg-ship-summary'), v.state === 'ok' ? v.summary : '');
     var err = box.querySelector('.vg-ship-error');
     setText(err, v.state === 'ok' ? '' : v.message); err.hidden = v.state === 'ok';
@@ -105,6 +131,8 @@
       + '.vg-ship-label{display:flex;flex-direction:column;gap:4px;font-size:.9em}'
       + '.vg-ship-picker select{width:100%;min-height:44px;padding:8px 14px;border-radius:999px;border:1px solid rgba(0,0,0,.18);background:rgba(255,255,255,.6);font:inherit;font-size:16px}'
       + '.vg-ship-summary,.vg-ship-note,.vg-ship-error{margin:0;font-size:.85em}.vg-ship-note{opacity:.65}'
+      + '.vg-ship-search{width:100%;min-height:44px;padding:8px 14px;border-radius:999px;border:1px solid rgba(0,0,0,.18);background:#fff;font:inherit;font-size:16px}'
+      + '.vg-ship-label{font-weight:600}.vg-ship-need select,.vg-ship-need .vg-ship-search{border:2px solid #3d4045;box-shadow:0 0 0 3px rgba(61,64,69,.15)}'
       + '.vg-ship-error{color:#a23b2a;font-weight:600}.vg-ship-error[hidden]{display:none}';
     document.head.appendChild(css);
     new MutationObserver(schedule).observe(document.body, { childList: true, subtree: true });

@@ -211,3 +211,12 @@ test('admin Expédition : réglages lettre (activée, pays, poids max, pièces m
   const html = readFileSync(new URL('../admin/expedition.html', import.meta.url), 'utf8');
   for (const p of ['lettre.enabled', 'lettre.countries', 'lettre.max_weight_g', 'lettre.max_pieces']) assert.ok(html.includes('data-path="' + p + '"') || html.includes("'" + p + "'"), p);
 });
+
+test('Belgique ≠ États-Unis : zone A (UE, 15 €) contre zone C (monde, 29 €) ; coûts La Poste 2026 (500 g : 14,99 € / 35,19 €)', () => {
+  const be = q([w('jean', 570)], 'BE'), us = q([w('jean', 570)], 'US');
+  assert.equal(be.zone, 'A'); assert.equal(us.zone, 'C');
+  assert.equal(be.totalCents, 1500); assert.equal(us.totalCents, 2900);
+  assert.notEqual(be.totalCents, us.totalCents);
+  assert.equal(q([w('a', 40)], 'BE').costCents, 1499);  // 178 g -> tranche 500 g, zone A
+  assert.equal(q([w('a', 40)], 'US').costCents, 3519);  // 178 g -> tranche 500 g, zone C
+});
