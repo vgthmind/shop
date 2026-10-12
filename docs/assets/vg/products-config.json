@@ -126,9 +126,5 @@
  "sc_0008": {
   "couleur_hex": "#1a1a1a",
   "couleur_nom": "noir"
- },
- "zz-test-fictif": {
-  "couleur_hex": "#1a1a1a",
-  "couleur_nom": "noir"
  }
 }

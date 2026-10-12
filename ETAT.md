@@ -16,3 +16,4 @@ Version actuelle (stable, clé de test) : 8fedf0bb-ab8e-401b-bb06-44a5488d53d8 =
 - 9301bbca-0ad6-43a9-ba0c-cfd3d54ade5b : clé de test, mais SANS les correctifs lettre (lettre à 0 € hors palier, pièce trop lourde en lettre) ni la nouvelle adresse de réponse.
 - f5466451-85d3-4090-9dbe-daf1def99997 : ancienne clé rk_live (paiement refusé en mode test), sans correctifs lettre ni nouvelle adresse.
 - 7ad9c00f-cbdf-484f-b7f1-ce42416f76c7 : avant le port par pays.
+Test carte 4242 (2026-10-12) : payé en Belgique, 10 + 15 = 25 EUR ; stock passé à 0 puis Sold out ; mails vendeur et client marqués envoyés (Resend). Pièce fictive supprimée du catalogue et du site.
