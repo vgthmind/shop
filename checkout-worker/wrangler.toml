@@ -32,9 +32,18 @@ id = "de2360d770d64089b018c6f56d48bb85"
 name = "STOCK"
 class_name = "StockDO"
 
+# Statistiques de visites (sans cookie) : checkout-worker/traffic.ts.
+[[durable_objects.bindings]]
+name = "TRAFFIC"
+class_name = "TrafficDO"
+
 [[migrations]]
 tag = "v1"
 new_sqlite_classes = ["StockDO"]
+
+[[migrations]]
+tag = "v2"
+new_sqlite_classes = ["TrafficDO"]
 
 # Sauvegarde du stock chaque jour a 03:30 UTC (KV backup:<date>, 180 jours).
 [triggers]

@@ -416,6 +416,12 @@ function injectAround(html, parts, product, relPath) {
     const beacon = `<script defer src="https://static.cloudflareinsights.com/beacon.min.js" data-cf-beacon='{"token": "${cfToken}"}'></script>\n`;
     if (end !== -1) html = html.slice(0, end) + beacon + html.slice(end);
   }
+  // Statistiques maison en temps réel (sans cookie, assets/vg-traffic.js -> Worker /t) :
+  // actives si "traffic": true dans data/shop-settings.json.
+  if (SHOP_SETTINGS.traffic === true) {
+    const end = html.lastIndexOf('</body>');
+    if (end !== -1) html = html.slice(0, end) + '<script defer src="/assets/vg-traffic.js"></script>\n' + html.slice(end);
+  }
   // See headContent()/PRODUCT_META_OVERRIDES above: a product page already
   // got its real description/og/twitter tags from {{ head_content }}
   // (rendered into `html` by layout.html before this function runs) -
@@ -681,6 +687,7 @@ async function main() {
   fs.copyFileSync(rel(ROOT, 'assets', 'vg-shipping-view.js'), rel(OUT_DIR, 'assets', 'vg-shipping-view.js'));
   fs.copyFileSync(rel(ROOT, 'assets', 'vg-shipping-picker.js'), rel(OUT_DIR, 'assets', 'vg-shipping-picker.js'));
   fs.copyFileSync(rel(ROOT, 'assets', 'vg-theme.js'), rel(OUT_DIR, 'assets', 'vg-theme.js'));
+  fs.copyFileSync(rel(ROOT, 'assets', 'vg-traffic.js'), rel(OUT_DIR, 'assets', 'vg-traffic.js'));
   fs.cpSync(rel(ROOT, 'assets', 'vendor'), rel(OUT_DIR, 'assets', 'vendor'), { recursive: true });
   fs.cpSync(rel(ROOT, 'assets', 'fonts'), rel(OUT_DIR, 'assets', 'fonts'), { recursive: true });
   const productImagesSrc = rel(ROOT, 'assets', 'products');

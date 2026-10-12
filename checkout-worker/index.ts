@@ -32,6 +32,8 @@
 
 import { DurableObject } from 'cloudflare:workers';
 import { checkoutShipping } from './shipping-worker';
+import { trafficRoutes } from './traffic';
+export { TrafficDO } from './traffic';
 import { customerEmail, sellerEmail, shippedEmail, REPLY_TO, langFor, countryName, type MailItem, type OrderData } from './emails';
 
 interface KV {
@@ -42,6 +44,7 @@ interface KV {
 }
 
 interface Env {
+  TRAFFIC?: any; // Durable Object des statistiques de visites (traffic.ts)
   STRIPE_SECRET_KEY?: string;
   STRIPE_WEBHOOK_SECRET?: string;
   GITHUB_CLIENT_ID?: string; // OAuth App (public)
@@ -246,6 +249,8 @@ async function route(request: Request, env: Env, ctx: any): Promise<Response> {
       if (path === '/stock' && request.method === 'GET') return await publicStock(env, cors);
       if (path === '/auth') return await oauthStart(request, env);
       if (path === '/callback') return await oauthCallback(request, env);
+      // Mesure d'audience maison (sans cookie) : balise assets/vg-traffic.js.
+      if (path === '/t' && env.TRAFFIC) { const r = await trafficRoutes(request, env as any, path, json); if (r) return r; }
       if (path.startsWith('/admin/')) {
         if (!(await isAdmin(request, env))) return json({ error: 'Non autorisé.' }, 401);
         if (path === '/admin/renew' && request.method === 'POST') return json({ session: await makeSession(env) });
@@ -267,6 +272,7 @@ async function route(request: Request, env: Env, ctx: any): Promise<Response> {
           return v ? new Response(v, { headers: { 'Content-Type': 'application/json', 'Content-Disposition': `attachment; filename="stock-${k.slice(7)}.json"`, ...cors } }) : json({ error: 'Introuvable.' }, 404);
         }
         if (path === '/admin/backup' && request.method === 'POST') return json(await backupStock(env));
+        if (path.startsWith('/admin/traffic') && env.TRAFFIC) { const tr = await trafficRoutes(request, env as any, path, json); if (tr) return tr; }
         return json({ error: 'Not found' }, 404);
       }
 
