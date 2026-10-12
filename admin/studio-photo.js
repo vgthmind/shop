@@ -173,14 +173,23 @@
   (function () {
     var MAX = 40 * 1024 * 1024;
     function msg(t, err) { $('rpMsg').textContent = t; $('rpMsg').style.color = err ? '#a23b2a' : ''; }
-    $('fReelVideo').onchange = function (e) {
-      var f = e.target.files[0]; reelFile = null; if (!f) { msg(''); return; }
-      if (f.size > MAX) { msg('Vidéo trop lourde (' + Math.round(f.size / 1048576) + ' Mo, 40 Mo maximum) : exporte-la en plus léger.', true); return; }
+    function accept(f) {
       var v = document.createElement('video'), u = URL.createObjectURL(f);
       v.muted = true; v.preload = 'metadata';
       v.onloadedmetadata = function () { URL.revokeObjectURL(u); reelFile = f; scheduleDraft(); msg('Vidéo prête (' + Math.round(f.size / 1048576 * 10) / 10 + ' Mo, ' + Math.round(v.duration) + ' s).'); };
       v.onerror = function () { URL.revokeObjectURL(u); msg('Cette vidéo ne peut pas être lue par ce navigateur (vidéo iPhone HEVC ?) : exporte-la en MP4 H.264.', true); };
       v.src = u; msg('Lecture…');
+    }
+    $('fReelVideo').onchange = function (e) {
+      var f = e.target.files[0]; reelFile = null; if (!f) { msg(''); return; }
+      var mp4 = /\.mp4$/i.test(f.name) || f.type === 'video/mp4';
+      if (f.size <= MAX && mp4) { accept(f); return; }
+      // Trop lourde ou autre format (.mov de l'iPhone…) : conversion automatique dans le navigateur.
+      if (!window.VGVideoConvert || !VGVideoConvert.supported()) { msg(f.size > MAX ? 'Vidéo trop lourde (' + Math.round(f.size / 1048576) + ' Mo, 40 Mo maximum) : exporte-la en plus léger.' : 'Vidéo non MP4 : exporte-la en MP4 H.264.', true); return; }
+      msg('Conversion en MP4 léger… 0 % (garde l\'écran allumé)');
+      VGVideoConvert.convert(f, { maxSeconds: 30, maxWidth: 720, bitrate: 2000000, maxBytes: MAX - 1048576, onProgress: function (p) { msg('Conversion en MP4 léger… ' + Math.round(p * 100) + ' % (garde l\'écran allumé)'); } })
+        .then(function (out) { if (out.size > MAX) throw new Error('encore trop lourde après conversion'); accept(out); })
+        .catch(function (err) { msg('Conversion impossible : ' + err.message, true); });
     };
   })();
   function remove(i) {

@@ -48,13 +48,15 @@
   <div id="app" hidden>
     <div class="card">
       <label for="file"><strong>Ajouter des clips</strong></label><br>
-      <input type="file" id="file" accept="video/mp4" multiple>
+      <input type="file" id="file" accept="video/*" multiple>
+      <p class="muted">Une vidéo trop lourde ou trop longue (ou au format iPhone .mov) est <strong>convertie toute seule</strong> en petit MP4 muet de 8 s maximum, directement ici : garde l'écran allumé pendant la conversion (autant de secondes que la vidéo).</p>
       <p class="muted">Le site se reconstruit tout seul (1 à 2 min) : les nouveaux clips apparaissent ensuite à l'ouverture.</p>
     </div>
     <div class="card"><strong id="count">Clips</strong><div id="list"></div></div>
   </div>
   <p id="msg" role="status" aria-live="polite"></p>
 </main>
+<script src="video-convert.js"></script>
 <script src="studio-publish.js"></script>
 <script src="vg-admin-auth.js"></script>
 <script>
@@ -103,23 +105,32 @@
   $('file').addEventListener('change', function () {
     var files = Array.prototype.slice.call(this.files || []), input = this;
     var chain = Promise.resolve(), ok = 0;
-    files.forEach(function (f) {
+    files.forEach(function (f0) {
       chain = chain.then(function () {
-        if (f.size > MAX_BYTES) { say(f.name + ' : trop lourd (' + (f.size / 1048576).toFixed(1) + ' Mo, maximum 3 Mo). Raccourcis-le d\'abord.', true); return; }
-        return probe(f).then(function (m) {
-          if (!m) { say(f.name + ' : fichier vidéo illisible (MP4 H.264 attendu).', true); return; }
-          if (m.d > MAX_S) { say(f.name + ' : trop long (' + Math.round(m.d) + ' s, maximum ' + MAX_S + ' s).', true); return; }
-          return b64(f).then(function (data) {
-            say('Envoi de ' + f.name + '…');
-            var name = slug(f.name) + '.mp4';
-            return api('GET', '/contents/' + DIR + '/' + name + '?ref=' + BRANCH).then(function (ex) { return ex && ex.sha; }, function () { return null; }).then(function (sha) {
-              var body = { message: 'Vidéo d\'ouverture : ' + name, content: data, branch: BRANCH };
-              if (sha) body.sha = sha;
-              return api('PUT', '/contents/' + DIR + '/' + name, body);
-            }).then(function () { ok++; });
+        // Déjà un petit MP4 court : envoyé tel quel ; sinon conversion automatique (voir video-convert.js).
+        var small = /\.mp4$/i.test(f0.name) && f0.size <= MAX_BYTES;
+        return (small ? probe(f0) : Promise.resolve(null)).then(function (m0) {
+          if (small && m0 && m0.d <= MAX_S) return f0;
+          if (!window.VGVideoConvert || !VGVideoConvert.supported()) { say(f0.name + ' : trop lourd, trop long ou mauvais format, et ce navigateur ne sait pas convertir (utilise Safari ou Chrome à jour).', true); return null; }
+          return VGVideoConvert.convert(f0, { maxSeconds: MAX_S, maxWidth: 720, bitrate: 1500000, maxBytes: MAX_BYTES - 262144, onProgress: function (p) { say('Conversion de ' + f0.name + ' : ' + Math.round(p * 100) + ' % (garde l\'écran allumé)'); } });
+        }).then(function (f) {
+          if (!f) return;
+          if (f.size > MAX_BYTES) { say(f0.name + ' : encore trop lourd après conversion (' + (f.size / 1048576).toFixed(1) + ' Mo, maximum 3 Mo).', true); return; }
+          return probe(f).then(function (m) {
+            if (!m) { say(f0.name + ' : fichier vidéo illisible.', true); return; }
+            if (isFinite(m.d) && m.d > MAX_S + 0.5) { say(f0.name + ' : trop long (' + Math.round(m.d) + ' s, maximum ' + MAX_S + ' s).', true); return; }
+            return b64(f).then(function (data) {
+              say('Envoi de ' + f0.name + '…');
+              var name = slug(f0.name) + '.mp4';
+              return api('GET', '/contents/' + DIR + '/' + name + '?ref=' + BRANCH).then(function (ex) { return ex && ex.sha; }, function () { return null; }).then(function (sha) {
+                var body = { message: 'Vidéo d\'ouverture : ' + name, content: data, branch: BRANCH };
+                if (sha) body.sha = sha;
+                return api('PUT', '/contents/' + DIR + '/' + name, body);
+              }).then(function () { ok++; });
+            });
           });
         });
-      });
+      }).catch(function (e) { say(f0.name + ' : ' + e.message, true); });
     });
     chain.then(function () { input.value = ''; return load(); }).then(function () { if (ok) say(ok + ' clip' + (ok > 1 ? 's' : '') + ' ajouté' + (ok > 1 ? 's' : '') + '. Le site se reconstruit (1 à 2 min).'); })
       .catch(function (e) { say('Erreur : ' + e.message, true); });
