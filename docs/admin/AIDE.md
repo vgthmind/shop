@@ -6,6 +6,7 @@ Adresses :
 - Commandes & stats : https://vgthmind.github.io/shop/admin/commandes.html.
 - Paiements, remboursements, codes promo : tableau de bord Stripe.
 
+- **Tableau de bord** (toutes les pages + Stripe, statistiques, tes liens compta et Facturier) : https://vgthmind.github.io/shop/admin/tableau.html.
 - **Catalogue** (le plus simple, aussi sur iPhone) : https://vgthmind.github.io/shop/admin/catalogue.html.
 
 Après chaque enregistrement dans l'admin, le site se reconstruit tout seul (1 à 2 min).

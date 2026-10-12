@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="robots" content="noindex, nofollow">
+  <meta name="referrer" content="no-referrer">
+  <title>vgthmind — tableau de bord</title>
+  <style>
+    :root { --bg: #f4f2ec; --ink: #171717; --muted: #6b6860; --line: rgba(0,0,0,.12); --card: rgba(255,255,255,.72); }
+    * { box-sizing: border-box; }
+    [hidden] { display: none !important; }
+    body { margin: 0; background: var(--bg); color: var(--ink); font: 16px/1.45 system-ui, -apple-system, "Segoe UI", sans-serif; -webkit-text-size-adjust: 100%; }
+    main { max-width: 820px; margin: 0 auto; padding: 22px 16px 60px; }
+    h1 { font-size: 22px; letter-spacing: .04em; text-transform: uppercase; margin: 0 0 4px; }
+    h2 { font-size: 14px; text-transform: uppercase; letter-spacing: .05em; margin: 26px 0 10px; color: var(--muted); }
+    .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 10px; }
+    a.tile, .tile { display: block; padding: 14px 16px; border-radius: 14px; background: var(--card); border: 1px solid var(--line); color: var(--ink); text-decoration: none; min-height: 76px; }
+    a.tile:hover { background: #fff; }
+    .tile strong { display: block; font-size: 16px; }
+    .tile span { font-size: 13px; color: var(--muted); }
+    a.tile.main { background: var(--ink); color: #fff; }
+    a.tile.main span { color: #cfcac0; }
+    .muted { color: var(--muted); font-size: 13px; }
+    .tile.empty { border-style: dashed; cursor: pointer; }
+    input[type=url] { width: 100%; padding: 9px 12px; border: 1px solid var(--line); border-radius: 10px; font: inherit; margin-top: 6px; }
+    button { padding: 8px 14px; border-radius: 999px; border: 1px solid var(--line); background: #fff; font: inherit; cursor: pointer; margin-top: 6px; }
+  </style>
+</head>
+<body>
+<main>
+  <h1>vgthmind — admin</h1>
+  <p class="muted">Tout l'admin depuis un seul endroit (marque cette page dans tes favoris, aussi sur iPhone : Partager → Sur l'écran d'accueil).</p>
+
+  <h2>Boutique</h2>
+  <div class="grid">
+    <a class="tile main" href="catalogue.html"><strong>Catalogue</strong><span>pièces, catégories, statuts</span></a>
+    <a class="tile main" href="studio-photo.html"><strong>+ Nouvelle pièce</strong><span>photos détourées + fiche</span></a>
+    <a class="tile" href="commandes.html"><strong>Commandes</strong><span>à expédier, suivi, stats</span></a>
+    <a class="tile" href="stock.html"><strong>Stock</strong><span>quantités, Sold out, sauvegardes</span></a>
+    <a class="tile" href="pieces.html"><strong>Poids &amp; ports</strong><span>poids, lettre / colis</span></a>
+    <a class="tile" href="expedition.html"><strong>Frais d'envoi</strong><span>grille des tarifs</span></a>
+    <a class="tile" href="trafic.html"><strong>Trafic</strong><span>visiteurs (temps réel)</span></a>
+    <a class="tile" href="export.html"><strong>Export des ventes</strong><span>fichier pour la compta</span></a>
+    <a class="tile" href="./"><strong>Éditeur avancé</strong><span>Sveltia (secours)</span></a>
+    <a class="tile" href="AIDE.md"><strong>Aide</strong><span>mode d'emploi</span></a>
+  </div>
+
+  <h2>Outils externes</h2>
+  <div class="grid" id="ext">
+    <a class="tile" href="https://dashboard.stripe.com/" target="_blank" rel="noopener noreferrer"><strong>Stripe ↗</strong><span>paiements, remboursements, codes promo</span></a>
+    <a class="tile" href="https://dash.cloudflare.com/?to=/:account/web-analytics" target="_blank" rel="noopener noreferrer"><strong>Statistiques Cloudflare ↗</strong><span>visites, pages, pays</span></a>
+    <a class="tile" href="https://www.laposte.fr/outils/suivre-vos-envois" target="_blank" rel="noopener noreferrer"><strong>Suivi La Poste ↗</strong><span>chercher un colis</span></a>
+  </div>
+
+  <h2>Mes liens (gardés sur cet appareil)</h2>
+  <p class="muted">Colle l'adresse de ton outil de compta et de ton Facturier une fois : le lien reste sur cet appareil (rien n'est publié sur le site).</p>
+  <div class="grid" id="mine"></div>
+</main>
+<script>
+(function () {
+  'use strict';
+  var KEY = 'vg-admin-links';
+  var SLOTS = [{ id: 'compta', label: 'Comptabilité', hint: 'ton outil compta (Sheet / Comptabilité)' }, { id: 'facturier', label: 'Facturier', hint: 'tes factures' }];
+  function read() { try { return JSON.parse(localStorage.getItem(KEY) || '{}'); } catch (e) { return {}; } }
+  function write(v) { try { localStorage.setItem(KEY, JSON.stringify(v)); } catch (e) {} }
+  function esc(s) { return String(s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+  function draw() {
+    var v = read();
+    document.getElementById('mine').innerHTML = SLOTS.map(function (s) {
+      var u = v[s.id];
+      return u && /^https:\/\//.test(u)
+        ? '<div class="tile"><a href="' + esc(u) + '" target="_blank" rel="noopener noreferrer"><strong>' + esc(s.label) + ' ↗</strong></a><span>' + esc(s.hint) + '</span><br><button type="button" data-edit="' + s.id + '">Changer le lien</button></div>'
+        : '<div class="tile empty"><strong>' + esc(s.label) + '</strong><span>' + esc(s.hint) + '</span><input type="url" inputmode="url" placeholder="https://…" data-in="' + s.id + '" aria-label="Adresse de ' + esc(s.label) + '"><button type="button" data-save="' + s.id + '">Enregistrer</button></div>';
+    }).join('');
+  }
+  document.getElementById('mine').addEventListener('click', function (e) {
+    var v = read(), id;
+    if ((id = e.target.getAttribute('data-save'))) {
+      var u = document.querySelector('[data-in="' + id + '"]').value.trim();
+      if (!/^https:\/\/\S+$/.test(u)) { alert('Colle une adresse qui commence par https://'); return; }
+      v[id] = u; write(v); draw();
+    }
+    if ((id = e.target.getAttribute('data-edit'))) { delete v[id]; write(v); draw(); }
+  });
+  draw();
+})();
+</script>
+</body>
+</html>
