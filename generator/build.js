@@ -426,7 +426,7 @@ function injectAround(html, parts, product, relPath) {
   // structurées Product (prix, stock) pour Google. Rien sur les pages
   // techniques (merci, paiement-annule, 404, contact).
   let seoTags = '';
-  if (relPath && !/^(merci|paiement-annule|suivi|404|contact)/.test(relPath)) {
+  if (relPath && !/^(merci|paiement-annule|suivi|404|contact\/)/.test(relPath)) {
     const escA = (v) => String(v || '').replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
     const pagePath = '/' + relPath.replace(/index\.html$/, '').replace(/\/$/, '');
     const url = SHOP_SETTINGS.site_url.replace(/\/$/, '') + (pagePath === '/' ? '/' : pagePath);

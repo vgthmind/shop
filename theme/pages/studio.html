@@ -18,3 +18,52 @@
 <p><strong>5. La peinture.</strong> Certaines pi&egrave;ces sont peintes &agrave; la main directement sur le tissu, sans aucune impression.</p>
 <p><strong><span class="h3-fs">LE PARCOURS</span></strong></p>
 <p>vgthmind na&icirc;t en 2021 &agrave; Vitry-sur-Seine. Premi&egrave;re collection prim&eacute;e au Festival de Dinan en 2022, collection VGTHM en 2023, puis la mixtape VGTAPE en 2025 : un clip et une tenue pour chaque morceau.</p>
+<p class="vg-lang-sep"><span>Location &amp; collab / Demande</span></p>
+<p>Stage rental, YouTube collab, custom or clip rental? Tell me about your project. / Location pour la sc&egrave;ne, collab YouTube, custom ou location pour un clip&nbsp;? Parle-moi de ton projet.</p>
+<form id="vg-collab-form" class="vg-contact-form" novalidate>
+  <div class="vg-cf-row"><label for="vgk-name">Nom / Name</label><input id="vgk-name" name="name" type="text" autocomplete="name" maxlength="100" required></div>
+  <div class="vg-cf-row"><label for="vgk-email">E-mail</label><input id="vgk-email" name="email" type="email" autocomplete="email" maxlength="200" required></div>
+  <div class="vg-cf-row"><label for="vgk-project">Projet / Project</label><textarea id="vgk-project" name="project" rows="5" maxlength="1500" required placeholder="Clip, concert, vidéo YouTube, custom… / Music video, gig, YouTube, custom…"></textarea></div>
+  <div class="vg-cf-row"><label for="vgk-dates">Dates</label><input id="vgk-dates" name="dates" type="text" maxlength="200" placeholder="ex. 12 au 14 novembre / e.g. Nov 12-14"></div>
+  <div class="vg-cf-row"><label for="vgk-pieces">Pièces voulues / Pieces wanted</label><input id="vgk-pieces" name="pieces" type="text" maxlength="300" placeholder="ex. CH_0002, un cache-cou… / e.g. CH_0002, a neck gaiter…"></div>
+  <div class="vg-cf-trap" aria-hidden="true"><label for="vgk-website">Ne pas remplir</label><input id="vgk-website" name="website" type="text" tabindex="-1" autocomplete="off"></div>
+  <button type="submit" class="button vg-cf-send">Envoyer la demande / Send request</button>
+  <p id="vg-collab-status" class="vg-cf-status" role="status" aria-live="polite"></p>
+</form>
+<style>
+.vg-contact-form{max-width:560px;margin:28px 0 0;display:flex;flex-direction:column;gap:16px}
+.vg-cf-row{display:flex;flex-direction:column;gap:6px}
+.vg-cf-row label{font-size:12px;letter-spacing:.08em;text-transform:uppercase}
+.vg-cf-row input,.vg-cf-row textarea{font:inherit;font-size:16px;padding:12px;border:1px solid #171717;background:#fff;color:#171717;border-radius:6px;width:100%;box-sizing:border-box}
+.vg-cf-row input[aria-invalid="true"],.vg-cf-row textarea[aria-invalid="true"]{border-color:#b3261e;box-shadow:0 0 0 1px #b3261e}
+.vg-cf-trap{position:absolute!important;left:-9999px!important;width:1px;height:1px;overflow:hidden}
+.vg-cf-send{align-self:flex-start;min-height:44px;padding:12px 28px}
+.vg-cf-status{margin:0;font-size:15px}
+.vg-cf-status.ok{color:#1b5e20}.vg-cf-status.err{color:#b3261e}
+</style>
+<script>
+(function(){
+  var f=document.getElementById('vg-collab-form'); if(!f) return;
+  var st=document.getElementById('vg-collab-status'), btn=f.querySelector('button'), t0=Date.now();
+  var EP=window.VG_SHOP_CHECKOUT_ENDPOINT!==undefined?window.VG_SHOP_CHECKOUT_ENDPOINT:'https://vgthmind-shop-checkout.vgthm66.workers.dev';
+  function say(c,m){st.className='vg-cf-status '+c;st.textContent=m;}
+  f.addEventListener('submit',function(e){
+    e.preventDefault();
+    var bad=null,v={};
+    ['name','email','project','dates','pieces','website'].forEach(function(k){var el=f.elements[k];v[k]=el.value.trim();el.removeAttribute('aria-invalid');});
+    ['name','email','project'].forEach(function(k){var el=f.elements[k],x=v[k];if(!x||(k==='email'&&!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(x))||(k==='project'&&x.length<5)){el.setAttribute('aria-invalid','true');if(!bad)bad=el;}});
+    if(bad){say('err','Merci de compléter les champs en rouge. / Please fill in the highlighted fields.');bad.focus();return;}
+    var msg='Projet / Project :\n'+v.project+'\n\nDates : '+(v.dates||'-')+'\nPièces / Pieces : '+(v.pieces||'-');
+    btn.disabled=true;say('','Envoi… / Sending…');
+    fetch(EP+'/contact',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:v.name,email:v.email,subject:'Demande de location / collab',message:msg,website:v.website,t:Date.now()-t0})})
+      .then(function(r){return r.json().catch(function(){return {};}).then(function(j){return {s:r.status,j:j};});})
+      .then(function(x){
+        if(x.s===200&&x.j.ok){f.reset();say('ok','Demande envoyée, merci ! Je reviens vers toi vite. / Request sent, thank you! I will get back to you soon.');}
+        else if(x.s===429){say('err','Trop d’envois pour le moment, réessaie plus tard ou écris à contact@vgthmind.org. / Too many messages, try later or email contact@vgthmind.org.');}
+        else{say('err','La demande n’a pas pu partir. Écris à contact@vgthmind.org. / Could not send. Please email contact@vgthmind.org.');}
+      })
+      .catch(function(){say('err','Connexion impossible. Écris à contact@vgthmind.org. / Connection failed. Please email contact@vgthmind.org.');})
+      .then(function(){btn.disabled=false;});
+  });
+})();
+</script>
