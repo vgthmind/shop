@@ -1621,6 +1621,22 @@ ul.categories li.page a:hover{color:#3d4045 !important;background:transparent !i
 }
 a:focus-visible,button:focus-visible,input:focus-visible,textarea:focus-visible,select:focus-visible{outline:2px solid var(--accent) !important;outline-offset:2px !important;}
 
+/* === FIL D ARIANE + RETOUR FICHE PIECE (ajout) === */
+.vg-breadcrumb{display:flex;flex-wrap:wrap;justify-content:flex-start;align-items:center;gap:8px 16px;margin:0 0 16px;font-family:'IBM Plex Mono',monospace;font-size:12px;letter-spacing:.06em;text-transform:uppercase;}
+.vg-breadcrumb a{color:var(--steel) !important;text-decoration:none !important;padding:10px 0;display:inline-block;}
+.vg-breadcrumb a:hover{color:var(--ink) !important;}
+.vg-breadcrumb .vg-crumbs{color:var(--steel);}
+.vg-breadcrumb .vg-crumbs a{padding:10px 2px;}
+@media (max-width:640px){.vg-breadcrumb .vg-crumbs{display:none;}}
+
+/* === PIECE VENDUE : PIECES SIMILAIRES (ajout) === */
+.vg-similar{margin:48px auto 0;max-width:960px;padding:0 16px;text-align:center;}
+.vg-similar h2{font-family:'Space Grotesk',sans-serif;font-size:16px;letter-spacing:.08em;text-transform:uppercase;margin:0 0 20px;}
+.vg-similar-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:16px;}
+.vg-similar-grid a{display:flex;flex-direction:column;gap:8px;text-decoration:none !important;color:var(--ink) !important;font-size:13px;}
+.vg-similar-grid img{width:100%;aspect-ratio:1/1;object-fit:cover;border-radius:8px;}
+html.vg-product-sold-out .product-subheader .product-status{font-size:14px;}
+
 </style>
 
 <style>body #navigation-modal .page_list li:has(> a[href="/shop/"]){display:none !important;}</style>
@@ -1769,6 +1785,7 @@ a:focus-visible,button:focus-visible,input:focus-visible,textarea:focus-visible,
     
     <main id="main" class="content " data-bc-hook="content">
       <div class="product-container" data-bc-hook="product-container">
+  <nav class="vg-breadcrumb" aria-label="Breadcrumb"><span class="vg-crumbs"><a href="/shop/">Home</a> / <a href="/shop/products">Products</a> / <span aria-current="page">Pantalon Denim Bleu</span></span></nav>
   <a class="vg-back-link" href="/shop/products">← Produits</a><h1>Pantalon Denim Bleu</h1>
   
   

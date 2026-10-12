@@ -60,6 +60,33 @@
     try { return decodeURIComponent(m[1]); } catch (e) { return m[1]; }
   }
 
+  // Pièce vendue : propose jusqu'à 4 pièces encore disponibles (même catégorie d'abord).
+  function showSimilar(slug, stock) {
+    if (!window.fetch || document.querySelector('.vg-similar')) return;
+    var base = (loc.pathname || '').split('/product/')[0];
+    fetch(base + '/products.json').then(function (r) { return r.json(); }).then(function (all) {
+      var me = all.filter(function (p) { return p.permalink === slug; })[0];
+      var mine = {};
+      ((me && me.categories) || []).forEach(function (c) { if (c.permalink !== 'all' && c.permalink !== 'latest-drop') mine[c.permalink] = 1; });
+      var avail = all.filter(function (p) { return p.permalink !== slug && p.status !== 'sold-out' && (stock[p.permalink] === undefined || stock[p.permalink] > 0); });
+      var score = function (p) { return (p.categories || []).some(function (c) { return mine[c.permalink]; }) ? 0 : 1; };
+      avail.sort(function (x, y) { return score(x) - score(y); });
+      avail = avail.slice(0, 4);
+      if (!avail.length) return;
+      var box = document.createElement('section');
+      box.className = 'vg-similar';
+      var h = '<h2>Sold — still available / Vendue — encore disponibles</h2><div class="vg-similar-grid">';
+      avail.forEach(function (p) {
+        var img = p.images && p.images[0] ? p.images[0].url : '';
+        var sized = img.replace('/assets/products/', '/assets/products-sized/320/').replace(/\.[a-z0-9]+$/i, '.webp');
+        h += '<a href="' + base + p.url + '"><img loading="lazy" alt="' + String(p.name).replace(/"/g, '&quot;') + '" src="' + sized + '"><span>' + p.name + '</span></a>';
+      });
+      box.innerHTML = h + '</div>';
+      var anchor = document.querySelector('.product-container') || document.querySelector('main');
+      if (anchor) anchor.appendChild(box);
+    }).catch(function () {});
+  }
+
   function applyStock(stock) {
     // Fiche produit.
     var slug = /\/product\//.test(loc.pathname || '') ? slugFromHref(loc.pathname) : '';
@@ -74,6 +101,7 @@
         sub.appendChild(tag);
       }
       document.documentElement.classList.add('vg-product-sold-out');
+      showSimilar(slug, stock);
     }
     // Grilles (accueil, Products, catégories) : même étiquette que le thème.
     if (stock) {

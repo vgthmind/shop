@@ -1,4 +1,5 @@
 <div class="product-container" data-bc-hook="product-container">
+  <nav class="vg-breadcrumb" aria-label="Breadcrumb"><span class="vg-crumbs"><a href="/">Home</a> / <a href="/products">Products</a> / <span aria-current="page">{{ product.name }}</span></span></nav>
   <h1>{{ product.name }}</h1>
   {% capture product_pricing %}
     {{ product | product_price: theme.money_format }}
