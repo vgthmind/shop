@@ -18,7 +18,7 @@ export function endOfDayParis(day: string): number | null {
   return Number.isFinite(ts) ? Math.floor(ts / 1000) : null;
 }
 
-// Vérifie le formulaire et prépare les deux appels Stripe. { error } si quelque chose ne va pas (message pour vgthmind).
+// Vérifie le formulaire et prépare les deux appels Stripe. { error } si quelque chose ne va pas (message pour le propriétaire).
 export function planPromo(input: PromoInput, now = Date.now()): { error: string } | { coupon: URLSearchParams; promo: (couponId: string) => URLSearchParams; label: string } {
   const code = String(input.code || '').trim().toUpperCase();
   if (!/^[A-Z0-9_-]{3,30}$/.test(code)) return { error: 'Code : 3 à 30 caractères, lettres sans accent, chiffres, - ou _ (ex. BIENVENUE10).' };
