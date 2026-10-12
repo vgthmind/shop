@@ -390,7 +390,7 @@
           if (res.data.url) { window.location.href = res.data.url; return; }
           if (res.status === 409 && res.data.problems) {
             // Pièces vendues entre-temps : retirées du panier, on le dit.
-            var gone = res.data.problems.filter(function (p) { return p.reason === 'vendue' || p.reason === 'introuvable'; })
+            var gone = res.data.problems.filter(function (p) { return p.reason === 'vendue' || p.reason === 'introuvable' || p.reason === 'bientot'; })
               .map(function (p) { return p.slug; });
             var held = res.data.problems.filter(function (p) { return p.reason === 'reservee'; })
               .map(function (p) { return p.slug; });
@@ -405,7 +405,10 @@
               writeCart(cart);
               items = setQty(p.slug, p.available || 1);
             });
-            message = names.length
+            var soonSlugs = res.data.problems.filter(function (p) { return p.reason === 'bientot'; }).map(function (p) { return p.slug; });
+            message = soonSlugs.length && soonSlugs.length === gone.length
+              ? L('Not on sale yet: ', 'Pas encore en vente : ') + names.join(', ') + L('. Removed from your cart.', '. Retiré du panier.')
+              : names.length
               ? L('Sorry, already sold: ', 'Désolé, déjà vendu : ') + names.join(', ') + L('. Removed from your cart.', '. Retiré du panier.')
               : heldNames.length
                 ? L('Someone is paying for ' + heldNames.join(', ') + ' right now, try again in 30 min.', 'Quelqu’un est en train de payer ' + heldNames.join(', ') + ', réessaie dans 30 min.')

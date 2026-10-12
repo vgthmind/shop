@@ -23,7 +23,8 @@ const THEME_DIR = path.join(ROOT, 'theme');
 const CUSTOM_DIR = path.join(THEME_DIR, 'custom');
 const PAGES_DIR = path.join(THEME_DIR, 'pages');
 const DATA_DIR = path.join(ROOT, 'data');
-const OUT_DIR = path.join(ROOT, 'docs');
+// OUT_DIR (env) : dossier de sortie alternatif (essais de bascule, tests) ; par défaut docs/.
+const OUT_DIR = process.env.OUT_DIR ? path.resolve(process.env.OUT_DIR) : path.join(ROOT, 'docs');
 
 // The real BigCartel templates hardcode root-absolute links (/, /products,
 // /product/<slug>...) because BigCartel always serves a store from its domain
@@ -39,7 +40,8 @@ const BASE_PATH = process.env.BASE_PATH !== undefined ? process.env.BASE_PATH : 
 // SITE_URL (env) le remplace, ex. l'adresse .pages.dev pendant les essais.
 const SHOP_SETTINGS = Object.assign({ public: false, site_url: 'https://vgthmind.github.io/shop' },
   JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'data', 'shop-settings.json'), 'utf8')),
-  process.env.SITE_URL ? { site_url: process.env.SITE_URL } : {});
+  process.env.SITE_URL ? { site_url: process.env.SITE_URL } : {},
+  process.env.SHOP_PUBLIC ? { public: process.env.SHOP_PUBLIC === '1' } : {});
 // Vidéos (reels, clips des transitions, studio) : copiées dans assets/media/ (le site ne dépend
 // plus du portfolio). Hors du dépôt docs/ (.gitignore) : seul le build Cloudflare les publie.
 // L'ancien aperçu GitHub Pages (/shop) garde les adresses du portfolio jusqu'à son arrêt.

@@ -28,7 +28,7 @@
     .piece .acts { display: flex; gap: 6px; flex-wrap: wrap; }
     .tag { font-size: 12px; padding: 2px 8px; border-radius: 999px; border: 1px solid var(--line); }
     .tag.live { color: var(--ok); border-color: var(--ok); }
-    .tag.preview, .tag.scheduled { color: var(--warn); border-color: var(--warn); }
+    .tag.preview, .tag.scheduled, .tag.coming { color: var(--warn); border-color: var(--warn); }
     .tag.archived { color: var(--muted); }
     #savebar { position: fixed; left: 0; right: 0; bottom: 0; background: var(--ink); color: #fff; padding: 12px 16px; display: flex; gap: 12px; align-items: center; justify-content: center; flex-wrap: wrap; }
     #savebar button { background: #fff; }
@@ -66,7 +66,7 @@
   'use strict';
   var $ = function (id) { return document.getElementById(id); };
   var pieces = [], changes = {}; // changes : slug -> fiche modifiée / créée
-  var LABEL = { live: 'En ligne', preview: 'Aperçu (non listée)', scheduled: 'Programmée', archived: 'Archivée' };
+  var LABEL = { live: 'En ligne', preview: 'Aperçu (non listée)', scheduled: 'Programmée', archived: 'Archivée', coming: 'Bientôt disponible (visible, non achetable)' };
   function fmtParis(iso) { try { return new Date(iso).toLocaleString('fr-FR', { timeZone: 'Europe/Paris', dateStyle: 'short', timeStyle: 'short' }); } catch (e) { return iso; } }
 
   function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
@@ -98,7 +98,9 @@
         + '<button type="button" data-act="dup">Dupliquer</button>'
         + (st === 'preview' || st === 'scheduled' ? '<button type="button" data-act="publish" class="primary">Publier maintenant</button><button type="button" data-act="schedule">' + (st === 'scheduled' ? 'Changer l\'heure' : 'Programmer') + '</button>' : '')
         + (st === 'scheduled' ? '<button type="button" data-act="unschedule">Annuler la programmation</button>' : '')
-        + (st === 'live' ? '<button type="button" data-act="hide">Passer en aperçu</button>' : '')
+        + (st === 'live' ? '<button type="button" data-act="coming">Marquer « bientôt disponible »</button>' : '')
+        + (st === 'coming' ? '<button type="button" data-act="open" class="primary">Ouvrir à la vente</button>' : '')
+        + (st === 'live' || st === 'coming' ? '<button type="button" data-act="hide">Passer en aperçu</button>' : '')
         + (st === 'archived' ? '<button type="button" data-act="restore">Remettre en ligne</button>' : '<button type="button" data-act="archive">Archiver</button>')
         + (isNew ? '' : '<a class="btn" target="_blank" rel="noopener" href="../product/' + encodeURIComponent(p.slug) + '">Voir la page</a>')
         + '</div></div>';
@@ -134,7 +136,9 @@
     }
     if (act === 'unschedule') { var u = Object.assign({}, p); delete u.publish_at; one[slug] = u; }
     if (act === 'publish') one[slug] = VGCatalogue.setHidden(p, false);
-    if (act === 'hide') one[slug] = VGCatalogue.setHidden(p, true);
+    if (act === 'hide') one[slug] = VGCatalogue.setComing(VGCatalogue.setHidden(p, true), false);
+    if (act === 'coming') one[slug] = VGCatalogue.setComing(p, true);
+    if (act === 'open') one[slug] = VGCatalogue.setComing(p, false);
     if (act === 'archive') one[slug] = VGCatalogue.setArchived(p, true);
     if (act === 'restore') one[slug] = VGCatalogue.setArchived(p, false);
     apply(one);

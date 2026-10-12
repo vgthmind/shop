@@ -1,4 +1,4 @@
-import { test, before, after } from 'node:test';
+import { test as baseTest, before, after } from 'node:test';
 import assert from 'node:assert/strict';
 import { spawn } from 'node:child_process';
 import { createRequire } from 'node:module';
@@ -9,6 +9,11 @@ import http from 'node:http';
 
 const require = createRequire(import.meta.url);
 const tunnel = require('../detourage-server/tunnel.js');
+// Le serveur a besoin de onnxruntime-node (installé sur le PC de vgthmind, pas dans tous les environnements) : sans lui, on saute ces essais.
+let hasOnnx = true;
+try { require.resolve('onnxruntime-node', { paths: [new URL('../detourage-server/', import.meta.url).pathname] }); } catch (e) { hasOnnx = false; }
+const test = (name, fn) => baseTest(name, { skip: hasOnnx ? false : 'onnxruntime-node absent (dépendance du serveur de détourage)' }, fn);
+
 const ORIGIN = 'https://vgthmind.github.io';
 const TOKEN = 'abcdefghijklmnopqrstuvwx';
 let proc, port = 17860 + Math.floor(Math.random() * 1000);
@@ -26,6 +31,7 @@ const local = { Origin: ORIGIN, Host: `localhost:${port}` };
 const viaTunnel = (extra = {}) => ({ Origin: ORIGIN, Host: 'abc-def.trycloudflare.com', 'Cf-Connecting-Ip': '1.2.3.4', ...extra });
 
 before(async () => {
+  if (!hasOnnx) return;
   const dir = mkdtempSync(join(tmpdir(), 'vgdet-'));
   proc = spawn(process.execPath, ['detourage-server/server.js'], {
     cwd: new URL('..', import.meta.url), stdio: 'ignore',

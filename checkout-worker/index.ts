@@ -35,6 +35,7 @@ import { checkoutShipping } from './shipping-worker';
 import { recordSale, replayPending, accountingConfigured } from './accounting';
 import { handleContact } from './contact';
 import { trafficRoutes } from './traffic';
+import { promoRoutes } from './promos';
 import { buildInvoice, parisYear } from './invoice';
 export { TrafficDO } from './traffic';
 import { requestRoutes, requestsCron, onRequestPaid, onShipped, requestInvoiceParts, type ReqDeps } from './requests';
@@ -83,6 +84,7 @@ interface Product {
   url: string;
   description?: string;
   quantity?: number;
+  status?: string; // 'coming-soon' = visible mais pas encore en vente
   images: { url: string }[];
   shipping: ShippingLine[];
 }
@@ -325,6 +327,10 @@ export default {
           const body: any = await request.json().catch(() => null);
           if (!body || typeof body !== 'object') return json({ error: 'Fichier invalide.' }, 400);
           return json({ ok: true, restored: await restoreOrders(env, body) });
+        }
+        if (path.startsWith('/admin/promos')) {
+          const sk = stripeKey(env);
+          return await promoRoutes(request, path, sk.ok ? (m, pa, pr) => stripeCall(sk.value, m, pa, pr) : null, json) as Response;
         }
         const tr = await trafficRoutes(request, env, path, json); if (tr) return tr;
         const ra = await requestRoutes(request, env, reqDeps(env), path, json, true); if (ra) return ra;
@@ -582,6 +588,7 @@ async function checkout(request: Request, env: Env, key: string, json: JsonFn): 
   for (const slug of slugs) {
     const p = bySlug.get(slug);
     if (!p) problems.push({ slug, reason: 'introuvable' });
+    else if (p.status === 'coming-soon') problems.push({ slug, reason: 'bientot' });
     else if (region === 'intl' && !intlLine(p)) problems.push({ slug, reason: 'france_uniquement' });
     else products.push(p);
   }
