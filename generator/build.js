@@ -213,6 +213,7 @@ const CUSTOM_PAGES = [
 const LEGAL_PAGES = [
   { name: 'Mentions légales', url: '/mentions-legales', permalink: 'mentions-legales' },
   { name: 'Confidentialité', url: '/confidentialite', permalink: 'confidentialite' },
+  { name: 'Livraison & retours', url: '/livraison-retours', permalink: 'livraison-retours' },
 ];
 // Stripe Checkout return pages (success_url / cancel_url of checkout-worker/).
 const SHOP_PAGES_DIR = path.join(__dirname, 'shop-pages');
