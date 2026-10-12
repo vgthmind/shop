@@ -21,6 +21,8 @@
 (function () {
   'use strict';
   var STORAGE_KEY = 'vg-shop-cart-v1';
+  // Langue du site (bouton EN | FR, assets/vg-lang.js) : L(anglais, français).
+  var L = function (en, fr) { return window.vgL ? window.vgL(en, fr) : en; };
   var ENDPOINT = window.VG_SHOP_CHECKOUT_ENDPOINT !== undefined
     ? window.VG_SHOP_CHECKOUT_ENDPOINT
     : 'https://vgthmind-shop-checkout.vgthm66.workers.dev';
@@ -75,7 +77,7 @@
       if (!avail.length) return;
       var box = document.createElement('section');
       box.className = 'vg-similar';
-      var h = '<h2>Sold — still available / Vendue — encore disponibles</h2><div class="vg-similar-grid">';
+      var h = '<h2>' + L('Sold — still available', 'Vendue — encore disponibles') + '</h2><div class="vg-similar-grid">';
       avail.forEach(function (p) {
         var img = p.images && p.images[0] ? p.images[0].url : '';
         var sized = img.replace('/assets/products/', '/assets/products-sized/320/').replace(/\.[a-z0-9]+$/i, '.webp');
@@ -284,7 +286,7 @@
           note = '<a class="button minimal-button" href="' + esc(it.stripe_payment_link) + '" target="_blank" rel="noopener">Payer cette pièce</a>';
         }
         var qtySelect = (it.max || 1) > 1
-          ? '<select class="vg-cart-qty" data-slug="' + esc(it.slug) + '" aria-label="Quantity / Quantité">'
+          ? '<select class="vg-cart-qty" data-slug="' + esc(it.slug) + '" aria-label="' + L('Quantity', 'Quantité') + '">'
             + Array.apply(null, Array(Math.min(it.max, 10))).map(function (_, i) {
               return '<option value="' + (i + 1) + '"' + (qty(it) === i + 1 ? ' selected' : '') + '>' + (i + 1) + '</option>';
             }).join('') + '</select>'
@@ -295,7 +297,7 @@
           + '<div class="cart-item-detail"><a href="' + esc(it.url) + '"><div class="product-name">' + esc(it.name) + '</div></a>'
           + '<div class="option-name"><div class="cart-item-unit-price">' + money(it.price) + '</div></div>' + note + '</div>'
           + '<div class="cart-qty">' + qtySelect
-          + '<button type="button" class="vg-cart-remove cart-remove-item--link button minimal-button" data-slug="' + esc(it.slug) + '">Remove / Retirer<span class="visually-hidden"> ' + esc(it.name) + '</span></button></div>'
+          + '<button type="button" class="vg-cart-remove cart-remove-item--link button minimal-button" data-slug="' + esc(it.slug) + '">' + L('Remove', 'Retirer') + '<span class="visually-hidden"> ' + esc(it.name) + '</span></button></div>'
           + '<div class="cart-item-price"><span>' + money(lineTotal(it)) + '</span></div>';
         list.appendChild(li);
       });
@@ -304,22 +306,22 @@
       var footer = document.createElement('div');
       footer.className = 'cart-footer';
       footer.innerHTML =
-        '<label class="vg-cart-region">Shipping / Livraison '
+        '<label class="vg-cart-region">' + L('Shipping', 'Livraison') + ' '
         + '<select class="vg-cart-region-select">'
         + '<option value="fr"' + (region === 'fr' ? ' selected' : '') + '>France</option>'
         + '<option value="intl"' + (region === 'intl' ? ' selected' : '') + '>International</option>'
         + '</select></label>'
-        + '<div class="cart-subtotal vg-cart-line"><span class="cart-subtotal__label">Subtotal:</span><span class="cart-subtotal__amount">' + money(subtotal()) + '</span></div>'
-        + '<div class="cart-subtotal vg-cart-line"><span class="cart-subtotal__label">Shipping:</span><span class="cart-subtotal__amount">' + money(shippingTotal()) + '</span></div>'
-        + '<div class="cart-subtotal vg-cart-line vg-cart-total" aria-live="polite"><span class="cart-subtotal__label">Total:</span><span class="cart-subtotal__amount">' + money(subtotal() + shippingTotal()) + '</span></div>'
+        + '<div class="cart-subtotal vg-cart-line"><span class="cart-subtotal__label">' + L('Subtotal:', 'Sous-total :') + '</span><span class="cart-subtotal__amount">' + money(subtotal()) + '</span></div>'
+        + '<div class="cart-subtotal vg-cart-line"><span class="cart-subtotal__label">' + L('Shipping:', 'Livraison :') + '</span><span class="cart-subtotal__amount">' + money(shippingTotal()) + '</span></div>'
+        + '<div class="cart-subtotal vg-cart-line vg-cart-total" aria-live="polite"><span class="cart-subtotal__label">' + L('Total:', 'Total :') + '</span><span class="cart-subtotal__amount">' + money(subtotal() + shippingTotal()) + '</span></div>'
         + (ENDPOINT
-            ? '<div class="cart-submit"><button type="button" class="button button--checkout vg-cart-checkout-all"' + (blocked.length ? ' disabled' : '') + '>Checkout</button></div>'
+            ? '<div class="cart-submit"><button type="button" class="button button--checkout vg-cart-checkout-all"' + (blocked.length ? ' disabled' : '') + '>' + L('Checkout', 'Payer') + '</button></div>'
             : '')
         + '<p class="vg-cart-msg" role="status" aria-live="polite"' + (message ? '' : ' hidden') + '>' + esc(message) + '</p>'
         + (blocked.length
-            ? '<p class="vg-cart-note">Remove the France-only pieces to ship abroad. / Retire les pièces livrables en France uniquement pour une livraison à l\'étranger.</p>'
+            ? '<p class="vg-cart-note">' + L('Remove the France-only pieces to ship abroad.', 'Retire les pièces livrables en France uniquement pour une livraison à l\'étranger.') + '</p>'
             : '')
-        + '<p class="vg-cart-note">Secure payment by Stripe. / Paiement sécurisé par Stripe.</p>';
+        + '<p class="vg-cart-note">' + L('Secure payment by Stripe.', 'Paiement sécurisé par Stripe.') + '</p>';
       root.appendChild(footer);
 
       root.querySelectorAll('.vg-cart-remove').forEach(function (btn) {
@@ -354,7 +356,7 @@
 
     function checkout(btn) {
       btn.disabled = true;
-      btn.textContent = 'One moment… / Un instant…';
+      btn.textContent = L('One moment…', 'Un instant…');
       fetch(ENDPOINT + '/checkout', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -381,26 +383,26 @@
               items = setQty(p.slug, p.available || 1);
             });
             message = names.length
-              ? 'Sorry, already sold / Désolé, déjà vendu : ' + names.join(', ') + '. Removed from your cart / Retiré du panier.'
+              ? L('Sorry, already sold: ', 'Désolé, déjà vendu : ') + names.join(', ') + L('. Removed from your cart.', '. Retiré du panier.')
               : heldNames.length
-                ? 'Someone is paying for ' + heldNames.join(', ') + ' right now, try again in 30 min. / Quelqu’un est en train de payer ' + heldNames.join(', ') + ', réessaie dans 30 min.'
+                ? L('Someone is paying for ' + heldNames.join(', ') + ' right now, try again in 30 min.', 'Quelqu’un est en train de payer ' + heldNames.join(', ') + ', réessaie dans 30 min.')
                 : short.length
-                  ? 'Fewer left than requested, quantity updated. / Il en reste moins que demandé, quantité ajustée.'
-                  : 'France only / Livraison en France uniquement pour certaines pièces.';
+                  ? L('Fewer left than requested, quantity updated.', 'Il en reste moins que demandé, quantité ajustée.')
+                  : L('Some pieces ship to France only.', 'Livraison en France uniquement pour certaines pièces.');
             if (items.length === 0) { root.remove(); location.reload(); return; }
           } else if (res.data.code === 'country_not_served') {
-            message = 'We do not deliver to this country yet. / Pays non livré pour le moment.';
+            message = L('We do not deliver to this country yet.', 'Pays non livré pour le moment.');
           } else if (res.data.code === 'country_required') {
-            message = 'Choose your country first. / Choisis d’abord ton pays de livraison.';
+            message = L('Choose your country first.', 'Choisis d’abord ton pays de livraison.');
           } else if (res.data.code === 'missing_weight') {
-            message = 'Shipping unavailable for one piece, contact me on Instagram. / Livraison indisponible pour une pièce, écris-moi sur Instagram.';
+            message = L('Shipping unavailable for one piece, contact me on Instagram.', 'Livraison indisponible pour une pièce, écris-moi sur Instagram.');
           } else {
-            message = 'Payment unavailable right now / Paiement indisponible pour le moment.';
+            message = L('Payment unavailable right now.', 'Paiement indisponible pour le moment.');
           }
           draw();
         })
         .catch(function () {
-          message = 'Connection problem, try again / Problème de connexion, réessaie.';
+          message = L('Connection problem, try again.', 'Problème de connexion, réessaie.');
           draw();
         });
     }
@@ -439,7 +441,7 @@
         items = readCart();
         if (!gone.length) { draw(); return; }
         gone.forEach(function (it) { items = removeItem(it.slug); });
-        message = 'Sorry, no longer available / Désolé, plus disponible : '
+        message = L('Sorry, no longer available: ', 'Désolé, plus disponible : ')
           + gone.map(function (it) { return it.name; }).join(', ') + '.';
         if (items.length === 0) {
           try { sessionStorage.setItem('vg-cart-flash', message); } catch (e) {}
@@ -479,11 +481,11 @@
           + (s.items || []).map(function (it) {
             return '<li class="vg-cart-line"><span>' + esc(it.name) + '</span><span>' + money(it.amount) + '</span></li>';
           }).join('')
-          + '<li class="vg-cart-line"><span>Shipping / Livraison</span><span>' + money(s.shipping) + '</span></li>'
+          + '<li class="vg-cart-line"><span>' + L('Shipping', 'Livraison') + '</span><span>' + money(s.shipping) + '</span></li>'
           + '<li class="vg-cart-line vg-cart-total"><span>Total</span><span>' + money(s.total) + '</span></li>'
           + '</ul>'
-          + (s.email ? '<p class="vg-cart-note">Receipt sent to / Reçu envoyé à ' + esc(s.email) + '</p>' : '')
-          + '<p class="vg-cart-note">No email from us? Check your spam folder. / Pas de mail de notre part ? Regarde dans tes spams.</p>';
+          + (s.email ? '<p class="vg-cart-note">' + L('Receipt sent to ', 'Reçu envoyé à ') + esc(s.email) + '</p>' : '')
+          + '<p class="vg-cart-note">' + L('No email from us? Check your spam folder.', 'Pas de mail de notre part ? Regarde dans tes spams.') + '</p>';
         summary.hidden = false;
       })
       .catch(function () {});
@@ -522,7 +524,7 @@
     var q = (loc.search || '');
     var fromUrl = function (k) { var m = q.match(new RegExp('[?&]' + k + '=([^&]*)')); return m ? decodeURIComponent(m[1].replace(/\+/g, ' ')) : ''; };
     var lang = fromUrl('l') === 'fr' || fromUrl('l') === 'en' ? fromUrl('l')
-      : (/^fr/i.test(navigator.language || '') ? 'fr' : 'en');
+      : (window.vgLang || (/^fr/i.test(navigator.language || '') ? 'fr' : 'en'));
     try { var saved = localStorage.getItem('vg-track-lang'); if (!fromUrl('l') && (saved === 'fr' || saved === 'en')) lang = saved; } catch (e) {}
     var form = root.querySelector('form');
     var refInput = root.querySelector('#vg-track-ref');

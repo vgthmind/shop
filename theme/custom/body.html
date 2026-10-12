@@ -727,7 +727,7 @@ nav.sections a:hover:hover:hover:hover:hover:hover,.header nav a:hover:hover:hov
   if (!hero) return;
   var story = document.createElement('div');
   story.className = 'vg-story-block';
-  story.innerHTML = '<p>Every vgthmind piece is one of a kind — designed, patterned and hand-sewn in France, using deadstock fabric rolls from luxury ateliers sourced at Paris’ fabric market, plus fully upcycled garments for the Customs/Upcycling range.</p><p class="vg-story-fr">Chaque pièce vgthmind est unique — conceptualisée, patronnée et cousue à la main en France, à partir de rouleaux de fin de série de maisons de luxe dénichés au marché du tissu à Paris, et de vêtements entièrement récupérés pour la gamme Customs/Upcycling.</p>';
+  story.innerHTML = '<p data-l="en">Every vgthmind piece is one of a kind — designed, patterned and hand-sewn in France, using deadstock fabric rolls from luxury ateliers sourced at Paris’ fabric market, plus fully upcycled garments for the Customs/Upcycling range.</p><p class="vg-story-fr" data-l="fr">Chaque pièce vgthmind est unique — conceptualisée, patronnée et cousue à la main en France, à partir de rouleaux de fin de série de maisons de luxe dénichés au marché du tissu à Paris, et de vêtements entièrement récupérés pour la gamme Customs/Upcycling.</p>';
   hero.parentNode.insertBefore(story, hero.nextSibling);
   fetch('/products.json').then(function (r) { return r.json(); }).then(function (products) {
     var catImages = {};
@@ -918,4 +918,5 @@ nav.sections a:hover:hover:hover:hover:hover:hover,.header nav a:hover:hover:hov
 </script>
 
 
+<script src="/assets/vg-lang.js"></script>
 <script defer src="/assets/vg-traffic.js"></script>

@@ -1636,7 +1636,32 @@ a:focus-visible,button:focus-visible,input:focus-visible,textarea:focus-visible,
 .vg-similar-grid img{width:100%;aspect-ratio:1/1;object-fit:cover;border-radius:8px;}
 html.vg-product-sold-out .product-subheader .product-status{font-size:14px;}
 
+/* === BOUTON DE LANGUE EN | FR + LANGUE CACHEE (ajout) === */
+html[data-vg-lang="en"] [data-l="fr"], html[data-vg-lang="fr"] [data-l="en"] { display: none !important; }
+html[data-vg-stacked] .vg-lang-sep { display: none !important; }
+.vg-neutral { display: none !important; }
+.vg-collab-title { font-family: 'Space Grotesk', sans-serif; font-size: 22px; margin: 40px 0 8px; }
+html[data-vg-lang="fr"] .vg-story-block p.vg-story-fr { font-size: 14px !important; color: #4a4d52 !important; margin: 0 0 8px 0 !important; }
+.vg-lang-li { display: flex; align-items: center; }
+.vg-lang-toggle { display: inline-flex; align-items: center; gap: 4px; min-height: 36px; min-width: 44px; padding: 4px 12px; border-radius: 999px;
+  border: 1px solid rgba(0,0,0,.14); background: transparent; color: var(--steel, #6c6c6c); font: 500 12px 'IBM Plex Mono', monospace; letter-spacing: .06em; cursor: pointer; }
+.vg-lang-toggle i { font-style: normal; opacity: .4; }
+.vg-lang-toggle [aria-current="true"] { color: var(--ink, #171717); font-weight: 700; }
+.vg-lang-toggle:hover { border-color: var(--ink, #171717); }
+@media (max-width: 640px) { .vg-lang-toggle { padding: 4px 8px; min-width: 40px; min-height: 40px; } }
+@media (max-width: 640px) {
+  .vg-lang-toggle i, .vg-lang-toggle [aria-current="true"] { display: none; }
+  .vg-lang-toggle { min-width: 40px; padding: 4px 6px; justify-content: center; }
+  .vg-lang-toggle [aria-current="false"] { color: var(--ink, #171717); font-weight: 700; }
+}
+@media (max-width: 640px) {
+  header nav.utility ul { gap: 6px !important; }
+  header nav.utility ul li { margin-left: 0 !important; margin-right: 0 !important; }
+}
+
 </style>
+
+<script>try{var l=localStorage.getItem('vg-lang');if(l!=='fr'&&l!=='en')l=/^fr/i.test((navigator.languages&&navigator.languages[0])||navigator.language||'')?'fr':'en';document.documentElement.setAttribute('data-vg-lang',l);document.documentElement.setAttribute('lang',l);}catch(e){}</script>
 
 <style>body #navigation-modal .page_list li:has(> a[href="/shop/"]){display:none !important;}</style>
 <style>
@@ -1790,13 +1815,14 @@ html.vg-product-sold-out .product-subheader .product-status{font-size:14px;}
 <p lang="fr">Une question sur une pi&egrave;ce, une commande, une collab&nbsp;? Remplis le formulaire, &eacute;cris-moi un mail ou envoie un DM sur Instagram. R&eacute;ponse en g&eacute;n&eacute;ral sous 24&nbsp;&agrave;&nbsp;48&nbsp;h.</p>
 <p lang="fr"><a href="mailto:contact@vgthmind.org">contact@vgthmind.org</a> &middot; <a rel="noopener" href="https://www.instagram.com/vgthmind" target="_blank">@vgthmind sur Instagram</a></p>
 
+<p lang="fr" class="vg-lang-sep vg-neutral"><span>Form</span></p>
 <form id="vg-contact-form" class="vg-contact-form" novalidate>
-  <div class="vg-cf-row"><label for="vgc-name">Nom / Name</label><input id="vgc-name" name="name" type="text" autocomplete="name" maxlength="100" required></div>
+  <div class="vg-cf-row"><label for="vgc-name"><span data-l="fr">Nom</span><span data-l="en">Name</span></label><input id="vgc-name" name="name" type="text" autocomplete="name" maxlength="100" required></div>
   <div class="vg-cf-row"><label for="vgc-email">E-mail</label><input id="vgc-email" name="email" type="email" autocomplete="email" maxlength="200" required></div>
-  <div class="vg-cf-row"><label for="vgc-subject">Sujet / Subject</label><input id="vgc-subject" name="subject" type="text" maxlength="150" required></div>
+  <div class="vg-cf-row"><label for="vgc-subject"><span data-l="fr">Sujet</span><span data-l="en">Subject</span></label><input id="vgc-subject" name="subject" type="text" maxlength="150" required></div>
   <div class="vg-cf-row"><label for="vgc-message">Message</label><textarea id="vgc-message" name="message" rows="6" maxlength="3000" required></textarea></div>
-  <div class="vg-cf-trap" aria-hidden="true"><label for="vgc-website">Ne pas remplir</label><input id="vgc-website" name="website" type="text" tabindex="-1" autocomplete="off"></div>
-  <button type="submit" class="button vg-cf-send">Envoyer / Send</button>
+  <div class="vg-cf-trap" aria-hidden="true"><label for="vgc-website">Do not fill in</label><input id="vgc-website" name="website" type="text" tabindex="-1" autocomplete="off"></div>
+  <button type="submit" class="button vg-cf-send"><span data-l="fr">Envoyer</span><span data-l="en">Send</span></button>
   <p lang="fr" id="vg-contact-status" class="vg-cf-status" role="status" aria-live="polite"></p>
 </form>
 <style>
@@ -1813,6 +1839,7 @@ html.vg-product-sold-out .product-subheader .product-status{font-size:14px;}
 <script>
 (function(){
   var f=document.getElementById('vg-contact-form'); if(!f) return;
+  var L=window.vgL||function(en){return en;};
   var st=document.getElementById('vg-contact-status'), btn=f.querySelector('button'), t0=Date.now();
   var EP=window.VG_SHOP_CHECKOUT_ENDPOINT!==undefined?window.VG_SHOP_CHECKOUT_ENDPOINT:'https://vgthmind-shop-checkout.vgthm66.workers.dev';
   function say(c,m){st.className='vg-cf-status '+c;st.textContent=m;}
@@ -1821,16 +1848,16 @@ html.vg-product-sold-out .product-subheader .product-status{font-size:14px;}
     var d={t:Date.now()-t0},bad=null;
     ['name','email','subject','message','website'].forEach(function(k){var el=f.elements[k];d[k]=el.value;el.removeAttribute('aria-invalid');});
     ['name','email','subject','message'].forEach(function(k){var el=f.elements[k],v=el.value.trim();if(!v||(k==='email'&&!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(v))||(k==='message'&&v.length<5)){el.setAttribute('aria-invalid','true');if(!bad)bad=el;}});
-    if(bad){say('err','Merci de compléter les champs en rouge. / Please fill in the highlighted fields.');bad.focus();return;}
-    btn.disabled=true;say('','Envoi… / Sending…');
+    if(bad){say('err',L('Please fill in the highlighted fields.','Merci de compléter les champs en rouge.'));bad.focus();return;}
+    btn.disabled=true;say('',L('Sending…','Envoi…'));
     fetch(EP+'/contact',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(d)})
       .then(function(r){return r.json().catch(function(){return {};}).then(function(j){return {s:r.status,j:j};});})
       .then(function(x){
-        if(x.s===200&&x.j.ok){f.reset();say('ok','Message envoyé, merci ! Je te réponds vite. / Message sent, thank you! I will reply soon.');}
-        else if(x.s===429){say('err','Trop d’envois pour le moment, réessaie plus tard ou écris à contact@vgthmind.org. / Too many messages, please try later or email contact@vgthmind.org.');}
-        else{say('err','Le message n’a pas pu partir. Écris directement à contact@vgthmind.org. / Could not send. Please email contact@vgthmind.org directly.');}
+        if(x.s===200&&x.j.ok){f.reset();say('ok',L('Message sent, thank you! I will reply soon.','Message envoyé, merci ! Je te réponds vite.'));}
+        else if(x.s===429){say('err',L('Too many messages, please try later or email contact@vgthmind.org.','Trop d’envois pour le moment, réessaie plus tard ou écris à contact@vgthmind.org.'));}
+        else{say('err',L('Could not send. Please email contact@vgthmind.org directly.','Le message n’a pas pu partir. Écris directement à contact@vgthmind.org.'));}
       })
-      .catch(function(){say('err','Connexion impossible. Écris directement à contact@vgthmind.org. / Connection failed. Please email contact@vgthmind.org directly.');})
+      .catch(function(){say('err',L('Connection failed. Please email contact@vgthmind.org directly.','Connexion impossible. Écris directement à contact@vgthmind.org.'));})
       .then(function(){btn.disabled=false;});
   });
 })();
@@ -2917,7 +2944,7 @@ nav.sections a:hover:hover:hover:hover:hover:hover,.header nav a:hover:hover:hov
   if (!hero) return;
   var story = document.createElement('div');
   story.className = 'vg-story-block';
-  story.innerHTML = '<p>Every vgthmind piece is one of a kind — designed, patterned and hand-sewn in France, using deadstock fabric rolls from luxury ateliers sourced at Paris’ fabric market, plus fully upcycled garments for the Customs/Upcycling range.</p><p class="vg-story-fr">Chaque pièce vgthmind est unique — conceptualisée, patronnée et cousue à la main en France, à partir de rouleaux de fin de série de maisons de luxe dénichés au marché du tissu à Paris, et de vêtements entièrement récupérés pour la gamme Customs/Upcycling.</p>';
+  story.innerHTML = '<p data-l="en">Every vgthmind piece is one of a kind — designed, patterned and hand-sewn in France, using deadstock fabric rolls from luxury ateliers sourced at Paris’ fabric market, plus fully upcycled garments for the Customs/Upcycling range.</p><p class="vg-story-fr" data-l="fr">Chaque pièce vgthmind est unique — conceptualisée, patronnée et cousue à la main en France, à partir de rouleaux de fin de série de maisons de luxe dénichés au marché du tissu à Paris, et de vêtements entièrement récupérés pour la gamme Customs/Upcycling.</p>';
   hero.parentNode.insertBefore(story, hero.nextSibling);
   fetch('/products.json').then(function (r) { return r.json(); }).then(function (products) {
     var catImages = {};
@@ -3117,6 +3144,7 @@ nav.sections a:hover:hover:hover:hover:hover:hover,.header nav a:hover:hover:hov
 }).call(window, window.__vgLoc || window.location);</script>
 
 
+<script src="/shop/assets/vg-lang.js"></script>
 <script defer src="/shop/assets/vg-traffic.js"></script>
 
 <script src="/shop/assets/vg-shop-cart.js" defer></script>

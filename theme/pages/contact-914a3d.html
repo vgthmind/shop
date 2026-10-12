@@ -5,13 +5,14 @@
 <p>Une question sur une pi&egrave;ce, une commande, une collab&nbsp;? Remplis le formulaire, &eacute;cris-moi un mail ou envoie un DM sur Instagram. R&eacute;ponse en g&eacute;n&eacute;ral sous 24&nbsp;&agrave;&nbsp;48&nbsp;h.</p>
 <p><a href="mailto:contact@vgthmind.org">contact@vgthmind.org</a> &middot; <a rel="noopener" href="https://www.instagram.com/vgthmind" target="_blank">@vgthmind sur Instagram</a></p>
 
+<p class="vg-lang-sep vg-neutral"><span>Form</span></p>
 <form id="vg-contact-form" class="vg-contact-form" novalidate>
-  <div class="vg-cf-row"><label for="vgc-name">Nom / Name</label><input id="vgc-name" name="name" type="text" autocomplete="name" maxlength="100" required></div>
+  <div class="vg-cf-row"><label for="vgc-name"><span data-l="fr">Nom</span><span data-l="en">Name</span></label><input id="vgc-name" name="name" type="text" autocomplete="name" maxlength="100" required></div>
   <div class="vg-cf-row"><label for="vgc-email">E-mail</label><input id="vgc-email" name="email" type="email" autocomplete="email" maxlength="200" required></div>
-  <div class="vg-cf-row"><label for="vgc-subject">Sujet / Subject</label><input id="vgc-subject" name="subject" type="text" maxlength="150" required></div>
+  <div class="vg-cf-row"><label for="vgc-subject"><span data-l="fr">Sujet</span><span data-l="en">Subject</span></label><input id="vgc-subject" name="subject" type="text" maxlength="150" required></div>
   <div class="vg-cf-row"><label for="vgc-message">Message</label><textarea id="vgc-message" name="message" rows="6" maxlength="3000" required></textarea></div>
-  <div class="vg-cf-trap" aria-hidden="true"><label for="vgc-website">Ne pas remplir</label><input id="vgc-website" name="website" type="text" tabindex="-1" autocomplete="off"></div>
-  <button type="submit" class="button vg-cf-send">Envoyer / Send</button>
+  <div class="vg-cf-trap" aria-hidden="true"><label for="vgc-website">Do not fill in</label><input id="vgc-website" name="website" type="text" tabindex="-1" autocomplete="off"></div>
+  <button type="submit" class="button vg-cf-send"><span data-l="fr">Envoyer</span><span data-l="en">Send</span></button>
   <p id="vg-contact-status" class="vg-cf-status" role="status" aria-live="polite"></p>
 </form>
 <style>
@@ -28,6 +29,7 @@
 <script>
 (function(){
   var f=document.getElementById('vg-contact-form'); if(!f) return;
+  var L=window.vgL||function(en){return en;};
   var st=document.getElementById('vg-contact-status'), btn=f.querySelector('button'), t0=Date.now();
   var EP=window.VG_SHOP_CHECKOUT_ENDPOINT!==undefined?window.VG_SHOP_CHECKOUT_ENDPOINT:'https://vgthmind-shop-checkout.vgthm66.workers.dev';
   function say(c,m){st.className='vg-cf-status '+c;st.textContent=m;}
@@ -36,16 +38,16 @@
     var d={t:Date.now()-t0},bad=null;
     ['name','email','subject','message','website'].forEach(function(k){var el=f.elements[k];d[k]=el.value;el.removeAttribute('aria-invalid');});
     ['name','email','subject','message'].forEach(function(k){var el=f.elements[k],v=el.value.trim();if(!v||(k==='email'&&!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(v))||(k==='message'&&v.length<5)){el.setAttribute('aria-invalid','true');if(!bad)bad=el;}});
-    if(bad){say('err','Merci de compléter les champs en rouge. / Please fill in the highlighted fields.');bad.focus();return;}
-    btn.disabled=true;say('','Envoi… / Sending…');
+    if(bad){say('err',L('Please fill in the highlighted fields.','Merci de compléter les champs en rouge.'));bad.focus();return;}
+    btn.disabled=true;say('',L('Sending…','Envoi…'));
     fetch(EP+'/contact',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(d)})
       .then(function(r){return r.json().catch(function(){return {};}).then(function(j){return {s:r.status,j:j};});})
       .then(function(x){
-        if(x.s===200&&x.j.ok){f.reset();say('ok','Message envoyé, merci ! Je te réponds vite. / Message sent, thank you! I will reply soon.');}
-        else if(x.s===429){say('err','Trop d’envois pour le moment, réessaie plus tard ou écris à contact@vgthmind.org. / Too many messages, please try later or email contact@vgthmind.org.');}
-        else{say('err','Le message n’a pas pu partir. Écris directement à contact@vgthmind.org. / Could not send. Please email contact@vgthmind.org directly.');}
+        if(x.s===200&&x.j.ok){f.reset();say('ok',L('Message sent, thank you! I will reply soon.','Message envoyé, merci ! Je te réponds vite.'));}
+        else if(x.s===429){say('err',L('Too many messages, please try later or email contact@vgthmind.org.','Trop d’envois pour le moment, réessaie plus tard ou écris à contact@vgthmind.org.'));}
+        else{say('err',L('Could not send. Please email contact@vgthmind.org directly.','Le message n’a pas pu partir. Écris directement à contact@vgthmind.org.'));}
       })
-      .catch(function(){say('err','Connexion impossible. Écris directement à contact@vgthmind.org. / Connection failed. Please email contact@vgthmind.org directly.');})
+      .catch(function(){say('err',L('Connection failed. Please email contact@vgthmind.org directly.','Connexion impossible. Écris directement à contact@vgthmind.org.'));})
       .then(function(){btn.disabled=false;});
   });
 })();

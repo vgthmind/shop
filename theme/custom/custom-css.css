@@ -1369,3 +1369,26 @@ a:focus-visible,button:focus-visible,input:focus-visible,textarea:focus-visible,
 .vg-similar-grid a{display:flex;flex-direction:column;gap:8px;text-decoration:none !important;color:var(--ink) !important;font-size:13px;}
 .vg-similar-grid img{width:100%;aspect-ratio:1/1;object-fit:cover;border-radius:8px;}
 html.vg-product-sold-out .product-subheader .product-status{font-size:14px;}
+
+/* === BOUTON DE LANGUE EN | FR + LANGUE CACHEE (ajout) === */
+html[data-vg-lang="en"] [data-l="fr"], html[data-vg-lang="fr"] [data-l="en"] { display: none !important; }
+html[data-vg-stacked] .vg-lang-sep { display: none !important; }
+.vg-neutral { display: none !important; }
+.vg-collab-title { font-family: 'Space Grotesk', sans-serif; font-size: 22px; margin: 40px 0 8px; }
+html[data-vg-lang="fr"] .vg-story-block p.vg-story-fr { font-size: 14px !important; color: #4a4d52 !important; margin: 0 0 8px 0 !important; }
+.vg-lang-li { display: flex; align-items: center; }
+.vg-lang-toggle { display: inline-flex; align-items: center; gap: 4px; min-height: 36px; min-width: 44px; padding: 4px 12px; border-radius: 999px;
+  border: 1px solid rgba(0,0,0,.14); background: transparent; color: var(--steel, #6c6c6c); font: 500 12px 'IBM Plex Mono', monospace; letter-spacing: .06em; cursor: pointer; }
+.vg-lang-toggle i { font-style: normal; opacity: .4; }
+.vg-lang-toggle [aria-current="true"] { color: var(--ink, #171717); font-weight: 700; }
+.vg-lang-toggle:hover { border-color: var(--ink, #171717); }
+@media (max-width: 640px) { .vg-lang-toggle { padding: 4px 8px; min-width: 40px; min-height: 40px; } }
+@media (max-width: 640px) {
+  .vg-lang-toggle i, .vg-lang-toggle [aria-current="true"] { display: none; }
+  .vg-lang-toggle { min-width: 40px; padding: 4px 6px; justify-content: center; }
+  .vg-lang-toggle [aria-current="false"] { color: var(--ink, #171717); font-weight: 700; }
+}
+@media (max-width: 640px) {
+  header nav.utility ul { gap: 6px !important; }
+  header nav.utility ul li { margin-left: 0 !important; margin-right: 0 !important; }
+}
