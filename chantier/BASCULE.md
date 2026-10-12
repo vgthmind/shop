@@ -26,7 +26,7 @@ Retour arrière : `LIVE_MODE="0"` + secrets de test (`rk_test...`) + `npx wrangl
 4. Je déploie le Worker avec le nouveau domaine, je pousse le build racine, je teste (checklist §6).
 - **Retour arrière** : redonner à `www` le CNAME `vgthmind.bigcartel.com` (1 clic dans IONOS), BigCartel revient en quelques minutes. Baisser le TTL de `www` à 300 s la veille. Redéployer l'ancien Worker (`rollback`).
 - **Meilleur moment** : un mardi ou mercredi matin, hors drop et hors promotion Instagram, toi disponible 2 h. Éviter week-end et veille de sortie.
-- Liens Instagram : `/product/<nom>` et `/category/...` sont identiques à BigCartel (voir REDIRECTIONS.md), rien ne casse une fois la racine prise. Seul `/products.xml` disparaît.
+- Liens Instagram : `/product/<nom>` et `/category/...` sont identiques à BigCartel (voir REDIRECTIONS.md), rien ne casse une fois la racine prise. `/products.xml` existe aussi sur le nouveau site (flux Merchant/Meta généré).
 - BigCartel : ne pas résilier avant 1 à 2 semaines de recul.
 
 ## 3. Domaine d'envoi Resend (33)

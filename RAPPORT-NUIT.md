@@ -50,3 +50,10 @@ Déjà là et gardé (vérifié, ouvert sur iPhone sans erreur ni débordement) 
 Texte de livraison reformulé de façon factuelle ; pas touché aux mentions légales ni aux factures ; aucun changement de prix, de port, de stock, de commande ou de paiement (hors refus des pièces « bientôt disponibles ») ; rien sur `main` ; une « fausse » reconstruction accidentelle du dossier `docs/` en mode racine au début de la nuit a été refaite en mode normal (aucune trace dans les commits).
 
 Rapport de la nuit précédente : `rapports-nuit/2026-10-12-au-13.md`.
+
+## Complément (après ta demande « en attendant »)
+- **`/products.xml`** : le dépôt ne montre aucun usage réel (ni catalogue Instagram/Facebook, ni Google Merchant) ; la seule trace est le lien « Product Feed » que BigCartel ajoute tout seul dans ses pages. Je n'ai pas accès à tes comptes Meta / Google : **à vérifier chez toi** (Meta Commerce Manager → Catalogue → Sources de données ; Google Merchant Center → Produits → Flux). Par prudence, le nouveau site génère le même `/products.xml` (flux RSS Google Merchant, lu aussi par Meta) : adresse inchangée, test automatique ajouté. Limite : la disponibilité du flux est celle du catalogue publié (le stock en direct reste dans le Worker).
+- **Textes juridiques** : brouillons avec options (médiateur, adresse de retour, mention TVA) dans `chantier/TEXTES-JURIDIQUES-BROUILLON.md`. Rien appliqué, rien décidé. Je n'ai pas pu vérifier les listes officielles de médiateurs ni la date du CIBS : indiqué dans le fichier.
+- **Checklist** des deux tests (paiement 4242, éditeur « Modifier une fiche » sur iPhone) : `chantier/CHECKLIST-TESTS.md`.
+- **Détourage** : `onnxruntime-node` installé (1er essai en échec à cause du téléchargement d'une option GPU inutile, 2e essai avec `--ignore-scripts` réussi) : **les 9 tests du détourage passent** (dossier `node_modules` non versionné, lockfile remis tel quel). Rien du détourage n'a été modifié.
+- Tout est sur la branche de la nuit ; `bascule-prete` n'est pas touchée (elle recevra ce complément à la fusion). Rien en ligne, rien fusionné.

@@ -736,6 +736,24 @@ async function main() {
     + '\n</urlset>\n';
   write('sitemap.xml', sitemap);
 
+  // products.xml : flux produits (RSS 2.0 + espace « g: » de Google Merchant Center, lu aussi par le catalogue Meta
+  // Instagram/Facebook), pour remplacer le /products.xml de l'ancienne boutique. Statique : la disponibilité vient du
+  // catalogue publié (le stock en direct est dans le Worker) ; une pièce « bientôt disponible » est marquée indisponible.
+  const xe = (t) => String(t == null ? '' : t).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  const feedItems = catalog.products.filter((p) => !p.hidden).map((p) => {
+    const desc = String(p.description || '').split(/\r?\n\s*\r?\n/)[0].replace(/\s+/g, ' ').trim() || p.name;
+    const og = SITE_ORIGIN + BASE_PATH + '/assets/products-og/' + encodeURIComponent(p.permalink) + '.jpg';
+    return '    <item>\n'
+      + `      <g:id>${xe(p.permalink)}</g:id>\n      <title>${xe(p.name)}</title>\n      <description>${xe(desc)}</description>\n`
+      + `      <link>${xe(SITE_ORIGIN + BASE_PATH + p.url)}</link>\n      <g:image_link>${xe(og)}</g:image_link>\n`
+      + `      <g:availability>${p.status === 'coming-soon' ? 'out of stock' : 'in stock'}</g:availability>\n`
+      + `      <g:price>${Number(p.price).toFixed(2)} EUR</g:price>\n      <g:condition>new</g:condition>\n      <g:brand>vgthmind</g:brand>\n      <g:identifier_exists>no</g:identifier_exists>\n`
+      + '    </item>';
+  });
+  write('products.xml', '<?xml version="1.0" encoding="UTF-8"?>\n<rss version="2.0" xmlns:g="http://base.google.com/ns/1.0">\n  <channel>\n'
+    + `    <title>vgthmind</title>\n    <link>${xe(SITE_ORIGIN + BASE_PATH + '/')}</link>\n    <description>vgthmind</description>\n`
+    + feedItems.join('\n') + '\n  </channel>\n</rss>\n');
+
   // GitHub Pages: serve files and folders starting with "_" too, no Jekyll.
   write('.nojekyll', '');
 
