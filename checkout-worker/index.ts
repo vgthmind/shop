@@ -989,9 +989,6 @@ async function clientPrint(request: Request): Promise<string> {
 function isSessionId(id: string) {
   return /^cs_(test|live)_[A-Za-z0-9]+$/.test(id);
 }
-function frLine(p: Product) {
-  return (p.shipping || []).find((s) => s.country && s.country.code === 'FR');
-}
 function intlLine(p: Product) {
   return (p.shipping || []).find((s) => !s.country);
 }

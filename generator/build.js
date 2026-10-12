@@ -706,7 +706,6 @@ async function main() {
   // this is the official shop, see robots.txt), ready for launch day: a
   // crawler that ignores robots.txt entirely still gets correct, absolute
   // URLs rather than nothing.
-  const SITE_ORIGIN = new URL(SHOP_SETTINGS.site_url).origin;
   // Catalogue date, not today's: an unchanged shop rebuilds identically.
   const today = String(catalog.fetched_at || new Date().toISOString()).slice(0, 10);
   const urls = [
@@ -718,7 +717,7 @@ async function main() {
   ];
   const sitemap = '<?xml version="1.0" encoding="UTF-8"?>\n'
     + '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'
-    + urls.map((u) => `  <url><loc>${SITE_ORIGIN}${u}</loc><lastmod>${today}</lastmod></url>`).join('\n')
+    + urls.map((u) => `  <url><loc>${SITE_ORIGIN_URL}${u}</loc><lastmod>${today}</lastmod></url>`).join('\n')
     + '\n</urlset>\n';
   write('sitemap.xml', sitemap);
   if (CUSTOM_DOMAIN) write('CNAME', CUSTOM_DOMAIN + '\n');
