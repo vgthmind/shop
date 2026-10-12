@@ -50,6 +50,8 @@
   var SIZED = [24, 320, 540, 800];
   window.__vgSized = function (url, px) {
     var m = /^(?:https?:\/\/[^\/]+)?(\/[^?#]*?)?\/assets\/products\/([^?#]+)\.(png|jpe?g|webp)(?:[?#].*)?$/i.exec(String(url));
+    // Déjà une variante allégée (/assets/products-sized/N/...) : on la re-choisit à la taille demandée (même fichier = pas de 2e téléchargement).
+    if (!m) m = /^(?:https?:\/\/[^\/]+)?(\/[^?#]*?)?\/assets\/products-sized\/\d+\/([^?#]+)\.webp(?:[?#].*)?$/i.exec(String(url));
     if (!m) return null;
     var w = SIZED[SIZED.length - 1];
     for (var i = 0; i < SIZED.length; i++) { if (SIZED[i] >= px) { w = SIZED[i]; break; } }
@@ -4397,9 +4399,11 @@ nav.sections a:hover:hover:hover:hover:hover:hover,.header nav a:hover:hover:hov
       var isFeatured = cats[m].permalink === 'latest-drop';
       var extraClass = isFeatured ? ' vg-tile-featured' : '';
       if (isFeatured) labelText = '\u2726 ' + labelText;
+      // Variante WebP allégée (800 px au plus) au lieu du PNG d'origine (~450 Ko) : l'accueil pesait ~12 Mo.
+      var tileImg = function (u) { return (window.__vgSized && window.__vgSized(u, isFeatured ? 800 : 540)) || u; };
       var tileHtml = '<a class="vg-category-tile' + extraClass + '" href="/category/' + cats[m].permalink + '">' +
-        '<span class="vg-category-tile-img" style="background-image:url(&quot;' + cats[m].img + '&quot;)"></span>' +
-        (cats[m].img2 ? '<span class="vg-category-tile-img vg-category-tile-img-alt" style="background-image:url(&quot;' + cats[m].img2 + '&quot;)"></span>' : '') +
+        '<span class="vg-category-tile-img" style="background-image:url(&quot;' + tileImg(cats[m].img) + '&quot;)"></span>' +
+        (cats[m].img2 ? '<span class="vg-category-tile-img vg-category-tile-img-alt" style="background-image:url(&quot;' + tileImg(cats[m].img2) + '&quot;)"></span>' : '') +
         '<span class="vg-category-tile-label">' + labelText + '</span></a>';
       if (isFeatured) featuredHtml += tileHtml; else gridHtml += tileHtml;
     }

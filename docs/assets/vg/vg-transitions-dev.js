@@ -423,6 +423,7 @@ window.__vgProducts = window.__vgProducts || fetch('/products.json').then(functi
     var imgs = p.images || [];
     for (var i = 0; i < imgs.length; i++) {
       if (bad.indexOf(i) === -1 && imgs[i] && imgs[i].url) {
+        if (window.__vgSized) { var szT = window.__vgSized(imgs[i].url, 320); if (szT) return szT; }
         try {
           var u = new URL(imgs[i].url, location.href);
           u.searchParams.set('w', '240');
@@ -819,6 +820,9 @@ window.__vgTrim = window.__vgTrim || (function () {
     }, 800);
   }
   function small(url) {
+    // Analyse de la transparence : sur la variante allégée déjà chargée (ou la plus proche), jamais sur le PNG d'origine.
+    if (/\/assets\/products-sized\//.test(String(url))) return url;
+    if (window.__vgSized) { var sz = window.__vgSized(url, 320); if (sz) return sz; }
     try {
       var u = new URL(url, location.href);
       u.searchParams.set('w', '200');
