@@ -304,7 +304,7 @@
         li.className = 'cart-item';
         var note = '';
         if (blocked.indexOf(it) !== -1) {
-          note = '<div class="vg-cart-unavailable">France only / livraison en France uniquement</div>';
+          note = '<div class="vg-cart-unavailable">' + L('Ships to France only', 'Livraison en France uniquement') + '</div>';
         } else if (!ENDPOINT && it.stripe_payment_link) {
           note = '<a class="button minimal-button" href="' + esc(it.stripe_payment_link) + '" target="_blank" rel="noopener">Payer cette pièce</a>';
         }

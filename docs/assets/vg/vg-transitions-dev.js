@@ -15,7 +15,7 @@
   if (cartLink && countEl) {
     var toast = document.createElement('div');
     toast.className = 'vg-toast';
-    toast.textContent = window.vgL ? window.vgL('Added to cart', 'Ajouté au panier') : 'Ajouté au panier';
+    toast.textContent = window.vgL ? window.vgL('Added to cart', 'Ajouté au panier') : 'Added to cart';
     document.body.appendChild(toast);
 
     function vgCartCount() {
@@ -32,7 +32,7 @@
         cartLink.classList.remove('vg-bump');
         void cartLink.offsetWidth;
         cartLink.classList.add('vg-bump');
-        toast.textContent = window.vgL ? window.vgL('Added to cart', 'Ajouté au panier') : 'Ajouté au panier'; toast.classList.add('vg-show');
+        toast.textContent = window.vgL ? window.vgL('Added to cart', 'Ajouté au panier') : 'Added to cart'; toast.classList.add('vg-show');
         clearTimeout(toastTimer);
         toastTimer = setTimeout(function () { toast.classList.remove('vg-show'); }, 2000);
       }

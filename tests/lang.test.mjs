@@ -16,7 +16,7 @@ test('chaque page empilée a un bloc English ET un bloc Français', () => {
 
 test('panier : plus de chaîne « anglais / français » en dur (tout passe par L(en, fr))', () => {
   const js = read('assets/vg-shop-cart.js');
-  assert.ok(!/'[^'\n]*[a-z] \/ [A-ZÉ][^'\n]*'/.test(js.replace(/Customs\/Upcycling/g, '')), 'chaîne bilingue restée dans vg-shop-cart.js');
+  assert.ok(!/'[^'\n]*[a-z] \/ [a-zA-ZÉ][^'\n]*'/.test(js.replace(/Customs\/Upcycling/g, '')), 'chaîne bilingue restée dans vg-shop-cart.js');
   assert.ok(js.includes('window.vgL'));
 });
 
@@ -78,4 +78,10 @@ test('lien sous le titre des fiches : « ← Boutique » / « ← Shop » ; text
   const js = read('assets/vg-lang.js');
   assert.ok(js.includes("'Boutique': 'Shop'"));
   assert.ok(js.includes('window.vgNamesEn') && read('generator/build.js').includes('window.vgNamesEn='));
+});
+
+test('recherche : titre, compteur, « Tout voir », catégorie et astuces clavier traduits en FR ; « Bientôt disponible »', () => {
+  const js = read('assets/vg-lang.js');
+  for (const s of ['#search-modal label', '.vg-sr-count', '.vg-sr-all', '.vg-sr-cat', '.vg-sr-hint span', "'See all': 'Tout voir'", "'No results': 'Aucun résultat'", "'Coming soon': 'Bientôt disponible'", 'function trFr']) assert.ok(js.includes(s), s);
+  assert.ok(js.includes('résultats'));
 });
