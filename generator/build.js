@@ -31,12 +31,17 @@ const OUT_DIR = path.join(ROOT, 'docs');
 // root. This preview is a GitHub Pages PROJECT page (vgthmind.github.io/shop/),
 // so links in the HTML get a /shop prefix here, and assets/vg-shop-shim.js
 // handles what scripts build at runtime. A future move to a dedicated domain
-// is just BASE_PATH = '' and a rebuild. Override with env BASE_PATH.
-const BASE_PATH = process.env.BASE_PATH !== undefined ? process.env.BASE_PATH : '/shop';
+// is just changing site_url in data/shop-settings.json (BASE_PATH = its path,
+// '' at a domain root) and a rebuild. Override with env BASE_PATH.
 // Launch switch (data/shop-settings.json): "public": true removes the noindex
 // tags and opens robots.txt; site_url = where the shop is served (sitemap).
 const SHOP_SETTINGS = Object.assign({ public: false, site_url: 'https://vgthmind.github.io/shop' },
   JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'data', 'shop-settings.json'), 'utf8')));
+const BASE_PATH = process.env.BASE_PATH !== undefined ? process.env.BASE_PATH
+  : new URL(SHOP_SETTINGS.site_url).pathname.replace(/\/+$/, '');
+// Domaine personnalisé (ex. vgthmind.org) : GitHub Pages le lit dans docs/CNAME,
+// réécrit à chaque build (docs/ est vidé à chaque fois).
+const CUSTOM_DOMAIN = /\.github\.io$/i.test(new URL(SHOP_SETTINGS.site_url).hostname) ? '' : new URL(SHOP_SETTINGS.site_url).hostname;
 
 // Same file the BigCartel draft loads (Body <script src> + Layout preload).
 // A copy is served by this site, wrapped so it sees location.pathname without
@@ -713,6 +718,7 @@ async function main() {
     + urls.map((u) => `  <url><loc>${SITE_ORIGIN}${u}</loc><lastmod>${today}</lastmod></url>`).join('\n')
     + '\n</urlset>\n';
   write('sitemap.xml', sitemap);
+  if (CUSTOM_DOMAIN) write('CNAME', CUSTOM_DOMAIN + '\n');
 
   // GitHub Pages: serve files and folders starting with "_" too, no Jekyll.
   write('.nojekyll', '');
