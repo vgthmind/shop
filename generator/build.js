@@ -69,12 +69,14 @@ filters.setThemeJsUrls({ theme: OWN_THEME_JS, api: NO_API_JS });
 // de la fiche produit non plus (pièces uniques, pas d'options). Le script du
 // thème devient Splide + vg-theme.js.
 function ownScripts(html) {
+  // Splide seulement là où il y a un carrousel (vg-theme.js teste typeof Splide).
+  const carousel = /class="[^"]*\b(product-carousel|home-carousel)\b/.test(html);
   return html
     .replace(/[ \t]*<script src="\/\/cdnjs\.cloudflare\.com\/ajax\/libs\/jquery\/[^"]*"><\/script>\r?\n?/g, '')
     .replace(/[ \t]*<script src="[^"]*vg-no-api\.js[^"]*"><\/script>\r?\n?/g, '')
     .replace(/[ \t]*<script>\s*\/\/ Detect if this is back\/forward navigation[\s\S]*?<\/script>\r?\n?/g, '')
     .replace(/(<link rel="preload" as="script" href=")\/assets\/vg-theme\.js(")/, `$1${BASE_PATH}/assets/vg-theme.js$2`)
-    .replace(/<script src="(\/assets\/vg-theme\.js)"><\/script>/g, '<script src="/assets/vendor/splide.min.js"></script>\n  <script src="$1"></script>');
+    .replace(/<script src="(\/assets\/vg-theme\.js)"><\/script>/g, carousel ? '<script src="/assets/vendor/splide.min.js"></script>\n  <script src="$1"></script>' : '<script src="$1"></script>');
 }
 
 // Pages bilingues (« English » puis « Français » separes par un <p class="vg-lang-sep">) :
@@ -189,7 +191,7 @@ const CART_CSS = `
 const SITE_ORIGIN_URL = new URL(SHOP_SETTINGS.site_url).origin; // suit site_url (bascule de domaine)
 const BC_IMAGE_MAP = [
   [/https:\/\/assets\.bigcartel\.com\/theme_images\/142638069\/Cover\.png(\?[^"'\s)]*)?/g, () => `${SITE_ORIGIN_URL}${BASE_PATH}/assets/theme/bc/cover-og.jpg`],
-  [/https:\/\/assets\.bigcartel\.com\/theme_images\/122404563\/Illustration_sans_titre\+_1_\.PNG(\?[^"'\s)]*)?/g, () => `${BASE_PATH}/assets/theme/bc/logo-illustration.png`],
+  [/https:\/\/assets\.bigcartel\.com\/theme_images\/122404563\/Illustration_sans_titre\+_1_\.PNG(\?[^"'\s)]*)?/g, () => `${BASE_PATH}/assets/theme/logo.png`],
   // Icones des transitions / du menu : etaient servies par le depot vgthmind.github.io
   // (cart-icon.png pesait 100 Ko, info-icon.png 373 Ko) ; copies allegees dans assets/theme/icons/.
   [/https:\/\/vgthmind\.github\.io\/assets\/bigcartel\/((?:cart|products|info|contact|studio|suivi)-icon\.png)/g, (m, f) => `${BASE_PATH}/assets/theme/icons/${f}`],
@@ -485,7 +487,7 @@ function injectAround(html, parts, product, relPath) {
     `<style>\n${(parts.bodyCode.match(/^\.vg-back-link[^{\n]*\{[^}\n]*\}$/gm) || []).join('\n')}\n</style>`,
     // Front-end cart (step 3, see assets/vg-shop-cart.js) - additive, not
     // part of the real draft's Custom CSS.
-    `<style>${CART_CSS}</style>`,
+    /^(cart|merci|suivi|paiement-annule)\//.test(relPath || '') ? `<style>${CART_CSS}</style>` : '',
   ].join('\n');
   html = html.replace(/<\/head>/i, () => `${headExtra}\n</head>`);
   // The Layout's <link rel="preload"> must name the file the Body really
@@ -507,7 +509,8 @@ function injectAround(html, parts, product, relPath) {
   // Front-end cart, after the Body/dev-JS scripts (step 3, see
   // assets/vg-shop-cart.js - not part of the real draft).
   // + the country picker of the cart (vg-shipping-picker.js: price from the Worker, same calculation as the payment).
-  const cartScript = '<script src="/assets/vg-shop-cart.js" defer></script>\n<script src="/assets/vg-shipping-view.js" defer></script>\n<script src="/assets/vg-shipping-picker.js" defer></script>';
+  const cartScript = '<script src="/assets/vg-shop-cart.js" defer></script>'
+    + (relPath === 'cart/index.html' ? '\n<script src="/assets/vg-shipping-view.js" defer></script>\n<script src="/assets/vg-shipping-picker.js" defer></script>' : '');
   const i = html.lastIndexOf('</body>');
   return html.slice(0, i) + body + '\n' + cartScript + '\n' + html.slice(i);
 }
@@ -519,7 +522,7 @@ async function main() {
   const layoutSrc = T('layout.html');
   const src = { home: T('home.html'), products: T('products.html'), product: T('product.html'), contact: T('contact.html'), cart: T('cart.html') };
   const parts = {
-    shim: read(rel(ROOT, 'assets', 'vg-shop-shim.js')),
+    shim: read(rel(ROOT, 'assets', 'vg-shop-shim.js')).replace(/^\/\*[\s\S]*?\*\/\s*/, ''),
     customCss: localFonts(read(rel(CUSTOM_DIR, 'custom-css.css'))),
     headCode: read(rel(CUSTOM_DIR, 'head.html')),
     // The Body reads products-config.json (portfolio) for, among others,
@@ -697,7 +700,7 @@ async function main() {
   // Admin (Sveltia CMS) : servi tel quel sous /shop/admin/ (page + config +
   // pages maison), jamais passé par le préfixe /shop (Sveltia lit
   // config.yml à côté de la page).
-  fs.cpSync(rel(ROOT, 'admin'), rel(OUT_DIR, 'admin'), { recursive: true });
+  fs.cpSync(rel(ROOT, 'admin'), rel(OUT_DIR, 'admin'), { recursive: true, filter: (f) => !/\.test\.mjs$/.test(f) });
 
   // sitemap.xml - inert for now (robots.txt still has "Disallow: /" until
   // this is the official shop, see robots.txt), ready for launch day: a

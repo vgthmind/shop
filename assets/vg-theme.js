@@ -53,10 +53,10 @@
     var height = getComputedStyle(root).getPropertyValue('--header-height');
     if ((window.pageYOffset || root.scrollTop || 0) >= announcementHeight()) {
       header.classList.add('fixed');
-      doc.body.style.paddingTop = height;
+      if (doc.body.style.paddingTop !== height) doc.body.style.paddingTop = height; // écrit seulement si ça change (défilement)
     } else {
       header.classList.remove('fixed');
-      doc.body.style.paddingTop = '0px';
+      if (doc.body.style.paddingTop !== '0px') doc.body.style.paddingTop = '0px';
     }
   }
   function resizeHomeWelcome() {

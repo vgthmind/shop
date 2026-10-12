@@ -284,7 +284,7 @@
     vgClearSelection();
     if (location.pathname === href) { vgBounce(logo); return; }
     window.pageTransition({
-      icon: "/shop/assets/theme/bc/logo-illustration.png",
+      icon: "/shop/assets/theme/logo.png",
       href: href,
       w: 280, h: 280, axis: 'y', persp: 1200
     });
@@ -720,7 +720,7 @@ window.__vgProducts = window.__vgProducts || fetch('/products.json').then(functi
   function boot() {
     var splash = document.createElement('div');
     splash.className = 'vg-splash';
-    splash.innerHTML = '<img class="vg-splash-logo" src="/shop/assets/theme/bc/logo-illustration.png" alt="vgthmind"><div class="vg-enter">Enter</div>';
+    splash.innerHTML = '<img class="vg-splash-logo" src="/shop/assets/theme/logo.png" alt="vgthmind"><div class="vg-enter">Enter</div>';
     document.body.appendChild(splash);
     var prevOverflow = document.documentElement.style.overflow;
     document.documentElement.style.overflow = 'hidden';

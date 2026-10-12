@@ -309,11 +309,14 @@
           draw();
         });
       });
-      document.addEventListener('vg-shipping-change', function () { // pays choisi dans le sélecteur du panier
-        if (!root.isConnected) return;
-        try { region = localStorage.getItem('vg-shop-region') === 'intl' ? 'intl' : 'fr'; } catch (err) {}
-        message = ''; draw();
-      });
+      if (!root.__vgShipListen) { // un seul écouteur (draw() est rappelé à chaque changement)
+        root.__vgShipListen = true;
+        document.addEventListener('vg-shipping-change', function () { // pays choisi dans le sélecteur du panier
+          if (!root.isConnected) return;
+          try { region = localStorage.getItem('vg-shop-region') === 'intl' ? 'intl' : 'fr'; } catch (err) {}
+          message = ''; draw();
+        });
+      }
       root.querySelector('.vg-cart-region-select').addEventListener('change', function (e) {
         region = e.target.value;
         try { localStorage.setItem('vg-shop-region', region); } catch (err) {}

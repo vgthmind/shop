@@ -12,24 +12,6 @@
 <html lang="en" translate="no">
   <head>
 <script>window.__VG_BASE = "/shop";
-/* Shim "sous-dossier" de la boutique hors BigCartel (injecté en tout premier
-   dans <head> par generator/build.js, avant tout autre script).
-
-   Les vrais gabarits BigCartel, le Body et vg-transitions-dev.js supposent un
-   site servi à la RACINE d'un domaine (/products, /product/<slug>,
-   location.pathname === '/studio'...). L'aperçu est une "project page" GitHub
-   Pages servie sous /shop/. Plutôt que de retoucher chaque script :
-   - fetch() et XMLHttpRequest : une URL qui commence par "/" (pas "//")
-     reçoit le préfixe /shop ;
-   - liens : getAttribute('href') renvoie la valeur SANS /shop (les scripts
-     la comparent à '/products', '/cart'...), l'attribut réel garde /shop ;
-     les liens créés en JavaScript (tuiles de catégories, lien retour...)
-     reçoivent /shop dès leur insertion ;
-   - window.__vgLoc : un "location" dont pathname est vu SANS /shop (et sans
-     barre finale), passé au Body et à vg-transitions-dev.js (enveloppés par
-     build.js) ; écrire href / assign / replace remet le préfixe.
-   Le jour où la boutique est servie à la racine d'un domaine, BASE = '' et
-   ce shim ne fait plus rien. */
 (function () {
   var BASE = window.__VG_BASE || '';
   function fix(u) {
@@ -2095,7 +2077,6 @@ ul.categories li.page a:hover{color:#3d4045 !important;background:transparent !i
     window.bigcartel.account.currency = window.bigcartel.account.currency || "EUR";
     window.bigcartel.account.moneyFormat = "code";
   </script>
-  <script src="/shop/assets/vendor/splide.min.js"></script>
   <script src="/shop/assets/vg-theme.js"></script>
   
 <script defer src="https://static.cloudflareinsights.com/beacon.min.js" data-cf-beacon='{"token": "ebb350ea66ad43c6a539b75d16af75d1"}'></script>
@@ -3064,7 +3045,5 @@ nav.sections a:hover:hover:hover:hover:hover:hover,.header nav a:hover:hover:hov
 
 
 <script src="/shop/assets/vg-shop-cart.js" defer></script>
-<script src="/shop/assets/vg-shipping-view.js" defer></script>
-<script src="/shop/assets/vg-shipping-picker.js" defer></script>
 </body>
 </html>
