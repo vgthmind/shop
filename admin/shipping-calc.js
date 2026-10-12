@@ -100,8 +100,24 @@
   function findZone(config, country) { return findIn(config.zones || [], country); }
   function findTier(config, country) { return findIn((config.customer_pricing && config.customer_pricing.tiers) || [], country); }
 
+  // Branchement d'une API transporteur (plus tard, AUCUNE aujourd'hui) : setRateProvider(fn) avec
+  //   fn({ kind: 'colis'|'lettre', zone, weight_g }) -> prix en centimes (entier), ou undefined pour garder
+  //   la grille. La fonction est synchrone : le Worker interroge l'API AVANT le calcul, garde les prix
+  //   recus (cache) et les rend ici. Tant que rien n'est branche, seule la grille de l'admin compte.
+  var rateProvider = null;
+  function setRateProvider(fn) { rateProvider = typeof fn === 'function' ? fn : null; }
+  function providerCents(kind, zone, weight) {
+    if (!rateProvider) return undefined;
+    try {
+      var v = rateProvider({ kind: kind, zone: zone && zone.id, weight_g: weight });
+      return Number.isInteger(v) && v >= 0 ? v : undefined;
+    } catch (e) { return undefined; } // API en panne : la grille prend le relais
+  }
+
   // Premiere tranche dont max_g >= poids ; null si trop lourd pour la derniere.
   function bracketPriceCents(zone, weight) {
+    var api = providerCents('colis', zone, weight);
+    if (api !== undefined) return api;
     var b = (zone.brackets || []).slice().sort(function (x, y) { return x.max_g - y.max_g; });
     for (var i = 0; i < b.length; i++) if (weight <= b[i].max_g) return cents(b[i].price);
     return null;
@@ -248,5 +264,5 @@
     return { lettre_cost: l.cost, colis_cost: c.cost, colis_cheaper: c.costCents < l.costCents };
   }
 
-  return { quoteShipping: quoteShipping, quoteOrFallback: quoteOrFallback, quoteByZone: quoteByZone, modeAdvice: modeAdvice, findZone: findZone, findTier: findTier, pieceInfo: pieceInfo };
+  return { setRateProvider: setRateProvider, quoteShipping: quoteShipping, quoteOrFallback: quoteOrFallback, quoteByZone: quoteByZone, modeAdvice: modeAdvice, findZone: findZone, findTier: findTier, pieceInfo: pieceInfo };
 }));

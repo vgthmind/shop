@@ -192,3 +192,17 @@ test('repli : pas utilisé quand le poids est connu', () => {
   const r = quoteOrFallback(base, { items: [{ slug: 'p', qty: 1, weight_g: 420, legacy: { fr: 4, intl: 8 } }] }, 'FR');
   assert.equal(r.fallback, undefined); assert.equal(r.costCents, 929);
 });
+
+test('branchement API transporteur : absent = grille ; présent = son prix ; en panne = grille', async () => {
+  const { createRequire } = await import('node:module');
+  const C = createRequire(import.meta.url)('../admin/shipping-calc.js');
+  const cfg = JSON.parse((await import('node:fs')).readFileSync(new URL('../admin/shipping-config.json', import.meta.url), 'utf8'));
+  const cart = { items: [{ slug: 'x', qty: 1, weight_g: 500, mode: 'colis' }], subtotal: 50 };
+  const grid = C.quoteShipping(cfg, cart, 'CA').costCents;
+  C.setRateProvider(() => 1234);
+  assert.equal(C.quoteShipping(cfg, cart, 'CA').costCents, 1234);
+  C.setRateProvider(() => { throw new Error('API en panne'); });
+  assert.equal(C.quoteShipping(cfg, cart, 'CA').costCents, grid);
+  C.setRateProvider(null);
+  assert.equal(C.quoteShipping(cfg, cart, 'CA').costCents, grid);
+});
