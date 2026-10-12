@@ -50,6 +50,8 @@ before(async () => {
       sessions.set(id, { id, status: 'open', payment_status: 'unpaid', livemode: false, currency: 'eur', created: Math.floor(Date.now() / 1000), metadata, params: b });
       return new Response(JSON.stringify({ id, url: 'https://stripe.test/' + id }));
     }
+    // Comme Stripe : plus de 4 niveaux d'expansion = refus (bug réel du 2026-10-12 sur /orders).
+    if (/expand\[\]=[^&]*(\.[^.&]+){4,}/.test(decodeURIComponent(url))) return new Response(JSON.stringify({ error: { message: 'You cannot expand more than 4 levels of a property.' } }), { status: 400 });
     if (m && !m[1] && opt.method !== 'POST') return new Response(JSON.stringify({ data: [...sessions.values()].filter((s) => s.status === 'complete') }));
     if (m && m[1] && m[2]) { sessions.get(m[1]).status = 'expired'; return new Response('{}'); }
     if (m && m[1]) { const s = sessions.get(m[1]); return s ? new Response(JSON.stringify(s)) : new Response('{}', { status: 404 }); }

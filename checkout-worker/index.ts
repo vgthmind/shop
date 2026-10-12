@@ -651,15 +651,16 @@ async function mailItems(env: Env, lineItems: any[], money: (c: number) => strin
   if (!preloaded) { try { catalog = await loadCatalog(env); } catch (e) {} }
   return lineItems.map((li: any) => {
     const prod = typeof li.price?.product === 'object' ? li.price.product : null;
-    const p = catalog.find((c) => c.permalink === prod?.metadata?.slug);
+    const p = catalog.find((c) => c.permalink === prod?.metadata?.slug) || (prod ? undefined : catalog.find((c) => c.name === li.description));
     const size = /\b(?:[Ss]ize|[Tt]aille|SIZE|TAILLE)\s+([A-Z]{1,4}|\d{1,3}(?:[./-]\d{1,3})?)\b/.exec(p?.description || '');
+    const catImg = !prod && p && p.images && p.images[0] ? new URL(env.SITE_BASE).origin + encodeURI(p.images[0].url) : '';
     return {
       name: String(li.description),
       size: size ? size[1] : '',
       qty: li.quantity,
       amount: money(li.amount_total),
       ...(li.quantity > 1 ? { unit: money(Math.round(li.amount_total / li.quantity)) } : {}),
-      image: (prod && prod.images && prod.images[0]) || '',
+      image: (prod && prod.images && prod.images[0]) || catImg,
     };
   });
 }
@@ -862,7 +863,9 @@ async function isAdmin(request: Request, env: Env): Promise<boolean> {
 
 async function listOrders(request: Request, env: Env, key: string, json: JsonFn): Promise<Response> {
   if (!(await isAdmin(request, env))) return json({ error: 'Non autorisé.' }, 401);
-  const stripe = await stripeCall(key, 'GET', '/v1/checkout/sessions?status=complete&limit=100&expand[]=data.line_items&expand[]=data.line_items.data.price.product');
+  // Stripe refuse plus de 4 niveaux d'expansion (data.line_items.data.price.product = 5) : produit non déplié ici,
+  // la pièce est retrouvée dans le catalogue par son nom (mailItems).
+  const stripe = await stripeCall(key, 'GET', '/v1/checkout/sessions?status=complete&limit=100&expand[]=data.line_items');
   if (!stripe.ok) return json({ error: stripe.data.error?.message || 'Erreur Stripe' }, 502);
   const orders = [];
   let catalog: Product[] = [];
