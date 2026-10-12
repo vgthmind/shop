@@ -24,7 +24,7 @@
 //   GET  /status            controle de la configuration (sans les secrets)
 //   POST /track             page /suivi : { ref, email } -> statut de la commande (limite d'essais)
 // Routes admin (en-tete Authorization: Bearer <session signee par SESSION_SECRET>) :
-//   POST /admin/renew       nouvelle session de 30 jours
+//   POST /admin/renew       nouvelle session de 7 jours
 //   GET/POST /admin/stock   lire / regler les quantites
 //   GET  /admin/backups     liste des sauvegardes ; GET /admin/backup?key=…
 //   POST /admin/backup      sauvegarde immediate
@@ -46,7 +46,7 @@ interface Env {
   STRIPE_WEBHOOK_SECRET?: string;
   GITHUB_CLIENT_ID?: string; // OAuth App (public)
   GITHUB_CLIENT_SECRET?: string; // OAuth App (secret)
-  SESSION_SECRET?: string; // signe les sessions admin (30 jours)
+  SESSION_SECRET?: string; // signe les sessions admin (7 jours) ; le changer deconnecte tous les appareils
   RESEND_API_KEY?: string; // secret : cle Resend
   ALERT_EMAIL?: string; // secret : adresse qui recoit l'alerte de commande
   MAIL_FROM?: string; // expediteur sur domaine verifie ; vide = pas d'email client
@@ -71,12 +71,15 @@ interface Product {
   shipping: ShippingLine[];
 }
 interface Item { slug: string; qty: number }
-interface Hold { items: Item[]; expires: number }
+interface Hold { items: Item[]; expires: number; who?: string }
 
 const MAX_ITEMS = 20;
 const SESSION_MINUTES = 30; // minimum Stripe
 const HOLD_MS = (SESSION_MINUTES + 2) * 60 * 1000;
 const BACKUP_DAYS = 180;
+// Reservations en cours par connexion (empreinte de l'adresse IP, jamais l'adresse elle-meme) : au-dela,
+// refus. Empeche un inconnu de bloquer toutes les pieces uniques en ouvrant des paiements a la chaine.
+const MAX_HOLDS_PER_CLIENT = 3;
 
 // Pays proposes pour « International » : tous ceux qu'accepte Stripe pour
 // une adresse de livraison, sauf la France (decision du 2026-10-06).
@@ -133,8 +136,13 @@ export class StockDO extends DurableObject {
     return out;
   }
 
-  async reserve(cartId: string, items: Item[], defaults: Record<string, number>) {
+  async reserve(cartId: string, items: Item[], defaults: Record<string, number>, who = '') {
     const { storage, stock, holds } = await this.state();
+    if (who) {
+      let mine = 0;
+      for (const [cart, h] of holds) if (cart !== cartId && h.who === who) mine++;
+      if (mine >= MAX_HOLDS_PER_CLIENT) return { ok: false, limited: true, problems: [] };
+    }
     const problems: { slug: string; reason: string; available?: number }[] = [];
     for (const it of items) {
       const s = stock.has(it.slug) ? stock.get(it.slug)! : (defaults[it.slug] ?? 0);
@@ -148,7 +156,7 @@ export class StockDO extends DurableObject {
       }
     }
     if (problems.length) return { ok: false, problems };
-    await storage.put('h:' + cartId, { items, expires: Date.now() + HOLD_MS });
+    await storage.put('h:' + cartId, { items, expires: Date.now() + HOLD_MS, ...(who ? { who } : {}) });
     return { ok: true, problems };
   }
 
@@ -184,8 +192,41 @@ function stockStub(env: Env) {
   return env.STOCK.get(env.STOCK.idFromName('main'));
 }
 
+// En-tetes de securite ajoutes a TOUTES les reponses du Worker (JSON, texte,
+// page de connexion, redirections) : pas de « devinette » du type de fichier,
+// pas d'affichage dans un cadre d'un autre site, adresse de provenance non transmise.
+const SECURITY_HEADERS: Record<string, string> = {
+  'X-Content-Type-Options': 'nosniff',
+  'X-Frame-Options': 'DENY',
+  'Referrer-Policy': 'no-referrer',
+  'Strict-Transport-Security': 'max-age=31536000',
+};
+// La page /callback contient un petit script en ligne (poignee de main avec l'admin) : rien d'autre n'est autorise.
+const PAGE_CSP = "default-src 'none'; script-src 'unsafe-inline'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'";
+const MAX_BODY_BYTES = 1024 * 1024; // corps de requete : 1 Mo maximum (un panier ou un webhook pese quelques Ko)
+
+function withSecurityHeaders(res: Response): Response {
+  const out = new Response(res.body, res); // copie : les en-tetes d'une redirection sont figes
+  for (const [k, v] of Object.entries(SECURITY_HEADERS)) if (!out.headers.has(k)) out.headers.set(k, v);
+  if ((out.headers.get('Content-Type') || '').startsWith('text/html')) out.headers.set('Content-Security-Policy', PAGE_CSP);
+  else if (!out.headers.has('Content-Security-Policy')) out.headers.set('Content-Security-Policy', "default-src 'none'; frame-ancestors 'none'");
+  return out;
+}
+
 export default {
   async fetch(request: Request, env: Env, ctx: any): Promise<Response> {
+    return withSecurityHeaders(await route(request, env, ctx));
+  },
+
+  // Sauvegarde quotidienne du stock (cron dans wrangler.toml).
+  async scheduled(_event: any, env: Env, ctx: any) {
+    ctx.waitUntil(backupStock(env));
+  },
+};
+
+// Routeur (bloc garde l'indentation d'origine : les en-tetes de securite sont ajoutes par fetch ci-dessus).
+async function route(request: Request, env: Env, ctx: any): Promise<Response> {
+  {
     const cors = {
       'Access-Control-Allow-Origin': env.ALLOWED_ORIGIN,
       'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
@@ -197,6 +238,7 @@ export default {
 
     if (request.method === 'OPTIONS') return new Response(null, { headers: cors });
     const path = new URL(request.url).pathname;
+    if (Number(request.headers.get('content-length') || 0) > MAX_BODY_BYTES) return json({ error: 'Requête trop lourde.' }, 413);
 
     try {
       // Sans cle Stripe.
@@ -247,13 +289,8 @@ export default {
       return json({ error: 'Erreur interne : ' + (e && e.message ? e.message : e) }, 500);
     }
     return json({ error: 'Not found' }, 404);
-  },
-
-  // Sauvegarde quotidienne du stock (cron dans wrangler.toml).
-  async scheduled(_event: any, env: Env, ctx: any) {
-    ctx.waitUntil(backupStock(env));
-  },
-};
+  }
+}
 
 function stripeKey(env: Env): { ok: true; value: string } | { ok: false; error: string } {
   const rawKey = env.STRIPE_SECRET_KEY || '';
@@ -366,6 +403,8 @@ async function checkout(request: Request, env: Env, key: string, json: JsonFn): 
   for (const slug of slugs) {
     const p = bySlug.get(slug);
     if (!p) problems.push({ slug, reason: 'introuvable' });
+    // Prix relu dans le catalogue : jamais 0, negatif ou invalide (une piece sans prix ne se vend pas).
+    else if (!(typeof p.price === 'number' && Number.isFinite(p.price) && p.price > 0 && p.price < 100000)) problems.push({ slug, reason: 'introuvable' });
     else if (region === 'intl' && !intlLine(p)) problems.push({ slug, reason: 'france_uniquement' });
     else products.push(p);
   }
@@ -374,7 +413,8 @@ async function checkout(request: Request, env: Env, key: string, json: JsonFn): 
   // Reservation atomique (Durable Object) AVANT la page de paiement.
   const items: Item[] = products.map((p) => ({ slug: p.permalink, qty: wanted.get(p.permalink) || 1 }));
   const stub = stockStub(env);
-  const held = await stub.reserve(cartId, items, catalogDefaults(catalog));
+  const held = await stub.reserve(cartId, items, catalogDefaults(catalog), await clientPrint(request));
+  if (held.limited) return json({ error: 'Trop de paiements en cours depuis cette connexion : réessaie dans 30 minutes.', code: 'rate' }, 429);
   if (!held.ok) return json({ error: 'Panier à mettre à jour.', problems: held.problems }, 409);
 
   // Port : pieces a port fixe = regle d'avant (le plus eleve du panier) ; pieces du studio = grille (poids,
@@ -470,10 +510,14 @@ async function webhook(request: Request, env: Env, json: JsonFn): Promise<Respon
   const payload = await request.text();
   const stamp = new Date().toISOString().slice(0, 16).replace('T', ' ') + ' UTC';
   if (!(await verifyStripeSignature(payload, request.headers.get('stripe-signature') || '', secret))) {
-    await env.HOLDS.put('webhook:last', `${stamp} — signature refusée (secret whsec_ à reposer)`);
+    // Note de diagnostic (/status) : une seule ecriture par minute, pour qu'un inconnu qui bombarde
+    // cette adresse n'use pas le quota d'ecritures du KV.
+    const refused = `${stamp} — signature refusée (secret whsec_ à reposer)`;
+    try { if ((await env.HOLDS.get('webhook:last')) !== refused) await env.HOLDS.put('webhook:last', refused); } catch (e) {}
     return json({ error: 'Signature invalide.' }, 400);
   }
-  await env.HOLDS.put('webhook:last', `${stamp} — OK`);
+  // Diagnostic seulement : un KV indisponible ne doit jamais faire echouer le decompte du stock.
+  try { await env.HOLDS.put('webhook:last', `${stamp} — OK`); } catch (e) {}
   const event = JSON.parse(payload);
   const s = event.data && event.data.object;
   if (!s) return json({ received: true });
@@ -592,8 +636,13 @@ async function sendOrderEmails(env: Env, s: any) {
 // --- OAuth GitHub (connexion admin, protocole Decap/Sveltia) ----------------
 async function oauthStart(request: Request, env: Env): Promise<Response> {
   if (!env.GITHUB_CLIENT_ID || !env.GITHUB_CLIENT_SECRET) return new Response('Connexion GitHub pas encore configurée.', { status: 503 });
-  const state = crypto.randomUUID();
-  await env.HOLDS.put('oauth:' + state, '1', { expirationTtl: 600 });
+  // Etat anti-falsification : signe par SESSION_SECRET et date (10 min max), donc aucune ecriture
+  // dans le KV a chaque visite de /auth (un inconnu ne peut pas user le quota d'ecritures).
+  let state = crypto.randomUUID();
+  if (env.SESSION_SECRET) {
+    const ts = Math.floor(Date.now() / 1000);
+    state = `${ts}.${state}.${await hmacB64(env, `oauth.${ts}.${state}`)}`;
+  } else await env.HOLDS.put('oauth:' + state, '1', { expirationTtl: 600 });
   const redirect = new URL('/callback', request.url).toString();
   const url = 'https://github.com/login/oauth/authorize?' + new URLSearchParams({
     client_id: env.GITHUB_CLIENT_ID,
@@ -627,8 +676,8 @@ async function oauthCallback(request: Request, env: Env): Promise<Response> {
 </script>`;
     return new Response(html, { headers: { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store' } });
   };
-  if (!state || !(await env.HOLDS.get('oauth:' + state))) return page('error', { message: 'Session de connexion expirée, réessaie.' });
-  await env.HOLDS.delete('oauth:' + state);
+  if (!(await oauthStateOk(env, state))) return page('error', { message: 'Session de connexion expirée, réessaie.' });
+  if (!code || code.length > 200) return page('error', { message: 'GitHub a refusé la connexion.' });
   const res = await fetch('https://github.com/login/oauth/access_token', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', Accept: 'application/json', 'User-Agent': 'vgthmind-shop-checkout' },
@@ -690,8 +739,8 @@ async function verifyStripeSignature(payload: string, header: string, secret: st
   const parts = header.split(',').map((kv) => kv.split('='));
   const t = (parts.find(([k]) => k === 't') || [])[1];
   const sigs = parts.filter(([k]) => k === 'v1').map(([, v]) => v);
-  if (!t || sigs.length === 0) return false;
-  if (Math.abs(Date.now() / 1000 - Number(t)) > 300) return false;
+  if (!t || !/^\d{1,12}$/.test(t) || sigs.length === 0) return false;
+  if (Math.abs(Date.now() / 1000 - Number(t)) > 300) return false; // tolerance 5 min (rejeu d'un vieil evenement refuse)
   const cryptoKey = await crypto.subtle.importKey('raw', new TextEncoder().encode(secret), { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']);
   const mac = await crypto.subtle.sign('HMAC', cryptoKey, new TextEncoder().encode(`${t}.${payload}`));
   const expected = [...new Uint8Array(mac)].map((b) => b.toString(16).padStart(2, '0')).join('');
@@ -706,17 +755,33 @@ function timingSafeEqual(a: string, b: string) {
 }
 
 // Session admin : « vgs.<expiration>.<signature> », signée par SESSION_SECRET,
-// valable 30 jours, renouvelée via /admin/renew. Le navigateur la garde en
-// localStorage et l'envoie en Authorization (pas de cookie tiers : Safari les bloque).
-const SESSION_TTL = 60 * 60 * 24 * 30;
+// valable 7 jours (30 avant le 2026-10-12), renouvelée via /admin/renew à chaque visite. Le navigateur
+// la garde en localStorage et l'envoie en Authorization (pas de cookie tiers : Safari les bloque).
+// Une session volée se coupe en changeant SESSION_SECRET (wrangler secret put SESSION_SECRET).
+const SESSION_TTL = 60 * 60 * 24 * 7;
 
-async function sessionSig(env: Env, exp: number): Promise<string> {
+async function hmacB64(env: Env, text: string): Promise<string> {
   const key = await crypto.subtle.importKey('raw', new TextEncoder().encode(env.SESSION_SECRET || ''), { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']);
-  const data = new TextEncoder().encode(`vgs.${exp}.${String(env.ADMIN_GITHUB_LOGIN).toLowerCase()}`);
-  const sig = new Uint8Array(await crypto.subtle.sign('HMAC', key, data));
+  const sig = new Uint8Array(await crypto.subtle.sign('HMAC', key, new TextEncoder().encode(text)));
   let s = '';
   for (const b of sig) s += String.fromCharCode(b);
   return btoa(s).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+}
+
+function sessionSig(env: Env, exp: number): Promise<string> {
+  return hmacB64(env, `vgs.${exp}.${String(env.ADMIN_GITHUB_LOGIN).toLowerCase()}`);
+}
+
+// Etat OAuth : signe et date de moins de 10 min (ou, ancien format, present dans le KV).
+async function oauthStateOk(env: Env, state: string): Promise<boolean> {
+  const m = /^(\d{1,12})\.([0-9a-f-]{36})\.([A-Za-z0-9_-]{43})$/.exec(state);
+  if (m && env.SESSION_SECRET) {
+    const age = Date.now() / 1000 - Number(m[1]);
+    return age >= -60 && age <= 600 && timingSafeEqual(m[3], await hmacB64(env, `oauth.${m[1]}.${m[2]}`));
+  }
+  if (!/^[0-9a-f-]{36}$/.test(state) || !(await env.HOLDS.get('oauth:' + state))) return false;
+  await env.HOLDS.delete('oauth:' + state);
+  return true;
 }
 
 async function makeSession(env: Env): Promise<string> {
@@ -729,7 +794,8 @@ async function isAdmin(request: Request, env: Env): Promise<boolean> {
   const m = /^Bearer vgs\.(\d{1,12})\.([A-Za-z0-9_-]{43})$/.exec(request.headers.get('authorization') || '');
   if (!m) return false;
   const exp = Number(m[1]);
-  if (exp < Date.now() / 1000) return false;
+  const now = Date.now() / 1000;
+  if (exp < now || exp > now + SESSION_TTL + 300) return false; // expiree, ou plus longue que permis
   return timingSafeEqual(m[2], await sessionSig(env, exp));
 }
 
@@ -910,6 +976,14 @@ async function stripeCall(key: string, method: string, path: string, params?: UR
     body: params ? params.toString() : undefined,
   });
   return { ok: res.ok, data: (await res.json()) as any };
+}
+
+// Empreinte courte de l'adresse IP (SHA-256 tronque) : sert seulement a compter les paiements en cours.
+async function clientPrint(request: Request): Promise<string> {
+  const ip = request.headers.get('CF-Connecting-IP') || '';
+  if (!ip) return '';
+  const h = new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode('vg-hold:' + ip)));
+  return [...h.slice(0, 8)].map((b) => b.toString(16).padStart(2, '0')).join('');
 }
 
 function isSessionId(id: string) {
