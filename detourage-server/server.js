@@ -45,6 +45,14 @@ function tokenOk(req) {
 let failHour = '', fails = 0;
 function tooManyFails() { const h = new Date().toISOString().slice(0, 13); if (h !== failHour) { failHour = h; fails = 0; } return fails >= 20; }
 const MAX_BYTES = 12 * 1024 * 1024;
+const MAX_PIXELS = 80e6; // ~ photo de 80 Mpx : au-delà, refus (image piégée qui exploserait la mémoire)
+// Seulement JPEG, PNG ou WebP (reconnus à leurs premiers octets, pas au nom ni à l'en-tête annoncé).
+function isImage(b) {
+  if (b.length < 12) return false;
+  if (b[0] === 0xff && b[1] === 0xd8 && b[2] === 0xff) return true; // JPEG
+  if (b.slice(0, 8).equals(Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]))) return true; // PNG
+  return b.toString('latin1', 0, 4) === 'RIFF' && b.toString('latin1', 8, 12) === 'WEBP'; // WebP
+}
 const SIZE = 1024, MEAN = [0.485, 0.456, 0.406], STD = [0.229, 0.224, 0.225];
 
 let session = null, loadError = null;
@@ -56,7 +64,7 @@ let chain = Promise.resolve(); // un détourage à la fois (mémoire)
 function enqueue(fn) { const p = chain.then(fn, fn); chain = p.catch(function () {}); return p; }
 
 async function cut(buf) {
-  const img = sharp(buf, { failOn: 'none' }).rotate(); // respecte l'orientation EXIF
+  const img = sharp(buf, { failOn: 'none', limitInputPixels: MAX_PIXELS }).rotate(); // respecte l'orientation EXIF
   const meta = await img.clone().metadata();
   const w = meta.autoOrient ? meta.autoOrient.width : meta.width, h = meta.autoOrient ? meta.autoOrient.height : meta.height;
   // On complète l'image en CARRÉ (bords en miroir) au lieu de l'écraser : écrasée, la pièce est déformée et le modèle
@@ -90,7 +98,7 @@ function cors(req, res) {
   }
   return o ? ALLOWED.indexOf(o) >= 0 : ALLOW_NO_ORIGIN; // un navigateur envoie toujours Origin ; sans Origin : tests locaux seulement
 }
-function send(res, code, body, type) { res.writeHead(code, { 'Content-Type': type || 'application/json' }); res.end(typeof body === 'string' || Buffer.isBuffer(body) ? body : JSON.stringify(body)); }
+function send(res, code, body, type) { res.writeHead(code, { 'Content-Type': type || 'application/json', 'X-Content-Type-Options': 'nosniff', 'Cache-Control': 'no-store' }); res.end(typeof body === 'string' || Buffer.isBuffer(body) ? body : JSON.stringify(body)); }
 
 http.createServer(function (req, res) {
   const ok = cors(req, res);
@@ -109,8 +117,10 @@ http.createServer(function (req, res) {
   req.on('data', function (c) { size += c.length; if (size > MAX_BYTES) { dead = true; send(res, 413, { error: 'image trop lourde' }); req.destroy(); } else chunks.push(c); });
   req.on('end', function () {
     if (dead) return;
+    const buf = Buffer.concat(chunks);
+    if (!isImage(buf)) return send(res, 415, { error: 'seulement des photos JPEG, PNG ou WebP' });
     used++;
-    enqueue(function () { return cut(Buffer.concat(chunks)); })
+    enqueue(function () { return cut(buf); })
       .then(function (png) { send(res, 200, png, 'image/png'); })
       .catch(function (e) { console.error(e); send(res, 500, { error: String(e && e.message || e) }); });
   });
