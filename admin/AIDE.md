@@ -6,7 +6,19 @@ Adresses :
 - Commandes & stats : https://vgthmind.github.io/shop/admin/commandes.html.
 - Paiements, remboursements, codes promo : tableau de bord Stripe.
 
+- **Catalogue** (le plus simple, aussi sur iPhone) : https://vgthmind.github.io/shop/admin/catalogue.html.
+
 Après chaque enregistrement dans l'admin, le site se reconstruit tout seul (1 à 2 min).
+
+## Catalogue (page conseillée)
+- Toutes les pièces avec photo, prix, stock (Sold out en rouge) et statut. Recherche + filtres (catégorie, stock, pièces uniques, statut).
+- Toucher une pièce : modifier nom, prix, taille, description, catégories, Latest Drop, badge UNIQUE PIECE, pastille couleur, reel, ordre des photos (glisser, ou ← →), statut, stock.
+- Statuts : **Publiée** (en boutique) · **Brouillon** (visible seulement par son lien, pour l'aperçu, jamais achetable) · **Masquée** (achetable par lien direct, absente des listes) · **Archivée** (retirée du site, fiche gardée).
+- **Dupliquer** : copie en brouillon (mêmes photos) pour une pièce proche.
+- Cocher plusieurs pièces : publier, masquer, brouillon, ajouter/retirer une catégorie, Sold out, archiver, en un clic.
+- Ordre de la boutique : glisser ⠿ (ordinateur) ou ↑ ↓ (téléphone), sans filtre actif.
+- **Catégories…** : créer, renommer (l'adresse ne change pas), réordonner.
+- Les modifications restent en attente (gardées sur l'appareil, même si la page se ferme) jusqu'à **Enregistrer** ; **Annuler cet enregistrement** remet tout comme avant. Le stock, lui, change tout de suite (avec « Annuler » dans le message).
 
 ## Ajouter une pièce
 Pièces → Nouveau. Remplir nom, slug (adresse de la page, sans accents ni espaces, à ne plus changer ensuite), prix, description (anglais, ligne vide, français), photos (la 1re = photo principale ; photos détourées, fond transparent, ~1000 px), catégories, frais de port France / international. « Livrable hors de France » : décocher pour une pièce France uniquement. Enregistrer.
@@ -31,7 +43,7 @@ Ouvrir la pièce, changer, enregistrer. Glisser les photos pour changer leur ord
 Cocher « Retirée du site (archivée) » plutôt que Supprimer : la pièce disparaît du site, de la recherche et du paiement, mais sa fiche reste (historique des commandes).
 
 ## Commandes
-Page Commandes : liste des paiements reçus (nom, adresse, pièces). « Marquer expédiée » → numéro de suivi → bouton « E-mail « expédiée » » qui prépare le message au client (anglais + français) dans ta messagerie.
+Page Commandes : liste des paiements reçus (nom, adresse, pièces), statut « payée » / « expédiée ». « Marquer expédiée » → numéro de suivi → le mail « expédiée » (numéro + lien de suivi La Poste, en français ou anglais selon le pays) part tout seul au client. Le numéro devient un lien de suivi La Poste cliquable.
 
 ## Codes promo
 Stripe → Catalogue de produits → Coupons → créer un coupon, puis un « code promotionnel » (ex. `VGT10`). Le champ « Ajouter un code promotionnel » apparaît tout seul sur la page de paiement.

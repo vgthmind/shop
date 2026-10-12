@@ -1,0 +1,195 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="robots" content="noindex, nofollow">
+  <meta name="referrer" content="no-referrer">
+  <title>vgthmind — catalogue</title>
+  <style>
+    :root { --bg: #f4f2ec; --ink: #171717; --muted: #6b6860; --line: rgba(0,0,0,.12); --card: rgba(255,255,255,.72); --ok: #2f7d4a; --warn: #a23b2a; --est: #a86400; --sel: rgba(255,226,122,.35); }
+    * { box-sizing: border-box; }
+    [hidden] { display: none !important; }
+    html { -webkit-text-size-adjust: 100%; }
+    body { margin: 0; background: var(--bg); color: var(--ink); font: 15px/1.45 system-ui, -apple-system, "Segoe UI", sans-serif; }
+    main { max-width: 1100px; margin: 0 auto; padding: 18px 16px 140px; }
+    h1 { font-size: 22px; letter-spacing: .04em; text-transform: uppercase; margin: 6px 0 2px; }
+    h2 { font-size: 15px; text-transform: uppercase; letter-spacing: .05em; margin: 18px 0 8px; }
+    nav.top { display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: 13px; }
+    nav.top a { color: var(--muted); }
+    .muted { color: var(--muted); font-size: 13px; }
+    button, .btn { padding: 9px 14px; min-height: 40px; border-radius: 999px; border: 1px solid var(--line); background: #fff; color: var(--ink); font: inherit; cursor: pointer; text-decoration: none; display: inline-flex; align-items: center; gap: 6px; }
+    button.primary, .btn.primary { background: var(--ink); color: #fff; border-color: var(--ink); }
+    button.danger { color: var(--warn); border-color: var(--warn); }
+    button.small { padding: 4px 10px; min-height: 32px; font-size: 13px; }
+    button:disabled { opacity: .45; cursor: default; }
+    input[type=text], input[type=search], input[type=number], input[type=url], select, textarea { padding: 9px 12px; border: 1px solid var(--line); border-radius: 10px; background: #fff; font: inherit; color: inherit; max-width: 100%; }
+    input[type=search] { border-radius: 999px; }
+    textarea { width: 100%; resize: vertical; }
+    .bar { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin: 12px 0; }
+    .bar > input[type=search] { flex: 1 1 220px; min-width: 0; }
+    .filters select { flex: 1 1 140px; min-width: 0; }
+    .tag { display: inline-block; font-size: 12px; padding: 2px 8px; border-radius: 999px; border: 1px solid var(--line); white-space: nowrap; line-height: 1.5; }
+    .tag.ok { color: var(--ok); border-color: var(--ok); }
+    .tag.out { color: #fff; background: var(--warn); border-color: var(--warn); }
+    .tag.draft { color: var(--est); border-color: var(--est); }
+    .tag.hid { color: var(--muted); border-style: dashed; }
+    .tag.arch { color: #fff; background: var(--muted); border-color: var(--muted); }
+    .tag.chg { background: #ffe27a; border-color: #d9b400; }
+    /* Liste */
+    #list { list-style: none; margin: 0; padding: 0; background: var(--card); border: 1px solid var(--line); border-radius: 14px; overflow: hidden; }
+    #list li { display: grid; grid-template-columns: 28px 22px 64px 1fr auto; gap: 10px; align-items: center; padding: 8px 10px; border-bottom: 1px solid var(--line); cursor: pointer; }
+    #list li:last-child { border-bottom: 0; }
+    #list li:hover { background: rgba(255,255,255,.7); }
+    #list li.sel { background: var(--sel); }
+    #list li.drag-over { box-shadow: inset 0 3px 0 var(--ink); }
+    #list li.dragging { opacity: .4; }
+    #list input[type=checkbox] { width: 20px; height: 20px; margin: 0; }
+    .handle { cursor: grab; color: var(--muted); font-size: 18px; text-align: center; user-select: none; touch-action: none; }
+    .handle.off { visibility: hidden; }
+    .thumb { width: 64px; height: 64px; border-radius: 10px; background: #ece9e1; object-fit: contain; }
+    .info { min-width: 0; }
+    .info .nm { font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .info .meta { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 3px; }
+    .right { text-align: right; display: flex; flex-direction: column; align-items: flex-end; gap: 4px; }
+    .price { font-weight: 600; font-variant-numeric: tabular-nums; white-space: nowrap; }
+    .updown { display: none; gap: 4px; }
+    @media (max-width: 640px) {
+      .sheet footer { gap: 6px; } .sheet footer .btn, .sheet footer button { padding: 6px 12px; min-height: 36px; font-size: 14px; }
+      #list li { grid-template-columns: 26px 56px 1fr auto; }
+      .handle { display: none; }
+      .thumb { width: 56px; height: 56px; }
+      .updown { display: flex; }
+    }
+    /* Barres fixes en bas : sélection + enregistrement */
+    .dock { position: fixed; left: 0; right: 0; bottom: 0; z-index: 20; padding: 10px 12px calc(10px + env(safe-area-inset-bottom)); background: rgba(244,242,236,.96); border-top: 1px solid var(--line); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); }
+    .dock .inner { max-width: 1100px; margin: 0 auto; display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+    .dock .grow { flex: 1 1 auto; }
+    #bulk { bottom: 0; }
+    body.has-bulk main { padding-top: 72px; padding-bottom: 240px; }
+    body.has-bulk #savebar { bottom: auto; top: 0; border-top: 0; border-bottom: 1px solid var(--line); }
+    #toast { position: fixed; left: 50%; top: 14px; transform: translateX(-50%); z-index: 50; max-width: calc(100% - 24px); padding: 10px 16px; border-radius: 12px; background: var(--ink); color: #fff; font-size: 14px; box-shadow: 0 6px 24px rgba(0,0,0,.2); }
+    #toast.err { background: var(--warn); }
+    #toast button { margin-left: 10px; min-height: 30px; padding: 3px 10px; }
+    /* Éditeur (feuille plein écran sur téléphone, panneau à droite sur ordinateur) */
+    dialog { border: 0; padding: 0; background: var(--bg); color: var(--ink); width: min(620px, 100%); max-width: 100%; height: 100%; max-height: 100%; margin: 0 0 0 auto; box-shadow: -10px 0 40px rgba(0,0,0,.15); }
+    dialog::backdrop { background: rgba(0,0,0,.25); }
+    .sheet { height: 100%; display: flex; flex-direction: column; }
+    .sheet header { display: flex; gap: 8px; align-items: center; padding: 12px 14px; border-bottom: 1px solid var(--line); padding-top: calc(12px + env(safe-area-inset-top)); }
+    .sheet header strong { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .sheet .body { flex: 1; overflow: auto; padding: 14px 16px 30px; -webkit-overflow-scrolling: touch; }
+    .sheet footer { display: flex; flex-wrap: wrap; gap: 8px; padding: 10px 14px calc(10px + env(safe-area-inset-bottom)); border-top: 1px solid var(--line); }
+    .field { display: block; margin: 0 0 14px; }
+    .field > span { display: block; font-size: 13px; color: var(--muted); margin-bottom: 4px; }
+    .field input[type=text], .field input[type=url], .field input[type=number], .field select { width: 100%; }
+    .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .chips { display: flex; flex-wrap: wrap; gap: 6px; }
+    .chips label { display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; border: 1px solid var(--line); border-radius: 999px; background: #fff; cursor: pointer; font-size: 14px; }
+    .chips label:has(input:checked) { background: var(--ink); color: #fff; border-color: var(--ink); }
+    .chips input { position: absolute; opacity: 0; width: 1px; height: 1px; margin: 0; }
+    .chips label:focus-within { outline: 2px solid #e4a400; outline-offset: 2px; }
+    .dot { width: 14px; height: 14px; border-radius: 50%; display: inline-block; border: 1px solid rgba(0,0,0,.2); vertical-align: -2px; }
+    .photos { display: grid; grid-template-columns: repeat(auto-fill, minmax(96px, 1fr)); gap: 8px; }
+    .photo { position: relative; background: #ece9e1; border-radius: 10px; padding: 4px; border: 2px solid transparent; }
+    .photo:first-child { border-color: var(--ink); }
+    .photo img { width: 100%; aspect-ratio: 1; object-fit: contain; display: block; }
+    .photo .pa { display: flex; justify-content: space-between; gap: 2px; margin-top: 4px; }
+    .photo .pa button { min-height: 30px; padding: 2px 8px; font-size: 13px; }
+    .photo .main { position: absolute; top: 6px; left: 6px; font-size: 10px; background: var(--ink); color: #fff; border-radius: 999px; padding: 1px 6px; }
+    .err { color: var(--warn); font-size: 14px; margin: 0 0 10px; }
+    .err:empty { display: none; }
+    .banner { padding: 10px 14px; border-radius: 12px; background: #fff7d6; border: 1px solid #e4c75a; margin: 10px 0; display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+    .catrow { display: grid; grid-template-columns: 1fr auto auto; gap: 6px; align-items: center; margin-bottom: 8px; }
+    .catrow input { width: 100%; }
+    .empty { padding: 30px 16px; text-align: center; color: var(--muted); }
+  </style>
+</head>
+<body>
+<main>
+  <nav class="top"><a href="./">← Admin</a><a href="studio-photo.html">+ Nouvelle pièce</a><a href="pieces.html">Poids &amp; ports</a><a href="stock.html">Stock</a><a href="commandes.html">Commandes</a><a href="AIDE.md">Aide</a></nav>
+  <h1>Catalogue</h1>
+  <p class="muted">Toutes les pièces d'un coup d'œil. Touche une pièce pour la modifier. Tes modifications sont gardées sur cet appareil tant que tu n'as pas cliqué « Enregistrer ».</p>
+
+  <div class="bar" id="login">
+    <button type="button" class="primary" id="login-btn">Se connecter avec GitHub</button>
+    <span class="muted" id="login-msg"></span>
+  </div>
+
+  <div id="app" hidden>
+    <div id="restore" class="banner" hidden></div>
+    <div class="bar">
+      <input type="search" id="q" placeholder="Chercher (nom, référence, description)…" aria-label="Chercher une pièce">
+      <a class="btn primary" href="studio-photo.html">+ Nouvelle pièce</a>
+    </div>
+    <div class="bar filters">
+      <select id="f-cat" aria-label="Catégorie"></select>
+      <select id="f-stock" aria-label="Stock"><option value="">Tout le stock</option><option value="in">En stock</option><option value="out">Sold out</option></select>
+      <select id="f-unique" aria-label="Pièce unique"><option value="">Uniques ou séries</option><option value="yes">Pièces uniques</option><option value="no">Petites séries</option></select>
+      <select id="f-status" aria-label="Statut"><option value="actives">Toutes sauf archivées</option><option value="">Toutes</option><option value="publiee">Publiées</option><option value="brouillon">Brouillons</option><option value="masquee">Masquées</option><option value="archivee">Archivées</option></select>
+      <button type="button" id="cats-btn">Catégories…</button>
+      <button type="button" id="reload">Recharger</button>
+    </div>
+    <div class="bar">
+      <label class="muted"><input type="checkbox" id="all"> Tout sélectionner</label>
+      <span class="muted" id="count"></span>
+      <span class="muted" id="ordernote"></span>
+    </div>
+    <ul id="list" aria-label="Pièces"></ul>
+  </div>
+</main>
+
+<!-- Enregistrement (toujours visible quand il y a quelque chose à enregistrer ou à annuler) -->
+<div class="dock" id="savebar" hidden><div class="inner">
+  <span class="grow" id="savemsg"></span>
+  <button type="button" id="discard">Tout annuler</button>
+  <button type="button" class="primary" id="save">Enregistrer</button>
+  <button type="button" id="undo" hidden>Annuler cet enregistrement</button>
+</div></div>
+
+<!-- Actions groupées -->
+<div class="dock" id="bulk" hidden><div class="inner">
+  <strong class="grow" id="bulkmsg"></strong>
+  <button type="button" class="small" data-bulk="publiee">Publier</button>
+  <button type="button" class="small" data-bulk="masquee">Masquer</button>
+  <button type="button" class="small" data-bulk="brouillon">Brouillon</button>
+  <select id="bulk-add" aria-label="Ajouter une catégorie"></select>
+  <select id="bulk-rm" aria-label="Retirer une catégorie"></select>
+  <button type="button" class="small" id="bulk-soldout">Sold out</button>
+  <button type="button" class="small danger" data-bulk="archivee">Archiver</button>
+  <button type="button" class="small" id="bulk-none">Désélectionner</button>
+</div></div>
+
+<dialog id="editor" aria-labelledby="ed-title"><div class="sheet">
+  <header><button type="button" class="small" id="ed-close" aria-label="Fermer">✕</button><strong id="ed-title"></strong><span id="ed-state" class="tag"></span></header>
+  <div class="body" id="ed-body"></div>
+  <footer>
+    <a class="btn" id="ed-view" target="_blank" rel="noopener">Voir sur le site ↗</a>
+    <button type="button" id="ed-dup">Dupliquer</button>
+    <button type="button" id="ed-revert">Annuler mes changements</button>
+    <button type="button" class="primary" id="ed-done">Terminé</button>
+  </footer>
+</div></dialog>
+
+<dialog id="catdlg" aria-labelledby="cat-title"><div class="sheet">
+  <header><button type="button" class="small" id="cat-close" aria-label="Fermer">✕</button><strong id="cat-title">Catégories</strong></header>
+  <div class="body">
+    <p class="muted">Renommer change le nom affiché (menu, pages) ; l'adresse de la catégorie ne change pas, pour ne casser aucun lien. Latest Drop et All sont automatiques. Une nouvelle catégorie apparaît dans le menu ; sa tuile sur l'accueil se fait à la demande (photo et place à choisir).</p>
+    <div id="cat-rows"></div>
+    <h2>Nouvelle catégorie</h2>
+    <div class="bar"><input type="text" id="cat-new" placeholder="ex. Robes" aria-label="Nom de la nouvelle catégorie"><button type="button" id="cat-add">Ajouter</button></div>
+    <p class="err" id="cat-err"></p>
+  </div>
+  <footer><button type="button" class="primary" id="cat-done">Terminé</button></footer>
+</div></dialog>
+
+<div id="toast" role="status" aria-live="polite" hidden></div>
+
+<script src="vg-admin-auth.js"></script>
+<script src="studio-publish.js"></script>
+<script src="pieces-view.js"></script>
+<script src="piece-form.js"></script>
+<script src="catalogue-core.js"></script>
+<script src="catalogue-save.js"></script>
+<script src="catalogue.js"></script>
+</body>
+</html>
