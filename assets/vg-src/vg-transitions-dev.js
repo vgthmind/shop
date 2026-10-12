@@ -1421,7 +1421,7 @@ window.__vgTrim = window.__vgTrim || (function () {
     if (isCategory) {
       products.forEach(function (p) {
         var inCat = (p.categories || []).some(function (c) { return c.permalink === slug; });
-        if (!inCat) return;
+        if (!inCat || !isAvailable(p)) return;
         var u = cutoutUrls(p)[0];
         if (u && pathOf(u) !== ex) urls.push(u);
       });
@@ -1562,12 +1562,15 @@ window.__vgTrim = window.__vgTrim || (function () {
   window.addEventListener('load', askStock);
   var CAT_LINK = '.vg-category-tile, ul.categories a[href*="/category/"]';
   var lastPick = {};
+  function isAvailable(p) {
+    if (p.hidden || p.status === 'sold-out') return false;
+    return !(stockNow && stockNow[p.permalink] !== undefined && stockNow[p.permalink] <= 0);
+  }
   function pickPiece(slug) {
     askStock();
     var products = productsNow || [];
     var pool = products.filter(function (p) {
-      if (p.hidden || p.status === 'sold-out') return false;
-      if (stockNow && stockNow[p.permalink] !== undefined && stockNow[p.permalink] <= 0) return false;
+      if (!isAvailable(p)) return false;
       if (slug !== 'all' && !(p.categories || []).some(function (c) { return c.permalink === slug; })) return false;
       return cutoutUrls(p).length > 0;
     });
@@ -1582,7 +1585,7 @@ window.__vgTrim = window.__vgTrim || (function () {
   // Au survol : on choisit deja la piece et on charge sa photo (sinon la bulle arrive vide au clic).
   document.addEventListener('mouseover', function (e) {
     var link = e.target.closest ? e.target.closest(CAT_LINK) : null;
-    if (!link || link.__vgPick) return;
+    if (!link || (link.__vgPick && isAvailable(link.__vgPick.product))) return;
     var slug = slugFrom(link.getAttribute('href'), 'category');
     if (!slug) return;
     var pk = pickPiece(slug);
@@ -1602,7 +1605,9 @@ window.__vgTrim = window.__vgTrim || (function () {
     var slug = slugFrom(href, isCategory ? 'category' : 'product');
 
     if (isCategory) {
-      var pk = link.__vgPick || pickPiece(slug);
+      var pk = link.__vgPick;
+      // Choisie au survol, parfois AVANT l'arrivee du stock reel (souris deja posee a l'ouverture de la page) : on revalide au clic.
+      if (!pk || !isAvailable(pk.product)) pk = pickPiece(slug);
       link.__vgPick = null; // le prochain survol en choisit une autre
       if (!pk) return; // aucune piece disponible : navigation normale
       e.preventDefault();
