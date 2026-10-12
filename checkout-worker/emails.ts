@@ -72,8 +72,16 @@ const T = {
     help: 'Un souci, une question ? Réponds simplement à ce mail.',
     view: 'Voir ma commande',
     ref: 'Commande',
-    withdrawal: "Droit de rétractation de 14 jours, sauf pour les pièces réalisées sur commande personnalisée (exception prévue par l'article L221-28 3° du Code de la consommation).",
+    withdrawal: "Droit de rétractation de 14 jours à compter de la réception, sauf pour les pièces réalisées sur commande personnalisée (art. L221-28 3° du Code de la consommation). Modalités, frais de retour et remboursement : page Livraison & retours.",
     cgv: 'Conditions générales de vente',
+    returns: 'Livraison & retours',
+    formTitle: 'Formulaire type de rétractation (à renvoyer uniquement si vous souhaitez vous rétracter)',
+    form: [
+      `À l'attention de vgthmind, ${CONTACT_EMAIL} (adresse postale : voir Mentions légales) :`,
+      'Je vous notifie par la présente ma rétractation du contrat portant sur la vente du bien ci-dessous :',
+      'Commandé le / reçu le :', 'Numéro de commande :', 'Nom du consommateur :', 'Adresse du consommateur :',
+      'Signature du consommateur (uniquement en cas de notification sur papier) :', 'Date :',
+    ],
     thanksEnd: 'Merci pour ton soutien,',
   },
   en: {
@@ -98,8 +106,16 @@ const T = {
     help: 'Questions? Just reply to this email.',
     view: 'View my order',
     ref: 'Order',
-    withdrawal: 'You have a 14-day right of withdrawal, except for pieces made to custom order (exception provided by article L221-28 3° of the French Consumer Code).',
+    withdrawal: '14-day right of withdrawal from receipt, except for pieces made to custom order (art. L221-28 3° of the French Consumer Code). Procedure, return costs and refunds: Shipping & returns page.',
     cgv: 'Terms of sale',
+    returns: 'Shipping & returns',
+    formTitle: 'Model withdrawal form (complete and return only if you wish to withdraw)',
+    form: [
+      `To vgthmind, ${CONTACT_EMAIL} (postal address: see Legal notice):`,
+      'I hereby give notice that I withdraw from my contract of sale of the following good:',
+      'Ordered on / received on:', 'Order number:', 'Name of consumer:', 'Address of consumer:',
+      'Signature of consumer (only if this form is notified on paper):', 'Date:',
+    ],
     thanksEnd: 'Thank you for your support,',
   },
 };
@@ -154,8 +170,14 @@ function signature(t: (typeof T)['fr']) {
     + para(`${link(INSTAGRAM_URL, 'instagram.com/vgthmind')} · ${link('mailto:' + CONTACT_EMAIL, CONTACT_EMAIL)}`);
 }
 
+// Page « Livraison & retours » : meme dossier que les CGV.
+const returnsUrl = (o: OrderData) => o.cgvUrl.replace(/infos-conditions-generales\/?$/, 'livraison-retours');
+
+// Rappel legal + formulaire type de retractation (support durable, art. L221-13).
 function legalFooter(o: OrderData, t: (typeof T)['fr']) {
-  return `<p style="margin:24px 0 0;padding-top:14px;border-top:1px solid ${LINE};font:12px/1.5 ${FONT};color:#777">${esc(t.withdrawal)} ${link(o.cgvUrl, esc(t.cgv))}</p>`;
+  const small = `font:12px/1.5 ${FONT};color:#777`;
+  return `<p style="margin:24px 0 0;padding-top:14px;border-top:1px solid ${LINE};${small}">${esc(t.withdrawal)} ${link(returnsUrl(o), esc(t.returns))} · ${link(o.cgvUrl, esc(t.cgv))}</p>`
+    + `<p style="margin:10px 0 0;${small}"><b>${esc(t.formTitle)}</b><br>${t.form.map(esc).join('<br>')}</p>`;
 }
 
 export function customerEmail(o: OrderData) {
@@ -180,7 +202,8 @@ export function customerEmail(o: OrderData) {
     t.next.toUpperCase(), t.nextText, ...(t.duties ? [t.duties] : []), '',
     `${t.view} : ${o.orderUrl}`, '', t.help, '',
     t.bye, 'vgthmind', `Instagram : ${INSTAGRAM_URL}`, CONTACT_EMAIL, '',
-    `${t.withdrawal} ${t.cgv} : ${o.cgvUrl}`,
+    `${t.withdrawal}`, `${t.returns} : ${returnsUrl(o)}`, `${t.cgv} : ${o.cgvUrl}`, '',
+    t.formTitle, ...t.form,
   ].join('\n');
   return { subject, html, text };
 }
