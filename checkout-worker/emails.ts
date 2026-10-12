@@ -5,7 +5,7 @@
 // passent pas dans Gmail/Apple Mail), boutons en HTML et non en image.
 
 export const INSTAGRAM_URL = 'https://instagram.com/vgthmind';
-export const CONTACT_EMAIL = 'vgthm66@gmail.com';
+export const CONTACT_EMAIL = 'contact@vgthmind.org';
 export const REPLY_TO = CONTACT_EMAIL;
 export const TRACKING_URL = 'https://www.laposte.fr/outils/suivre-vos-envois?code=';
 
