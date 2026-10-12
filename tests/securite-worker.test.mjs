@@ -166,3 +166,33 @@ test('stock : au plus 3 paiements en cours par connexion', async () => {
   assert.equal((await d.reserve('c1', [{ slug: 'c1', qty: 1 }], { c1: 1 }, 'ip1')).ok, true, 'le même panier peut réessayer');
   assert.equal((await d.reserve('c5', [{ slug: 'c5', qty: 1 }], { c5: 1 }, 'ip2')).ok, true, 'une autre connexion passe');
 });
+
+test('suivi (/track) : rien sans le bon couple numéro + e-mail, réponse identique, essais limités ; IP jamais en clair', async () => {
+  reset();
+  kv.set('ref:VG-ABCDEF', 'cs_test_abc');
+  const realFetch = globalThis.fetch;
+  globalThis.fetch = async (url) => String(url).includes('/v1/checkout/sessions/cs_test_abc')
+    ? new Response(JSON.stringify({ id: 'cs_test_abc', payment_status: 'paid', customer_details: { email: 'client@example.com' }, line_items: { data: [] } }))
+    : realFetch(url);
+  try {
+    const ask = (body, ip = '1.2.3.4') => call('POST', '/track', { body, headers: { 'CF-Connecting-IP': ip } });
+    const a = await ask({ ref: 'VG-ABCDEF', email: 'autre@example.com' });
+    const b = await ask({ ref: 'VG-ZZZZZZ', email: 'client@example.com' });
+    const c = await ask({ ref: 'VG-ABCDEF' });
+    for (const r of [a, b, c]) { assert.equal(r.status, 404); assert.deepEqual(await r.json(), { ok: false }); }
+    const good = await (await ask({ ref: 'vg abcdef', email: ' Client@Example.com ' }, '9.9.9.9')).json();
+    assert.equal(good.ok, true);
+    assert.ok(![...kv.keys()].some((k) => k.includes('1.2.3.4')), 'pas d’IP en clair dans le KV');
+    let last;
+    for (let i = 0; i < 16; i++) last = await ask({ ref: 'VG-ZZZZZZ', email: 'x@y.z' }, '5.5.5.5');
+    assert.equal(last.status, 429);
+  } finally { globalThis.fetch = realFetch; }
+});
+
+test('page Merci (/session) : identifiant Stripe complet exigé', async () => {
+  reset();
+  for (const id of ['', 'abc', 'cs_test_', 'cs_test_x/../../v1/balance', 'cs_live_a?b=1']) {
+    assert.equal((await call('GET', '/session?id=' + encodeURIComponent(id))).status, 400, id);
+  }
+  assert.equal(stripeCalls.length, 0);
+});

@@ -907,7 +907,7 @@ async function bump(env: Env, key: string): Promise<number> {
 async function trackOrder(request: Request, env: Env, key: string, json: JsonFn): Promise<Response> {
   let body: any = {};
   try { body = await request.json(); } catch (e) {}
-  const ip = request.headers.get('CF-Connecting-IP') || 'inconnue';
+  const ip = (await clientPrint(request)) || 'inconnue'; // empreinte, pas l'adresse IP en clair dans le KV
   const email = String(body.email || '').trim().toLowerCase().slice(0, 254);
   const ref = normalizeRef(body.ref);
   const tooMany = () => json({ ok: false, error: 'rate' }, 429);
