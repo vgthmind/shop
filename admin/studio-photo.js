@@ -607,5 +607,38 @@
   })();
   document.addEventListener('input', scheduleDraft); document.addEventListener('change', scheduleDraft);
 
+  // --- Aperçu avant / après en plein écran (iPhone compris) : curseur glissant entre l'original et le détouré.
+  (function () {
+    var box = $('cmp'), stage = $('cmpStage'), after = $('cmpAfter'), line = $('cmpLine'), c1 = $('cmpC1'), c2 = $('cmpC2'), bgSel = $('cmpBg');
+    if (!box || !$('bCompare')) return;
+    Object.keys(BGS).forEach(function (k) { var o = document.createElement('option'); o.value = k; o.textContent = BGS[k].label.split(' (')[0]; bgSel.appendChild(o); });
+    var cb = document.createElement('option'); cb.value = 'checker'; cb.textContent = 'Damier'; bgSel.appendChild(cb);
+    bgSel.value = 'beige';
+    function paint() {
+      [[c1, origEl], [c2, cutEl]].forEach(function (a) {
+        a[0].width = a[1].width; a[0].height = a[1].height; a[0].getContext('2d').drawImage(a[1], 0, 0);
+      });
+      applyBg($('cmpBefore'), bgSel.value); applyBg(after, bgSel.value);
+    }
+    function setPos(x) {
+      var r = stage.getBoundingClientRect(), pct = Math.max(0, Math.min(100, (x - r.left) / r.width * 100));
+      after.style.clipPath = 'inset(0 0 0 ' + pct + '%)'; line.style.left = pct + '%';
+    }
+    var drag = false;
+    stage.addEventListener('pointerdown', function (e) { drag = true; try { stage.setPointerCapture(e.pointerId); } catch (x) {} setPos(e.clientX); });
+    stage.addEventListener('pointermove', function (e) { if (drag) setPos(e.clientX); });
+    ['pointerup', 'pointercancel'].forEach(function (n) { stage.addEventListener(n, function () { drag = false; }); });
+    function close() { box.hidden = true; document.body.style.overflow = ''; }
+    $('bCompare').onclick = function () {
+      if (!origEl.width || !cutEl.width) return;
+      paint(); box.hidden = false; document.body.style.overflow = 'hidden'; after.style.clipPath = 'inset(0 0 0 50%)'; line.style.left = '50%';
+      if (box.requestFullscreen && !E.isIOS) { try { box.requestFullscreen(); } catch (x) {} } // iPhone : le plein écran Safari ne couvre pas la page, le calque fixe suffit
+    };
+    $('cmpClose').onclick = function () { if (document.fullscreenElement) { try { document.exitFullscreen(); } catch (x) {} } close(); };
+    bgSel.onchange = paint;
+    document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && !box.hidden) close(); });
+    document.addEventListener('fullscreenchange', function () { if (!document.fullscreenElement && !box.hidden) close(); });
+  })();
+
   window.VGStudio = { colorSample: colorSample, count: function () { return exportable().length; }, pending: pendingCount, _state: function () { return { photos: photos, params: params }; } };
 })();
