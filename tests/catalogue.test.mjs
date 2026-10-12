@@ -73,3 +73,57 @@ test('catégories : créer, renommer (adresse inchangée), réordonner (Latest D
 test('vignette : WebP 320 px, original en secours, accents encodés', () => {
   assert.deepEqual(C.thumbUrls(P('short-coupe-évasée')), { src: '../assets/products-sized/320/short-coupe-%C3%A9vas%C3%A9e/0.webp', fallback: '../assets/products/short-coupe-%C3%A9vas%C3%A9e/0.png' });
 });
+
+// Faux dépôt GitHub (contents + git data), suffisant pour load/save/revert.
+function fakeRepo(files) {
+  const b64 = (t) => Buffer.from(t, 'utf8').toString('base64');
+  let head = 'c0', blobs = {}, trees = {}, commits = { c0: { tree: 't0', files: { ...files } } }, n = 0;
+  const gh = async (method, path, body) => {
+    const cur = commits[head].files;
+    let m;
+    if (method === 'GET' && (m = /^\/contents\/(.+?)\?ref=main$/.exec(path))) {
+      const p = decodeURIComponent(m[1]);
+      if (p === 'data/products') return Object.keys(cur).filter((k) => k.startsWith('data/products/')).map((k) => ({ name: k.split('/').pop(), path: k }));
+      if (!(p in cur)) { const e = new Error('Not Found'); e.status = 404; throw e; }
+      return { content: b64(cur[p]) };
+    }
+    if (method === 'GET' && path === '/git/ref/heads/main') return { object: { sha: head } };
+    if (method === 'GET' && path.startsWith('/git/commits/')) return { tree: { sha: commits[path.slice(13)].tree } };
+    if (method === 'POST' && path === '/git/blobs') { const id = 'b' + ++n; blobs[id] = Buffer.from(body.content, 'base64').toString('utf8'); return { sha: id }; }
+    if (method === 'POST' && path === '/git/trees') { const id = 't' + ++n; trees[id] = body.tree; return { sha: id }; }
+    if (method === 'POST' && path === '/git/commits') {
+      const id = 'c' + ++n, f = { ...commits[body.parents[0]].files };
+      for (const e of trees[body.tree]) f[e.path] = blobs[e.sha];
+      commits[id] = { tree: body.tree, files: f, message: body.message }; return { sha: id };
+    }
+    if (method === 'PATCH' && path === '/git/refs/heads/main') { head = body.sha; return {}; }
+    throw new Error('route inconnue ' + method + ' ' + path);
+  };
+  return { gh, files: () => commits[head].files, edit: (p, t) => { commits[head].files[p] = t; } };
+}
+
+test('enregistrer puis annuler : un commit, contenu d\'avant restauré ; refus si modifié ailleurs', async () => {
+  const S = createRequire(import.meta.url)('../admin/catalogue-save.js');
+  const a = P('a'); delete a.slug; a.slug = 'a';
+  const repo = fakeRepo({ 'data/products/a.json': S.pieceText(a), 'data/categories.json': S.catsText(cats) });
+  const d = await S.load(repo.gh);
+  assert.equal(d.pieces.length, 1); assert.equal(d.categories.length, 4);
+  const changed = { ...d.pieces[0], price: 99 };
+  const last = await S.save(repo.gh, { pieces: { a: changed }, categories: C.addCategory(d.categories, 'Robes').categories }, d.raw, 'test');
+  assert.equal(JSON.parse(repo.files()['data/products/a.json']).price, 99);
+  assert.equal(JSON.parse(repo.files()['data/categories.json']).length, 5);
+  await S.revert(repo.gh, last);
+  assert.equal(JSON.parse(repo.files()['data/products/a.json']).price, 50);
+  assert.equal(JSON.parse(repo.files()['data/categories.json']).length, 4);
+  // Modifié ailleurs entre le chargement et l'enregistrement : refus, rien d'écrit.
+  const d2 = await S.load(repo.gh);
+  repo.edit('data/products/a.json', S.pieceText({ ...d2.pieces[0], price: 70 }));
+  await assert.rejects(S.save(repo.gh, { pieces: { a: { ...d2.pieces[0], price: 10 } } }, d2.raw, 'x'), /ailleurs/);
+  assert.equal(JSON.parse(repo.files()['data/products/a.json']).price, 70);
+  // Nouvelle pièce (dupliquée) : l'annulation l'archive, ne la supprime pas.
+  const d3 = await S.load(repo.gh);
+  const dup = C.duplicate(d3.pieces[0], ['a']);
+  const l3 = await S.save(repo.gh, { pieces: { [dup.slug]: dup } }, d3.raw, 'dup');
+  await S.revert(repo.gh, l3);
+  assert.equal(JSON.parse(repo.files()['data/products/a-copie.json']).archived, true);
+});
