@@ -6,7 +6,7 @@ Test en ligne avec pièce fictive (supprimée) : port Belgique 15 € facturé p
 Tâche 2 (2026-10-12) : admin Expédition = + réglages lettre activée / pays acceptés ; corrigés : lettre vers un palier sans forfait lettre = 0 € (désormais vrai tarif), pièce seule plus lourde que le max lettre partait en lettre. Worker redéployé : 82765331-e369-4ef0-bbcb-296fb9f323c7. Versions : 9301bbca-0ad6-43a9-ba0c-cfd3d54ade5b (clé rk_test, code avant correctifs lettre), f5466451 (clé rk_live). Retour arrière : npx wrangler@4 rollback <id>.
 Tâches 3+5 : nouveau tests/stock-flow.test.mjs (vrai StockDO) : 2 clients simultanés = 1 seul, stock décompté après paiement seulement, sold out à 0, abandon (/release, webhook expired, expiration 32 min), mails (pays, port, total BE/CA). Corrigé : Reply-To/contact des mails = contact@vgthmind.org (c était vgthm66@gmail.com). Worker redéployé avec ça. 159 tests OK. À savoir : l atomicité repose sur les Durable Objects Cloudflare (appels en file) ; carte 4242 jamais saisie par Claude.
 Tâche 4 : chantier/REDIRECTIONS.md (structure identique : rien ne casse si le site prend la racine ; /products.xml seul manquant). Rattrapage : la pièce fictive était restée dans docs/ (build sans build-catalog) : retirée. Worker actuel : 8fedf0bb-ab8e-401b-bb06-44a5488d53d8. Permissions rk_test vérifiées (session, expire, expand produit, paiements). À faire avec vgthmind : carte 4242 sur Stripe (voir A-FAIRE section 0).
-Reste : voir A-FAIRE.md (usage du tunnel, test du panier) ; liens Instagram manquants (dd001, ff001, vc001, sacoche, sc_0008, ml001, sg001) ; poids « estimés » ; « Paiement en mode test » à lever avec la clé test ou le passage live.
+Reste : voir A-FAIRE.md (usage du tunnel, test du panier) ; poids « estimés » ; « Paiement en mode test » à lever avec la clé test ou le passage live.
 Notes : France colis offert (grille), lettre 4 €, UE 15 €, monde 29 € ; adresse du tunnel change à chaque lancement ; règle US 17 sept 2026.
 Reste (toi) : médiateur, adresse, CGV, tu/vous, TVA, Stripe live, DNS IONOS, BASE_PATH='' + site_url + public:true.
 
@@ -22,7 +22,7 @@ Test carte 4242 (2026-10-12) : payé en Belgique, 10 + 15 = 25 EUR ; stock pass�
 Accueil : bande blanche supprimée (dégradé du hero = beige #f4f2ec). Cover : le site utilise déjà la même image que la boutique BigCartel en ligne (comparée, écart nul) : rien à remplacer. Contact : formulaire (Worker POST /contact, Resend vers contact@vgthmind.org, reply-to client, piège caché + délai 3 s + 3 envois/h/IP + 60/jour) ; formulaire location/collab sur la page Studio ; Confidentialité réécrite (contact, Stripe, Resend, stats, SIRET/Vitry) ; mentions légales avec contact@ ; breadcrumb fiche ; pièce vendue = pièces similaires ; zones tactiles mobile 44 px + focus clavier. 164 tests OK (tests/contact.test.mjs ajouté).
 RETOUR ARRIÈRE Worker : version actuelle 9f0d51d8-4c6f-4b67-84a9-bf4d072e50bf (ajoute /contact). Avant : `npx wrangler@4 rollback 8fedf0bb-ab8e-401b-bb06-44a5488d53d8` (dans checkout-worker/). Site : `git revert <commit>` puis `git push` (commits 676c851, 0bf5542, d0c22eb, c729a85 + suivants).
 Documents : chantier/BASCULE.md (Stripe live pas à pas, DNS IONOS, Resend/DMARC, surveillance, checklist jour J, plan factures), chantier/CGV-A-VERIFIER.md, chantier/DETAILS-VISUELS.md. Raccourci « Admin boutique vgthmind.url » créé dans Outils Taff.
-Catalogue (25) : 27/27 pièces BigCartel présentes, prix et nombre de photos identiques ; 7 pièces « sold out » chez BigCartel = stock 0 du Worker (OK) ; badge UNIQUE : 25/27 (pas sur cd-vgtape ni cache-cou) ; reels manquants : dd001, ff001, vc001, sg001, sacoche, ml001, sc_0008.
+Catalogue (25) : 27/27 pièces BigCartel présentes, prix et nombre de photos identiques ; 7 pièces « sold out » chez BigCartel = stock 0 du Worker (OK) ; badge UNIQUE : 25/27 (pas sur cd-vgtape ni cache-cou) ; les 7 pièces sans reel (dd001, ff001, vc001, sg001, sacoche, ml001, sc_0008) n'en auront jamais : normal.
 EN ATTENTE DE TA RÉPONSE : admin (12 à 21, 38, 40), langue (26), surveillance (35), factures (30) : voir le rapport.
 
 ## À FAIRE PAR vgthmind (étapes simples, rien à coder)
@@ -31,8 +31,30 @@ EN ATTENTE DE TA RÉPONSE : admin (12 à 21, 38, 40), langue (26), surveillance 
 3. **Alerte Cloudflare** (3 clics) : dash.cloudflare.com, Notifications, Add, « Workers : Error rate » (ou « Health check »), destinataire contact@vgthmind.org.
 4. **Stripe live** (quand tu veux, après les tests) : suivre chantier/BASCULE.md §1 (clé restreinte + webhook), puis dis-moi « clé live créée ».
 5. **Textes à valider** : chantier/CGV-A-VERIFIER.md (médiateur, rétractation, pays livrés) ; la page Confidentialité (durée de conservation des messages : 12 mois, choix de ma part) ; mention TVA (CIBS L. 223-3 vs 293 B).
-6. **Liens Instagram manquants** (reels) : pièces dd001, ff001, vc001, sg001, sacoche, ml001, sc_0008.
+6. (Reels : les 7 pièces sans reel n'en auront jamais, fiches vérifiées sans bloc vide : rien à faire.)
 7. **Médiateur de la consommation** et choix d'une adresse pour le retour/rétractation.
 
 ## Checklist jour J (résumé : détail dans chantier/BASCULE.md §6)
 Avant : tests verts, sauvegarde, id Worker noté, TTL DNS 300 s, paiement live testé. Pendant : Stripe live puis build racine puis DNS `www` puis HTTPS puis tests. Après : surveiller 48 h, garder BigCartel 2 semaines. Retour d'urgence : DNS `www` vers vgthmind.bigcartel.com + LIVE_MODE=0 + `wrangler rollback`.
+
+## Session 2026-10-12 (partie 2) : admin, langue, alertes, factures : fait
+Admin (tableau de bord admin/menu.html, installable PWA : manifest + sw.js + icônes) : Commandes (mail « expédiée » + lien de suivi envoyé AUTOMATIQUEMENT après saisie du suivi, bon de commande imprimable, bouton Facture, sauvegarde/restauration de l'état des commandes) ; Catalogue (copier une pièce = démarre en aperçu `hidden`, ordre ▲▼, publier, archiver) ; aide.html (mode d'emploi lisible sans fichier .md) ; raccourci Outils Taff. Déjà existants et gardés : Poids et ports (16), Expédition, Stock + sauvegardes, Export compta CSV (15), Trafic (17).
+Trafic : balise maison sans cookie branchée (assets/vg-traffic.js + TrafficDO dans le Worker, admin « Trafic », direct toutes les 10 s) en plus de Cloudflare Web Analytics. Les 4 visites « iPhone » du 12/10 sont mes tests.
+Sécurité admin : connexion = compte GitHub vgthmind (active la double authentification chez GitHub) ; session 12 h (avant 30 jours) ; déconnexion automatique après 30 min d'inactivité ; limite 12 tentatives /15 min /IP sur /auth et /callback.
+Alertes mail ([vgthmind ALERTE]) vers ALERT_EMAIL : erreur du Worker, paiement Stripe échoué, mail de commande non parti ; une même alerte au plus 1 fois / 10 min.
+Factures : W-AAAA-NNN (compteur du Worker, par année ; commandes de test = TEST-VG-…), mention « TVA non applicable, art. 293 B du CGI », bouton sur la page Suivi (client) et dans Commandes (admin) -> page imprimable / PDF. À FAIRE courant 2027 : passer la mention à « art. L. 223-3 du CIBS » (invoice.ts VAT_MENTION + mentions légales + CGV + Facturier).
+Langue : bouton EN | FR (assets/vg-lang.js), langue du navigateur sinon anglais, mêmes adresses. Les pages « anglais puis français » gardent les 2 langues dans le HTML (une seule affichée).
+WORKER ACTUEL : bc0a53e5-013d-480e-877e-277718158cf9 (trafic, alertes, factures, sauvegarde commandes). Retour arrière : `npx wrangler@4 rollback 9f0d51d8-4c6f-4b67-84a9-bf4d072e50bf` (dans checkout-worker/ ; avant : 8fedf0bb-ab8e-401b-bb06-44a5488d53d8). Site : `git revert <commit>` puis `git push` (commits 7902884 admin/Worker, df2acad langue).
+Tests : `npm test` (182) = parcours panier, paiement Stripe simulé, stock, mails, factures, alertes ; à relancer avant chaque publication.
+Codes promo (20) : déjà actifs côté Stripe (champ « code promotionnel » au paiement). Structure future : page admin « Promos » + routes /admin/promos (Worker) qui appellent l'API Stripe coupons / promotion_codes (clé restreinte : ajouter Écriture « Coupons » et « Promotion Codes » le moment venu). Rien à refaire côté panier ni paiement.
+Studio de détourage (21) : état = détourage dans le navigateur, validation / relance / annulation par photo, « tout relancer », brouillon automatique, publication directe ; iPhone via le tunnel du PC (PC allumé). Suite proposée : (1) aperçu avant/après côte à côte plein écran sur iPhone, (2) détourage côté Cloudflare (sans PC allumé), (3) retouche du bord (adoucir/rogner) depuis le téléphone.
+Admin installé : l'enregistrement du service worker n'a pas pu être vérifié dans le navigateur intégré (refus du panneau d'essai) : à vérifier sur ton iPhone (voir A FAIRE).
+Cartes de test : carte 4242 jamais saisie par Claude.
+
+## À FAIRE PAR vgthmind (mise à jour, partie 2)
+8. **Stripe, webhook (test puis live)** : tableau de bord Stripe, Développeurs, Webhooks, ton endpoint : ajouter les événements `payment_intent.payment_failed` et `checkout.session.async_payment_failed` (sinon pas d'alerte « paiement échoué »).
+9. **Installer l'admin sur l'iPhone** : Safari, ouvre `https://vgthmind.github.io/shop/admin/menu.html`, bouton Partager, « Sur l'écran d'accueil ». Dis-moi si l'icône s'ouvre en plein écran.
+10. **Double authentification GitHub** : GitHub, Settings, Password and authentication, Two-factor (clé d'accès ou application). C'est la vraie protection de l'admin.
+11. **Facture : adresse de l'émetteur** : une facture française doit normalement porter le nom et l'adresse du vendeur. Tu veux n'afficher que « vgthmind, Vitry-sur-Seine, SIRET ». Si tu changes d'avis : écris l'adresse dans `INVOICE_SELLER_ADDRESS` (wrangler.toml), je redéploie.
+12. **CGV** : relis `chantier/CGV-PROPOSITION.html` (double-clic = s'ouvre dans le navigateur) ; surligné jaune = à remplir ; médiateur = emplacement prêt.
+13. **DMARC** (déjà noté plus haut) : valeur exacte `v=DMARC1; p=none; rua=mailto:contact@vgthmind.org`.

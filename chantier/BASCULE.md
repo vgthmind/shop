@@ -5,7 +5,7 @@
 ## 1. Stripe en live (31) : ce que TU crées dans le tableau de bord Stripe
 1. Stripe, coin haut-gauche : **désactive « Mode test »** (tu es en live).
 2. Développeurs, Clés API, **Créer une clé restreinte**. Nom : `vgthmind-worker-live`. Permissions : **Écriture** sur *Checkout Sessions* ; **Lecture** sur *PaymentIntents*, *Charges*, *Products*, *Customers*. Rien d'autre. Copie la clé (`rk_live_...`) : tu ne la reverras plus.
-3. Développeurs, Webhooks, **Ajouter un endpoint** : adresse `https://vgthmind-shop-checkout.vgthm66.workers.dev/webhook` ; événements : `checkout.session.completed`, `checkout.session.async_payment_succeeded`, `checkout.session.expired`. Copie le **secret de signature** (`whsec_...`).
+3. Développeurs, Webhooks, **Ajouter un endpoint** : adresse `https://vgthmind-shop-checkout.vgthm66.workers.dev/webhook` ; événements : `checkout.session.completed`, `checkout.session.async_payment_succeeded`, `checkout.session.expired`, `payment_intent.payment_failed`, `checkout.session.async_payment_failed`. Copie le **secret de signature** (`whsec_...`).
 4. Ne m'envoie ces deux valeurs **nulle part**. Dis-moi juste « clé live créée » : je te donne les commandes à coller : `wrangler secret put STRIPE_SECRET_KEY` (clé live), `wrangler secret put STRIPE_WEBHOOK_SECRET` (whsec live), puis `LIVE_MODE = "1"` dans `wrangler.toml` + redéploiement.
 5. Paramètres, Moyens de paiement : carte (+ Apple Pay / Google Pay si tu veux). Paramètres, Informations de l'entreprise : nom « vgthmind », SIRET.
 6. **Test réel** : une pièce fictive à 1 € (je la crée), tu paies avec ta vraie carte, je vérifie stock + mails, puis **Remboursement** depuis Stripe (Paiements, le paiement, Rembourser). Frais Stripe perdus : environ 0,25 €.
