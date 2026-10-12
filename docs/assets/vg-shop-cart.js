@@ -199,6 +199,21 @@
     return items;
   }
 
+  function showAlreadyInCart(form, series) {
+    var note = document.querySelector('.vg-already-in-cart');
+    if (!note) {
+      note = document.createElement('p');
+      note.className = 'vg-already-in-cart';
+      note.setAttribute('role', 'status');
+      var btn = form.querySelector('#add-to-cart-button');
+      (btn && btn.parentNode ? btn.parentNode : form).appendChild(note);
+    }
+    note.innerHTML = (series
+      ? L('Already in your cart in the maximum quantity.', 'Déjà dans ton panier, en quantité maximale.')
+      : L('Already in your cart (one-of-a-kind piece).', 'Déjà dans ton panier (pièce unique).'))
+      + ' <a href="/cart">' + L('View cart', 'Voir le panier') + '</a>';
+  }
+
   // --- "Add to cart" : le click (capturé par vg-transitions-dev.js, qui
   // joue l'animation du panier sans empêcher la soumission) arrive avant
   // ce handler submit - on bloque seulement la vraie requête réseau (il
@@ -215,6 +230,12 @@
         if (stock && stock[product.permalink] !== undefined) {
           if (stock[product.permalink] <= 0) { applyStock(stock); return; }
           product.quantity = stock[product.permalink];
+        }
+        // Pièce déjà au maximum dans le panier (une pièce unique, ou la série entière) : message clair, pas de nouvel ajout.
+        var inCart = readCart().filter(function (it) { return it.slug === product.permalink; })[0];
+        if (inCart && qty(inCart) >= Math.max(1, product.quantity || 1)) {
+          showAlreadyInCart(form, (product.quantity || 1) > 1);
+          return;
         }
         addItem(product);
         setTimeout(function () { loc.href = '/cart'; }, 200);
