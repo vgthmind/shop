@@ -14,6 +14,7 @@ const config = JSON.parse(readFileSync(new URL('../admin/shipping-config.json', 
 const line = (fr, intl) => [{ amount_alone: fr, country: { code: 'FR' } }, ...(intl == null ? [] : [{ amount_alone: intl }])];
 const catalog = [
   { permalink: 'uniq', name: 'Pièce unique', price: 10, url: '/p/uniq', images: [], quantity: 1, shipping: line(0, 29), weight_g: 800, mode: 'colis', alone: false, shipping_derived: true, description: 'Size M' },
+  { permalink: 'nomen', name: 'Pantalon rouge', name_en: 'Red trousers', price: 50, url: '/p/nomen', images: [], quantity: 3, shipping: line(0, 29), weight_g: 300, mode: 'colis', alone: false, shipping_derived: true },
   { permalink: 'serie', name: 'Série', price: 20, url: '/p/serie', images: [], quantity: 3, shipping: line(0, 29), weight_g: 300, mode: 'colis', alone: false, shipping_derived: true },
 ];
 const WH = 'whsec_test123';
@@ -175,7 +176,7 @@ test('mail de commande Belgique : bon pays, port 15, total 25 ; expéditeur comm
   for (const m of mails) { assert.match(m.from, /commande@vgthmind\.org/); assert.equal(m.reply_to, 'contact@vgthmind.org'); }
   assert.match(seller.subject, /\[TEST\] Nouvelle commande 25,00 EUR — Belgique/);
   assert.match(seller.text, /15,00 EUR/); assert.match(seller.text, /25,00 EUR/);
-  assert.match(client.text, /15,00 EUR/); assert.match(client.text, /25,00 EUR/); assert.match(client.text, /Bruxelles/);
+  assert.match(client.text, /15,00 €/); assert.match(client.text, /25,00 €/); assert.match(client.text, /Bruxelles/);
   await webhook('checkout.session.completed', sessions.get(a.id).full); // webhook rejoué : pas de 2e envoi
   assert.equal(mails.length, 2);
 });
@@ -185,5 +186,58 @@ test('mail de commande Canada : port 29, total 39', async () => {
   assert.equal(stripeCreated[0].get('shipping_options[0][shipping_rate_data][fixed_amount][amount]'), '2900');
   await webhook('checkout.session.completed', pay(a.id, { country: 'CA', ship: 2900, total: 3900 }));
   const client = mails.find((m) => m.to[0] === 'client@example.com'), seller = mails.find((m) => m.to[0] === 'alex-vendeur@example.com');
-  assert.match(seller.subject, /39,00 EUR — Canada/); assert.match(client.text, /29,00 EUR/); assert.match(client.text, /39,00 EUR/);
+  assert.match(seller.subject, /39,00 EUR — Canada/); assert.match(client.text, /€29.00/); assert.match(client.text, /€39.00/);
+});
+
+// --- Langue choisie sur le site : page Stripe, nom de la pièce, mails ---
+const lineName = (b) => b.get('line_items[0][price_data][product_data][name]');
+const checkoutLang = async (lang, slug = 'nomen', country = 'BE') => {
+  const r = await call('/checkout', { items: [{ slug, qty: 1 }], country, cart_id: 'cart-lang-' + String(lang) + slug, ...(lang ? { lang } : {}) });
+  return { ...(await r.json()) };
+};
+
+test('langue EN : page Stripe en anglais, nom anglais de la pièce, langue gardée dans la session', async () => {
+  const j = await checkoutLang('en'); assert.ok(j.url);
+  const b = stripeCreated[0];
+  assert.equal(b.get('locale'), 'en'); assert.equal(lineName(b), 'Red trousers'); assert.equal(b.get('metadata[lang]'), 'en');
+});
+
+test('langue FR : page Stripe en français, nom français', async () => {
+  assert.ok((await checkoutLang('fr')).url);
+  const b = stripeCreated[0];
+  assert.equal(b.get('locale'), 'fr'); assert.equal(lineName(b), 'Pantalon rouge');
+});
+
+test('langue EN sans nom anglais : le nom français reste ; sans langue : locale auto (ancien panier)', async () => {
+  assert.ok((await checkoutLang('en', 'serie')).url);
+  assert.equal(lineName(stripeCreated[0]), 'Série');
+  stripeCreated.length = 0;
+  assert.ok((await checkoutLang(undefined)).url);
+  assert.equal(stripeCreated[0].get('locale'), 'auto'); assert.equal(lineName(stripeCreated[0]), 'Pantalon rouge');
+  assert.equal(stripeCreated[0].get('metadata[lang]'), null);
+  stripeCreated.length = 0;
+  assert.ok((await checkoutLang('de', 'serie')).url); // valeur inconnue ignorée
+  assert.equal(stripeCreated[0].get('locale'), 'auto');
+});
+
+test('mails de commande : langue du site, pas celle du pays (Belgique + EN = anglais ; Canada + FR = français)', async () => {
+  const j = await checkoutLang('en', 'uniq', 'BE');
+  pay(j.url.split('/').pop(), { country: 'BE' });
+  assert.equal((await webhook('checkout.session.completed', sessions.get(j.url.split('/').pop()).full)).status, 200);
+  let client = mails.find((m) => m.to[0] === 'client@example.com');
+  assert.match(client.subject, /^Thank you/); assert.match(client.html, /lang="en"/); assert.match(client.html, /[?&](amp;)?l=en/); assert.match(client.html, />€25.00</);
+
+  mails = [];
+  const k = await checkoutLang('fr', 'serie', 'CA');
+  const id = k.url.split('/').pop(); pay(id, { country: 'CA' });
+  assert.equal((await webhook('checkout.session.completed', sessions.get(id).full)).status, 200);
+  client = mails.find((m) => m.to[0] === 'client@example.com');
+  assert.match(client.subject, /^Merci/); assert.match(client.html, /25,00 €/);
+});
+
+test('mails de commande : sans langue dans la session (ancienne commande) = selon le pays, comme avant', async () => {
+  const j = await checkoutLang(undefined, 'uniq', 'BE');
+  const id = j.url.split('/').pop(); pay(id, { country: 'BE' });
+  assert.equal((await webhook('checkout.session.completed', sessions.get(id).full)).status, 200);
+  assert.match(mails.find((m) => m.to[0] === 'client@example.com').subject, /^Merci/);
 });

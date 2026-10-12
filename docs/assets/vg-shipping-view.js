@@ -38,7 +38,11 @@
 
   function langOf(l) { return /^fr/i.test(String(l || '')) ? 'fr' : 'en'; }
   function text(lang) { return TEXT[langOf(lang)]; }
-  function money(n) { return (Math.round((n || 0) * 100) / 100).toFixed(2).replace('.', ',') + ' EUR'; }
+  // 15,00 € en français, €15.00 en anglais (même règle que assets/vg-lang.js).
+  function money(n, lang) {
+    var v = (Math.round((n || 0) * 100) / 100).toFixed(2);
+    return langOf(lang) === 'fr' ? v.replace('.', ',') + ' €' : '€' + v;
+  }
 
   function countryName(code, lang) {
     try {
@@ -72,7 +76,7 @@
     }
     if (!q.ok) return Object.assign(base, { state: 'error', blocked: true, message: t.error });
     var n = q.parcels.length;
-    var summary = t.shipping + ' : ' + (q.free || q.total === 0 ? t.free : money(q.total)) + (n > 1 ? ' (' + n + ' ' + t.parcels + ')' : '');
+    var summary = t.shipping + ' : ' + (q.free || q.total === 0 ? t.free : money(q.total, lang)) + (n > 1 ? ' (' + n + ' ' + t.parcels + ')' : '');
     return Object.assign(base, { state: 'ok', blocked: false, shipping: q.total, total: Math.round((subtotal + q.total) * 100) / 100, free: q.free, parcels: n, summary: summary, message: '' });
   }
 
@@ -84,7 +88,7 @@
     if (!quote) return Object.assign(base, { state: 'loading', blocked: true, message: t.loading });
     if (quote.ok) {
       var ship = Number(quote.total) || 0;
-      return Object.assign(base, { state: 'ok', blocked: false, shipping: ship, total: Math.round((subtotal + ship) * 100) / 100, free: ship === 0, summary: t.shipping + ' : ' + (ship === 0 ? t.free : money(ship)) });
+      return Object.assign(base, { state: 'ok', blocked: false, shipping: ship, total: Math.round((subtotal + ship) * 100) / 100, free: ship === 0, summary: t.shipping + ' : ' + (ship === 0 ? t.free : money(ship, lang)) });
     }
     if (quote.error === 'country_not_served') return Object.assign(base, { state: 'not_served', blocked: true, message: t.notServed(countryName(country, lang) || country) });
     if (quote.error === 'france_uniquement') return Object.assign(base, { state: 'not_served', blocked: true, message: t.franceOnly });

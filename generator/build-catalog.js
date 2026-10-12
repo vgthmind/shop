@@ -112,6 +112,8 @@ function buildProduct(admin, imageMap) {
     tax: 0,
     on_sale: false,
     description: admin.description || '',
+    // Ours : nom anglais facultatif (vide = le nom ci-dessus), lu par le site (mode EN), Stripe et les mails.
+    ...(admin.name_en && String(admin.name_en).trim() && String(admin.name_en).trim() !== admin.name ? { name_en: String(admin.name_en).trim() } : {}),
     has_option_groups: false,
     options: [{
       id: optionId,

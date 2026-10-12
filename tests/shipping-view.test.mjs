@@ -14,7 +14,7 @@ test('pays choisi : prix de livraison et total', () => {
   assert.equal(v.state, 'ok'); assert.equal(v.blocked, false);
   assert.equal(v.shipping, 0); assert.equal(v.total, 20);
   assert.equal(v.summary, 'Livraison : offerte');
-  assert.equal(V.buildView(calc, config, cart, 'CA', 'en').summary, 'Shipping : 29,00 EUR');
+  assert.equal(V.buildView(calc, config, cart, 'CA', 'en').summary, 'Shipping : €29.00');
 });
 test('plusieurs colis annoncés', () => {
   const big = structuredClone(config); big.items = { a: { weight_g: 570, alone: true } };
@@ -51,7 +51,7 @@ test('fromQuote : prix du Worker affiché, états de blocage', () => {
   assert.equal(V.fromQuote(null, 20, '', 'fr').state, 'choose');
   assert.equal(V.fromQuote(null, 20, 'BE', 'fr').state, 'loading');
   const ok = V.fromQuote({ ok: true, total: 15 }, 20, 'BE', 'fr');
-  assert.deepEqual([ok.state, ok.blocked, ok.shipping, ok.total, ok.summary], ['ok', false, 15, 35, 'Livraison : 15,00 EUR']);
+  assert.deepEqual([ok.state, ok.blocked, ok.shipping, ok.total, ok.summary], ['ok', false, 15, 35, 'Livraison : 15,00 €']);
   assert.equal(V.fromQuote({ ok: true, total: 0 }, 20, 'FR', 'en').summary, 'Shipping : free');
   const ru = V.fromQuote({ ok: false, error: 'country_not_served' }, 20, 'RU', 'fr');
   assert.deepEqual([ru.state, ru.blocked], ['not_served', true]); assert.match(ru.message, /Russie/);

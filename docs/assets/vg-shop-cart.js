@@ -23,6 +23,8 @@
   var STORAGE_KEY = 'vg-shop-cart-v1';
   // Langue du site (bouton EN | FR, assets/vg-lang.js) : L(anglais, français).
   var L = function (en, fr) { return window.vgL ? window.vgL(en, fr) : en; };
+  // Nom de la pièce dans la langue du site (nom anglais facultatif, sinon le nom français).
+  var nameOf = function (it) { return (window.vgLang === 'en' && it.name_en) ? it.name_en : it.name; };
   var ENDPOINT = window.VG_SHOP_CHECKOUT_ENDPOINT !== undefined
     ? window.VG_SHOP_CHECKOUT_ENDPOINT
     : 'https://vgthmind-shop-checkout.vgthm66.workers.dev';
@@ -81,7 +83,7 @@
       avail.forEach(function (p) {
         var img = p.images && p.images[0] ? p.images[0].url : '';
         var sized = img.replace('/assets/products/', '/assets/products-sized/320/').replace(/\.[a-z0-9]+$/i, '.webp');
-        h += '<a href="' + base + p.url + '"><img loading="lazy" alt="' + String(p.name).replace(/"/g, '&quot;') + '" src="' + sized + '"><span>' + p.name + '</span></a>';
+        h += '<a href="' + base + p.url + '"><img loading="lazy" alt="' + String(nameOf(p)).replace(/"/g, '&quot;') + '" src="' + sized + '"><span>' + nameOf(p) + '</span></a>';
       });
       box.innerHTML = h + '</div>';
       var anchor = document.querySelector('.product-container') || document.querySelector('main');
@@ -133,7 +135,7 @@
   }
 
   function money(amount) {
-    return (Math.round((amount || 0) * 100) / 100).toFixed(2).replace('.', ',') + ' EUR';
+    return window.vgMoney ? window.vgMoney(amount) : (Math.round((amount || 0) * 100) / 100).toFixed(2).replace('.', ',') + ' €';
   }
   function esc(s) {
     return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
@@ -171,7 +173,7 @@
     var img = (product.images && product.images[0] && product.images[0].url) || (product.image && product.image.url) || '';
     items.push({
       slug: product.permalink,
-      name: product.name,
+      name: product.name, name_en: product.name_en || "",
       price: product.price,
       image: img,
       url: product.url,
@@ -293,11 +295,11 @@
           : '';
         li.innerHTML =
           '<div class="cart-item-image-holder"><a class="cart-item-image-link" href="' + esc(it.url) + '">'
-          + (it.image ? '<img src="' + esc(it.image) + '" alt="' + esc(it.name) + '">' : '') + '</a></div>'
-          + '<div class="cart-item-detail"><a href="' + esc(it.url) + '"><div class="product-name">' + esc(it.name) + '</div></a>'
+          + (it.image ? '<img src="' + esc(it.image) + '" alt="' + esc(nameOf(it)) + '">' : '') + '</a></div>'
+          + '<div class="cart-item-detail"><a href="' + esc(it.url) + '"><div class="product-name">' + esc(nameOf(it)) + '</div></a>'
           + '<div class="option-name"><div class="cart-item-unit-price">' + money(it.price) + '</div></div>' + note + '</div>'
           + '<div class="cart-qty">' + qtySelect
-          + '<button type="button" class="vg-cart-remove cart-remove-item--link button minimal-button" data-slug="' + esc(it.slug) + '">' + L('Remove', 'Retirer') + '<span class="visually-hidden"> ' + esc(it.name) + '</span></button></div>'
+          + '<button type="button" class="vg-cart-remove cart-remove-item--link button minimal-button" data-slug="' + esc(it.slug) + '">' + L('Remove', 'Retirer') + '<span class="visually-hidden"> ' + esc(nameOf(it)) + '</span></button></div>'
           + '<div class="cart-item-price"><span>' + money(lineTotal(it)) + '</span></div>';
         list.appendChild(li);
       });
@@ -360,7 +362,7 @@
       fetch(ENDPOINT + '/checkout', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ items: items.map(function (it) { return { slug: it.slug, qty: qty(it) }; }), region: region, country: (window.VGShippingPicker && window.VGShippingPicker.country()) || undefined, cart_id: cartId() }),
+        body: JSON.stringify({ items: items.map(function (it) { return { slug: it.slug, qty: qty(it) }; }), region: region, lang: window.vgLang === 'fr' ? 'fr' : 'en', country: (window.VGShippingPicker && window.VGShippingPicker.country()) || undefined, cart_id: cartId() }),
       })
         .then(function (r) { return r.json().then(function (data) { return { status: r.status, data: data }; }); })
         .then(function (res) {
@@ -371,8 +373,8 @@
               .map(function (p) { return p.slug; });
             var held = res.data.problems.filter(function (p) { return p.reason === 'reservee'; })
               .map(function (p) { return p.slug; });
-            var heldNames = items.filter(function (it) { return held.indexOf(it.slug) !== -1; }).map(function (it) { return it.name; });
-            var names = items.filter(function (it) { return gone.indexOf(it.slug) !== -1; }).map(function (it) { return it.name; });
+            var heldNames = items.filter(function (it) { return held.indexOf(it.slug) !== -1; }).map(function (it) { return nameOf(it); });
+            var names = items.filter(function (it) { return gone.indexOf(it.slug) !== -1; }).map(function (it) { return nameOf(it); });
             gone.forEach(function (slug) { items = removeItem(slug); });
             // Petite série : il en reste moins que demandé -> quantité ramenée au stock.
             var short = res.data.problems.filter(function (p) { return p.reason === 'stock'; });
@@ -442,7 +444,7 @@
         if (!gone.length) { draw(); return; }
         gone.forEach(function (it) { items = removeItem(it.slug); });
         message = L('Sorry, no longer available: ', 'Désolé, plus disponible : ')
-          + gone.map(function (it) { return it.name; }).join(', ') + '.';
+          + gone.map(function (it) { return nameOf(it); }).join(', ') + '.';
         if (items.length === 0) {
           try { sessionStorage.setItem('vg-cart-flash', message); } catch (e) {}
           root.remove(); location.reload(); return;
@@ -479,7 +481,7 @@
         if (!summary) return;
         summary.innerHTML = '<ul class="vg-cart-items">'
           + (s.items || []).map(function (it) {
-            return '<li class="vg-cart-line"><span>' + esc(it.name) + '</span><span>' + money(it.amount) + '</span></li>';
+            return '<li class="vg-cart-line"><span>' + esc(nameOf(it)) + '</span><span>' + money(it.amount) + '</span></li>';
           }).join('')
           + '<li class="vg-cart-line"><span>' + L('Shipping', 'Livraison') + '</span><span>' + money(s.shipping) + '</span></li>'
           + '<li class="vg-cart-line vg-cart-total"><span>Total</span><span>' + money(s.total) + '</span></li>'
@@ -523,9 +525,12 @@
     if (!root) return;
     var q = (loc.search || '');
     var fromUrl = function (k) { var m = q.match(new RegExp('[?&]' + k + '=([^&]*)')); return m ? decodeURIComponent(m[1].replace(/\+/g, ' ')) : ''; };
-    var lang = fromUrl('l') === 'fr' || fromUrl('l') === 'en' ? fromUrl('l')
-      : (window.vgLang || (/^fr/i.test(navigator.language || '') ? 'fr' : 'en'));
-    try { var saved = localStorage.getItem('vg-track-lang'); if (!fromUrl('l') && (saved === 'fr' || saved === 'en')) lang = saved; } catch (e) {}
+    // Une seule langue pour tout le site (bouton FR / EN, assets/vg-lang.js). Le lien des mails (?l=fr|en) la fixe.
+    var wanted = fromUrl('l');
+    if ((wanted === 'fr' || wanted === 'en') && wanted !== window.vgLang) {
+      try { localStorage.setItem('vg-lang', wanted); location.reload(); return; } catch (e) {}
+    }
+    var lang = window.vgLang === 'fr' ? 'fr' : 'en';
     var form = root.querySelector('form');
     var refInput = root.querySelector('#vg-track-ref');
     var emailInput = root.querySelector('#vg-track-email');
@@ -537,10 +542,8 @@
 
     function applyLang(l) {
       lang = l; t = TRACK_TEXT[l];
-      try { localStorage.setItem('vg-track-lang', l); } catch (e) {}
       document.documentElement.setAttribute('lang', l);
       root.querySelectorAll('[data-t]').forEach(function (el) { el.textContent = t[el.getAttribute('data-t')]; });
-      root.querySelectorAll('[data-lang]').forEach(function (a) { a.setAttribute('aria-current', String(a.getAttribute('data-lang') === l)); });
       var h1 = document.querySelector('main h1'); if (h1) h1.textContent = t.title;
       document.title = t.title + ' | vgthmind';
       if (result.__data) drawResult(result.__data);
@@ -565,8 +568,8 @@
       }).join('');
       var items = (d.items || []).map(function (it) {
         return '<li class="cart-item">'
-          + '<div class="cart-item-image-holder"><span class="cart-item-image-link">' + (it.image ? '<img src="' + esc(it.image) + '" alt="' + esc(it.name) + '" decoding="async">' : '') + '</span></div>'
-          + '<div class="cart-item-detail"><div class="product-name">' + esc(it.name) + '</div>'
+          + '<div class="cart-item-image-holder"><span class="cart-item-image-link">' + (it.image ? '<img src="' + esc(it.image) + '" alt="' + esc(nameOf(it)) + '" decoding="async">' : '') + '</span></div>'
+          + '<div class="cart-item-detail"><div class="product-name">' + esc(nameOf(it)) + '</div>'
           + '<div class="option-name">' + (it.size ? esc(t.size) + ' ' + esc(it.size) + ' · ' : '') + esc(t.qty) + ' ' + esc(it.qty || 1) + '</div>'
           + (it.unit ? '<div class="vg-track-unit">' + money(it.unit) + ' ' + esc(t.each) + '</div>' : '') + '</div>'
           + '<div class="cart-item-price"><span>' + money(it.amount) + '</span></div></li>';
@@ -596,9 +599,6 @@
       lookup.hidden = true; result.hidden = false;
     }
 
-    root.querySelectorAll('[data-lang]').forEach(function (a) {
-      a.addEventListener('click', function (e) { e.preventDefault(); applyLang(a.getAttribute('data-lang')); });
-    });
     result.addEventListener('click', function (e) {
       if (e.target.closest && e.target.closest('.vg-track-invoice-btn')) {
         var btn = e.target.closest('.vg-track-invoice-btn'), req = result.__req;

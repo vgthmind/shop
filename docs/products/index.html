@@ -134,7 +134,7 @@
 <!-- VGTHMIND TRANSITION START -->
 <style>html,body{background-color:#f4f2ec !important;}@view-transition{navigation:auto;}::view-transition-group(root),::view-transition-old(root),::view-transition-new(root){animation:none !important;mix-blend-mode:normal !important;opacity:1 !important;}</style>
 <link rel="preload" as="script" href="/shop/assets/vg/vg-transitions-dev.js">
-<link rel="stylesheet" href="/shop/assets/vg/vg-transitions-dev.css?v=e3c03e0042">
+<link rel="stylesheet" href="/shop/assets/vg/vg-transitions-dev.css?v=149de057b5">
 <!-- SECTION 6 POINT 4 (ajout) : indique au navigateur de commencer a charger
      theme.js (qui embarque lazysizes) en parallele du reste du <head>, au
      lieu d'attendre que le parseur atteigne le <script src> pres de
@@ -1646,16 +1646,40 @@ html[data-vg-stacked] .vg-lang-sep { display: none !important; }
 .vg-collab-title { font-family: 'Space Grotesk', sans-serif; font-size: 22px; margin: 40px 0 8px; }
 html[data-vg-lang="fr"] .vg-story-block p.vg-story-fr { font-size: 14px !important; color: #4a4d52 !important; margin: 0 0 8px 0 !important; }
 .vg-lang-li { display: flex; align-items: center; }
-.vg-lang-toggle { display: inline-flex; align-items: center; gap: 4px; min-height: 36px; min-width: 44px; padding: 4px 12px; border-radius: 999px;
-  border: 1px solid rgba(0,0,0,.14); background: transparent; color: var(--steel, #6c6c6c); font: 500 12px 'IBM Plex Mono', monospace; letter-spacing: .06em; cursor: pointer; }
-.vg-lang-toggle i { font-style: normal; opacity: .4; }
-.vg-lang-toggle [aria-current="true"] { color: var(--ink, #171717); font-weight: 700; }
-.vg-lang-toggle:hover { border-color: var(--ink, #171717); }
-@media (max-width: 640px) { .vg-lang-toggle { padding: 4px 8px; min-width: 40px; min-height: 40px; } }
+/* Deux touches chromées FR | EN : la langue active est relevée (point noir, texte noir), l'autre est enfoncée et grisée. */
+.vg-lang-keys { display: inline-flex; align-items: center; gap: 6px; }
+.vg-lang-keys button { position: relative; z-index: 0; min-width: 42px; min-height: 40px; padding: 0 10px; border: 0; border-radius: 10px; cursor: pointer;
+  font: 600 11px 'IBM Plex Mono', monospace; letter-spacing: .06em; color: #3d4045; text-shadow: 0 1px 0 rgba(255,255,255,.5);
+  background: linear-gradient(155deg, #eef0f2 0%, #c7cbd0 24%, #8f939a 50%, #d8dbde 68%, #6f7379 100%);
+  box-shadow: 0 3px 0 #6f7379, 0 5px 7px rgba(0,0,0,.3), 0 1px 0 rgba(255,255,255,.5) inset; transition: transform .12s ease, box-shadow .12s ease; }
+.vg-lang-keys button::before { content: ''; position: absolute; z-index: -1; inset: 2px; border-radius: 8px;
+  background: linear-gradient(165deg, #ffffff 0%, #f2f2f1 55%, #dfdfdd 100%); box-shadow: 0 1px 2px rgba(0,0,0,.1), 0 -1px 1px rgba(255,255,255,.9) inset; }
+.vg-lang-keys button[aria-pressed="true"] { color: #171717; font-weight: 700; cursor: default; }
+.vg-lang-keys button[aria-pressed="true"]::after { content: ''; position: absolute; left: 50%; bottom: 5px; width: 4px; height: 4px; margin-left: -2px; border-radius: 50%; background: #171717; }
+.vg-lang-keys button[aria-pressed="false"] { color: #7d8085; transform: translateY(2px); box-shadow: 0 1px 0 #9a9da2, 0 1px 2px rgba(0,0,0,.15); }
+.vg-lang-keys button[aria-pressed="false"]::before { background: linear-gradient(165deg, #eceae6 0%, #e2e0dc 100%); }
+.vg-lang-keys button[aria-pressed="false"]:hover { color: #171717; }
+.vg-lang-keys button:focus-visible { outline: 2px solid #171717 !important; outline-offset: 3px; }
+/* Menu téléphone : même choix en bas, noms complets */
+.vg-lang-menu { display: flex; align-items: center; justify-content: center; gap: 14px; margin: 26px 0 6px; padding-top: 18px; border-top: 1px dashed rgba(0,0,0,.18); }
+.vg-lang-menu-label { font: 500 11px 'IBM Plex Mono', monospace; letter-spacing: .08em; text-transform: uppercase; color: var(--steel, #6c6c6c); }
+.vg-lang-keys--full button { min-width: 104px; min-height: 44px; font-size: 12px; }
 @media (max-width: 640px) {
-  .vg-lang-toggle i, .vg-lang-toggle [aria-current="true"] { display: none; }
-  .vg-lang-toggle { min-width: 40px; padding: 4px 6px; justify-content: center; }
-  .vg-lang-toggle [aria-current="false"] { color: var(--ink, #171717); font-weight: 700; }
+  .vg-lang-keys { gap: 4px; }
+  header .vg-lang-keys button { min-width: 30px; min-height: 40px; padding: 0 5px; font-size: 10px; letter-spacing: .04em; }
+  /* l'en-tête reste sur une ligne : panier plus compact pour faire de la place aux deux touches */
+  header nav.utility ul { gap: 4px !important; }
+  header nav.utility a.cart-link { padding-left: 9px !important; padding-right: 9px !important; }
+}
+@media (max-width: 360px) {
+  header .store-logo { width: 46px !important; height: auto !important; }
+  header .vg-lang-keys { gap: 3px; }
+  header .vg-lang-keys button { min-width: 27px; padding: 0 3px; }
+  header nav.utility a.cart-link { padding-left: 7px !important; padding-right: 7px !important; gap: 4px !important; }
+}
+@media (max-width: 340px) {
+  header nav.utility a.cart-link::before { display: none !important; }
+  header .vg-lang-keys button { min-width: 25px; }
 }
 @media (max-width: 640px) {
   header nav.utility ul { gap: 6px !important; }
@@ -1666,6 +1690,7 @@ html[data-vg-lang="fr"] .vg-story-block p.vg-story-fr { font-size: 14px !importa
 
 <script>try{var l=localStorage.getItem('vg-lang');if(l!=='fr'&&l!=='en')l=/^fr/i.test((navigator.languages&&navigator.languages[0])||navigator.language||'')?'fr':'en';document.documentElement.setAttribute('data-vg-lang',l);document.documentElement.setAttribute('lang',l);}catch(e){}</script>
 
+<script>window.vgNamesEn={};</script>
 <style>body #navigation-modal .page_list li:has(> a[href="/shop/"]){display:none !important;}</style>
 <style>
 .vg-back-link{display:inline-block !important;margin-bottom:10px !important;font-family:'IBM Plex Mono',monospace !important;font-size:11px !important;letter-spacing:0.05em !important;text-transform:uppercase !important;color:#8d929a !important;text-decoration:none !important;}
@@ -1799,7 +1824,7 @@ html[data-vg-lang="fr"] .vg-story-block p.vg-story-fr { font-size: 14px !importa
               <svg aria-hidden="true" fill="currentColor" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16"><path d="M15.202 0h-14.188c-.561 0-1.014.4-1.014 1s.453 1 1 1h1v9c0 .6.5 1 1 1h10c.56 0 1-.447 1-1s-.44-1-1-1h-9v-2h9.175c.56 0 1.124-.435 1.259-.97l1.536-6.06c.136-.57-.17-.97-.77-.97zm-2.596 6h-8.606v-4h9.397l-.791 4z"/shop/><circle cx="4.5" cy="14.5" r="1.5"/shop/><circle cx="11.5" cy="14.5" r="1.5"/shop/></svg>
               <span class="header-item-count">0</span>
               <span class="desktop header-divider">/</span>
-              <span class="desktop header-subtotal-amount">0,00 EUR</span>
+              <span class="desktop header-subtotal-amount">0,00 €</span>
             </a>
           </li>
           <li>
@@ -1886,7 +1911,7 @@ html[data-vg-lang="fr"] .vg-story-block p.vg-story-fr { font-size: 14px !importa
                     
 
                     
-                      84,00 EUR
+                      84,00 €
 
                       
                     
@@ -1936,7 +1961,7 @@ html[data-vg-lang="fr"] .vg-story-block p.vg-story-fr { font-size: 14px !importa
                     
 
                     
-                      104,00 EUR
+                      104,00 €
 
                       
                     
@@ -1986,7 +2011,7 @@ html[data-vg-lang="fr"] .vg-story-block p.vg-story-fr { font-size: 14px !importa
                     
 
                     
-                      114,00 EUR
+                      114,00 €
 
                       
                     
@@ -2036,7 +2061,7 @@ html[data-vg-lang="fr"] .vg-story-block p.vg-story-fr { font-size: 14px !importa
                     
 
                     
-                      114,00 EUR
+                      114,00 €
 
                       
                     
@@ -2086,7 +2111,7 @@ html[data-vg-lang="fr"] .vg-story-block p.vg-story-fr { font-size: 14px !importa
                     
 
                     
-                      84,00 EUR
+                      84,00 €
 
                       
                     
@@ -2136,7 +2161,7 @@ html[data-vg-lang="fr"] .vg-story-block p.vg-story-fr { font-size: 14px !importa
                     
 
                     
-                      130,00 EUR
+                      130,00 €
 
                       
                     
@@ -2186,7 +2211,7 @@ html[data-vg-lang="fr"] .vg-story-block p.vg-story-fr { font-size: 14px !importa
                     
 
                     
-                      130,00 EUR
+                      130,00 €
 
                       
                     
@@ -2236,7 +2261,7 @@ html[data-vg-lang="fr"] .vg-story-block p.vg-story-fr { font-size: 14px !importa
                     
 
                     
-                      130,00 EUR
+                      130,00 €
 
                       
                     
@@ -2286,7 +2311,7 @@ html[data-vg-lang="fr"] .vg-story-block p.vg-story-fr { font-size: 14px !importa
                     
 
                     
-                      180,00 EUR
+                      180,00 €
 
                       
                     
@@ -2336,7 +2361,7 @@ html[data-vg-lang="fr"] .vg-story-block p.vg-story-fr { font-size: 14px !importa
                     
 
                     
-                      65,00 EUR
+                      65,00 €
 
                       
                     
@@ -2386,7 +2411,7 @@ html[data-vg-lang="fr"] .vg-story-block p.vg-story-fr { font-size: 14px !importa
                     
 
                     
-                      200,00 EUR
+                      200,00 €
 
                       
                     
@@ -2436,7 +2461,7 @@ html[data-vg-lang="fr"] .vg-story-block p.vg-story-fr { font-size: 14px !importa
                     
 
                     
-                      170,00 EUR
+                      170,00 €
 
                       
                     
@@ -2486,7 +2511,7 @@ html[data-vg-lang="fr"] .vg-story-block p.vg-story-fr { font-size: 14px !importa
                     
 
                     
-                      210,00 EUR
+                      210,00 €
 
                       
                     
@@ -2536,7 +2561,7 @@ html[data-vg-lang="fr"] .vg-story-block p.vg-story-fr { font-size: 14px !importa
                     
 
                     
-                      170,00 EUR
+                      170,00 €
 
                       
                     
@@ -2586,7 +2611,7 @@ html[data-vg-lang="fr"] .vg-story-block p.vg-story-fr { font-size: 14px !importa
                     
 
                     
-                      170,00 EUR
+                      170,00 €
 
                       
                     
@@ -2636,7 +2661,7 @@ html[data-vg-lang="fr"] .vg-story-block p.vg-story-fr { font-size: 14px !importa
                     
 
                     
-                      210,70 EUR
+                      210,70 €
 
                       
                     
@@ -2686,7 +2711,7 @@ html[data-vg-lang="fr"] .vg-story-block p.vg-story-fr { font-size: 14px !importa
                     
 
                     
-                      115,00 EUR
+                      115,00 €
 
                       
                     
@@ -2736,7 +2761,7 @@ html[data-vg-lang="fr"] .vg-story-block p.vg-story-fr { font-size: 14px !importa
                     
 
                     
-                      85,00 EUR
+                      85,00 €
 
                       
                     
@@ -2786,7 +2811,7 @@ html[data-vg-lang="fr"] .vg-story-block p.vg-story-fr { font-size: 14px !importa
                     
 
                     
-                      8,00 EUR
+                      8,00 €
 
                       
                     
@@ -2836,7 +2861,7 @@ html[data-vg-lang="fr"] .vg-story-block p.vg-story-fr { font-size: 14px !importa
                     
 
                     
-                      55,00 EUR
+                      55,00 €
 
                       
                     
@@ -2886,7 +2911,7 @@ html[data-vg-lang="fr"] .vg-story-block p.vg-story-fr { font-size: 14px !importa
                     
 
                     
-                      315,00 EUR
+                      315,00 €
 
                       
                     
@@ -2936,7 +2961,7 @@ html[data-vg-lang="fr"] .vg-story-block p.vg-story-fr { font-size: 14px !importa
                     
 
                     
-                      130,00 EUR
+                      130,00 €
 
                       
                     
@@ -2986,7 +3011,7 @@ html[data-vg-lang="fr"] .vg-story-block p.vg-story-fr { font-size: 14px !importa
                     
 
                     
-                      120,00 EUR
+                      120,00 €
 
                       
                     
@@ -3036,7 +3061,7 @@ html[data-vg-lang="fr"] .vg-story-block p.vg-story-fr { font-size: 14px !importa
                     
 
                     
-                      130,00 EUR
+                      130,00 €
 
                       
                     
@@ -3086,7 +3111,7 @@ html[data-vg-lang="fr"] .vg-story-block p.vg-story-fr { font-size: 14px !importa
                     
 
                     
-                      30,00 EUR
+                      30,00 €
 
                       
                     
@@ -3136,7 +3161,7 @@ html[data-vg-lang="fr"] .vg-story-block p.vg-story-fr { font-size: 14px !importa
                     
 
                     
-                      105,00 EUR
+                      105,00 €
 
                       
                     
@@ -3186,7 +3211,7 @@ html[data-vg-lang="fr"] .vg-story-block p.vg-story-fr { font-size: 14px !importa
                     
 
                     
-                      55,00 EUR
+                      55,00 €
 
                       
                     
@@ -3520,7 +3545,7 @@ html[data-vg-lang="fr"] .vg-story-block p.vg-story-fr { font-size: 14px !importa
     window.bigcartel = window.bigcartel || {};
     window.bigcartel.account = window.bigcartel.account || {};
     window.bigcartel.account.currency = window.bigcartel.account.currency || "EUR";
-    window.bigcartel.account.moneyFormat = "code";
+    window.bigcartel.account.moneyFormat = "sign";
   </script>
   <script src="/shop/assets/vendor/splide.min.js"></script>
   <script src="/shop/assets/vg-theme.js"></script>
@@ -3661,7 +3686,7 @@ window.__vgConfig = fetch('/assets/vg/products-config.json')
     extLink.href = reelUrl;
     extLink.target = '_blank';
     extLink.rel = 'noopener';
-    extLink.textContent = 'Voir sur Instagram \u2192';
+    extLink.textContent = (window.vgL ? window.vgL('View on Instagram', 'Voir sur Instagram') : 'Voir sur Instagram') + ' \u2192';
 
     var videoUrl = REEL_VIDEO_MAP[slug] || (cfg[slug] && cfg[slug].reel_video) || '';
     if (videoUrl) {
@@ -4361,7 +4386,7 @@ nav.sections a:hover:hover:hover:hover:hover:hover,.header nav a:hover:hover:hov
   var back = document.createElement('a');
   back.className = 'vg-back-link';
   back.href = '/products';
-  back.textContent = '\u2190 Produits';
+  back.textContent = '\u2190 Boutique';
   h1.parentNode.insertBefore(back, h1);
 })();
 

@@ -30,3 +30,52 @@ test('vg-lang.js : anglais par défaut, localStorage vg-lang, bouton EN | FR', (
 test('les adresses ne changent pas : aucune page /fr/ ou /en/', () => {
   assert.ok(!/\/fr\/|\/en\//.test(read('assets/vg-lang.js').replace(/\/\^fr\/i/g, '')));
 });
+
+// --- Lot « traductions » (2026-10-12) ---
+import { createRequire } from 'node:module';
+const req = createRequire(import.meta.url);
+
+test('nom anglais facultatif : filtre name_i18n (deux langues si différent, nom seul sinon)', () => {
+  const filters = req('../generator/filters.js');
+  assert.equal(filters.name_i18n({ name: 'Pantalon rouge' }), 'Pantalon rouge');
+  assert.equal(filters.name_i18n({ name: 'Cache-cou', name_en: 'Cache-cou' }), 'Cache-cou');
+  assert.equal(filters.name_i18n({ name: 'Pantalon rouge', name_en: 'Red <b>trousers' }), '<span data-l="fr">Pantalon rouge</span><span data-l="en">Red &lt;b&gt;trousers</span>');
+});
+
+test('nom anglais facultatif : admin (formulaire, Sveltia) et catalogue', () => {
+  const F = req('../admin/piece-form.js');
+  const base = { name: 'Pantalon', price: 100, quantity: 1, categories: ['pants'], description_en: 'x', weight_g: 500, mode: 'colis' };
+  assert.equal(F.buildPiece(Object.assign({}, base, { name_en: ' Trousers ' }), ['pants']).product.name_en, 'Trousers');
+  assert.equal('name_en' in F.buildPiece(Object.assign({}, base, { name_en: '' }), ['pants']).product, false);
+  assert.equal('name_en' in F.buildPiece(Object.assign({}, base, { name_en: 'Pantalon' }), ['pants']).product, false);
+  assert.ok(read('admin/config.yml').includes('name: "name_en"'));
+  assert.ok(read('generator/build-catalog.js').includes('name_en'));
+});
+
+test('vg-lang.js : Latest Drop / Customs / Merch restent en anglais, prix €84.00 en EN, onglets et textes cachés traduits', () => {
+  const js = read('assets/vg-lang.js');
+  assert.ok(!js.includes("'Latest Drop': 'Nouveautés'"), 'Latest Drop reste en anglais');
+  assert.ok(js.includes('window.vgMoney') && js.includes("'€' + n.toLocaleString('en-GB'"));
+  for (const k of ['Open mobile navigation', 'Close navigation', 'Submit search form', 'Search products…', 'Breadcrumb', 'vgthmind Home']) assert.ok(js.includes("'" + k + "'"), k);
+  for (const k of ['Boutique — créations vgthmind', 'Infos & conditions de vente', 'Suivre ma commande']) assert.ok(js.includes(k), k);
+});
+
+test('suivi : une seule langue pour tout le site (plus de FR · EN séparé)', () => {
+  assert.ok(!read('generator/shop-pages/suivi.html').includes('data-lang'));
+  const cart = read('assets/vg-shop-cart.js');
+  assert.ok(!cart.includes('vg-track-lang') && cart.includes("window.vgLang === 'fr' ? 'fr' : 'en'"));
+});
+
+test('boutons de retour et mentions légales', () => {
+  assert.ok(/data-l="fr">Retour au panier/.test(read('generator/shop-pages/paiement-annule.html')));
+  assert.ok(/data-l="fr">Retour à la boutique/.test(read('generator/shop-pages/merci.html')));
+  const ml = read('theme/pages/mentions-legales.html');
+  assert.ok(!/GitHub/.test(ml) && ml.includes('Cloudflare, Inc.') && ml.includes('101 Townsend St') && ml.includes('+1 (650) 319-8930'));
+});
+
+test('lien sous le titre des fiches : « ← Boutique » / « ← Shop » ; textes alternatifs en EN avec le nom anglais', () => {
+  assert.ok(/back.textContent = '.{1,8} Boutique'/.test(read('theme/custom/body.html')));
+  const js = read('assets/vg-lang.js');
+  assert.ok(js.includes("'Boutique': 'Shop'"));
+  assert.ok(js.includes('window.vgNamesEn') && read('generator/build.js').includes('window.vgNamesEn='));
+});

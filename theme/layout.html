@@ -315,7 +315,7 @@
                       >
                     </div>
                     <div class="product-list-thumb-info">
-                      <div class="product-list-thumb-name">{{ related_product.name }}</div>
+                      <div class="product-list-thumb-name">{{ related_product | name_i18n }}</div>
                       <div class="product-list-thumb-price">
                         {% assign hide_price = false %}
                         {% if related_product.status == 'sold-out' and theme.show_sold_out_product_prices == false %}

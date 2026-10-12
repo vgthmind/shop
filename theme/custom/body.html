@@ -128,7 +128,7 @@ window.__vgConfig = fetch('https://vgthmind.github.io/assets/bigcartel/products-
     extLink.href = reelUrl;
     extLink.target = '_blank';
     extLink.rel = 'noopener';
-    extLink.textContent = 'Voir sur Instagram \u2192';
+    extLink.textContent = (window.vgL ? window.vgL('View on Instagram', 'Voir sur Instagram') : 'Voir sur Instagram') + ' \u2192';
 
     var videoUrl = REEL_VIDEO_MAP[slug] || (cfg[slug] && cfg[slug].reel_video) || '';
     if (videoUrl) {
@@ -796,7 +796,7 @@ nav.sections a:hover:hover:hover:hover:hover:hover,.header nav a:hover:hover:hov
   var back = document.createElement('a');
   back.className = 'vg-back-link';
   back.href = '/products';
-  back.textContent = '\u2190 Produits';
+  back.textContent = '\u2190 Boutique';
   h1.parentNode.insertBefore(back, h1);
 })();
 </script>

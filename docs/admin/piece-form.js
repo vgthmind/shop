@@ -126,6 +126,8 @@
       in_stock: true, position: 0, created_at: now || new Date().toISOString(), stripe_payment_link: '',
       quantity: quantity
     };
+    var nameEn = String(form.name_en || '').trim();
+    if (nameEn && nameEn !== name) base.name_en = nameEn;
     if (color_name) { base.color_name = color_name; base.color_hex = color_hex; }
     if (reel) base.reel_url = reel;
     if (form.weight_g === "" || form.weight_g === null || form.weight_g === undefined) return { error: "Poids manquant (étape Ports)." };

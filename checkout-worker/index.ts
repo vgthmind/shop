@@ -74,6 +74,7 @@ interface ShippingLine { amount_alone: number; country?: { code: string } }
 interface Product {
   permalink: string;
   name: string;
+  name_en?: string; // nom anglais facultatif (mode EN du site, Stripe, mails EN)
   price: number;
   url: string;
   description?: string;
@@ -463,7 +464,7 @@ async function shippingQuote(request: Request, env: Env, json: JsonFn): Promise<
 
 // --- Paiement --------------------------------------------------------------
 async function checkout(request: Request, env: Env, key: string, json: JsonFn): Promise<Response> {
-  let body: { items?: unknown; region?: unknown; cart_id?: unknown; country?: unknown };
+  let body: { items?: unknown; region?: unknown; cart_id?: unknown; country?: unknown; lang?: unknown };
   try {
     body = await request.json();
   } catch (e) {
@@ -519,7 +520,9 @@ async function checkout(request: Request, env: Env, key: string, json: JsonFn): 
   const itemList = items.map((it) => `${it.slug}:${it.qty}`).join(',').slice(0, 500);
   const params = new URLSearchParams();
   params.set('mode', 'payment');
-  params.set('locale', 'auto');
+  // Langue choisie sur le site (bouton FR / EN) : page Stripe, noms des pieces et mails suivent ce choix.
+  const siteLang = body.lang === 'fr' || body.lang === 'en' ? (body.lang as 'fr' | 'en') : '';
+  params.set('locale', siteLang || 'auto');
   const back = siteBaseFor(request, env);
   params.set('success_url', `${back}/merci/?session_id={CHECKOUT_SESSION_ID}`);
   params.set('cancel_url', `${back}/paiement-annule/?session_id={CHECKOUT_SESSION_ID}`);
@@ -528,6 +531,7 @@ async function checkout(request: Request, env: Env, key: string, json: JsonFn): 
   params.set('allow_promotion_codes', 'true');
   params.set('custom_text[submit][message]',
     `En payant, tu acceptes les conditions de vente : ${env.SITE_BASE}/infos-conditions-generales — By paying you accept our terms.`);
+  if (siteLang) params.set('metadata[lang]', siteLang);
   params.set('metadata[slugs]', slugList);
   params.set('metadata[items]', itemList);
   params.set('metadata[region]', region);
@@ -538,7 +542,7 @@ async function checkout(request: Request, env: Env, key: string, json: JsonFn): 
     params.set(`line_items[${i}][quantity]`, String(wanted.get(p.permalink) || 1));
     params.set(`line_items[${i}][price_data][currency]`, 'eur');
     params.set(`line_items[${i}][price_data][unit_amount]`, String(Math.round(p.price * 100)));
-    params.set(`line_items[${i}][price_data][product_data][name]`, p.name);
+    params.set(`line_items[${i}][price_data][product_data][name]`, siteLang === 'en' && p.name_en ? p.name_en : p.name);
     params.set(`line_items[${i}][price_data][product_data][metadata][slug]`, p.permalink);
     const img = p.images && p.images[0] && p.images[0].url;
     if (img) params.set(`line_items[${i}][price_data][product_data][images][0]`, origin + encodeURI(img));
@@ -682,10 +686,19 @@ async function mailItems(env: Env, lineItems: any[], money: (c: number) => strin
   });
 }
 
-async function buildOrder(env: Env, o: any): Promise<OrderData> {
+// forSeller : montants a l'ancienne (« 25,00 EUR »), mail vendeur toujours en francais.
+async function buildOrder(env: Env, o: any, forSeller = false): Promise<OrderData> {
   const ship = (o.collected_information && o.collected_information.shipping_details) || o.shipping_details || {};
   const a = ship.address || {};
-  const money = (c: number) => (c / 100).toFixed(2).replace('.', ',') + ' ' + String(o.currency || 'eur').toUpperCase();
+  // Langue du mail : celle choisie sur le site au moment du paiement ; anciennes commandes : selon le pays.
+  const mailLang = o.metadata?.lang === 'fr' || o.metadata?.lang === 'en' ? o.metadata.lang : langFor(a.country || o.customer_details?.address?.country || '');
+  // 84,00 € en français, €84.00 en anglais (autre devise : code après le montant).
+  const cur = String(o.currency || 'eur').toUpperCase();
+  const money = (c: number) => {
+    const v = (c / 100).toFixed(2);
+    if (forSeller || cur !== 'EUR') return v.replace('.', ',') + ' ' + cur;
+    return mailLang === 'fr' ? v.replace('.', ',') + ' €' : '€' + v;
+  };
   const ref = await assignRef(env, String(o.id));
   return {
     ref,
@@ -693,14 +706,15 @@ async function buildOrder(env: Env, o: any): Promise<OrderData> {
     email: o.customer_details?.email || '',
     phone: o.customer_details?.phone || '',
     country: a.country || o.customer_details?.address?.country || '',
-    address: [ship.name || o.customer_details?.name, a.line1, a.line2, [a.postal_code, a.city].filter(Boolean).join(' '), a.state, countryName(a.country, langFor(a.country || o.customer_details?.address?.country || ''))].filter(Boolean),
+    lang: mailLang as 'fr' | 'en',
+    address: [ship.name || o.customer_details?.name, a.line1, a.line2, [a.postal_code, a.city].filter(Boolean).join(' '), a.state, countryName(a.country, mailLang)].filter(Boolean),
     items: await mailItems(env, o.line_items?.data || [], money),
     shipping: money(o.shipping_cost?.amount_total || 0),
     total: money(o.amount_total),
     test: !o.livemode,
     stripeUrl: `https://dashboard.stripe.com/${o.livemode ? '' : 'test/'}payments/${typeof o.payment_intent === 'string' ? o.payment_intent : ''}`,
     cgvUrl: `${env.SITE_BASE}/infos-conditions-generales`,
-    orderUrl: `${env.SITE_BASE}/suivi/?o=${encodeURIComponent(ref)}&l=${langFor(a.country || o.customer_details?.address?.country || '')}`,
+    orderUrl: `${env.SITE_BASE}/suivi/?o=${encodeURIComponent(ref)}&l=${mailLang}`,
   };
 }
 
@@ -720,7 +734,7 @@ async function sendOrderEmails(env: Env, s: any) {
   const order = await buildOrder(env, full.data);
 
   if (needAlert) {
-    const m = sellerEmail(order);
+    const m = sellerEmail(await buildOrder(env, full.data, true));
     const ok = await resendSend(env, customerFrom || 'vgthmind <onboarding@resend.dev>', alertTo, m.subject, m.html, m.text, REPLY_TO);
     if (ok) done.alert = 1;
     else await alertAdmin(env, 'mail-seller-' + s.id, "Le mail de commande (vendeur) n'est pas parti", `Commande ${s.id} : Resend a refusé l'envoi.`);

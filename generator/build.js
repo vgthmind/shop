@@ -511,7 +511,8 @@ async function main() {
   const parts = {
     shim: read(rel(ROOT, 'assets', 'vg-shop-shim.js')),
     customCss: localFonts(read(rel(CUSTOM_DIR, 'custom-css.css'))),
-    headCode: read(rel(CUSTOM_DIR, 'head.html')),
+    // Noms anglais facultatifs (nom français -> nom anglais) : assets/vg-lang.js les utilise pour les textes alternatifs en mode EN.
+    headCode: read(rel(CUSTOM_DIR, 'head.html')) + '\n<script>window.vgNamesEn=' + JSON.stringify(Object.fromEntries(catalog.products.filter((p) => p.name_en && p.name_en !== p.name).map((p) => [p.name, p.name_en]))).replace(/</g, '\\u003c') + ';</script>',
     // The Body reads products-config.json (portfolio) for, among others,
     // unique_mode: served from /shop/ with "force-no" added for the pieces
     // the admin gives more than one in stock (no "Unique piece" badge).
@@ -560,7 +561,7 @@ async function main() {
     // jumped. Same link, in the HTML from the start (the Body script sees it
     // and adds nothing).
     if (/^(category|product)\//.test(relPath)) {
-      pageContent = pageContent.replace(/<h1\b/, '<a class="vg-back-link" href="/products">← Produits</a>$&');
+      pageContent = pageContent.replace(/<h1\b/, '<a class="vg-back-link" href="/products">← Boutique</a>$&');
     }
     const layoutCtx = Object.assign({}, ctx, { page_content: pageContent, head_content: headContent(ctx.page, product, imageMap) });
     const html = liquid.render(layoutSrc, layoutCtx, filters);

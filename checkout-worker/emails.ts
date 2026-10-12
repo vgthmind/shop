@@ -24,6 +24,7 @@ export type OrderData = {
   email: string;
   phone?: string;
   country: string; // code ISO a 2 lettres (ex. FR, CA)
+  lang?: 'fr' | 'en'; // langue choisie sur le site au paiement ; absente (anciennes commandes) = selon le pays
   address: string[]; // lignes d'adresse, sans HTML
   items: MailItem[];
   shipping: string;
@@ -159,7 +160,7 @@ function legalFooter(o: OrderData, t: (typeof T)['fr']) {
 }
 
 export function customerEmail(o: OrderData) {
-  const l = langFor(o.country);
+  const l = o.lang || langFor(o.country);
   const t = T[l];
   const first = (o.name || '').trim().split(/\s+/)[0] || '';
   const subject = t.subject(o.ref);
@@ -187,7 +188,7 @@ export function customerEmail(o: OrderData) {
 
 // Mail « expediee » : numero de suivi + bouton, sans nom de transporteur.
 export function shippedEmail(o: OrderData, tracking: string) {
-  const l = langFor(o.country);
+  const l = o.lang || langFor(o.country);
   const t = T[l];
   const first = (o.name || '').trim().split(/\s+/)[0] || '';
   const subject = t.shippedSubject(o.ref);
@@ -227,7 +228,7 @@ export function sellerEmail(o: OrderData) {
     + row('Livrer à', o.address.map(esc).join('<br>'))
     + row('Pays', esc(pays))
     + row('Frais de port', esc(o.shipping))
-    + row('Langue du mail client', langFor(o.country).toUpperCase())
+    + row('Langue du mail client', (o.lang || langFor(o.country)).toUpperCase())
     + `</table><div style="margin-top:20px">${button(o.stripeUrl, 'Ouvrir la commande dans Stripe')}</div>`);
   const text = [
     `Nouvelle commande payée${o.test ? ' (mode TEST)' : ''} - ${o.total} - réf. ${o.ref}`, '',

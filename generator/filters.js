@@ -162,6 +162,14 @@ module.exports = {
   pluralize: (v, a, b) => pluralize(v, a, b),
   paragraphs: (v) => paragraphs(v),
   money: (v, fmt) => money(v, fmt),
+  // Nom de piece dans les deux langues : le CSS/JS du site n'affiche que celle choisie (data-l).
+  // Sans nom anglais : le nom francais tel quel (aucun balisage).
+  name_i18n: (v) => {
+    const fr = v && v.name != null ? String(v.name) : '';
+    const en = v && v.name_en ? String(v.name_en) : '';
+    if (!en || en === fr) return fr;
+    return '<span data-l="fr">' + fr + '</span><span data-l="en">' + escapeHtml(en) + '</span>';
+  },
   link_to: (v, url) => linkTo(v, url),
   product_image_url: (v, imageMap) => productImageUrl(v, imageMap),
   constrain: (v, w) => constrain(v, w),

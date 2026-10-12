@@ -28,7 +28,7 @@
   "show_search": true,
   "show_inventory_bars": false,
   "show_sold_out_product_options": true,
-  "money_format": "code",
+  "money_format": "sign",
   "instagram_url": "https://instagram.com/vgthmind",
   "tiktok_url": "https://www.tiktok.com/@vgthmind",
   "twitter_url": null,

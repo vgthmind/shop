@@ -24,6 +24,7 @@ collections:
     summary: "{{name}} — {{price}} EUR"
     fields:
       - { label: "Nom", name: "name", widget: "string" }
+      - { label: "Nom anglais (facultatif : vide = le nom ci-dessus)", name: "name_en", widget: "string", required: false, hint: "Affiche en mode anglais, sur Stripe et dans les mails en anglais. Laisse vide pour garder le nom francais." }
       - { label: "Slug (URL, sans espaces ni accents)", name: "slug", widget: "string", hint: "ex: pantalon-denim-bleu — ne plus changer une fois la piece publiee (change son URL)" }
       - { label: "Prix (EUR)", name: "price", widget: "number", value_type: "float" }
       - { label: "Description (anglais puis francais, separes par une ligne vide)", name: "description", widget: "text" }

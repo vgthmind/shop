@@ -14,7 +14,7 @@
   if (cartLink && countEl) {
     var toast = document.createElement('div');
     toast.className = 'vg-toast';
-    toast.textContent = 'Ajoute au panier';
+    toast.textContent = window.vgL ? window.vgL('Added to cart', 'Ajouté au panier') : 'Ajouté au panier';
     document.body.appendChild(toast);
 
     function vgCartCount() {
@@ -31,7 +31,7 @@
         cartLink.classList.remove('vg-bump');
         void cartLink.offsetWidth;
         cartLink.classList.add('vg-bump');
-        toast.classList.add('vg-show');
+        toast.textContent = window.vgL ? window.vgL('Added to cart', 'Ajouté au panier') : 'Ajouté au panier'; toast.classList.add('vg-show');
         clearTimeout(toastTimer);
         toastTimer = setTimeout(function () { toast.classList.remove('vg-show'); }, 2000);
       }
@@ -573,7 +573,7 @@ window.__vgProducts = window.__vgProducts || fetch('/products.json').then(functi
         txt.className = 'vg-sr-txt';
         var nm = document.createElement('span');
         nm.className = 'vg-sr-name';
-        nm.textContent = (p.name || '').trim();
+        nm.textContent = ((window.vgLang === 'en' && p.name_en) ? p.name_en : (p.name || '')).trim();
         var ct = document.createElement('span');
         ct.className = 'vg-sr-cat';
         ct.textContent = catLabel(p);
@@ -1658,12 +1658,12 @@ window.__vgTrim = window.__vgTrim || (function () {
   function run() {
     document.querySelectorAll('a.product-list-link').forEach(function (a) {
       var n = a.querySelector('.product-list-thumb-name');
-      var name = n ? n.textContent.trim() : (a.getAttribute('title') || '').trim();
+      var nFr = n && n.querySelector('[data-l="fr"]'); var name = n ? (nFr || n).textContent.trim() : (a.getAttribute('title') || '').trim();
       if (!name) return;
       a.querySelectorAll('img').forEach(function (im) { if (!im.getAttribute('alt')) im.alt = name; });
     });
     var h1 = document.querySelector('.product-container h1, main h1');
-    var pname = h1 ? h1.textContent.trim() : '';
+    var h1Fr = h1 && h1.querySelector('[data-l="fr"]'); var pname = h1 ? (h1Fr || h1).textContent.trim() : '';
     if (pname) document.querySelectorAll('.product-thumbnails--item img').forEach(function (im, i) {
       if (!im.getAttribute('alt')) im.alt = pname + ' ' + (i + 1);
     });
