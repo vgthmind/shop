@@ -67,6 +67,8 @@ async function main() {
 }
 
 // Image d'accueil (assets/theme/cover.png, 1,7 Mo) : variantes WebP, meme principe.
+// Qualite 72 (au lieu de 82, 2026-10-12) : -22 % de poids, grain identique a l'oeil.
+// Changer la qualite : supprimer assets/theme-sized/ pour tout regenerer.
 async function themeImages() {
   const src = path.join(ROOT, 'assets', 'theme', 'cover.png');
   if (!fs.existsSync(src)) return;
@@ -77,7 +79,7 @@ async function themeImages() {
     const dest = path.join(out, String(w), 'cover.webp');
     if (fs.existsSync(dest) && fs.statSync(dest).mtimeMs >= srcTime) continue;
     fs.mkdirSync(path.dirname(dest), { recursive: true });
-    await sharp(src).resize({ width: w, withoutEnlargement: true }).webp({ quality: 82, alphaQuality: 90 }).toFile(dest);
+    await sharp(src).resize({ width: w, withoutEnlargement: true }).webp({ quality: 72, alphaQuality: 90 }).toFile(dest);
     made++;
   }
   console.log(`Image d'accueil : ${made} variantes creees.`);

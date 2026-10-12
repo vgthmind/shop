@@ -480,7 +480,10 @@ function injectAround(html, parts, product, relPath) {
     // masqué le temps de la réponse (2,6 s max, puis affiché quoi qu'il arrive).
     '<script>(function(d){d.classList.add("vg-stock-pending");setTimeout(function(){d.classList.remove("vg-stock-pending")},2600)})(document.documentElement)</script>'
       + '<style>.vg-stock-pending #add-to-cart-form{visibility:hidden}</style>',
-    `<style>\n${parts.customCss}\n</style>`,
+    // Custom CSS (~48 Ko) : fichier à part, gardé en cache par le navigateur
+    // d'une page à l'autre (nom = empreinte du contenu, donc jamais périmé).
+    // Même place dans la cascade que l'ancien <style> en ligne.
+    `<link rel="stylesheet" href="/assets/${parts.customCssFile}">`,
     parts.headCode,
     // vg-transitions-dev.css hides the menu's Home link with
     // a[href="/"]; here that link is /shop/, so Home stayed in the mobile
@@ -551,6 +554,7 @@ async function main() {
     if (Object.keys(entry).length) productsConfig[p.permalink] = entry;
   }
 
+  parts.customCssFile = 'vg-custom.' + require('crypto').createHash('sha1').update(parts.customCss).digest('hex').slice(0, 10) + '.css';
   const devJs = await download(DEV_JS_URL);
   const devCss = await download(DEV_CSS_URL);
   DEV_CSS_VERSION = require('crypto').createHash('sha1').update(devCss).digest('hex').slice(0, 10);
@@ -688,6 +692,8 @@ async function main() {
   fs.copyFileSync(rel(ROOT, 'assets', 'vg-shipping-picker.js'), rel(OUT_DIR, 'assets', 'vg-shipping-picker.js'));
   fs.copyFileSync(rel(ROOT, 'assets', 'vg-theme.js'), rel(OUT_DIR, 'assets', 'vg-theme.js'));
   fs.copyFileSync(rel(ROOT, 'assets', 'vg-traffic.js'), rel(OUT_DIR, 'assets', 'vg-traffic.js'));
+  // Même traitement que l'ancien <style> en ligne (préfixe /shop, images BigCartel locales).
+  fs.writeFileSync(rel(OUT_DIR, 'assets', parts.customCssFile), localizeBigCartelImages(withBasePath(`\n${parts.customCss}\n`)));
   fs.cpSync(rel(ROOT, 'assets', 'vendor'), rel(OUT_DIR, 'assets', 'vendor'), { recursive: true });
   fs.cpSync(rel(ROOT, 'assets', 'fonts'), rel(OUT_DIR, 'assets', 'fonts'), { recursive: true });
   const productImagesSrc = rel(ROOT, 'assets', 'products');
