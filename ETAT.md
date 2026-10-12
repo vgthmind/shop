@@ -9,3 +9,10 @@ Tâche 4 : chantier/REDIRECTIONS.md (structure identique : rien ne casse si le s
 Reste : voir A-FAIRE.md (usage du tunnel, test du panier) ; liens Instagram manquants (dd001, ff001, vc001, sacoche, sc_0008, ml001, sg001) ; poids « estimés » ; « Paiement en mode test » à lever avec la clé test ou le passage live.
 Notes : France colis offert (grille), lettre 4 €, UE 15 €, monde 29 € ; adresse du tunnel change à chaque lancement ; règle US 17 sept 2026.
 Reste (toi) : médiateur, adresse, CGV, tu/vous, TVA, Stripe live, DNS IONOS, BASE_PATH='' + site_url + public:true.
+
+## RETOUR ARRIÈRE du Worker (mis à jour 2026-10-12) — dans checkout-worker/ : npx wrangler@4 rollback <id>
+Version actuelle (stable, clé de test) : 8fedf0bb-ab8e-401b-bb06-44a5488d53d8 = clé rk_test + correctifs lettre + réponses des mails vers contact@vgthmind.org.
+- Retour à la dernière version stable AVANT la version actuelle, toujours avec la clé de test : npx wrangler@4 rollback 82765331-e369-4ef0-bbcb-296fb9f323c7 -> annule SEULEMENT la correction de l'adresse de réponse (les réponses repartent vers l'ancien Gmail).
+- 9301bbca-0ad6-43a9-ba0c-cfd3d54ade5b : clé de test, mais SANS les correctifs lettre (lettre à 0 € hors palier, pièce trop lourde en lettre) ni la nouvelle adresse de réponse.
+- f5466451-85d3-4090-9dbe-daf1def99997 : ancienne clé rk_live (paiement refusé en mode test), sans correctifs lettre ni nouvelle adresse.
+- 7ad9c00f-cbdf-484f-b7f1-ce42416f76c7 : avant le port par pays.
