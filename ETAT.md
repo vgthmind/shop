@@ -17,3 +17,22 @@ Version actuelle (stable, clé de test) : 8fedf0bb-ab8e-401b-bb06-44a5488d53d8 =
 - f5466451-85d3-4090-9dbe-daf1def99997 : ancienne clé rk_live (paiement refusé en mode test), sans correctifs lettre ni nouvelle adresse.
 - 7ad9c00f-cbdf-484f-b7f1-ce42416f76c7 : avant le port par pays.
 Test carte 4242 (2026-10-12) : payé en Belgique, 10 + 15 = 25 EUR ; stock passé à 0 puis Sold out ; mails vendeur et client marqués envoyés (Resend). Pièce fictive supprimée du catalogue et du site.
+
+## Session 2026-10-12 (mission longue, partie 1) — fait
+Accueil : bande blanche supprimée (dégradé du hero = beige #f4f2ec). Cover : le site utilise déjà la même image que la boutique BigCartel en ligne (comparée, écart nul) : rien à remplacer. Contact : formulaire (Worker POST /contact, Resend vers contact@vgthmind.org, reply-to client, piège caché + délai 3 s + 3 envois/h/IP + 60/jour) ; formulaire location/collab sur la page Studio ; Confidentialité réécrite (contact, Stripe, Resend, stats, SIRET/Vitry) ; mentions légales avec contact@ ; breadcrumb fiche ; pièce vendue = pièces similaires ; zones tactiles mobile 44 px + focus clavier. 164 tests OK (tests/contact.test.mjs ajouté).
+RETOUR ARRIÈRE Worker : version actuelle 9f0d51d8-4c6f-4b67-84a9-bf4d072e50bf (ajoute /contact). Avant : `npx wrangler@4 rollback 8fedf0bb-ab8e-401b-bb06-44a5488d53d8` (dans checkout-worker/). Site : `git revert <commit>` puis `git push` (commits 676c851, 0bf5542, d0c22eb, c729a85 + suivants).
+Documents : chantier/BASCULE.md (Stripe live pas à pas, DNS IONOS, Resend/DMARC, surveillance, checklist jour J, plan factures), chantier/CGV-A-VERIFIER.md, chantier/DETAILS-VISUELS.md. Raccourci « Admin boutique vgthmind.url » créé dans Outils Taff.
+Catalogue (25) : 27/27 pièces BigCartel présentes, prix et nombre de photos identiques ; 7 pièces « sold out » chez BigCartel = stock 0 du Worker (OK) ; badge UNIQUE : 25/27 (pas sur cd-vgtape ni cache-cou) ; reels manquants : dd001, ff001, vc001, sg001, sacoche, ml001, sc_0008.
+EN ATTENTE DE TA RÉPONSE : admin (12 à 21, 38, 40), langue (26), surveillance (35), factures (30) : voir le rapport.
+
+## À FAIRE PAR vgthmind (étapes simples, rien à coder)
+1. **Vérifier la boîte contact@vgthmind.org** : un mail de test « Test formulaire contact » doit y être arrivé. S'il n'y est pas (ni en spam), dis-le-moi.
+2. **DMARC** (2 min, IONOS) : IONOS, Domaines, vgthmind.org, DNS : supprimer l'enregistrement `_dmarc`, en ajouter un de type TXT, nom `_dmarc`, valeur `v=DMARC1; p=none; rua=mailto:contact@vgthmind.org`. Puis Resend, Domains : vérifier « Verified ».
+3. **Alerte Cloudflare** (3 clics) : dash.cloudflare.com, Notifications, Add, « Workers : Error rate » (ou « Health check »), destinataire contact@vgthmind.org.
+4. **Stripe live** (quand tu veux, après les tests) : suivre chantier/BASCULE.md §1 (clé restreinte + webhook), puis dis-moi « clé live créée ».
+5. **Textes à valider** : chantier/CGV-A-VERIFIER.md (médiateur, rétractation, pays livrés) ; la page Confidentialité (durée de conservation des messages : 12 mois, choix de ma part) ; mention TVA (CIBS L. 223-3 vs 293 B).
+6. **Liens Instagram manquants** (reels) : pièces dd001, ff001, vc001, sg001, sacoche, ml001, sc_0008.
+7. **Médiateur de la consommation** et choix d'une adresse pour le retour/rétractation.
+
+## Checklist jour J (résumé : détail dans chantier/BASCULE.md §6)
+Avant : tests verts, sauvegarde, id Worker noté, TTL DNS 300 s, paiement live testé. Pendant : Stripe live puis build racine puis DNS `www` puis HTTPS puis tests. Après : surveiller 48 h, garder BigCartel 2 semaines. Retour d'urgence : DNS `www` vers vgthmind.bigcartel.com + LIVE_MODE=0 + `wrangler rollback`.
