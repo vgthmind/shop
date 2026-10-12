@@ -96,3 +96,9 @@ test('taille : écrite sur la fiche, ajoutée à la description au build sauf si
   assert.equal(withSize('Hoodie\r\nSize L', 'M'), 'Hoodie\r\nSize L');
   assert.equal(withSize('Hoodie', ''), 'Hoodie');
 });
+
+test('publier en brouillon : draft + hidden', () => {
+  const p = F.buildPiece(Object.assign({}, ok, { draft: true }), cats).product;
+  assert.equal(p.draft, true); assert.equal(p.hidden, true);
+  assert.equal(F.buildPiece(ok, cats).product.draft, undefined);
+});

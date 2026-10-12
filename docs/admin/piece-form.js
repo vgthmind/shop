@@ -128,6 +128,7 @@
     };
     if (color_name) { base.color_name = color_name; base.color_hex = color_hex; }
     if (reel) base.reel_url = reel;
+    if (form.draft === true) { base.draft = true; base.hidden = true; } // brouillon : aperçu par lien, pas achetable
     var size = String(form.size || '').trim().slice(0, 20);
     if (size) base.size = size;
     if (form.weight_g === "" || form.weight_g === null || form.weight_g === undefined) return { error: "Poids manquant (étape Ports)." };

@@ -14,7 +14,7 @@
     var col = (document.querySelector('input[name=fColor]:checked') || {}).value || '';
     return {
       name: $('fName').value, slug: $('slug').value, price: $('fPrice').value, quantity: $('fQty').value === '' ? '' : Number($('fQty').value),
-      unique: $('fUnique').checked, latest_drop: $('fDrop').checked, categories: checked('fCat'),
+      unique: $('fUnique').checked, latest_drop: $('fDrop').checked, draft: $('fDraft') ? $('fDraft').checked : false, categories: checked('fCat'),
       description_en: $('fEn').value, description_fr: $('fFr').value, color: col, color_other: $('fColorOther').value,
       reel_url: $('fReel').value, size: $('fSize') ? $('fSize').value : '', weight_g: $('fWeight').value === '' ? '' : Number($('fWeight').value), mode: $('fMode').value, alone: $('fAlone').checked
     };
@@ -99,7 +99,7 @@
     if (r.error) { el.className = 'notice err'; el.textContent = 'À corriger avant de publier : ' + r.error; return; }
     var p = r.product;
     el.className = 'notice';
-    el.innerHTML = '<strong>' + esc(p.name) + '</strong> (' + esc(p.slug) + ') · ' + p.price + ' € · quantité ' + p.quantity + (p.unique ? ' · badge UNIQUE PIECE' : '')
+    el.innerHTML = '<strong>' + esc(p.name) + '</strong> (' + esc(p.slug) + ') · ' + p.price + ' € · quantité ' + p.quantity + (p.unique ? ' · badge UNIQUE PIECE' : '') + (p.draft ? ' · <strong>BROUILLON</strong>' : '')
       + '<br>' + esc(p.categories.join(', ')) + (p.color_name ? ' · couleur ' + esc(p.color_name) : '') + (p.reel_url ? ' · reel' : '') + ' · ' + p.weight_g + ' g (' + p.mode + (p.alone ? ', part seule' : '') + ')'
       + '<br>' + window.VGStudio.count() + ' photo(s) validée(s).'
       + (window.VGStudio.pending() ? '<br><strong>' + window.VGStudio.pending() + ' photo(s) à détourer ou à valider : pièce non publiable pour l’instant (étape 2).</strong>' : '');
