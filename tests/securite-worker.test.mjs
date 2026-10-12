@@ -196,3 +196,18 @@ test('page Merci (/session) : identifiant Stripe complet exigé', async () => {
   }
   assert.equal(stripeCalls.length, 0);
 });
+
+test('connexion : un message d’erreur piégé ne sort jamais du script de la page /callback', async () => {
+  reset();
+  const auth = await call('GET', '/auth');
+  const state = new URL(auth.headers.get('location')).searchParams.get('state');
+  const realFetch = globalThis.fetch;
+  globalThis.fetch = async (url) => String(url).startsWith('https://github.com/login/oauth/access_token')
+    ? new Response(JSON.stringify({ error_description: '</script><script>alert(1)</script>' }))
+    : realFetch(url);
+  try {
+    const html = await (await call('GET', '/callback?code=abc&state=' + encodeURIComponent(state))).text();
+    assert.equal((html.match(/<\/script>/g) || []).length, 1);
+    assert.doesNotMatch(html, /<script>alert/);
+  } finally { globalThis.fetch = realFetch; }
+});

@@ -663,7 +663,7 @@ async function oauthCallback(request: Request, env: Env): Promise<Response> {
     const origin = JSON.stringify(env.ALLOWED_ORIGIN);
     const html = `<!doctype html><meta charset="utf-8"><title>Connexion</title><p>${status === 'success' ? 'Connecté, cette fenêtre va se fermer.' : 'Connexion refusée.'}</p><script>
 (function () {
-  var msg = ${JSON.stringify(msg)};
+  var msg = ${JSON.stringify(msg).replace(/</g, '\\u003c')};
   function receive(e) {
     if (e.origin !== ${origin}) return;
     window.opener.postMessage(msg, e.origin);
