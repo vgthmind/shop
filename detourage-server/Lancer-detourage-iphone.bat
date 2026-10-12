@@ -13,7 +13,7 @@ if not exist models\model.onnx (
   curl.exe -L -f -o models\model.onnx https://huggingface.co/onnx-community/BiRefNet_lite-ONNX/resolve/main/onnx/model.onnx || (echo Echec du telechargement. & del models\model.onnx 2>nul & pause & exit /b 1)
 )
 if not exist cloudflared.exe (
-  echo Telechargement de cloudflared depuis le site officiel de Cloudflare, une seule fois...
+  echo Telechargement de cloudflared (55 Mo) depuis le site officiel de Cloudflare, une seule fois...
   curl.exe -L -f -o cloudflared.exe https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-windows-amd64.exe || (echo Echec du telechargement. & del cloudflared.exe 2>nul & pause & exit /b 1)
 )
 echo.
