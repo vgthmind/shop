@@ -352,7 +352,12 @@ function headContent(page, product, imageMap) {
   if (!product) return '';
   const img0 = product.images && product.images[0] ? (imageMap[product.images[0].url] || product.images[0].url) : '';
   // og:image / twitter:image doivent etre des adresses absolues (aperçus de partage).
-  const img = img0 && img0.startsWith('/') ? SITE_ORIGIN_URL + BASE_PATH + img0 : img0;
+  // Image de partage dédiée (JPEG 1200 x 630 sur fond beige, generator/resize-images.js) si elle existe.
+  const og = /^\/assets\/products\//.test(product.images && product.images[0] ? product.images[0].url : '')
+    ? product.images[0].url.replace(/^\/assets\/products\//, '/assets/products-sized/og/').replace(/\.[^./]+$/, '.jpg') : '';
+  const ogOk = og && fs.existsSync(path.join(ROOT, decodeURIComponent(og).replace(/^\//, '')));
+  const pick = ogOk ? encodeURI(og) : img0;
+  const img = pick && pick.startsWith('/') ? SITE_ORIGIN_URL + BASE_PATH + pick : pick;
   const esc = (s) => String(s || '').replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
   const desc = esc(seoDescription(product, false));
   return [
@@ -361,6 +366,7 @@ function headContent(page, product, imageMap) {
     `<meta property="og:title" content="${esc(product.name)}">`,
     `<meta property="og:description" content="${desc}">`,
     img ? `<meta property="og:image" content="${esc(img)}">` : '',
+    ogOk ? '<meta property="og:image:width" content="1200"><meta property="og:image:height" content="630">' : '',
     `<meta name="twitter:card" content="summary_large_image">`,
     `<meta name="twitter:title" content="${esc(product.name)}">`,
     `<meta name="twitter:description" content="${desc}">`,

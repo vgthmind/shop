@@ -40,6 +40,24 @@ async function main() {
       made++;
     }
   }
+  // Image de partage (Instagram, WhatsApp, Facebook) de chaque pièce : sa 1re photo
+  // centrée sur le fond beige du site, 1200 x 630, en JPEG (pas de transparence,
+  // qui s'affiche en noir dans certaines applis). Utilisée par build.js (og:image).
+  for (const f of fs.readdirSync(path.join(ROOT, 'data', 'products')).filter((n) => n.endsWith('.json'))) {
+    const first = ((JSON.parse(fs.readFileSync(path.join(ROOT, 'data', 'products', f), 'utf8')).images) || [])[0] || '';
+    if (!first.startsWith('/assets/products/')) continue;
+    const src = path.join(ROOT, first.replace(/^\//, ''));
+    if (!fs.existsSync(src)) continue;
+    const dest = path.join(OUT, 'og', path.relative(SRC, src).replace(/\.[^.]+$/, '.jpg'));
+    wanted.add(dest);
+    if (fs.existsSync(dest) && fs.statSync(dest).mtimeMs >= fs.statSync(src).mtimeMs) continue;
+    fs.mkdirSync(path.dirname(dest), { recursive: true });
+    const bg = { r: 244, g: 242, b: 236, alpha: 1 };
+    const piece = await sharp(src).resize({ width: 1100, height: 570, fit: 'inside', withoutEnlargement: true }).toBuffer();
+    await sharp({ create: { width: 1200, height: 630, channels: 4, background: bg } })
+      .composite([{ input: piece, gravity: 'center' }]).flatten({ background: bg }).jpeg({ quality: 82, mozjpeg: true }).toFile(dest);
+    made++;
+  }
   // Photos removed from the catalog: drop their variants too.
   let removed = 0;
   for (const f of walk(OUT)) {
