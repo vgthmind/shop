@@ -1,7 +1,13 @@
 # À faire de ton côté (pas à pas, sans terminal)
 
-Le Worker de paiement est **déjà mis à jour** (version `f5466451…`, voir `ETAT.md`). Il reste **1 petit usage à connaître** (A) et **1 test conseillé** (B).
-Tu n'as jamais besoin d'ouvrir un terminal : tout se fait par double-clic.
+**Mise à jour du 12 octobre (soir).** Le Worker utilise maintenant ta clé Stripe **de test** (rk_test) : le paiement du site fonctionne en mode test (aucun vrai argent). Voir aussi `chantier/REDIRECTIONS.md` (anciennes adresses).
+
+## 0. Le test de paiement avec la carte 4242 (2 minutes, à faire avec Claude)
+Je n'ai pas le droit de saisir un numéro de carte, même de test. Tout le reste est testé et marche (port de 15 € pour la Belgique bien facturé, pièce réservée mais pas décomptée avant paiement, annulation = pièce de nouveau en vente, mails corrects).
+1. Dis à Claude : « prépare le test de paiement ». Il publie une pièce fictive et te donne un lien Stripe (valable 30 minutes).
+2. Ouvre le lien. Carte `4242 4242 4242 4242`, date future, CVC 123, pays Belgique ou France.
+3. Après le paiement, dis « c'est payé » : Claude vérifie le stock (0 = Sold out), les deux mails, puis supprime la pièce.
+Si Stripe refuse quelque chose, il n'y a aucune case à cocher : la clé a déjà toutes les permissions nécessaires (testé).
 
 ---
 
@@ -52,6 +58,11 @@ un bandeau **« Brouillon retrouvé »** propose **Reprendre** ou **Effacer**. L
 Le brouillon est effacé après une publication réussie, ou au bout de 14 jours.
 
 ---
+
+## À vérifier de ton côté
+- La boîte **contact@vgthmind.org** existe et tu la lis : les réponses des clients aux mails de commande y arrivent maintenant (avant : ton adresse Gmail). Si elle n'existe pas encore, dis-le-moi pour revenir en arrière.
+- Le brouillon des CGV (`rapports-nuit/brouillons/cgv.html`) donne encore l'adresse Gmail pour la rétractation : à harmoniser quand tu valides les CGV.
+- Admin « Expédition » : nouveaux réglages « Lettre suivie proposée ? » et « pays acceptés » (France seule pour l'instant, comme avant).
 
 ## Ce qui reste de ton côté (inchangé)
 Liens Instagram manquants, médiateur, adresse, CGV, TVA, passage Stripe live, DNS IONOS : voir `ETAT.md`.
