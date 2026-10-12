@@ -80,7 +80,7 @@
       cards: true,
       html: function () {
         return head(L('What is it for?', 'C’est pour quoi ?')) + '<div class="vgd-cards big">'
-          + card('what', 'piece', 'piece', L('A piece for me', 'Une pièce pour moi'), L('Custom painted or made to measure', 'Custom peint ou sur-mesure'), '', 0)
+          + card('what', 'piece', 'piece', L('A piece for me', 'Une pièce pour moi'), L('Custom painted or made to measure', 'Custom peint ou sur-mesure'), L('on quote', 'sur devis'), 0)
           + card('what', 'production', 'production', L('A visual production', 'Une production visuelle'), L('Music video, stage, shoot, video', 'Clip, scène, shooting, vidéo'), L('on quote', 'sur devis'), 1)
           + card('what', 'collab', 'collab', L('A collab', 'Une collab'), L('Artist, video, project', 'Artiste, vidéo, projet'), L('on quote', 'sur devis'), 2) + '</div>';
       },
