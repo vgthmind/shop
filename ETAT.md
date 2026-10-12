@@ -90,5 +90,5 @@ Pas fait : image d'accueil (photo « collection grise » introuvable : à fourni
 EN ATTENTE DE vgthmind : photo de la collection grise (image d'accueil) ; photo d'origine du pantalon denim bleu (détourage). Ne pas toucher : mentions légales, noindex, Disallow.
 
 ## 2026-10-13 (nuit) : branche claude/keen-hypatia-ikrv7l (8987277), PAS déployée (site/Worker en ligne injoignables depuis la sandbox). Voir RAPPORT-NUIT.md.
-Fait : pop catégorie revalidé au clic (6980047, en plus de 134cdee) ; panier (déjà au panier, Retirer chromé, recherche pays, photos entières) ; contact en FR ; studio avant/après plein écran ; conversion vidéo dans l'admin (admin/video-convert.js) ; accueil 12 -> 5,5 Mo ; a11y (axe 0 défaut).
+DÉPLOYÉ sur main le 2026-10-13 (74d6c5c ; retour arrière : git revert 134cdee..74d6c5c puis push ; vérification en ligne impossible depuis la sandbox). Fait : pop catégorie revalidé au clic (6980047, en plus de 134cdee) ; panier (déjà au panier, Retirer chromé, recherche pays, photos entières) ; contact en FR ; studio avant/après plein écran ; conversion vidéo dans l'admin (admin/video-convert.js) ; accueil 12 -> 5,5 Mo ; a11y (axe 0 défaut).
 Worker inchangé (cf99b2d4 ; retour arrière rollback 4e16e2f1-115e-4758-a696-2581a6a38198). Belgique 15 € / États-Unis 29 € confirmés dans la grille (test ajouté).
