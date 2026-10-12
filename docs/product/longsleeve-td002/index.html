@@ -1737,7 +1737,7 @@ html{background:var(--background-color, #f4f2ec);}
 <script>window.vgNamesEn={};</script>
 <style>body #navigation-modal .page_list li:has(> a[href="/shop/"]){display:none !important;}</style>
 <style>
-.vg-back-link{display:inline-block !important;margin-bottom:10px !important;font-family:'IBM Plex Mono',monospace !important;font-size:11px !important;letter-spacing:0.05em !important;text-transform:uppercase !important;color:#8d929a !important;text-decoration:none !important;}
+.vg-back-link{display:inline-block !important;margin-bottom:10px !important;font-family:'IBM Plex Mono',monospace !important;font-size:11px !important;letter-spacing:0.05em !important;text-transform:uppercase !important;color:#5c6068 !important;text-decoration:none !important;}
 .vg-back-link:hover{color:#3a4de8 !important;}
 </style>
 <style>.vg-cart-unavailable{font-size:.85em;opacity:.7;margin-top:4px;}
@@ -2600,11 +2600,19 @@ window.__vgConfig = fetch('/assets/vg/products-config.json')
       video.className = 'ig-reel-video';
       video.src = videoUrl + '#t=0.1'; // iOS : affiche la 1re image de la vidéo même avant lecture
       video.muted = true;
-      video.autoplay = true;
       video.loop = true;
       video.playsInline = true;
       video.controls = true;
       video.setAttribute('preload', 'metadata');
+      // Lecture seulement quand le reel est à l'écran (économise plusieurs Mo sur iPhone tant qu'on ne descend pas jusqu'à lui).
+      if ('IntersectionObserver' in window) {
+        new IntersectionObserver(function (entries) {
+          entries.forEach(function (en) {
+            if (en.isIntersecting) { var pr = video.play(); if (pr && pr.catch) pr.catch(function () {}); }
+            else video.pause();
+          });
+        }, { threshold: 0.35 }).observe(video);
+      } else { video.autoplay = true; }
       wrap.appendChild(video);
       wrap.appendChild(extLink);
     } else {
@@ -3197,7 +3205,7 @@ nav.sections a:hover:hover:hover:hover:hover:hover,.header nav a:hover:hover:hov
 .vg-category-tile.vg-tile-featured .vg-category-tile-img{background-size:contain !important;}
 .vg-category-tile.vg-tile-featured .vg-category-tile-label{font-size:16px !important;}
 @media (max-width:640px){.vg-category-showcase{display:flex !important;flex-wrap:wrap !important;justify-content:center !important;}.vg-category-tile{flex:0 1 calc(50% - 7px) !important;max-width:calc(50% - 7px) !important;}.vg-category-tile.vg-tile-featured{flex:0 1 100% !important;max-width:100% !important;}}
-.vg-back-link{display:inline-block !important;margin-bottom:10px !important;font-family:'IBM Plex Mono',monospace !important;font-size:11px !important;letter-spacing:0.05em !important;text-transform:uppercase !important;color:#8d929a !important;text-decoration:none !important;}
+.vg-back-link{display:inline-block !important;margin-bottom:10px !important;font-family:'IBM Plex Mono',monospace !important;font-size:11px !important;letter-spacing:0.05em !important;text-transform:uppercase !important;color:#5c6068 !important;text-decoration:none !important;}
 .vg-back-link:hover{color:#3a4de8 !important;}
 .ig-reel-embed{position:relative !important;display:block !important;aspect-ratio:9/16 !important;max-width:280px !important;margin:16px auto 0 !important;padding:0 !important;border-radius:14px !important;overflow:hidden !important;text-decoration:none !important;background:#111 !important;box-shadow:0 4px 10px rgba(0,0,0,0.25) !important;}
 .ig-reel-video{width:100% !important;height:100% !important;object-fit:cover !important;display:block !important;border-radius:0 !important;background:#111 !important;}
