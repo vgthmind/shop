@@ -92,7 +92,7 @@ function cors(req, res) {
 }
 function send(res, code, body, type) { res.writeHead(code, { 'Content-Type': type || 'application/json' }); res.end(typeof body === 'string' || Buffer.isBuffer(body) ? body : JSON.stringify(body)); }
 
-http.createServer(function (req, res) {
+var server = http.createServer(function (req, res) {
   const ok = cors(req, res);
   if (req.method === 'OPTIONS') return send(res, ok ? 204 : 403, '');
   if (req.url.split('?')[0] === '/health') return send(res, 200, { ok: true, ready: !!session, error: loadError ? String(loadError.message || loadError) : null });
@@ -114,4 +114,21 @@ http.createServer(function (req, res) {
       .then(function (png) { send(res, 200, png, 'image/png'); })
       .catch(function (e) { console.error(e); send(res, 500, { error: String(e && e.message || e) }); });
   });
-}).listen(PORT, process.env.HOST || '0.0.0.0', function () { console.log('Détourage à l\'écoute sur le port', PORT, '- origines :', ALLOWED.join(', ')); });
+});
+// Port déjà pris = presque toujours une AUTRE fenêtre de détourage déjà ouverte : ce n'est pas une panne.
+server.on('error', function (e) {
+  if (e && e.code === 'EADDRINUSE') {
+    http.get({ host: '127.0.0.1', port: PORT, path: '/health', timeout: 2000 }, function (r) {
+      r.resume();
+      console.log('\nLe serveur de détourage tourne DÉJÀ (une autre fenêtre noire est ouverte). Rien à relancer :');
+      console.log('garde l\'autre fenêtre ouverte, ferme celle-ci, et utilise le studio photo normalement.');
+      process.exit(0);
+    }).on('error', function () {
+      console.log('\nLe port', PORT, 'est pris par un autre programme (pas par le détourage). Ferme les fenêtres noires de détourage, ou redémarre le PC, puis relance.');
+      process.exit(1);
+    });
+    return;
+  }
+  throw e;
+});
+server.listen(PORT, process.env.HOST || '0.0.0.0', function () { console.log('Détourage à l\'écoute sur le port', PORT, '- origines :', ALLOWED.join(', ')); });
