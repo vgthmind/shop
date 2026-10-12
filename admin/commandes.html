@@ -200,7 +200,12 @@
         .then(function (d) {
           o.shipped = d.shipped;
           draw();
-          $('msg').textContent = 'Marquée expédiée. Clique « Envoyer le mail « expédiée » au client » pour le prévenir.';
+          // Mail « expédiée » (numéro + lien de suivi) envoyé tout de suite, sans second clic.
+          if (!o.email) { $('msg').textContent = 'Marquée expédiée (pas d\'e-mail client : aucun mail envoyé).'; return; }
+          $('msg').textContent = 'Marquée expédiée. Envoi du mail au client…';
+          return api('/orders/shipped-mail', { method: 'POST', body: JSON.stringify({ id: o.id }) })
+            .then(function (m) { o.shipped = m.shipped; draw(); $('msg').textContent = 'Marquée expédiée, mail envoyé à ' + o.email + '.'; })
+            .catch(function (err) { $('msg').textContent = 'Marquée expédiée, mais le mail n\'est pas parti (' + err.message + ') : bouton « Envoyer le mail « expédiée » au client » pour réessayer.'; });
         })
         .catch(function (err) { $('msg').textContent = 'Erreur : ' + err.message; });
     }

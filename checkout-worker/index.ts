@@ -876,7 +876,7 @@ async function trackOrder(request: Request, env: Env, key: string, json: JsonFn)
     shipping: (s.shipping_cost?.amount_total || 0) / 100,
     total: s.amount_total / 100,
     tracking,
-    trackUrl: tracking ? 'https://www.laposte.fr/outils/suivre-vos-envois?code=' + encodeURIComponent(tracking) : '',
+    trackUrl: tracking ? 'https://www.laposte.fr/outils/suivre-vos-envois?code=' + encodeURIComponent(tracking.replace(/\s+/g, '')) : '',
   });
 }
 
