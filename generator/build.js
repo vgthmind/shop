@@ -205,9 +205,13 @@ function localizeBigCartelImages(text) {
   return BC_IMAGE_MAP.reduce((t, [re, to]) => t.replace(re, to), text);
 }
 
+// Pièces masquées : config (couleur, reel) injectée dans leur seule fiche, jamais dans le fichier public.
+const HIDDEN_CONFIG = {};
+
 const FAVICON_LINKS = [
-  '<link rel="icon" href="/assets/theme/favicon.svg" type="image/svg+xml">',
-  '<link rel="icon" href="/assets/theme/favicon.ico" type="image/x-icon">',
+  '<link rel="icon" href="/assets/theme/favicon-32.png" type="image/png" sizes="32x32">',
+  '<link rel="icon" href="/assets/theme/favicon-16.png" type="image/png" sizes="16x16">',
+  '<link rel="shortcut icon" href="/favicon.ico">',
   '<link rel="apple-touch-icon" href="/assets/theme/apple-touch-icon.png">',
 ].join('\n');
 
@@ -333,8 +337,9 @@ function seoDescription(product, withFrench) {
   const flat = (t) => String(t || '').split(/\r?\n/).map((l) => l.replace(/^[\s-]+/, '').replace(/[\s.]+$/, '').trim()).filter(Boolean).join(', ');
   const en = flat(paras[0]);
   const fr = flat(paras[1]);
-  const base = withFrench && fr ? `${en}. ${fr}.` : `${en}.`;
-  return (base + ' One-of-a-kind piece made in France by vgthmind. / Pièce unique faite en France.').slice(0, 300);
+  if (withFrench) return ((fr || en) + '. Pièce unique faite en France par vgthmind.').slice(0, 300);
+  // Aperçu de partage : une seule langue (français ; l'anglais seulement si la fiche n'a pas de texte français).
+  return fr ? (fr + '. Pièce unique faite en France par vgthmind.').slice(0, 300) : (en + '. One-of-a-kind piece made in France by vgthmind.').slice(0, 300);
 }
 
 // products.json / product/<slug>.js as BigCartel serves them, with our local
@@ -351,19 +356,24 @@ function localizeProduct(p, imageMap) {
 // --- head / body injections (what BigCartel adds around the templates) ---
 function headContent(page, product, imageMap) {
   if (!product) return '';
-  const img0 = product.images && product.images[0] ? (imageMap[product.images[0].url] || product.images[0].url) : '';
-  // og:image / twitter:image doivent etre des adresses absolues (aperçus de partage).
-  const img = img0 && img0.startsWith('/') ? SITE_ORIGIN_URL + BASE_PATH + img0 : img0;
+  // Aperçu de partage : JPG carré 1200x1200 < 300 Ko (generator/resize-images.js), adresse encodée (accents).
+  const img = product.permalink ? SITE_ORIGIN_URL + BASE_PATH + '/assets/products-og/' + encodeURIComponent(product.permalink) + '.jpg' : '';
+  const ogTitle = `${product.name} | vgthmind`;
+  const hid = product.hidden && HIDDEN_CONFIG[product.permalink] ? `<script>window.__vgConfigExtra=${JSON.stringify({ [product.permalink]: HIDDEN_CONFIG[product.permalink] }).replace(/</g, '\\u003c')};</script>` : '';
   const esc = (s) => String(s || '').replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
   const desc = esc(seoDescription(product, false));
   return [
+    hid,
     `<meta name="description" content="${desc}">`,
     `<meta property="og:type" content="product">`,
-    `<meta property="og:title" content="${esc(product.name)}">`,
+    `<meta property="og:title" content="${esc(ogTitle)}">`,
     `<meta property="og:description" content="${desc}">`,
-    img ? `<meta property="og:image" content="${esc(img)}">` : '',
+    img ? `<meta property="og:image" content="${esc(img)}">
+    <meta property="og:image:type" content="image/jpeg">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="1200">` : '',
     `<meta name="twitter:card" content="summary_large_image">`,
-    `<meta name="twitter:title" content="${esc(product.name)}">`,
+    `<meta name="twitter:title" content="${esc(ogTitle)}">`,
     `<meta name="twitter:description" content="${desc}">`,
     img ? `<meta name="twitter:image" content="${esc(img)}">` : '',
   ].join('\n    ');
@@ -428,6 +438,12 @@ function injectAround(html, parts, product, relPath) {
   // structurées Product (prix, stock) pour Google. Rien sur les pages
   // techniques (merci, paiement-annule, 404, contact).
   let seoTags = '';
+  // Pages techniques (merci, suivi, demande, paiement annulé) : pas d'adresse canonique, mais un titre de partage.
+  if (relPath && /^(merci|paiement-annule|suivi|demande\/)/.test(relPath)) {
+    const t0 = (html.match(/<title>([\s\S]*?)<\/title>/i) || [])[1];
+    const escT = (v) => String(v || '').trim().replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
+    if (t0) seoTags = '<meta property="og:title" content="' + escT(t0) + '">\n<meta property="og:type" content="website">\n<meta name="twitter:card" content="summary_large_image">';
+  }
   if (relPath && !/^(merci|paiement-annule|suivi|demande\/|404|contact\/)/.test(relPath)) {
     const escA = (v) => String(v || '').replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
     const pagePath = '/' + relPath.replace(/index\.html$/, '').replace(/\/$/, '');
@@ -512,7 +528,7 @@ async function main() {
     shim: read(rel(ROOT, 'assets', 'vg-shop-shim.js')),
     customCss: localFonts(read(rel(CUSTOM_DIR, 'custom-css.css'))),
     // Noms anglais facultatifs (nom français -> nom anglais) : assets/vg-lang.js les utilise pour les textes alternatifs en mode EN.
-    headCode: read(rel(CUSTOM_DIR, 'head.html')) + '\n<script>window.vgNamesEn=' + JSON.stringify(Object.fromEntries(catalog.products.filter((p) => p.name_en && p.name_en !== p.name).map((p) => [p.name, p.name_en]))).replace(/</g, '\\u003c') + ';</script>',
+    headCode: read(rel(CUSTOM_DIR, 'head.html')) + '\n<script>window.vgNamesEn=' + JSON.stringify(Object.fromEntries(catalog.products.filter((p) => !p.hidden && p.name_en && p.name_en !== p.name).map((p) => [p.name, p.name_en]))).replace(/</g, '\\u003c') + ';</script>',
     // The Body reads products-config.json (portfolio) for, among others,
     // unique_mode: served from /shop/ with "force-no" added for the pieces
     // the admin gives more than one in stock (no "Unique piece" badge).
@@ -530,7 +546,7 @@ async function main() {
     if (p.reel_url) entry.reel_url = p.reel_url;
     if (p.reel_video) entry.reel_video = BASE_PATH + p.reel_video;
     if (p.unique === false || (p.quantity || 0) > 1) entry.unique_mode = 'force-no';
-    if (Object.keys(entry).length) productsConfig[p.permalink] = entry;
+    if (Object.keys(entry).length) { if (p.hidden) HIDDEN_CONFIG[p.permalink] = entry; else productsConfig[p.permalink] = entry; }
   }
 
   const devJs = read(DEV_JS_SRC);
@@ -629,7 +645,8 @@ async function main() {
   // /cart.js (our own cart lives in localStorage instead, see
   // vg-shop-cart.js; this stays empty/unused, kept in case a script asks).
   const localized = catalog.products.map((p) => localizeProduct(p, imageMap));
-  write('products.json', JSON.stringify(localized));
+  // Pièces masquées (aperçu) : pas dans products.json (recherche, panier, pièces similaires) ; leur fiche et product/<slug>.js restent.
+  write('products.json', JSON.stringify(localized.filter((p) => !p.hidden)));
   for (const p of localized) write(`product/${p.permalink}.js`, JSON.stringify(p));
   write('cart.js', JSON.stringify({ item_count: 0, items: [], price: 0, total: 0, shipping: null, discount: null }));
 
@@ -646,9 +663,16 @@ async function main() {
   write('assets/vg/vg-transitions-dev.js', wrapScript(devJsHooked));
   write('assets/vg/vg-transitions-dev.css', devCss);
   write('assets/vg/products-config.json', JSON.stringify(productsConfig, null, 1));
+  // Clips de l'écran d'ouverture : tous les .mp4 du dossier assets/media/splash/ (ajout depuis l'admin « Vidéos d'ouverture »).
+  const splashDir = rel(ROOT, 'assets', 'media', 'splash');
+  const splashList = fs.existsSync(splashDir) ? fs.readdirSync(splashDir).filter((f) => /.mp4$/i.test(f)).sort().map((f) => BASE_PATH + '/assets/media/splash/' + encodeURIComponent(f)) : [];
+  write('assets/vg/splash.json', JSON.stringify(splashList));
   // Mots-clés de recherche : fichier commun du portfolio + ceux saisis dans
   // l'admin pour chaque pièce (champ « Mots-clés de recherche »).
   const mergedKeywords = JSON.parse(keywords);
+  // Aucun mot-clé (ni clé) pour une pièce masquée ou absente du catalogue : la recherche ne doit pas la révéler.
+  const hiddenSlugs = new Set(catalog.products.filter((p) => p.hidden).map((p) => p.permalink));
+  for (const k of Object.keys(mergedKeywords)) if (hiddenSlugs.has(k) || k.charAt(0) === '_') delete mergedKeywords[k];
   for (const p of catalog.products) {
     const extra = (p.search_keywords || []).map((k) => String(k).trim()).filter(Boolean);
     if (extra.length) mergedKeywords[p.permalink] = [...new Set([...(mergedKeywords[p.permalink] || []), ...extra])];
@@ -671,7 +695,12 @@ async function main() {
   const themeSizedSrc = rel(ROOT, 'assets', 'theme-sized');
   if (fs.existsSync(themeSizedSrc)) fs.cpSync(themeSizedSrc, rel(OUT_DIR, 'assets', 'theme-sized'), { recursive: true });
   fs.cpSync(rel(ROOT, 'assets', 'theme'), rel(OUT_DIR, 'assets', 'theme'), { recursive: true });
+  const ogSrc = rel(ROOT, 'assets', 'products-og');
+  if (fs.existsSync(ogSrc)) fs.cpSync(ogSrc, rel(OUT_DIR, 'assets', 'products-og'), { recursive: true });
   if (LOCAL_MEDIA) fs.cpSync(rel(ROOT, 'assets', 'media'), rel(OUT_DIR, 'assets', 'media'), { recursive: true });
+  fs.copyFileSync(rel(ROOT, 'generator', '_headers'), rel(OUT_DIR, '_headers'));
+  // /favicon.ico a la racine du site (certains navigateurs le demandent d'office).
+  fs.copyFileSync(rel(ROOT, 'assets', 'theme', 'favicon.ico'), rel(OUT_DIR, 'favicon.ico'));
   // robots.txt: the prototype's "Disallow: /" until launch; then only the
   // admin is blocked, plus the sitemap. (Only effective once the shop is at
   // the root of its own domain - under /shop/, the noindex tag does the job.)

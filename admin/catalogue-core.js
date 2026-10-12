@@ -24,7 +24,30 @@
     });
   }
 
-  function state(p) { return p.archived ? 'archived' : p.hidden ? 'preview' : 'live'; }
+  // Programmée = masquée avec une date de mise en ligne (publish_at) encore à venir.
+  function state(p, now) {
+    if (p.archived) return 'archived';
+    if (!p.hidden) return 'live';
+    return p.publish_at && Date.parse(p.publish_at) > (now || Date.now()) ? 'scheduled' : 'preview';
+  }
+
+  // « 2026-11-06 18:00 » (heure de Paris) -> date ISO UTC, ou null si le texte est invalide.
+  function parisToIso(str) {
+    var m = /^(\d{4})-(\d{2})-(\d{2})[ T](\d{1,2}):(\d{2})$/.exec(String(str || '').trim());
+    if (!m) return null;
+    var guess = Date.UTC(+m[1], +m[2] - 1, +m[3], +m[4], +m[5]);
+    var fmt = new Intl.DateTimeFormat('en-GB', { timeZone: 'Europe/Paris', hour12: false, year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' });
+    function parisAt(ts) {
+      var o = {};
+      fmt.formatToParts(new Date(ts)).forEach(function (x) { o[x.type] = x.value; });
+      return Date.UTC(+o.year, +o.month - 1, +o.day, (+o.hour) % 24, +o.minute);
+    }
+    var ts = guess - (parisAt(guess) - guess);
+    ts = guess - (parisAt(ts) - ts);
+    var d = new Date(ts);
+    return isNaN(d) ? null : d.toISOString();
+  }
+  function schedule(p, iso) { var q = Object.assign({}, p); q.hidden = true; q.publish_at = iso; return q; }
 
   // Déplace une pièce d'un cran (dir = -1 vers le haut, +1 vers le bas) parmi les pièces non archivées.
   // Renvoie { slug: nouvelleFiche } pour les seules fiches dont la position change (positions 1..n).
@@ -68,7 +91,7 @@
   }
 
   function setArchived(p, on) { var q = Object.assign({}, p); if (on) { q.archived = true; } else { delete q.archived; } return q; }
-  function setHidden(p, on) { var q = Object.assign({}, p); if (on) q.hidden = true; else delete q.hidden; return q; }
+  function setHidden(p, on) { var q = Object.assign({}, p); if (on) q.hidden = true; else { delete q.hidden; delete q.publish_at; } return q; }
 
-  return { slugify: slugify, sorted: sorted, state: state, move: move, freeSlug: freeSlug, duplicate: duplicate, setArchived: setArchived, setHidden: setHidden };
+  return { slugify: slugify, sorted: sorted, state: state, move: move, freeSlug: freeSlug, duplicate: duplicate, setArchived: setArchived, setHidden: setHidden, schedule: schedule, parisToIso: parisToIso };
 }));

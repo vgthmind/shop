@@ -668,7 +668,8 @@ footer{
   position:relative !important;
   transition:opacity .3s ease, filter .3s ease !important;
 }
-.product-list-container:has(.product-list-link:hover) .product-list-link:not(:hover){
+/* Les autres pieces s'estompent seulement quand le pop de la piece visee est ouvert (souris vraiment sur la piece), pas des que la souris approche du lien. */
+.product-list-container:has(.vg-pop-hidden) .product-list-link:not(:has(.vg-pop-hidden)){
   opacity:0.35 !important;
   filter:blur(1.5px) saturate(70%) !important;
 }
@@ -1363,10 +1364,13 @@ a:focus-visible,button:focus-visible,input:focus-visible,textarea:focus-visible,
 @media (max-width:640px){.vg-breadcrumb .vg-crumbs{display:none;}}
 
 /* === PIECE VENDUE : PIECES SIMILAIRES (ajout) === */
-.vg-similar{margin:48px auto 0;max-width:960px;padding:0 16px;text-align:center;}
+/* clear:both : la rangée passe SOUS la photo et la description (flottantes) au lieu de se glisser entre elles. */
+.vg-similar{clear:both;position:relative;z-index:2;width:100%;box-sizing:border-box;margin:64px auto 0;max-width:960px;padding:0 16px;text-align:center;}
 .vg-similar h2{font-family:'Space Grotesk',sans-serif;font-size:16px;letter-spacing:.08em;text-transform:uppercase;margin:0 0 20px;}
 .vg-similar-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:16px;}
 .vg-similar-grid a{display:flex;flex-direction:column;gap:8px;text-decoration:none !important;color:var(--ink) !important;font-size:13px;}
+/* Même police que les noms de la boutique (.product-list-thumb-name). */
+.vg-similar-grid a,.vg-similar-grid span{font-family:'Space Grotesk',sans-serif !important;font-size:14px;font-weight:500;}
 .vg-similar-grid img{width:100%;aspect-ratio:1/1;object-fit:cover;border-radius:8px;}
 html.vg-product-sold-out .product-subheader .product-status{font-size:14px;}
 
@@ -1415,4 +1419,15 @@ html[data-vg-lang="fr"] .vg-story-block p.vg-story-fr { font-size: 14px !importa
 @media (max-width: 640px) {
   header nav.utility ul { gap: 6px !important; }
   header nav.utility ul li { margin-left: 0 !important; margin-right: 0 !important; }
+}
+
+/* Rangée des catégories (boutique, PC) : centrée comme le titre « BOUTIQUE » et la grille (elle restait collée à gauche). */
+body .subheader ul.categories{margin-left:auto !important;margin-right:auto !important;}
+
+/* iPhone en paysage (encoche) : la couleur du site remplit toute la largeur (viewport-fit=cover) et le contenu reste
+   hors des zones de l'encoche / de la barre d'accueil. */
+html{background:var(--background-color, #f4f2ec);}
+@media (orientation: landscape) and (max-height: 520px){
+  body{padding-left:env(safe-area-inset-left);padding-right:env(safe-area-inset-right);box-sizing:border-box;}
+  body .header{padding-left:max(32px, env(safe-area-inset-left)) !important;padding-right:max(32px, env(safe-area-inset-right)) !important;box-sizing:border-box;}
 }

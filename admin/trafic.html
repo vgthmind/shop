@@ -34,6 +34,8 @@
     #msg { min-height: 1.4em; }
     @media (min-width: 700px) { .cols { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; } }
   </style>
+<link rel="icon" href="../assets/theme/favicon-32.png" type="image/png" sizes="32x32">
+<link rel="apple-touch-icon" href="../assets/theme/apple-touch-icon.png">
 </head>
 <body>
 <main>
@@ -60,7 +62,7 @@
       <div><h2>Pays</h2><div class="card" id="countries"></div></div>
     </div>
     <h2>Appareil</h2><div class="card" id="devices"></div>
-    <div class="bar"><button type="button" id="logout">Se déconnecter</button></div>
+    <div class="bar"><button type="button" id="reset-today">Remettre à zéro les visites d'aujourd'hui (tests)</button> <button type="button" id="logout">Se déconnecter</button></div>
   </div>
   <p id="msg" role="status" aria-live="polite"></p>
 </main>
@@ -68,6 +70,12 @@
 <script>
 (function () {
   'use strict';
+  document.addEventListener('click', function (e) {
+    if (!e.target || e.target.id !== 'reset-today') return;
+    if (!confirm("Effacer toutes les visites comptées aujourd'hui ? (utile après des tests)")) return;
+    window.vgAdminApi('/admin/traffic/reset', { method: 'POST', body: JSON.stringify({ day: new Date().toISOString().slice(0, 10) }) })
+      .then(function () { location.reload(); }).catch(function (err) { var m = document.getElementById('msg'); if (m) m.textContent = 'Échec : ' + err.message; });
+  });
   var $ = function (id) { return document.getElementById(id); };
   var days = 7, demo = /[?&]demo=1/.test(location.search), timer = null;
   var DEVICE = { mobile: 'Mobile', desktop: 'Ordinateur', tablet: 'Tablette' };

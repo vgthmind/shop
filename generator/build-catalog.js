@@ -64,12 +64,19 @@ function imageDims(localPath) {
   return { width: 1000, height: 1000 };
 }
 
+const PUBLISH_LEAD_MS = 75 * 1000; // doit rester >= au délai du Worker avant l'heure (LEAD_S dans checkout-worker/index.ts)
+
 function buildProduct(admin, imageMap) {
   if (!admin.name || !admin.slug) throw new Error(`Produit sans nom/slug: ${JSON.stringify(admin)}`);
   const realCats = admin.categories || [];
+  // Mise en ligne programmée : une pièce masquée avec `publish_at` (date ISO) passe en ligne dès que ce moment est atteint
+  // au moment de la construction. Le build part un peu AVANT l'heure (le site met ~45 s à se publier) : voir le cron du Worker.
+  const publishAt = admin.publish_at ? Date.parse(admin.publish_at) : NaN;
+  const goLive = admin.hidden === true && Number.isFinite(publishAt) && publishAt <= Date.now() + PUBLISH_LEAD_MS && realCats.length > 0;
+  const isHidden = admin.hidden === true && !goLive;
   // hidden: true = page + paiement OK, mais ni liste, ni categorie, ni sitemap
   // (produit test du passage en live).
-  if (realCats.length === 0 && admin.hidden !== true) throw new Error(`Produit "${admin.name}": aucune categorie (data/products/${admin.slug}.json)`);
+  if (realCats.length === 0 && !isHidden) throw new Error(`Produit "${admin.name}": aucune categorie (data/products/${admin.slug}.json)`);
   for (const perm of realCats) {
     if (!byPermalink.has(perm)) throw new Error(`Produit "${admin.name}": categorie "${perm}" inconnue (voir data/categories.json)`);
   }
@@ -80,8 +87,8 @@ function buildProduct(admin, imageMap) {
     imageMap[url] = url; // identity: already-local paths, see generator/filters.js productImageUrl()
     return Object.assign({ url }, dims);
   });
-  const categories = admin.hidden === true ? [] : [...realCats.map((perm) => byPermalink.get(perm)), ALL];
-  if (admin.latest_drop && admin.hidden !== true)categories.push(LATEST_DROP);
+  const categories = isHidden ? [] : [...realCats.map((perm) => byPermalink.get(perm)), ALL];
+  if (admin.latest_drop && !isHidden)categories.push(LATEST_DROP);
 
   // quantity = STARTING stock only (1 = one-of-a-kind, the default). The real
   // stock lives in the checkout Worker (Durable Object): sales count it down
@@ -127,7 +134,7 @@ function buildProduct(admin, imageMap) {
     }],
     artists: [],
     categories,
-    ...(admin.hidden === true ? { hidden: true } : {}),
+    ...(isHidden ? { hidden: true } : {}),
     option_groups: [],
     // ships_intl:false = France only (no "everywhere else" line, as on
     // BigCartel for SC_0008/SC_0009): the cart and the checkout Worker

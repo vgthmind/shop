@@ -65,4 +65,28 @@ async function themeImages() {
   console.log(`Image d'accueil : ${made} variantes creees.`);
 }
 
-main().then(themeImages).catch((e) => { console.error(e); process.exit(1); });
+// Images de partage (Instagram, WhatsApp...) : 1 JPG carre 1200x1200 par piece (1re photo), fond beige du site,
+// moins de 300 Ko (limite de WhatsApp). assets/products-og/<slug>.jpg, regenere a chaque build.
+async function ogImages() {
+  const out = path.join(ROOT, 'assets', 'products-og');
+  fs.rmSync(out, { recursive: true, force: true });
+  fs.mkdirSync(out, { recursive: true });
+  let made = 0;
+  for (const d of fs.readdirSync(SRC, { withFileTypes: true })) {
+    if (!d.isDirectory()) continue;
+    const first = fs.readdirSync(path.join(SRC, d.name)).filter((f) => /^0\.(png|jpe?g|webp)$/i.test(f))[0];
+    if (!first) continue;
+    const photo = await sharp(path.join(SRC, d.name, first)).resize(1080, 1080, { fit: 'inside' }).toBuffer();
+    const base = sharp({ create: { width: 1200, height: 1200, channels: 3, background: '#f4f2ec' } }).composite([{ input: photo, gravity: 'centre' }]);
+    let buf;
+    for (const q of [86, 78, 70, 60, 50]) {
+      buf = await base.clone().jpeg({ quality: q, mozjpeg: true }).toBuffer();
+      if (buf.length < 290 * 1024) break;
+    }
+    fs.writeFileSync(path.join(out, d.name + '.jpg'), buf);
+    made++;
+  }
+  console.log('Images de partage : ' + made + ' JPG 1200x1200 (< 300 Ko).');
+}
+
+main().then(themeImages).then(ogImages).catch((e) => { console.error(e); process.exit(1); });

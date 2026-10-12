@@ -71,7 +71,7 @@ html.vg-s3 .product-list-container:has(.product-list-link:hover) .product-list-l
 /* .vg-orbit-wrap = point de pivot (taille nulle, positionne au point */
 /* clique) ; tourner ce wrapper fait orbiter .vg-orbit-tile, positionnee a */
 /* "left" (rayon) de lui, en cercle autour du point clique. Aucun fond, */
-/* aucun cadre (photos deja detourees cote BigCartel, hors les 12 exclues */
+/* aucun cadre (photos deja detourees cote l'ancienne plateforme, hors les 12 exclues */
 /* cote JS) -- seule exception la pochette VGTAPE, carree par nature. */
 .vg-orbit-wrap{
   position:fixed !important;
@@ -803,6 +803,10 @@ body .vg-category-tile .vg-category-tile-label{
   overflow:hidden !important;
   text-overflow:ellipsis !important;
 }
+/* Petits ecrans (320 px) : « CUSTOMS/UPCYCLING » ne doit plus etre coupe. */
+@media (max-width:360px){
+  body .vg-category-tile .vg-category-tile-label{font-size:9.5px !important;letter-spacing:0.02em !important;padding:0 2px !important;}
+}
 /* Latest Drop : toujours mis en avant au repos, mais ~1,4x les autres au */
 /* lieu d'une tuile de 640px. */
 body .vg-category-tile.vg-tile-featured{
@@ -972,7 +976,7 @@ html{scroll-padding-top:calc(var(--vg-header-h, var(--header-height, 95px)) + 16
 main h1, main h2, main [id]{scroll-margin-top:calc(var(--vg-header-h, var(--header-height, 95px)) + 16px) !important;}
 
 /* === PAGE STUDIO : video d'atelier en boucle en haut de page === */
-/* (inseree par vg-transitions-dev.js sur /studio ; texte = page BigCartel) */
+/* (inseree par vg-transitions-dev.js sur /studio ; texte = page l'ancienne plateforme) */
 .vg-studio-reel{
   display:block;
   width:min(420px, 86vw);
@@ -1080,7 +1084,7 @@ video.ig-reel-video::-webkit-media-controls-start-playback-button{display:none !
 .product-status.status-secondary{font-size:11px !important;padding:6px 14px !important;}
 /* [2026-09-29 finale] Page panier : bouton Checkout et sous-total dans la */
 /* meme typo que les pills du site (comme ADD TO CART). Le checkout lui-meme */
-/* (pages BigCartel) n'est pas touche. */
+/* (pages l'ancienne plateforme) n'est pas touche. */
 .button--checkout{
   font-family:'IBM Plex Mono',monospace !important;
   font-weight:600 !important;
@@ -1100,3 +1104,22 @@ video.ig-reel-video::-webkit-media-controls-start-playback-button{display:none !
 /* iPhone) maintenant que la page s'affiche avant les scripts. La 1re slide */
 /* reserve sa taille finale des le premier rendu. */
 .product-carousel:not(.is-initialized) .splide__slide:first-child{height:auto !important;width:100% !important;}
+
+/* === iPhone / tactile : transitions plus legeres (2026-10-12) === */
+/* La spirale 3D (perspective + rotation + scale sur tout le body) et les flous de fond coutent cher sur iPhone et */
+/* faisaient figer le menu / la page. Sur tactile : simple reduction + fondu (transform/opacity, 420 ms), flous allegés. */
+@media (hover: none) and (pointer: coarse){
+  @media (prefers-reduced-motion: no-preference){
+    body.vg-aspirate.vg-s3{animation:vg-aspirate-s3-light 420ms cubic-bezier(.4,0,.6,1) forwards !important;}
+  }
+  .header,
+  body #navigation-modal .overlay_background,
+  body #search-modal{
+    -webkit-backdrop-filter:blur(8px) !important;
+    backdrop-filter:blur(8px) !important;
+  }
+}
+@keyframes vg-aspirate-s3-light{
+  0%{transform:scale(1);opacity:1;}
+  100%{transform:scale(0.55);opacity:0;}
+}

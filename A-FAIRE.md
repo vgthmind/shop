@@ -1,5 +1,24 @@
 # À faire de ton côté (pas à pas, sans terminal)
 
+**Mise à jour du 12 octobre (nuit).** Rien de ce qui suit n'est en ligne tant que tu n'as pas dit OK pour pousser le site et déployer le Worker.
+
+## E. Mise en ligne programmée (drops 18 h) : 1 réglage chez toi
+1. dash.cloudflare.com → Workers & Pages → **vgthmind-shop** → Settings → **Deploy Hooks** → Add : nom `drop`, branche `main` → copie l'adresse (https://api.cloudflare.com/client/v4/pages/webhooks/deploy_hooks/…).
+2. Dans le dossier `checkout-worker` (PowerShell) : `npx.cmd wrangler secret put DEPLOY_HOOK_URL` → colle l'adresse UNE fois → Entrée.
+3. Admin → Catalogue → une pièce en aperçu → **Programmer** → `2026-11-06 18:00` (heure de Paris) → Enregistrer. Le Worker lance la construction du site ~1 min avant l'heure ; la pièce apparaît à 18 h, à ± 20 secondes.
+La pièce doit avoir au moins une catégorie. « Annuler la programmation » la remet en aperçu.
+
+## F. Ventes → ton Sheet de compta
+Il me faut, **à saisir toi-même** (je ne les vois jamais) :
+- `npx.cmd wrangler secret put COMPTA_URL` : l'adresse « /exec » de ton script Google ;
+- `npx.cmd wrangler secret put COMPTA_SECRET` : la valeur de la propriété « SECRET » de ce script.
+Puis dis-moi « compta posée » : je fais un achat test sur une copie du Sheet (`COMPTA_TEST=1`), je vérifie la ligne, je retire `COMPTA_TEST`. Format de la ligne : voir chantier/PLAN-ADMIN.md §6 (id `site-VG-XXXXXX`, montant port compris). Pas encore branchés : les remboursements (il faudra ajouter l'événement Stripe `refund.created`) et les acomptes.
+
+## G. Vidéos d'ouverture (accueil)
+Admin → **Vidéos d'ouverture** : ajouter / retirer des clips. Format : MP4 H.264 vertical, 480 px, 3 s, sans son, < 1 Mo (max 3 Mo / 8 s accepté). Pour transformer un reel : glisse-le sur `outils\Convertir-reel-ouverture.bat` (ffmpeg requis : `winget install Gyan.FFmpeg`). Les reels déjà sur le site ont été convertis en clips d'ouverture (21 clips).
+
+---
+
 **Mise à jour du 12 octobre (soir).** Le Worker utilise maintenant ta clé Stripe **de test** (rk_test) : le paiement du site fonctionne en mode test (aucun vrai argent). Voir aussi `chantier/REDIRECTIONS.md` (anciennes adresses).
 
 ## 0. Le test de paiement avec la carte 4242 (2 minutes, à faire avec Claude)

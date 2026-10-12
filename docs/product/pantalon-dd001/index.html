@@ -12,10 +12,10 @@
 <html lang="en" translate="no">
   <head>
 <script>window.__VG_BASE = "/shop";
-/* Shim "sous-dossier" de la boutique hors BigCartel (injecté en tout premier
+/* Shim "sous-dossier" de la boutique hors l'ancienne plateforme (injecté en tout premier
    dans <head> par generator/build.js, avant tout autre script).
 
-   Les vrais gabarits BigCartel, le Body et vg-transitions-dev.js supposent un
+   Les vrais gabarits l'ancienne plateforme, le Body et vg-transitions-dev.js supposent un
    site servi à la RACINE d'un domaine (/products, /product/<slug>,
    location.pathname === '/studio'...). L'aperçu est une "project page" GitHub
    Pages servie sous /shop/. Plutôt que de retoucher chaque script :
@@ -41,7 +41,7 @@
   window.__vgFixUrl = fix;
 
   // Photos produit demandées par vg-transitions-dev.js avec ?w=N (pops,
-  // compagnons de la section 3 : comme sur le CDN BigCartel) -> la variante
+  // compagnons de la section 3 : comme sur le CDN l'ancienne plateforme) -> la variante
   // WebP la plus proche (generator/resize-images.js), 800 px au plus, au
   // lieu du PNG d'origine (~400 Ko chacun). build.js branche sized() dessus.
   var SIZED = [24, 320, 540, 800];
@@ -71,7 +71,7 @@
 
   // Les scripts lisent les liens avec getAttribute('href') et les comparent
   // à '/products', '/cart'... : ils voient la valeur SANS /shop, comme sur
-  // BigCartel. L'attribut réel garde /shop (navigation native, clic milieu,
+  // l'ancienne plateforme. L'attribut réel garde /shop (navigation native, clic milieu,
   // barre d'état corrects).
   // Sauf les liens vers un fichier (/shop/assets/... : photos du zoom) : le
   // Body s'en sert tel quel comme src d'image, ils gardent /shop.
@@ -131,7 +131,7 @@
 <!-- VGTHMIND TRANSITION START -->
 <style>html,body{background-color:#f4f2ec !important;}@view-transition{navigation:auto;}::view-transition-group(root),::view-transition-old(root),::view-transition-new(root){animation:none !important;mix-blend-mode:normal !important;opacity:1 !important;}</style>
 <link rel="preload" as="script" href="/shop/assets/vg/vg-transitions-dev.js">
-<link rel="stylesheet" href="/shop/assets/vg/vg-transitions-dev.css?v=e3c03e0042">
+<link rel="stylesheet" href="/shop/assets/vg/vg-transitions-dev.css?v=638b90fcfc">
 <!-- SECTION 6 POINT 4 (ajout) : indique au navigateur de commencer a charger
      theme.js (qui embarque lazysizes) en parallele du reste du <head>, au
      lieu d'attendre que le parseur atteigne le <script src> pres de
@@ -237,26 +237,34 @@
 
     <title>Pantalon DD001 | vgthmind</title>
     <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
     
     
-                        <link href="/shop/assets/theme.css" media="screen" rel="stylesheet" type="text/css">
-    <meta name="description" content="50% Wool, 50% Cotton, Pockets in 100% white silk satin, Size EU44/46 (≈93cm waist circumference), The model is approximately 6'0&quot; (1.83m) tall, Thick. One-of-a-kind piece made in France by vgthmind. / Pièce unique faite en France.">
+                <meta property="og:image:type" content="image/jpeg">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="1200">
+            <link href="/shop/assets/theme.css" media="screen" rel="stylesheet" type="text/css">
+    
+    <meta name="description" content="50% Laine 50% Coton, Poches 100% satin de soie blanc, Taille EU44/46 (≈93cm de tour de ceinture), Le mannequin fait environ 1m83, Épais. Pièce unique faite en France par vgthmind.">
     <meta property="og:type" content="product">
-    <meta property="og:title" content="Pantalon DD001">
-    <meta property="og:description" content="50% Wool, 50% Cotton, Pockets in 100% white silk satin, Size EU44/46 (≈93cm waist circumference), The model is approximately 6'0&quot; (1.83m) tall, Thick. One-of-a-kind piece made in France by vgthmind. / Pièce unique faite en France.">
-    <meta property="og:image" content="https://vgthmind.github.io/shop/assets/products/pantalon-dd001/0.png">
+    <meta property="og:title" content="Pantalon DD001 | vgthmind">
+    <meta property="og:description" content="50% Laine 50% Coton, Poches 100% satin de soie blanc, Taille EU44/46 (≈93cm de tour de ceinture), Le mannequin fait environ 1m83, Épais. Pièce unique faite en France par vgthmind.">
+    <meta property="og:image" content="https://vgthmind.github.io/shop/assets/products-og/pantalon-dd001.jpg">
+    <meta property="og:image:type" content="image/jpeg">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="1200">
     <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:title" content="Pantalon DD001">
-    <meta name="twitter:description" content="50% Wool, 50% Cotton, Pockets in 100% white silk satin, Size EU44/46 (≈93cm waist circumference), The model is approximately 6'0&quot; (1.83m) tall, Thick. One-of-a-kind piece made in France by vgthmind. / Pièce unique faite en France.">
-    <meta name="twitter:image" content="https://vgthmind.github.io/shop/assets/products/pantalon-dd001/0.png">
+    <meta name="twitter:title" content="Pantalon DD001 | vgthmind">
+    <meta name="twitter:description" content="50% Laine 50% Coton, Poches 100% satin de soie blanc, Taille EU44/46 (≈93cm de tour de ceinture), Le mannequin fait environ 1m83, Épais. Pièce unique faite en France par vgthmind.">
+    <meta name="twitter:image" content="https://vgthmind.github.io/shop/assets/products-og/pantalon-dd001.jpg">
     <style>.preloader * { opacity: 0; }.transition-preloader * { transition: none !important }</style>
-  <link rel="icon" href="/shop/assets/theme/favicon.svg" type="image/svg+xml">
-<link rel="icon" href="/shop/assets/theme/favicon.ico" type="image/x-icon">
+  <link rel="icon" href="/shop/assets/theme/favicon-32.png" type="image/png" sizes="32x32">
+<link rel="icon" href="/shop/assets/theme/favicon-16.png" type="image/png" sizes="16x16">
+<link rel="shortcut icon" href="/shop/favicon.ico">
 <link rel="apple-touch-icon" href="/shop/assets/theme/apple-touch-icon.png">
 <link rel="canonical" href="https://vgthmind.github.io/shop/product/pantalon-dd001">
 <meta property="og:url" content="https://vgthmind.github.io/shop/product/pantalon-dd001">
-<script type="application/ld+json">{"@context":"https://schema.org","@type":"Product","name":"Pantalon DD001","description":"50% Wool, 50% Cotton, Pockets in 100% white silk satin, Size EU44/46 (≈93cm waist circumference), The model is approximately 6'0\" (1.83m) tall, Thick. 50% Laine 50% Coton, Poches 100% satin de soie blanc, Taille EU44/46 (≈93cm de tour de ceinture), Le mannequin fait environ 1m83, Épais. One-of-a-kin","sku":"pantalon-dd001","image":["https://vgthmind.github.io/shop/assets/products/pantalon-dd001/0.png","https://vgthmind.github.io/shop/assets/products/pantalon-dd001/1.png","https://vgthmind.github.io/shop/assets/products/pantalon-dd001/2.png","https://vgthmind.github.io/shop/assets/products/pantalon-dd001/3.png"],"brand":{"@type":"Brand","name":"vgthmind"},"offers":{"@type":"Offer","url":"https://vgthmind.github.io/shop/product/pantalon-dd001","priceCurrency":"EUR","price":"210.7"}}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"Product","name":"Pantalon DD001","description":"50% Laine 50% Coton, Poches 100% satin de soie blanc, Taille EU44/46 (≈93cm de tour de ceinture), Le mannequin fait environ 1m83, Épais. Pièce unique faite en France par vgthmind.","sku":"pantalon-dd001","image":["https://vgthmind.github.io/shop/assets/products/pantalon-dd001/0.png","https://vgthmind.github.io/shop/assets/products/pantalon-dd001/1.png","https://vgthmind.github.io/shop/assets/products/pantalon-dd001/2.png","https://vgthmind.github.io/shop/assets/products/pantalon-dd001/3.png"],"brand":{"@type":"Brand","name":"vgthmind"},"offers":{"@type":"Offer","url":"https://vgthmind.github.io/shop/product/pantalon-dd001","priceCurrency":"EUR","price":"210.7"}}</script>
 <meta name="robots" content="noindex, nofollow">
 <script>(function(d){d.classList.add("vg-stock-pending");setTimeout(function(){d.classList.remove("vg-stock-pending")},2600)})(document.documentElement)</script><style>.vg-stock-pending #add-to-cart-form{visibility:hidden}</style>
 <style>
@@ -935,7 +943,8 @@ footer{
   position:relative !important;
   transition:opacity .3s ease, filter .3s ease !important;
 }
-.product-list-container:has(.product-list-link:hover) .product-list-link:not(:hover){
+/* Les autres pieces s'estompent seulement quand le pop de la piece visee est ouvert (souris vraiment sur la piece), pas des que la souris approche du lien. */
+.product-list-container:has(.vg-pop-hidden) .product-list-link:not(:has(.vg-pop-hidden)){
   opacity:0.35 !important;
   filter:blur(1.5px) saturate(70%) !important;
 }
@@ -1630,10 +1639,13 @@ a:focus-visible,button:focus-visible,input:focus-visible,textarea:focus-visible,
 @media (max-width:640px){.vg-breadcrumb .vg-crumbs{display:none;}}
 
 /* === PIECE VENDUE : PIECES SIMILAIRES (ajout) === */
-.vg-similar{margin:48px auto 0;max-width:960px;padding:0 16px;text-align:center;}
+/* clear:both : la rangée passe SOUS la photo et la description (flottantes) au lieu de se glisser entre elles. */
+.vg-similar{clear:both;position:relative;z-index:2;width:100%;box-sizing:border-box;margin:64px auto 0;max-width:960px;padding:0 16px;text-align:center;}
 .vg-similar h2{font-family:'Space Grotesk',sans-serif;font-size:16px;letter-spacing:.08em;text-transform:uppercase;margin:0 0 20px;}
 .vg-similar-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:16px;}
 .vg-similar-grid a{display:flex;flex-direction:column;gap:8px;text-decoration:none !important;color:var(--ink) !important;font-size:13px;}
+/* Même police que les noms de la boutique (.product-list-thumb-name). */
+.vg-similar-grid a,.vg-similar-grid span{font-family:'Space Grotesk',sans-serif !important;font-size:14px;font-weight:500;}
 .vg-similar-grid img{width:100%;aspect-ratio:1/1;object-fit:cover;border-radius:8px;}
 html.vg-product-sold-out .product-subheader .product-status{font-size:14px;}
 
@@ -1682,6 +1694,17 @@ html[data-vg-lang="fr"] .vg-story-block p.vg-story-fr { font-size: 14px !importa
 @media (max-width: 640px) {
   header nav.utility ul { gap: 6px !important; }
   header nav.utility ul li { margin-left: 0 !important; margin-right: 0 !important; }
+}
+
+/* Rangée des catégories (boutique, PC) : centrée comme le titre « BOUTIQUE » et la grille (elle restait collée à gauche). */
+body .subheader ul.categories{margin-left:auto !important;margin-right:auto !important;}
+
+/* iPhone en paysage (encoche) : la couleur du site remplit toute la largeur (viewport-fit=cover) et le contenu reste
+   hors des zones de l'encoche / de la barre d'accueil. */
+html{background:var(--background-color, #f4f2ec);}
+@media (orientation: landscape) and (max-height: 520px){
+  body{padding-left:env(safe-area-inset-left);padding-right:env(safe-area-inset-right);box-sizing:border-box;}
+  body .header{padding-left:max(32px, env(safe-area-inset-left)) !important;padding-right:max(32px, env(safe-area-inset-right)) !important;box-sizing:border-box;}
 }
 
 </style>
@@ -2399,10 +2422,10 @@ html[data-vg-lang="fr"] .vg-story-block p.vg-story-fr { font-size: 14px !importa
     </script>
   
   <script type="text/javascript">
-    window.bigcartel = window.bigcartel || {};
-    window.bigcartel.account = window.bigcartel.account || {};
-    window.bigcartel.account.currency = window.bigcartel.account.currency || "EUR";
-    window.bigcartel.account.moneyFormat = "sign";
+    window.vgshop = window.vgshop || {};
+    window.vgshop.account = window.vgshop.account || {};
+    window.vgshop.account.currency = window.vgshop.account.currency || "EUR";
+    window.vgshop.account.moneyFormat = "sign";
   </script>
   <script src="/shop/assets/vendor/splide.min.js"></script>
   <script src="/shop/assets/vg-theme.js"></script>
@@ -2413,7 +2436,8 @@ html[data-vg-lang="fr"] .vg-story-block p.vg-story-fr { font-size: 14px !importa
 
 window.__vgConfig = fetch('/assets/vg/products-config.json')
   .then(function (r) { return r.ok ? r.json() : {}; })
-  .catch(function () { return {}; });
+  .catch(function () { return {}; })
+  .then(function (c) { var x = window.__vgConfigExtra; if (x) for (var k in x) c[k] = x[k]; return c; });
 
 }).call(window, window.__vgLoc || window.location);</script>
 

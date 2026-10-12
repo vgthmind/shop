@@ -19,16 +19,29 @@ interface KVLike {
   get(key: string): Promise<string | null>;
   put(key: string, value: string): Promise<void>;
 }
-interface ShipEnv { HOLDS: KVLike; SITE_BASE: string }
+interface ShipEnv { HOLDS: KVLike; SITE_BASE: string; CATALOG_BASE?: string; SESSION_SECRET?: string; ADMIN_GITHUB_LOGIN?: string }
 interface CatalogLine { permalink: string; price: number }
 type JsonFn = (data: unknown, status?: number) => Response;
 
 const KEY = 'shipping:config';
 
+// Le fichier de la grille est dans /admin/ du site, protégé par le garde (functions/admin/_middleware.js) :
+// le Worker se présente avec une session d'admin qu'il signe lui-même (même format que isAdmin() dans index.ts).
+async function adminCookie(env: ShipEnv): Promise<string> {
+  if (!env.SESSION_SECRET) return '';
+  const exp = Math.floor(Date.now() / 1000) + 300;
+  const key = await crypto.subtle.importKey('raw', new TextEncoder().encode(env.SESSION_SECRET), { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']);
+  const sig = new Uint8Array(await crypto.subtle.sign('HMAC', key, new TextEncoder().encode(`vgs.${exp}.${String(env.ADMIN_GITHUB_LOGIN).toLowerCase()}`)));
+  let b = '';
+  for (const x of sig) b += String.fromCharCode(x);
+  return `vgs.${exp}.${btoa(b).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '')}`;
+}
+
 export async function loadShippingConfig(env: ShipEnv): Promise<any> {
   const saved = await env.HOLDS.get(KEY);
   if (saved) { try { return JSON.parse(saved); } catch (e) { /* grille abimee : on retombe sur le fichier du depot */ } }
-  const res = await fetch(`${env.SITE_BASE}/admin/shipping-config.json`, { cf: { cacheTtl: 60 } } as any);
+  const tok = await adminCookie(env);
+  const res = await fetch(`${env.CATALOG_BASE || env.SITE_BASE}/admin/shipping-config.json`, { headers: tok ? { Cookie: 'vg-admin=' + encodeURIComponent(tok) } : {}, cf: { cacheTtl: 60 } } as any);
   if (!res.ok) throw new Error('Grille des frais d’envoi introuvable.');
   return res.json();
 }

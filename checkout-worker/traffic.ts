@@ -84,6 +84,18 @@ export class TrafficDO extends DurableObject {
 
   async live() { return this.presence.count(Date.now()); }
 
+  // Remet à zéro les compteurs d'un jour (visites de test / d'audit comptées par erreur). day = AAAA-MM-JJ.
+  async resetDay(day: string) {
+    const now = Date.now();
+    const storage = await this.load(now);
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(day)) return false;
+    if (day === this.today) {
+      this.day = emptyDay(); this.visitors = new Set(); this.presence = new Presence();
+      await this.flush();
+    } else await storage.delete('d:' + day);
+    return true;
+  }
+
   async report(days: number) {
     const now = Date.now();
     await this.load(now);
@@ -124,6 +136,11 @@ export async function trafficRoutes(request: Request, env: TrafficEnv, path: str
   if (path === '/admin/traffic' && request.method === 'GET') {
     const days = Math.floor(Number(new URL(request.url).searchParams.get('days'))) || 30;
     return json(await stub(env).report(days));
+  }
+  if (path === '/admin/traffic/reset' && request.method === 'POST') {
+    const body: any = await request.json().catch(() => ({}));
+    const ok = await stub(env).resetDay(String(body && body.day || ''));
+    return json(ok ? { ok: true } : { error: 'Jour invalide (AAAA-MM-JJ).' }, ok ? 200 : 400);
   }
   if (path === '/admin/traffic/live' && request.method === 'GET') return json({ live: await stub(env).live() });
   return null;

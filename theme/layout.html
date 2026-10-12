@@ -7,14 +7,14 @@
 
 {% comment %} Handle special page cases {% endcomment %}
 {% if page.name == 'Home' %}
-  {% assign page_title = "vgthmind — créations fabriquées en France" %}
+  {% assign page_title = "Home / Accueil | vgthmind" %}
 {% elsif page.full_url contains '/products' %}
   {% if page.full_url contains 'search=' %}
     {% assign page_title = t['products.search_results'] | append: title_suffix %}
   {% elsif theme.collections %}
     {% assign page_title = t['navigation.categories'] | append: title_suffix %}
   {% endif %}
-  {% unless page.full_url contains 'search=' %}{% assign page_title = "Boutique — créations vgthmind" %}{% endunless %}
+  {% unless page.full_url contains 'search=' %}{% assign page_title = "Shop / Boutique | vgthmind" %}{% endunless %}
 {% elsif page.permalink == 'infos-conditions-generales' %}
   {% assign page_title = "Infos & conditions de vente" | append: title_suffix %}
 {% endif %}
@@ -128,12 +128,15 @@
 
     <title>{{ page_title }}</title>
     <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    {% comment %} Partage de liens (accueil, Studio, autres pages) ; les fiches produit ont deja les leurs (BigCartel) {% endcomment %}
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    {% comment %} Partage de liens (accueil, Studio, autres pages) ; les fiches produit ont deja les leurs (l'ancienne plateforme) {% endcomment %}
     {% unless page.permalink == 'product' %}{% assign vg_og = "" %}{% if page.permalink == 'studio' %}{% assign vg_desc = "Inside the vgthmind studio: every piece is designed, patterned, cut, sewn and finished by hand. L'atelier vgthmind : chaque pièce est dessinée, patronnée, coupée, cousue et finie à la main." %}{% elsif page.permalink == 'home' %}{% assign vg_desc = "Vêtements et accessoires, pièces uniques et petites séries, conçus et fabriqués par une seule personne en France." %}{% assign vg_og = "Clothing and accessories: unique pieces and small runs, designed and made by one person in France." %}{% elsif page.permalink == 'products' %}{% assign vg_desc = "Vêtements et accessoires en pièces uniques et petites séries, en tissus de fin de rouleau, faits par une seule personne en France." %}{% assign vg_og = "Clothing and accessories in unique pieces and small runs, from end-of-roll fabrics, made by one person in France." %}{% elsif page.permalink == 'infos-conditions-generales' %}{% assign vg_desc = "Retours, garantie, livraison et paiement des créations vgthmind. Returns, warranty, shipping and payment." %}{% elsif page.permalink == 'sur-demande' %}{% assign vg_desc = "Proposer un projet à vgthmind : pièce custom peinte, sur-mesure, location pour un clip ou une scène, collab. Start a project: custom painted piece, made to measure, rental for a video or stage, collab." %}{% elsif page.permalink == 'contact-914a3d' %}{% assign vg_desc = "Contacter vgthmind : formulaire, e-mail ou Instagram. Contact vgthmind: form, email or Instagram." %}{% elsif page.permalink == 'mentions-legales' %}{% assign vg_desc = "Éditeur et hébergement du site vgthmind. Publisher and hosting of the vgthmind website." %}{% elsif page.permalink == 'confidentialite' %}{% assign vg_desc = "Données personnelles et prestataires de la boutique vgthmind. Personal data and service providers of the vgthmind shop." %}{% else %}{% assign vg_desc = "vgthmind: one-of-a-kind pieces designed, patterned and hand-sewn in France. Pièces uniques conçues, patronnées et cousues à la main en France." %}{% endif %}{% if vg_og == "" %}{% assign vg_og = vg_desc %}{% endif %}
     <meta name="description" content="{{ vg_desc }}">
     <meta property="og:description" content="{{ vg_og }}">
     <meta property="og:image" content="https://assets.bigcartel.com/theme_images/142638069/Cover.png?auto=format&fit=max&w=1200">
+    <meta property="og:image:type" content="image/jpeg">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="1200">
     <meta name="twitter:description" content="{{ vg_og }}">
     <meta name="twitter:image" content="https://assets.bigcartel.com/theme_images/142638069/Cover.png?auto=format&fit=max&w=1200">{% endunless %}
     <link href="{{ theme | theme_css_url }}" media="screen" rel="stylesheet" type="text/css">
@@ -742,10 +745,10 @@
   <script src="//cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
   <script src="{{ 'api' | theme_js_url }}"></script>
   <script type="text/javascript">
-    window.bigcartel = window.bigcartel || {};
-    window.bigcartel.account = window.bigcartel.account || {};
-    window.bigcartel.account.currency = window.bigcartel.account.currency || "{{ store.currency.code }}";
-    window.bigcartel.account.moneyFormat = "{{ theme.money_format }}";
+    window.vgshop = window.vgshop || {};
+    window.vgshop.account = window.vgshop.account || {};
+    window.vgshop.account.currency = window.vgshop.account.currency || "{{ store.currency.code }}";
+    window.vgshop.account.moneyFormat = "{{ theme.money_format }}";
   </script>
   <script src="{{ theme | theme_js_url }}"></script>
   {% if page.full_url contains '/product/' %}
@@ -757,9 +760,9 @@
       if (isBackForward) {
         // Always fetch fresh data on back/forward to handle browser restoration timing
         Product.find('{{ product.permalink }}', processProduct);
-      } else if (window.bigcartel?.product) {
+      } else if (window.vgshop?.product) {
         // Normal page load with cached data (optimization)
-        processProduct(window.bigcartel.product);
+        processProduct(window.vgshop.product);
       } else {
         // Fallback: no cached data available
         Product.find('{{ product.permalink }}', processProduct);

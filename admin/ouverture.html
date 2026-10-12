@@ -1,0 +1,142 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="robots" content="noindex, nofollow">
+  <title>vgthmind — vidéos d'ouverture</title>
+  <link rel="icon" href="../assets/theme/favicon-32.png" type="image/png" sizes="32x32">
+  <style>
+    :root { --bg: #f4f2ec; --ink: #171717; --muted: #6b6860; --line: rgba(0,0,0,.12); --ok: #1f7a3a; --bad: #b3261e; }
+    * { box-sizing: border-box; }
+    [hidden] { display: none !important; }
+    body { margin: 0; background: var(--bg); color: var(--ink); font: 16px/1.45 system-ui, -apple-system, "Segoe UI", sans-serif; }
+    main { max-width: 860px; margin: 0 auto; padding: 20px 16px 80px; }
+    nav a { color: inherit; margin-right: 14px; }
+    h1 { font-size: 20px; letter-spacing: .08em; text-transform: uppercase; }
+    .muted { color: var(--muted); }
+    .card { background: rgba(255,255,255,.7); border: 1px solid var(--line); border-radius: 12px; padding: 14px; margin: 14px 0; }
+    button { font: inherit; padding: 10px 16px; border-radius: 10px; border: 1px solid var(--ink); background: var(--ink); color: #fff; cursor: pointer; }
+    button.ghost { background: transparent; color: var(--ink); }
+    .clip { display: flex; align-items: center; gap: 12px; padding: 8px 0; border-top: 1px solid var(--line); }
+    .clip:first-child { border-top: 0; }
+    .clip video { width: 54px; height: 96px; object-fit: cover; border-radius: 8px; background: #000; }
+    .clip .nm { flex: 1; min-width: 0; word-break: break-all; }
+    #msg { min-height: 1.4em; }
+    code { background: rgba(0,0,0,.06); padding: 1px 5px; border-radius: 5px; }
+  </style>
+</head>
+<body>
+<main>
+  <nav><a href="menu.html">← Tableau de bord</a></nav>
+  <h1>Vidéos d'ouverture</h1>
+  <p class="muted">Écran « Enter » de l'accueil : deux de ces clips, tirés au hasard, défilent à chaque première visite. Chaque clip est chargé avant le clic : il doit donc être <strong>court et léger</strong>.</p>
+
+  <div class="card">
+    <strong>Format conseillé</strong>
+    <ul>
+      <li>Vertical (9:16), <strong>MP4 H.264</strong>, 480 px de large, <strong>3 secondes</strong>, sans son, moins de <strong>1 Mo</strong> (maximum accepté ici : 3 Mo et 8 s).</li>
+      <li>Un reel Instagram entier est trop lourd : raccourcis-le d'abord. Sur le PC, glisse le fichier sur <code>outils\Convertir-reel-ouverture.bat</code> (dans le dossier du projet) : il crée le clip léger à côté.</li>
+    </ul>
+  </div>
+
+  <div id="login-box" class="card" hidden>
+    <p>Connecte-toi à GitHub pour ajouter ou retirer des clips.</p>
+    <button type="button" id="login">Se connecter avec GitHub</button>
+  </div>
+
+  <div id="app" hidden>
+    <div class="card">
+      <label for="file"><strong>Ajouter des clips</strong></label><br>
+      <input type="file" id="file" accept="video/mp4" multiple>
+      <p class="muted">Le site se reconstruit tout seul (1 à 2 min) : les nouveaux clips apparaissent ensuite à l'ouverture.</p>
+    </div>
+    <div class="card"><strong id="count">Clips</strong><div id="list"></div></div>
+  </div>
+  <p id="msg" role="status" aria-live="polite"></p>
+</main>
+<script src="studio-publish.js"></script>
+<script src="vg-admin-auth.js"></script>
+<script>
+(function () {
+  'use strict';
+  var DIR = 'assets/media/splash', BRANCH = 'main', MAX_BYTES = 3 * 1048576, MAX_S = 8;
+  var $ = function (id) { return document.getElementById(id); };
+  function say(t, bad) { var m = $('msg'); m.textContent = t || ''; m.style.color = bad ? 'var(--bad)' : ''; }
+  function esc(s) { return String(s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
+  var api = function (m, p, b) { return VGStudioPublish.api(m, p, b); };
+
+  function load() {
+    say('Chargement…');
+    return api('GET', '/contents/' + DIR + '?ref=' + BRANCH).then(function (files) {
+      var clips = (files || []).filter(function (f) { return /\.mp4$/i.test(f.name); });
+      $('login-box').hidden = true; $('app').hidden = false;
+      $('count').textContent = clips.length + ' clip' + (clips.length > 1 ? 's' : '');
+      $('list').innerHTML = clips.map(function (f) {
+        return '<div class="clip"><video muted loop playsinline preload="none" src="../' + DIR + '/' + encodeURIComponent(f.name) + '"></video>'
+          + '<div class="nm"><strong>' + esc(f.name) + '</strong><div class="muted">' + Math.round(f.size / 1024) + ' Ko</div></div>'
+          + '<button type="button" class="ghost" data-del="' + esc(f.name) + '" data-sha="' + esc(f.sha) + '">Retirer</button></div>';
+      }).join('') || '<p class="muted">Aucun clip.</p>';
+      say('');
+    }).catch(function (e) { say('Erreur : ' + e.message, true); });
+  }
+
+  function probe(file) {
+    return new Promise(function (resolve) {
+      var v = document.createElement('video'), u = URL.createObjectURL(file);
+      v.preload = 'metadata'; v.muted = true;
+      v.onloadedmetadata = function () { URL.revokeObjectURL(u); resolve({ d: v.duration, w: v.videoWidth, h: v.videoHeight }); };
+      v.onerror = function () { URL.revokeObjectURL(u); resolve(null); };
+      v.src = u;
+    });
+  }
+  function b64(file) {
+    return new Promise(function (resolve, reject) {
+      var r = new FileReader();
+      r.onload = function () { resolve(String(r.result).split(',')[1]); };
+      r.onerror = function () { reject(new Error('Lecture du fichier impossible.')); };
+      r.readAsDataURL(file);
+    });
+  }
+  function slug(name) { return name.replace(/\.[^.]+$/, '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'clip'; }
+
+  $('file').addEventListener('change', function () {
+    var files = Array.prototype.slice.call(this.files || []), input = this;
+    var chain = Promise.resolve(), ok = 0;
+    files.forEach(function (f) {
+      chain = chain.then(function () {
+        if (f.size > MAX_BYTES) { say(f.name + ' : trop lourd (' + (f.size / 1048576).toFixed(1) + ' Mo, maximum 3 Mo). Raccourcis-le d\'abord.', true); return; }
+        return probe(f).then(function (m) {
+          if (!m) { say(f.name + ' : fichier vidéo illisible (MP4 H.264 attendu).', true); return; }
+          if (m.d > MAX_S) { say(f.name + ' : trop long (' + Math.round(m.d) + ' s, maximum ' + MAX_S + ' s).', true); return; }
+          return b64(f).then(function (data) {
+            say('Envoi de ' + f.name + '…');
+            var name = slug(f.name) + '.mp4';
+            return api('GET', '/contents/' + DIR + '/' + name + '?ref=' + BRANCH).then(function (ex) { return ex && ex.sha; }, function () { return null; }).then(function (sha) {
+              var body = { message: 'Vidéo d\'ouverture : ' + name, content: data, branch: BRANCH };
+              if (sha) body.sha = sha;
+              return api('PUT', '/contents/' + DIR + '/' + name, body);
+            }).then(function () { ok++; });
+          });
+        });
+      });
+    });
+    chain.then(function () { input.value = ''; return load(); }).then(function () { if (ok) say(ok + ' clip' + (ok > 1 ? 's' : '') + ' ajouté' + (ok > 1 ? 's' : '') + '. Le site se reconstruit (1 à 2 min).'); })
+      .catch(function (e) { say('Erreur : ' + e.message, true); });
+  });
+
+  $('list').addEventListener('click', function (e) {
+    var name = e.target.getAttribute && e.target.getAttribute('data-del');
+    if (!name || !confirm('Retirer « ' + name + ' » des vidéos d\'ouverture ?')) return;
+    api('DELETE', '/contents/' + DIR + '/' + encodeURIComponent(name), { message: 'Retire la vidéo d\'ouverture ' + name, sha: e.target.getAttribute('data-sha'), branch: BRANCH })
+      .then(load).then(function () { say('Retiré. Le site se reconstruit (1 à 2 min).'); })
+      .catch(function (err) { say('Erreur : ' + err.message, true); });
+  });
+  $('list').addEventListener('mouseover', function (e) { if (e.target.tagName === 'VIDEO') e.target.play().catch(function () {}); });
+
+  $('login').addEventListener('click', function () { VGStudioPublish.login().then(load).catch(function (e) { say(e.message, true); }); });
+  $('login-box').hidden = false;
+})();
+</script>
+</body>
+</html>

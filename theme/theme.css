@@ -1057,7 +1057,7 @@ footer *:not(.footer-custom-content) {
     padding: 48px 32px;
   }
 }
-footer .bigcartel-credit {
+footer .vg-credit {
   font-size: 14px;
   line-height: 1em;
   -webkit-align-items: center;
@@ -1069,10 +1069,10 @@ footer .bigcartel-credit {
   outline-offset: 4px;
   padding: 2px 0;
 }
-footer .bigcartel-credit__text {
+footer .vg-credit__text {
   position: relative;
 }
-footer .bigcartel-credit__lockup {
+footer .vg-credit__lockup {
   display: block;
   fill: currentColor;
   padding-top: 1px;

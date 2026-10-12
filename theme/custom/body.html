@@ -1,7 +1,8 @@
 <script>
 window.__vgConfig = fetch('https://vgthmind.github.io/assets/bigcartel/products-config.json')
   .then(function (r) { return r.ok ? r.json() : {}; })
-  .catch(function () { return {}; });
+  .catch(function () { return {}; })
+  .then(function (c) { var x = window.__vgConfigExtra; if (x) for (var k in x) c[k] = x[k]; return c; });
 </script>
 
 <script>

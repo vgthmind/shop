@@ -8,6 +8,10 @@
   var ENDPOINT = 'https://vgthmind-shop-checkout.vgthm66.workers.dev';
   if (navigator.doNotTrack === '1' || window.doNotTrack === '1') return;
   if (/(^|\/)admin(\/|$)/.test(location.pathname)) return;
+  // Visites de test : navigateur automatisé, page dans un cadre (audit), serveur local, ou « ?notrack=1 » (mémorisé dans ce navigateur).
+  try { if (/[?&]notrack=1/.test(location.search)) localStorage.setItem('vg-notrack', '1'); if (localStorage.getItem('vg-notrack') === '1') return; } catch (e) {}
+  if (navigator.webdriver || window.top !== window.self) return;
+  if (/^(localhost|127\.0\.0\.1|\[::1\])$|\.(localhost|test)$/.test(location.hostname)) return;
   // Session admin (meme origine que la boutique) : mes visites ne comptent pas.
   try {
     var s = localStorage.getItem('vg-admin-session') || '';

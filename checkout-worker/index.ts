@@ -32,6 +32,7 @@
 
 import { DurableObject } from 'cloudflare:workers';
 import { checkoutShipping } from './shipping-worker';
+import { recordSale, replayPending, accountingConfigured } from './accounting';
 import { handleContact } from './contact';
 import { trafficRoutes } from './traffic';
 import { buildInvoice, parisYear } from './invoice';
@@ -59,6 +60,9 @@ interface Env {
   GITHUB_TOKEN?: string; // ancien systeme : n'est plus utilise, a supprimer
   ALLOWED_ORIGIN: string; // https://vgthmind.github.io
   SITE_BASE: string; // https://vgthmind.github.io/shop
+  COMPTA_URL?: string; COMPTA_SECRET?: string; COMPTA_TEST?: string; // secrets : envoi des ventes vers le Sheet (accounting.ts)
+  DEPLOY_HOOK_URL?: string; // secret : Deploy Hook Cloudflare Pages (mise en ligne programmée)
+  CATALOG_BASE?: string; // https://vgthmind-shop.pages.dev : source du catalogue et de la grille d'envoi
   LIVE_MODE?: string; // "1" seulement le jour du passage en live
   ADMIN_GITHUB_LOGIN: string; // seul compte GitHub admin
   HOLDS: KV; // commandes expediees, sauvegardes du stock, etats OAuth
@@ -193,6 +197,12 @@ export class StockDO extends DurableObject {
     return num;
   }
 
+  // Supprime des entrées de stock (pièces de test, pièces disparues).
+  async deleteStock(slugs: string[]) {
+    const storage = (this as any).ctx.storage;
+    for (const slug of slugs) await storage.delete('q:' + slug);
+  }
+
   async setStock(values: Record<string, number>) {
     const storage = (this as any).ctx.storage;
     for (const [slug, n] of Object.entries(values)) {
@@ -240,7 +250,11 @@ export default {
 
     try {
       // Sans cle Stripe.
-      if (path === '/status') return await status(env);
+      // /status dit quelles clés sont posées, le mode, le stock : réservé à l'admin connecté (page admin « État »).
+      if (path === '/status') {
+        if (!(await isAdmin(request, env))) return json({ error: 'Non autorisé.' }, 401);
+        return await status(env, cors);
+      }
       if (path === '/stock' && request.method === 'GET') return await publicStock(env, cors);
       if (path === '/t') { const r = await trafficRoutes(request, env, path, json); if (r) return r; }
       if ((path === '/auth' || path === '/callback') && !(await allow(env, 'rl:login:' + (request.headers.get('CF-Connecting-IP') || 'x'), 12, 900))) return json({ error: 'Trop de tentatives de connexion, réessaie dans 15 minutes.' }, 429);
@@ -255,6 +269,35 @@ export default {
           if (!body || typeof body.stock !== 'object') return json({ error: 'Requête invalide.' }, 400);
           await stockStub(env).setStock(body.stock);
           return json(await adminStock(env));
+        }
+        if (path === '/admin/stock/delete' && request.method === 'POST') {
+          const body: any = await request.json().catch(() => ({}));
+          if (!body || !Array.isArray(body.slugs)) return json({ error: 'Requête invalide.' }, 400);
+          await stockStub(env).deleteStock(body.slugs.filter((x: unknown) => typeof x === 'string').slice(0, 50));
+          return json(await adminStock(env));
+        }
+        if (path === '/admin/compta/status' && request.method === 'GET') {
+          const q = await env.HOLDS.list({ prefix: 'compta:q:' });
+          const ok = await env.HOLDS.list({ prefix: 'compta:ok:' });
+          return json({ configured: accountingConfigured(env as any), pending: q.keys.length, done: ok.keys.length });
+        }
+        if (path === '/admin/compta/replay' && request.method === 'POST') return json(await replayPending(env as any, 100));
+        if (path === '/admin/schedule' && request.method === 'GET') return json({ schedule: await readSchedule(env), hook: !!env.DEPLOY_HOOK_URL, leadSeconds: LEAD_S });
+        if (path === '/admin/schedule' && request.method === 'POST') {
+          const body: any = await request.json().catch(() => ({}));
+          const slug = String(body && body.slug || '').slice(0, 100);
+          const at = Date.parse(String(body && body.at || ''));
+          if (!slug || !Number.isFinite(at)) return json({ error: 'Pièce ou date invalide.' }, 400);
+          const list = (await readSchedule(env)).filter((e) => e.slug !== slug);
+          list.push({ slug, at: new Date(at).toISOString() });
+          await env.HOLDS.put(SCHEDULE_KEY, JSON.stringify(list));
+          return json({ schedule: list, hook: !!env.DEPLOY_HOOK_URL, leadSeconds: LEAD_S });
+        }
+        if (path === '/admin/schedule/cancel' && request.method === 'POST') {
+          const body: any = await request.json().catch(() => ({}));
+          const list = (await readSchedule(env)).filter((e) => e.slug !== String(body && body.slug || ''));
+          await env.HOLDS.put(SCHEDULE_KEY, JSON.stringify(list));
+          return json({ schedule: list });
         }
         if (path === '/admin/backups' && request.method === 'GET') {
           const list = await env.HOLDS.list({ prefix: 'backup:' });
@@ -330,13 +373,53 @@ export default {
   // Sauvegarde quotidienne du stock (cron dans wrangler.toml).
   // Toutes les heures : relances et conservation des demandes ; la nuit (03:30 UTC) : sauvegardes.
   async scheduled(event: any, env: Env, ctx: any) {
+    // Chaque minute : mises en ligne programmées (rien d'autre).
+    if (event && event.cron === '* * * * *') {
+      ctx.waitUntil(publishCron(env).catch((e) => alertAdmin(env, 'publish-cron', 'Mise en ligne programmée en erreur', String(e && e.stack ? e.stack : e))));
+      return;
+    }
     if (!event || !event.cron || event.cron === '30 3 * * *') {
+      // Pièces de test oubliées dans le stock (2026-10-12) : retirées une fois pour toutes.
+      ctx.waitUntil(Promise.resolve().then(() => stockStub(env).deleteStock(['zz-test-fictif', 'zz-test-live-k7q4x2m9'])).catch(() => {}));
       ctx.waitUntil(backupStock(env));
       ctx.waitUntil(backupOrders(env));
+      if (accountingConfigured(env as any)) ctx.waitUntil(replayPending(env as any, 100).catch(() => {})); // ventes restées en file (script Google injoignable)
     }
     ctx.waitUntil(requestsCron(env as any, reqDeps(env)).catch((e) => alertAdmin(env, 'req-cron', 'Cron des demandes en erreur', String(e && e.stack ? e.stack : e))));
   },
 };
+
+// --- Mise en ligne programmée ---------------------------------------------------------------------------------
+// La fiche porte `publish_at` (date ISO) et reste masquée dans le dépôt ; le site la publie quand une construction a lieu
+// à partir de LEAD_S + marge avant l'heure (generator/build-catalog.js, PUBLISH_LEAD_MS). Ici : à H - LEAD_S, on déclenche
+// la construction du site (Deploy Hook Cloudflare Pages, secret DEPLOY_HOOK_URL). Le site met ~45 s à se publier.
+const SCHEDULE_KEY = 'publish:schedule';
+const LEAD_S = 60;
+interface ScheduleEntry { slug: string; at: string; fired?: string }
+async function readSchedule(env: Env): Promise<ScheduleEntry[]> {
+  const raw = await env.HOLDS.get(SCHEDULE_KEY);
+  if (!raw) return [];
+  try { const l = JSON.parse(raw); return Array.isArray(l) ? l : []; } catch (e) { return []; }
+}
+export async function publishCron(env: Env, now = Date.now()): Promise<{ fired: number }> {
+  const list = await readSchedule(env);
+  if (!list.length) return { fired: 0 };
+  const due = list.filter((e) => !e.fired && Date.parse(e.at) - LEAD_S * 1000 <= now && now <= Date.parse(e.at) + 30 * 60 * 1000);
+  let fired = 0;
+  if (due.length) {
+    if (!env.DEPLOY_HOOK_URL) {
+      await alertAdmin(env, 'publish-nohook', 'Mise en ligne programmée impossible', "Le secret DEPLOY_HOOK_URL n'est pas posé : la pièce programmée ne sera pas publiée à l'heure. Voir A-FAIRE.");
+    } else {
+      const r = await fetch(env.DEPLOY_HOOK_URL, { method: 'POST' }).catch(() => null);
+      if (r && r.ok) { for (const e of due) e.fired = new Date(now).toISOString(); fired = due.length; }
+      else await alertAdmin(env, 'publish-hook', 'Mise en ligne programmée : la construction du site ne démarre pas', 'Le Deploy Hook Cloudflare a répondu ' + (r ? r.status : 'rien') + ' ; nouvel essai à la minute suivante.');
+    }
+  }
+  // Ménage : entrées déclenchées depuis plus d'un jour, ou ratées depuis plus de 30 min.
+  const keep = list.filter((e) => !(e.fired && now - Date.parse(e.fired) > 86400_000) && !(!e.fired && now > Date.parse(e.at) + 30 * 60 * 1000));
+  if (due.length || keep.length !== list.length) await env.HOLDS.put(SCHEDULE_KEY, JSON.stringify(keep));
+  return { fired };
+}
 
 function stripeKey(env: Env): { ok: true; value: string } | { ok: false; error: string } {
   const rawKey = env.STRIPE_SECRET_KEY || '';
@@ -353,7 +436,8 @@ function stripeKey(env: Env): { ok: true; value: string } | { ok: false; error: 
 
 // --- Catalogue -------------------------------------------------------------
 async function loadCatalog(env: Env): Promise<Product[]> {
-  const res = await fetch(`${env.SITE_BASE}/products.json`, { cf: { cacheTtl: 60, cacheEverything: true } } as any);
+  // Catalogue publié : celui de Cloudflare Pages (CATALOG_BASE), reconstruit à chaque modification dans l'admin.
+  const res = await fetch(`${env.CATALOG_BASE || env.SITE_BASE}/products.json`, { cf: { cacheTtl: 60, cacheEverything: true } } as any);
   if (!res.ok) throw new Error('Catalogue indisponible');
   return res.json();
 }
@@ -365,7 +449,10 @@ function catalogDefaults(catalog: Product[]): Record<string, number> {
 
 async function publicStock(env: Env, cors: Record<string, string>): Promise<Response> {
   const catalog = await loadCatalog(env);
-  const stock = await stockStub(env).snapshot(catalogDefaults(catalog));
+  const all = await stockStub(env).snapshot(catalogDefaults(catalog));
+  // Seulement les pièces du catalogue publié (ni pièces de test, ni pièces masquées).
+  const stock: Record<string, number> = {};
+  for (const p of catalog) if (p.permalink in all) stock[p.permalink] = all[p.permalink];
   return new Response(JSON.stringify({ stock }), {
     headers: { 'Content-Type': 'application/json', 'Cache-Control': 'public, max-age=15', ...cors },
   });
@@ -515,7 +602,7 @@ async function checkout(request: Request, env: Env, key: string, json: JsonFn): 
   }
   const shipping = quote.cents / 100;
 
-  const origin = new URL(env.SITE_BASE).origin;
+  const origin = new URL(env.CATALOG_BASE || env.SITE_BASE).origin;
   const slugList = products.map((p) => p.permalink).join(',').slice(0, 500);
   const itemList = items.map((it) => `${it.slug}:${it.qty}`).join(',').slice(0, 500);
   const params = new URLSearchParams();
@@ -648,6 +735,10 @@ async function processPaid(env: Env, s: any) {
   await stockStub(env).confirm(s.id, meta.cart_id || '', items, catalogDefaults(catalog));
   await sendOrderEmails(env, s).catch((e) => alertAdmin(env, 'mail-' + s.id, "Un mail de commande n'est pas parti", `Commande ${s.id} : ${String(e && e.message ? e.message : e)}`)); // un échec d'email ne bloque jamais la commande
   if (s.livemode) await stockStub(env).invoiceNumber(s.id, parisYear(s.created || Math.floor(Date.now() / 1000))).catch(() => {});
+  // Compta : une ligne par commande payée dans le Sheet (seulement si COMPTA_URL et COMPTA_SECRET sont posés ; commandes de test ignorées).
+  if (accountingConfigured(env as any)) {
+    await recordSale(env as any, s, await assignRef(env, String(s.id))).catch((e) => alertAdmin(env, 'compta-' + s.id, "Une vente n'est pas partie vers la compta", `Commande ${s.id} : ${String(e && e.message ? e.message : e)}`));
+  }
 }
 
 // --- Emails de commande (Resend) ---------------------------------------------
@@ -674,7 +765,7 @@ async function mailItems(env: Env, lineItems: any[], money: (c: number) => strin
     const prod = typeof li.price?.product === 'object' ? li.price.product : null;
     const p = catalog.find((c) => c.permalink === prod?.metadata?.slug) || (prod ? undefined : catalog.find((c) => c.name === li.description));
     const size = /\b(?:[Ss]ize|[Tt]aille|SIZE|TAILLE)\s+([A-Z]{1,4}|\d{1,3}(?:[./-]\d{1,3})?)\b/.exec(p?.description || '');
-    const catImg = !prod && p && p.images && p.images[0] ? new URL(env.SITE_BASE).origin + encodeURI(p.images[0].url) : '';
+    const catImg = !prod && p && p.images && p.images[0] ? new URL(env.CATALOG_BASE || env.SITE_BASE).origin + encodeURI(p.images[0].url) : '';
     return {
       name: String(li.description),
       size: size ? size[1] : '',
@@ -816,7 +907,7 @@ async function oauthCallback(request: Request, env: Env): Promise<Response> {
 }
 
 // --- /status -----------------------------------------------------------------
-async function status(env: Env): Promise<Response> {
+async function status(env: Env, cors: Record<string, string> = {}): Promise<Response> {
   const lines: string[] = [];
   const ok = (b: boolean) => (b ? 'OK ' : '-- ');
   const raw = env.STRIPE_SECRET_KEY || '';
@@ -848,7 +939,7 @@ async function status(env: Env): Promise<Response> {
   const latest = await env.HOLDS.get('backup:latest');
   lines.push(`${ok(!!latest)}dernière sauvegarde du stock : ${latest ? JSON.parse(latest).date : 'aucune'}`);
   lines.push(`   mode : ${env.LIVE_MODE === '1' ? 'LIVE' : 'test uniquement'}`);
-  return new Response(lines.join('\n') + '\n', { headers: { 'Content-Type': 'text/plain; charset=utf-8', 'Cache-Control': 'no-store' } });
+  return new Response(lines.join('\n') + '\n', { headers: { 'Content-Type': 'text/plain; charset=utf-8', 'Cache-Control': 'no-store', ...cors } });
 }
 
 // --- Outils ------------------------------------------------------------------

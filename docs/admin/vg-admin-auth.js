@@ -12,7 +12,20 @@
   var LAST = 'vg-admin-last'; // derniere activite (deconnexion automatique apres 30 min sans rien faire)
   var IDLE_MS = 30 * 60 * 1000;
   function idle() { try { var t = Number(localStorage.getItem(LAST)) || 0; return t > 0 && Date.now() - t > IDLE_MS; } catch (e) { return false; } }
-  function touch() { try { localStorage.setItem(LAST, String(Date.now())); } catch (e) {} }
+  // Cookie de session lu par le garde des pages /admin (functions/admin/_middleware.js) : même valeur que la session,
+  // valable 30 min après la dernière activité (le garde refuse les pages admin sans lui).
+  function setCookie(v) {
+    try {
+      document.cookie = 'vg-admin=' + (v ? encodeURIComponent(v) : '') + '; path=/; max-age=' + (v ? 1800 : 0) + '; SameSite=Strict' + (location.protocol === 'https:' ? '; Secure' : '');
+    } catch (e) {}
+  }
+  function touch() {
+    try {
+      localStorage.setItem(LAST, String(Date.now()));
+      var s = localStorage.getItem(KEY) || '';
+      if (s && Number(s.split('.')[1]) > Date.now() / 1000) setCookie(s);
+    } catch (e) {}
+  }
 
   // Session signee par le Worker (30 jours, renouvelee), vide si absente ou expiree.
   window.vgAdminToken = function () {
@@ -33,7 +46,7 @@
       .then(function (d) { if (d && d.session) localStorage.setItem(KEY, d.session); })
       .catch(function () {});
   }
-  try { if (localStorage.getItem(KEY) && idle()) { localStorage.removeItem(KEY); localStorage.removeItem('vg-admin-token'); } } catch (e) {}
+  try { if (localStorage.getItem(KEY) && idle()) { localStorage.removeItem(KEY); localStorage.removeItem('vg-admin-token'); setCookie(''); } } catch (e) {}
   renew();
   touch();
   ['click', 'keydown', 'touchstart', 'scroll', 'input'].forEach(function (ev) {
@@ -76,6 +89,7 @@
 
   window.vgAdminLogout = function () {
     try { localStorage.removeItem(KEY); localStorage.removeItem('vg-admin-token'); } catch (e) {}
+    setCookie('');
   };
 
   // Appel au Worker avec le jeton ; 401 -> jeton oublié (à reconnecter).

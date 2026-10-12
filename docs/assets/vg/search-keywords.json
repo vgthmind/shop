@@ -1,5 +1,4 @@
 {
- "_lisezmoi": "Mots-cles de recherche par produit (cle = permalink BigCartel, visible dans l'URL /product/...). Pas d'accents ni de majuscules necessaires : la recherche les ignore. Chaque mot tape doit correspondre au DEBUT d'un mot (sac -> sacoche). Apres modification : pousser, attendre le deploiement, puis bumper le ?v= du JS (voir CLAUDE.md).",
  "ch_0002": [
   "hoodie",
   "sweat",

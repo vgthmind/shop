@@ -52,9 +52,9 @@ test('nom anglais facultatif : admin (formulaire, Sveltia) et catalogue', () => 
   assert.ok(read('generator/build-catalog.js').includes('name_en'));
 });
 
-test('vg-lang.js : Latest Drop / Customs / Merch restent en anglais, prix €84.00 en EN, onglets et textes cachés traduits', () => {
+test('vg-lang.js : Latest Drop traduit en FR (Dernier drop), Customs / Merch restent en anglais, prix €84.00 en EN, onglets et textes cachés traduits', () => {
   const js = read('assets/vg-lang.js');
-  assert.ok(!js.includes("'Latest Drop': 'Nouveautés'"), 'Latest Drop reste en anglais');
+  assert.ok(js.includes("'Latest Drop': 'Dernier drop'") && !js.includes("'Merch':") && !js.includes("'Customs/Upcycling':"), 'Latest Drop traduit ; Customs et Merch restent en anglais');
   assert.ok(js.includes('window.vgMoney') && js.includes("'€' + n.toLocaleString('en-GB'"));
   for (const k of ['Open mobile navigation', 'Close navigation', 'Submit search form', 'Search products…', 'Breadcrumb', 'vgthmind Home']) assert.ok(js.includes("'" + k + "'"), k);
   for (const k of ['Boutique — créations vgthmind', 'Infos & conditions de vente', 'Suivre ma commande']) assert.ok(js.includes(k), k);

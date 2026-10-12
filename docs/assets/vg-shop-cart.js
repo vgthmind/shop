@@ -1,11 +1,11 @@
-/* Panier front-end (prototype hors BigCartel, étape 3 du plan).
+/* Panier front-end (prototype hors l'ancienne plateforme, étape 3 du plan).
    Additif, comme le Body du brouillon : ne touche à aucun gabarit
    (theme/*.html reste l'octet-pour-octet du brouillon réel), s'appuie sur
    window.__vgLoc / le fetch patché par assets/vg-shop-shim.js (déjà
    injecté avant ce script) pour voir les chemins et les requêtes sans le
    prefixe /shop, comme vg-transitions-dev.js.
 
-   BigCartel gère nativement le panier/paiement côté serveur (aucun
+   l'ancienne plateforme gère nativement le panier/paiement côté serveur (aucun
    backend ici) : ce module le remplace entièrement côté front avec
    localStorage, SANS toucher au script de transitions (vg-transitions-dev.js
    garde son animation "passive" sur #add-to-cart-form - ce module
@@ -262,7 +262,7 @@
 
     function subtotal() { return items.reduce(function (s, it) { return s + lineTotal(it); }, 0); }
     function franceOnly() { return items.filter(function (it) { return shippingFor(it, region) === null; }); }
-    // Les frais de port BigCartel de ce catalogue ont tous
+    // Les frais de port l'ancienne plateforme de ce catalogue ont tous
     // amount_with_others=0 : combiner des pièces ne coûte jamais plus que
     // la pièce la plus chère à expédier seule - même règle ici et dans le
     // Worker (qui fait foi).
@@ -273,7 +273,7 @@
     function draw() {
       root.innerHTML = '';
       var blocked = franceOnly();
-      // Même balisage que le gabarit panier BigCartel (cart.html) : le
+      // Même balisage que le gabarit panier l'ancienne plateforme (cart.html) : le
       // thème et le Custom CSS déjà validés le stylent tel quel. Pas de
       // data-item-id ni de .qty-button : theme.js n'y branche rien.
       var list = document.createElement('ul');
@@ -417,9 +417,17 @@
     wrapper.appendChild(root);
 
     // Pièces vendues / retirées depuis l'ajout au panier : retirées dès
-    // l'ouverture du panier (catalogue publié + stock réel), comme BigCartel.
+    // l'ouverture du panier (catalogue publié + stock réel), comme l'ancienne plateforme.
     Promise.all([
-      fetch('/products.json', { cache: 'no-store' }).then(function (r) { return r.ok ? r.json() : null; }).catch(function () { return null; }),
+      fetch('/products.json', { cache: 'no-store' }).then(function (r) { return r.ok ? r.json() : null; })
+        // Pièce masquée (aperçu) : absente de products.json mais encore achetable par son lien direct : on vérifie sa fiche.
+        .then(function (cat) {
+          if (!cat) return null;
+          var miss = items.filter(function (it) { return !cat.some(function (p) { return p.permalink === it.slug; }); });
+          return Promise.all(miss.map(function (it) {
+            return fetch('/product/' + encodeURIComponent(it.slug) + '.js', { cache: 'no-store' }).then(function (r) { return r.ok ? r.json() : null; }).catch(function () { return null; });
+          })).then(function (extra) { return cat.concat(extra.filter(Boolean)); });
+        }).catch(function () { return null; }),
       stockReady,
     ])
       .then(function (res) {

@@ -1,5 +1,5 @@
 /* Comportement du thème, écrit pour cette boutique (remplace theme.js et api.js
-   de BigCartel : plus aucun fichier chargé depuis assets.bigcartel.com, plus de
+   de l'ancienne plateforme : plus aucun fichier chargé depuis le CDN d'origine, plus de
    jQuery). Code à nous, sans dépendance sauf Splide (carrousel, MIT, hébergé
    dans assets/vendor/).
 

@@ -369,7 +369,7 @@ window.__vgProducts = window.__vgProducts || fetch('/products.json').then(functi
   }
 
   // Mots-cles par produit (type de vetement...), fichier separe facile a
-  // editer : assets/bigcartel/search-keywords.json (cle = permalink).
+  // editer : assets/vg-src/search-keywords.json (cle = permalink).
   var keywordsReady = (function () {
     try {
       var u = new URL('search-keywords.json', SCRIPT_SRC || location.href);
@@ -725,34 +725,35 @@ window.__vgProducts = window.__vgProducts || fetch('/products.json').then(functi
     var prevOverflow = document.documentElement.style.overflow;
     document.documentElement.style.overflow = 'hidden';
 
-    splash.addEventListener('click', function () {
-      try { sessionStorage.setItem('vg-splash-seen', '1'); } catch (err) {}
-      var clips = [
-        'https://vgthmind.github.io/assets/bigcartel/clip_1.mp4',
-        'https://vgthmind.github.io/assets/bigcartel/clip_2.mp4',
-        'https://vgthmind.github.io/assets/bigcartel/clip_3.mp4',
-        'https://vgthmind.github.io/assets/bigcartel/clip_4.mp4'
-      ];
+    // Clips d'ouverture : liste dans /assets/vg/splash.json (dossier assets/media/splash/, courts et legers : H.264 480 px).
+    // Deux clips tires au hasard sont charges DES L'AFFICHAGE de l'ecran « Enter » (avant le clic) : au clic, ils demarrent tout de suite.
+    var vidA = document.createElement('video');
+    var vidB = document.createElement('video');
+    [vidA, vidB].forEach(function (v) {
+      v.className = 'vg-splash-video';
+      v.muted = true;
+      v.playsInline = true;
+      // Safari iOS : attributs HTML en plus des proprietes (lecture inline, sans son)
+      v.setAttribute('muted', ''); v.setAttribute('playsinline', ''); v.setAttribute('webkit-playsinline', '');
+      v.defaultMuted = true;
+      v.preload = 'auto';
+      splash.appendChild(v);
+    });
+    var sequence = [];
+    var clipsReady = fetch('/assets/vg/splash.json').then(function (r) { return r.ok ? r.json() : []; }).catch(function () { return []; }).then(function (list) {
+      var clips = (list || []).slice();
       for (var si = clips.length - 1; si > 0; si--) {
         var sj = Math.floor(Math.random() * (si + 1));
         var stmp = clips[si]; clips[si] = clips[sj]; clips[sj] = stmp;
       }
-      var sequence = clips.slice(0, 2);
+      sequence = clips.slice(0, 2);
+      if (sequence[0]) { vidA.src = sequence[0]; vidA.load(); }
+      if (sequence[1]) { vidB.src = sequence[1]; vidB.load(); }
+    });
 
-      var vidA = document.createElement('video');
-      var vidB = document.createElement('video');
-      [vidA, vidB].forEach(function (v) {
-        v.className = 'vg-splash-video';
-        v.muted = true;
-        v.playsInline = true;
-        // Safari iOS : attributs HTML en plus des proprietes (lecture inline, sans son)
-        v.setAttribute('muted', ''); v.setAttribute('playsinline', ''); v.setAttribute('webkit-playsinline', '');
-        v.defaultMuted = true;
-        v.preload = 'auto';
-        splash.appendChild(v);
-      });
+    splash.addEventListener('click', function () {
+      try { sessionStorage.setItem('vg-splash-seen', '1'); } catch (err) {}
       splash.classList.add('vg-splash-playing');
-
       var finished = false;
       function finish() {
         if (finished) return;
@@ -762,10 +763,11 @@ window.__vgProducts = window.__vgProducts || fetch('/products.json').then(functi
         setTimeout(function () { splash.remove(); }, 650);
       }
 
-      var hardStop = setTimeout(finish, 2200);
+      var hardStop = setTimeout(finish, 3400);
 
       function playOn(vid, src, onStarted) {
-        vid.src = src;
+        if (!src) { finish(); return; }
+        if (vid.getAttribute('src') !== src) vid.src = src;
         vid.addEventListener('playing', function once() {
           vid.removeEventListener('playing', once);
           if (onStarted) onStarted();
@@ -775,7 +777,7 @@ window.__vgProducts = window.__vgProducts || fetch('/products.json').then(functi
 
       // Precharge le 2e clip en parallele du 1er (pas de .src partage :
       // chaque <video> garde le sien toute sa vie, donc pas de reset).
-      playOn(vidA, sequence[0], function () {
+      clipsReady.then(function () { playOn(vidA, sequence[0], function () {
         vidA.classList.add('vg-active');
         setTimeout(function () {
           if (finished) return;
@@ -785,7 +787,7 @@ window.__vgProducts = window.__vgProducts || fetch('/products.json').then(functi
             setTimeout(finish, 500);
           });
         }, 500);
-      });
+      }); });
     });
   }
 
@@ -799,7 +801,7 @@ window.__vgProducts = window.__vgProducts || fetch('/products.json').then(functi
 /* photo est analysee une seule fois, en petit (200 px), sur un canvas : */
 /* rectangle des pixels non transparents, en fractions de l'image. Resultat */
 /* garde en memoire + localStorage (cle = chemin de l'image, sans les */
-/* parametres de taille). Le CDN d'images BigCartel autorise le CORS. */
+/* parametres de taille). Le CDN d'images l'ancienne plateforme autorise le CORS. */
 /* Utilise par les sections 4 et 5 (pop), et plus tard la section 3. */
 window.__vgTrim = window.__vgTrim || (function () {
   var KEY = 'vgTrim2';
@@ -939,7 +941,7 @@ window.__vgTrim = window.__vgTrim || (function () {
   // grilles produits) : ~1,75x une vignette de grille desktop (~320px).
   // Facteurs de taille (tuiles : x la tuile normale ; grilles : x la taille
   // de base). Choix de vgthmind (2026-09-29) : tuiles 2,1x, grilles taille actuelle.
-  var TILE_K = 2.1, GRID_K = 1;
+  var TILE_K = 2.1, GRID_K = 1.4; // grilles : 1,4x (demande de vgthmind 2026-10-12 : agrandissement plus fort)
   function popSize() {
     return Math.round(Math.min(560 * GRID_K, window.innerHeight * 0.72 * GRID_K, window.innerWidth * 0.5 * GRID_K));
   }
@@ -1116,10 +1118,7 @@ window.__vgTrim = window.__vgTrim || (function () {
       cx = gv.cx; cy = gv.cy;
       target = { g: gA, auto: true, x: size / 2, y: size / 2, frameA: true };
     }
-    // Jamais coupe : le pop reste entierement dans la fenetre.
-    var half = size / 2 + 8;
-    cx = Math.min(Math.max(cx, half), window.innerWidth - half);
-    cy = Math.min(Math.max(cy, top + size / 2), window.innerHeight - half);
+    // Grossit SUR PLACE (demande de vgthmind 2026-10-12) : aucun recentrage, meme si la piece n'est pas au centre de l'ecran.
     var box = document.createElement('div');
     box.className = 'vg-pop';
     box.style.width = size + 'px';
@@ -1193,8 +1192,12 @@ window.__vgTrim = window.__vgTrim || (function () {
   // Prechargement des photos du pop (repos + 2e photo) quand le navigateur
   // est inactif : sans lui, la 2e photo mettait 1 a 2 s a apparaitre au
   // premier survol.
+  var FINE_HOVER = window.matchMedia('(hover: hover) and (pointer: fine)');
   var preloaded = {};
   function preloadAll() {
+    // Pas de prechargement massif (54 photos de 900 px) sur tactile (pas de pop) ni sur connexion lente / economie de donnees.
+    var cn = navigator.connection;
+    if (!FINE_HOVER.matches || (cn && (cn.saveData || /(^|-)[23]g$/.test(cn.effectiveType || '')))) return;
     Promise.resolve(window.__vgProducts).then(function (products) {
       var els = Array.prototype.slice.call(document.querySelectorAll('.product-list-link, .vg-category-tile'));
       var urls = [];
@@ -1445,6 +1448,7 @@ window.__vgTrim = window.__vgTrim || (function () {
     return urls.slice(0, 6);
   }
   function small(url, px) {
+    if (window.__vgSized) { var vgS = window.__vgSized(url, px); if (vgS) return vgS; }
     try { var u = new URL(url, location.href); u.searchParams.set('w', String(px)); u.searchParams.set('h', String(px)); return u.toString(); } catch (e) { return url; }
   }
   function bgUrl(el) {
@@ -1538,21 +1542,81 @@ window.__vgTrim = window.__vgTrim || (function () {
     document.documentElement.classList.remove('vg-s3');
     if (document.body) document.body.classList.remove('vg-s3');
     document.querySelectorAll('.vg-pop-hidden').forEach(function (el) { el.classList.remove('vg-pop-hidden'); });
+    // Retour depuis le cache du navigateur (iPhone) : plus de transition en cours, rien qui bloque les clics ni le menu.
+    window.__vgTransitioning = false;
+    document.documentElement.classList.remove('vg-managed');
+    if (document.body) document.body.classList.remove('vg-aspirate', 'vg-arrive', 'vg-s3');
+    document.querySelectorAll('.vg-orbit-wrap, .vg-pop, #vg-transition-out, #vg-transition-boot').forEach(function (el) { el.remove(); });
+    try { sessionStorage.removeItem('vg-transition'); } catch (err) {}
   });
 
+  // --- Clic sur une categorie (tuile de l'accueil OU bouton de la boutique) : une piece de la categorie, au hasard parmi
+  // les pieces disponibles (en stock, non masquees), apparait en grand AU CENTRE de l'ecran. Une autre a chaque clic.
+  var stockNow = null;
+  Promise.resolve(window.__vgStock).then(function (s) { stockNow = s || null; });
+  var CAT_LINK = '.vg-category-tile, ul.categories a[href*="/category/"]';
+  var lastPick = {};
+  function pickPiece(slug) {
+    var products = productsNow || [];
+    var pool = products.filter(function (p) {
+      if (p.hidden || p.status === 'sold-out') return false;
+      if (stockNow && stockNow[p.permalink] !== undefined && stockNow[p.permalink] <= 0) return false;
+      if (slug !== 'all' && !(p.categories || []).some(function (c) { return c.permalink === slug; })) return false;
+      return cutoutUrls(p).length > 0;
+    });
+    if (!pool.length) return null;
+    var others = pool.filter(function (p) { return p.permalink !== lastPick[slug]; });
+    var p = (others.length ? others : pool)[Math.floor(Math.random() * (others.length ? others.length : pool.length))];
+    lastPick[slug] = p.permalink;
+    return { product: p, icon: small(cutoutUrls(p)[0], 900) };
+  }
+  function centerSize() { return Math.round(Math.min(560, window.innerHeight * 0.62, window.innerWidth * 0.8)); }
+
+  // Au survol : on choisit deja la piece et on charge sa photo (sinon la bulle arrive vide au clic).
+  document.addEventListener('mouseover', function (e) {
+    var link = e.target.closest ? e.target.closest(CAT_LINK) : null;
+    if (!link || link.__vgPick) return;
+    var slug = slugFrom(link.getAttribute('href'), 'category');
+    if (!slug) return;
+    var pk = pickPiece(slug);
+    if (!pk) return;
+    link.__vgPick = pk;
+    var im = new Image(); im.src = pk.icon;
+  }, true);
+
   document.addEventListener('click', function (e) {
-    var link = e.target.closest ? e.target.closest('.product-list-link, .vg-category-tile') : null;
+    var link = e.target.closest ? e.target.closest('.product-list-link, ' + CAT_LINK) : null;
     if (!link) return;
     var href = link.getAttribute('href');
     if (!href || href.charAt(0) === '#' || link.target === '_blank' || e.metaKey || e.ctrlKey || e.shiftKey || e.button > 0) return;
     if (window.__vgTransitioning) { e.preventDefault(); return; }
-    var isCategory = link.classList.contains('vg-category-tile');
-    var srcEl = isCategory
-      ? link.querySelector('.vg-category-tile-img:not(.vg-category-tile-img-alt)')
-      : (link.querySelector('img.product-list-image') || link.querySelector('.product-list-image-container img'));
+    var isCategory = !link.classList.contains('product-list-link');
+    var cx = window.innerWidth / 2, cy = window.innerHeight / 2; // toutes les animations de clic : centre de l'ecran
+    var slug = slugFrom(href, isCategory ? 'category' : 'product');
+
+    if (isCategory) {
+      var pk = link.__vgPick || pickPiece(slug);
+      link.__vgPick = null; // le prochain survol en choisit une autre
+      if (!pk) return; // aucune piece disponible : navigation normale
+      e.preventDefault();
+      try { window.getSelection().removeAllRanges(); } catch (err) {}
+      document.documentElement.classList.add('vg-s3');
+      var S = centerSize();
+      var gC = S * 0.9;
+      var bxC = TRIM && TRIM.get(pk.icon);
+      if (bxC) gC = TRIM.garment(bxC, { left: 0, top: 0, width: S, height: S }).size;
+      window.pageTransition({
+        icon: pk.icon, href: href, x: cx, y: cy, w: S, h: S, axis: 'z', persp: 1000,
+        grow: 0.55, s3: true, popMs: S3_POP_MS + 60, aspirateMs: S3_ASPIRATE_MS, navDelay: 150,
+        onPop: function () { spawnOrbit(companions(productsNow || [], true, slug, pk.icon), cx, cy, gC); }
+      });
+      return;
+    }
+
+    var srcEl = link.querySelector('img.product-list-image') || link.querySelector('.product-list-image-container img');
     if (!srcEl) return;
     // Image de REPOS affichee (deja chargee = aucun saut, aucun flash).
-    var icon = isCategory ? bgUrl(srcEl) : (srcEl.currentSrc || srcEl.src);
+    var icon = srcEl.currentSrc || srcEl.src;
     if (!icon || icon.indexOf('w=20') !== -1) return; // placeholder flou : navigation normale
     e.preventDefault();
     try { window.getSelection().removeAllRanges(); } catch (err) {}
@@ -1561,20 +1625,18 @@ window.__vgTrim = window.__vgTrim || (function () {
     document.documentElement.classList.add('vg-s3');
 
     var r = restRect(srcEl, icon);
-    var x = r.left + r.width / 2, y = r.top + r.height / 2;
     var w = Math.round(r.width * GROW), h = Math.round(r.height * GROW);
     var g = Math.max(r.width, r.height) * GROW;
     var bx = TRIM && TRIM.get(icon);
     if (bx) g = TRIM.garment(bx, { left: 0, top: 0, width: w, height: h }).size;
-    // La vignette d'origine disparait sous l'icone qui la remplace.
+    // La vignette d'origine disparait sous l'icone qui la remplace (qui apparait au centre de l'ecran).
     srcEl.classList.add('vg-pop-hidden');
 
-    var slug = slugFrom(href, isCategory ? 'category' : 'product');
-    var urls = companions(productsNow || [], isCategory, slug, icon);
+    var urls = companions(productsNow || [], false, slug, icon);
     window.pageTransition({
-      icon: icon, href: href, x: x, y: y, w: w, h: h, axis: 'z', persp: 1000,
+      icon: icon, href: href, x: cx, y: cy, w: w, h: h, axis: 'z', persp: 1000,
       grow: 1 / GROW, s3: true, popMs: S3_POP_MS, aspirateMs: S3_ASPIRATE_MS, navDelay: 150,
-      onPop: function () { spawnOrbit(urls, x, y, g); }
+      onPop: function () { spawnOrbit(urls, cx, cy, g); }
     });
   }, true);
 })();
@@ -1653,7 +1715,7 @@ window.__vgTrim = window.__vgTrim || (function () {
 /* Les gabarits par defaut du theme laissent alt="" sur les vignettes des */
 /* grilles, les tuiles de categories et les miniatures de la fiche produit. */
 /* On y met le nom du produit / de la categorie (titre du lien), sans */
-/* toucher aux gabarits (ils restent ceux du theme, mis a jour par BigCartel). */
+/* toucher aux gabarits (ils restent ceux du theme, mis a jour par l'ancienne plateforme). */
 /* decoding="async" sur les images chargees en differe : jamais de blocage */
 /* de l'affichage sur le decodage d'une image. */
 (function () {
@@ -1721,7 +1783,7 @@ window.vgAutoplay = function (v, box) {
 /* === PAGE STUDIO : video d'atelier (8,6 s, sans son, en boucle) === */
 /* Montee a partir d'extraits des reels deja en ligne (aerographe, couture */
 /* Juki, patron, CD VGTAPE ; ni robot ni visage). Inseree ici plutot que */
-/* dans le contenu de la page (l'editeur BigCartel peut filtrer <video>). */
+/* dans le contenu de la page (l'editeur l'ancienne plateforme peut filtrer <video>). */
 /* Legere (900 Ko) : chargee seulement quand elle entre a l'ecran ; en */
 /* prefers-reduced-motion : image fixe, pas de lecture automatique. */
 (function () {
@@ -1794,6 +1856,32 @@ window.vgAutoplay = function (v, box) {
       ms.forEach(function (m) { m.addedNodes.forEach(function (n) { if (n.nodeType === 1) { if (n.tagName === 'A' && external(n)) { n.target = '_blank'; n.rel = 'noopener'; } mark(n); } }); });
     }).observe(document.documentElement, { childList: true, subtree: true });
   }
+})();
+
+
+/* === Retour arriere / avant : on retrouve la position exacte (2026-10-12) === */
+/* Le navigateur restaurait trop tot (page encore courte : images sans hauteur) et retombait en haut. On memorise la */
+/* position par adresse et on la rejoue des que la page est assez haute (50 x 50 ms au plus). */
+(function () {
+  if (!('scrollRestoration' in history)) return;
+  try { history.scrollRestoration = 'manual'; } catch (e) {}
+  var KEY = 'vg-scroll:' + location.pathname + location.search;
+  var timer;
+  function save() { try { sessionStorage.setItem(KEY, String(Math.round(window.scrollY))); } catch (e) {} }
+  window.addEventListener('scroll', function () { clearTimeout(timer); timer = setTimeout(save, 120); }, { passive: true });
+  window.addEventListener('pagehide', save);
+  var nav = performance.getEntriesByType && performance.getEntriesByType('navigation')[0];
+  var back = nav ? (nav.type === 'back_forward' || nav.type === 'reload') : false;
+  if (!back) return;
+  var y = 0;
+  try { y = Number(sessionStorage.getItem(KEY)) || 0; } catch (e) {}
+  if (!y) return;
+  var tries = 0;
+  (function go() {
+    var tall = document.documentElement.scrollHeight >= y + window.innerHeight;
+    window.scrollTo(0, y);
+    if (!tall && tries++ < 50) setTimeout(go, 50);
+  })();
 })();
 
 }).call(window, window.__vgLoc || window.location);

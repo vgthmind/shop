@@ -28,12 +28,14 @@
     .piece .acts { display: flex; gap: 6px; flex-wrap: wrap; }
     .tag { font-size: 12px; padding: 2px 8px; border-radius: 999px; border: 1px solid var(--line); }
     .tag.live { color: var(--ok); border-color: var(--ok); }
-    .tag.preview { color: var(--warn); border-color: var(--warn); }
+    .tag.preview, .tag.scheduled { color: var(--warn); border-color: var(--warn); }
     .tag.archived { color: var(--muted); }
     #savebar { position: fixed; left: 0; right: 0; bottom: 0; background: var(--ink); color: #fff; padding: 12px 16px; display: flex; gap: 12px; align-items: center; justify-content: center; flex-wrap: wrap; }
     #savebar button { background: #fff; }
     #msg { min-height: 1.4em; }
   </style>
+<link rel="icon" href="../assets/theme/favicon-32.png" type="image/png" sizes="32x32">
+<link rel="apple-touch-icon" href="../assets/theme/apple-touch-icon.png">
 </head>
 <body>
 <main>
@@ -58,12 +60,14 @@
 <script src="catalogue-core.js"></script>
 <script src="pieces-save.js"></script>
 <script src="studio-publish.js"></script>
+<script src="vg-admin-auth.js"></script>
 <script>
 (function () {
   'use strict';
   var $ = function (id) { return document.getElementById(id); };
   var pieces = [], changes = {}; // changes : slug -> fiche modifiée / créée
-  var LABEL = { live: 'En ligne', preview: 'Aperçu (non listée)', archived: 'Archivée' };
+  var LABEL = { live: 'En ligne', preview: 'Aperçu (non listée)', scheduled: 'Programmée', archived: 'Archivée' };
+  function fmtParis(iso) { try { return new Date(iso).toLocaleString('fr-FR', { timeZone: 'Europe/Paris', dateStyle: 'short', timeStyle: 'short' }); } catch (e) { return iso; } }
 
   function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
   function say(t) { $('msg').textContent = t || ''; }
@@ -87,12 +91,13 @@
     $('list').innerHTML = list.map(function (p) {
       var st = VGCatalogue.state(p), isNew = changes[p.slug] && !pieces.some(function (x) { return x.slug === p.slug; });
       return '<div class="piece' + (changes[p.slug] ? ' changed' : '') + '" data-slug="' + esc(p.slug) + '">' + thumb(p)
-        + '<div class="nm"><strong>' + esc(p.name || p.slug) + '</strong> <span class="tag ' + st + '">' + LABEL[st] + (isNew ? ' · nouvelle copie' : '') + '</span>'
+        + '<div class="nm"><strong>' + esc(p.name || p.slug) + '</strong> <span class="tag ' + st + '">' + LABEL[st] + (st === 'scheduled' ? ' le ' + fmtParis(p.publish_at) : '') + (isNew ? ' · nouvelle copie' : '') + '</span>'
         + '<div class="muted">' + esc(p.slug) + ' · ' + esc(p.price) + ' €' + (p.position != null ? ' · n° ' + esc(p.position) : '') + '</div></div>'
         + '<div class="acts">'
         + (st === 'archived' ? '' : '<button type="button" data-act="up" aria-label="Monter ' + esc(p.name) + '">▲</button><button type="button" data-act="down" aria-label="Descendre ' + esc(p.name) + '">▼</button>')
         + '<button type="button" data-act="dup">Dupliquer</button>'
-        + (st === 'preview' ? '<button type="button" data-act="publish" class="primary">Publier</button>' : '')
+        + (st === 'preview' || st === 'scheduled' ? '<button type="button" data-act="publish" class="primary">Publier maintenant</button><button type="button" data-act="schedule">' + (st === 'scheduled' ? 'Changer l\'heure' : 'Programmer') + '</button>' : '')
+        + (st === 'scheduled' ? '<button type="button" data-act="unschedule">Annuler la programmation</button>' : '')
         + (st === 'live' ? '<button type="button" data-act="hide">Passer en aperçu</button>' : '')
         + (st === 'archived' ? '<button type="button" data-act="restore">Remettre en ligne</button>' : '<button type="button" data-act="archive">Archiver</button>')
         + (isNew ? '' : '<a class="btn" target="_blank" rel="noopener" href="../product/' + encodeURIComponent(p.slug) + '">Voir la page</a>')
@@ -116,6 +121,18 @@
       one[r.slug] = r.product; apply(one);
       return say('Copie « ' + r.product.name + ' » créée en aperçu. Enregistre, attends 1 à 2 min, vérifie la page, puis « Publier ». Les photos sont celles de l\'original : change-les dans « Nouvelle pièce » ou l\'admin Pièces.');
     }
+    if (act === 'schedule') {
+      var def = p.publish_at ? fmtParis(p.publish_at) : '';
+      var txt = window.prompt('Mise en ligne à quelle date et heure (heure de Paris) ?\nFormat : AAAA-MM-JJ HH:MM, par exemple 2026-11-06 18:00', '');
+      if (txt === null) return;
+      var iso = VGCatalogue.parisToIso(txt);
+      if (!iso) return say('Date non comprise. Écris par exemple : 2026-11-06 18:00');
+      if (Date.parse(iso) < Date.now() + 5 * 60 * 1000) return say('Choisis une heure au moins 5 minutes dans le futur.');
+      if (!(p.categories || []).length) return say('Cette pièce n\'a aucune catégorie : ajoute-en une avant de la programmer.');
+      one[slug] = VGCatalogue.schedule(p, iso);
+      say('Programmée pour le ' + fmtParis(iso) + ' (heure de Paris). Clique sur « Enregistrer » pour valider.');
+    }
+    if (act === 'unschedule') { var u = Object.assign({}, p); delete u.publish_at; one[slug] = u; }
     if (act === 'publish') one[slug] = VGCatalogue.setHidden(p, false);
     if (act === 'hide') one[slug] = VGCatalogue.setHidden(p, true);
     if (act === 'archive') one[slug] = VGCatalogue.setArchived(p, true);
@@ -133,10 +150,29 @@
   $('save').addEventListener('click', function () {
     var n = Object.keys(changes).length;
     $('save').disabled = true;
+    var toSync = changes;
     VGPiecesSave.saveFiles(VGStudioPublish.api, changes, 'Catalogue (ordre, copie, archivage, aperçu)', say).then(function () {
+      return syncSchedule(toSync);
+    }).then(function () {
       return load().then(function () { say('Enregistré (' + n + '). Le site se reconstruit tout seul (1 à 2 min).'); });
     }).catch(function (e) { say('Erreur : ' + e.message); }).then(function () { $('save').disabled = false; });
   });
+  // Programmation : le Worker déclenche la reconstruction du site à l'heure (voir checkout-worker, publishCron).
+  function syncSchedule(map) {
+    var jobs = [];
+    Object.keys(map).forEach(function (slug) {
+      var now = map[slug], before = pieces.filter(function (x) { return x.slug === slug; })[0];
+      if (now.hidden && now.publish_at && !now.archived) jobs.push({ path: '/admin/schedule', body: { slug: slug, at: now.publish_at } });
+      else if (before && before.publish_at) jobs.push({ path: '/admin/schedule/cancel', body: { slug: slug } });
+    });
+    if (!jobs.length) return Promise.resolve();
+    var ready = window.vgAdminToken() ? Promise.resolve() : window.vgAdminLogin();
+    return ready.then(function () {
+      return jobs.reduce(function (p, j) { return p.then(function () { return window.vgAdminApi(j.path, { method: 'POST', body: JSON.stringify(j.body) }); }); }, Promise.resolve());
+    }).then(function () {
+      return window.vgAdminApi('/admin/schedule').then(function (d) { if (!d.hook) say('Attention : le « Deploy Hook » n\'est pas encore posé dans le Worker : la mise en ligne programmée ne se déclenchera pas (voir A-FAIRE).'); });
+    });
+  }
   $('cancel').addEventListener('click', function () { changes = {}; draw(); say('Changements annulés.'); });
   $('filter').addEventListener('input', draw);
   $('refresh').addEventListener('click', function () { if (!Object.keys(changes).length || confirm('Abandonner les changements non enregistrés ?')) load(); });

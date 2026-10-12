@@ -1,7 +1,7 @@
-/* Shim "sous-dossier" de la boutique hors BigCartel (injecté en tout premier
+/* Shim "sous-dossier" de la boutique hors l'ancienne plateforme (injecté en tout premier
    dans <head> par generator/build.js, avant tout autre script).
 
-   Les vrais gabarits BigCartel, le Body et vg-transitions-dev.js supposent un
+   Les vrais gabarits l'ancienne plateforme, le Body et vg-transitions-dev.js supposent un
    site servi à la RACINE d'un domaine (/products, /product/<slug>,
    location.pathname === '/studio'...). L'aperçu est une "project page" GitHub
    Pages servie sous /shop/. Plutôt que de retoucher chaque script :
@@ -27,7 +27,7 @@
   window.__vgFixUrl = fix;
 
   // Photos produit demandées par vg-transitions-dev.js avec ?w=N (pops,
-  // compagnons de la section 3 : comme sur le CDN BigCartel) -> la variante
+  // compagnons de la section 3 : comme sur le CDN l'ancienne plateforme) -> la variante
   // WebP la plus proche (generator/resize-images.js), 800 px au plus, au
   // lieu du PNG d'origine (~400 Ko chacun). build.js branche sized() dessus.
   var SIZED = [24, 320, 540, 800];
@@ -57,7 +57,7 @@
 
   // Les scripts lisent les liens avec getAttribute('href') et les comparent
   // à '/products', '/cart'... : ils voient la valeur SANS /shop, comme sur
-  // BigCartel. L'attribut réel garde /shop (navigation native, clic milieu,
+  // l'ancienne plateforme. L'attribut réel garde /shop (navigation native, clic milieu,
   // barre d'état corrects).
   // Sauf les liens vers un fichier (/shop/assets/... : photos du zoom) : le
   // Body s'en sert tel quel comme src d'image, ils gardent /shop.
