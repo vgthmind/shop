@@ -14,7 +14,6 @@
 'use strict';
 const fs = require('fs');
 const path = require('path');
-const https = require('https');
 const liquid = require('./liquid');
 const filters = require('./filters');
 const translations = require('./translations');
@@ -32,21 +31,30 @@ const OUT_DIR = path.join(ROOT, 'docs');
 // so links in the HTML get a /shop prefix here, and assets/vg-shop-shim.js
 // handles what scripts build at runtime. A future move to a dedicated domain
 // is just BASE_PATH = '' and a rebuild. Override with env BASE_PATH.
-const BASE_PATH = process.env.BASE_PATH !== undefined ? process.env.BASE_PATH : '/shop';
+// Cloudflare Pages (variable CF_PAGES posée par Cloudflare) sert le site à la racine.
+const ON_CF_PAGES = !!process.env.CF_PAGES;
+const BASE_PATH = process.env.BASE_PATH !== undefined ? process.env.BASE_PATH : (ON_CF_PAGES ? '' : '/shop');
 // Launch switch (data/shop-settings.json): "public": true removes the noindex
 // tags and opens robots.txt; site_url = where the shop is served (sitemap).
+// SITE_URL (env) le remplace, ex. l'adresse .pages.dev pendant les essais.
 const SHOP_SETTINGS = Object.assign({ public: false, site_url: 'https://vgthmind.github.io/shop' },
-  JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'data', 'shop-settings.json'), 'utf8')));
+  JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'data', 'shop-settings.json'), 'utf8')),
+  process.env.SITE_URL ? { site_url: process.env.SITE_URL } : {});
+// Vidéos (reels, clips des transitions, studio) : copiées dans assets/media/ (le site ne dépend
+// plus du portfolio). Hors du dépôt docs/ (.gitignore) : seul le build Cloudflare les publie.
+// L'ancien aperçu GitHub Pages (/shop) garde les adresses du portfolio jusqu'à son arrêt.
+const LOCAL_MEDIA = ON_CF_PAGES || process.env.LOCAL_MEDIA === '1';
 
 // Same file the BigCartel draft loads (Body <script src> + Layout preload).
 // A copy is served by this site, wrapped so it sees location.pathname without
 // the /shop prefix (see wrapScript) - the code itself is not modified.
-const DEV_JS_URL = 'https://vgthmind.github.io/assets/bigcartel/vg-transitions-dev.js';
-const DEV_KEYWORDS_URL = 'https://vgthmind.github.io/assets/bigcartel/search-keywords.json';
+// Sources : assets/vg-src/ (copiées du portfolio le 2026-10-12 ; c'est ICI qu'on
+// les modifie désormais, le portfolio n'est plus lu).
+const DEV_JS_SRC = path.join(__dirname, '..', 'assets', 'vg-src', 'vg-transitions-dev.js');
+const DEV_KEYWORDS_SRC = path.join(__dirname, '..', 'assets', 'vg-src', 'search-keywords.json');
 const LOCAL_DEV_JS = '/assets/vg/vg-transitions-dev.js';
-// Same for the CSS (copied as is; its url()s are absolute): the shop no
-// longer changes when the portfolio's -dev CSS is edited, only on rebuild.
-const DEV_CSS_URL = 'https://vgthmind.github.io/assets/bigcartel/vg-transitions-dev.css';
+// Same for the CSS (copied as is; its url()s are absolute).
+const DEV_CSS_SRC = path.join(__dirname, '..', 'assets', 'vg-src', 'vg-transitions-dev.css');
 const LOCAL_DEV_CSS = '/assets/vg/vg-transitions-dev.css';
 let DEV_CSS_VERSION = '0'; // content hash, set in main()
 
@@ -189,6 +197,8 @@ const BC_IMAGE_MAP = [
   // (cart-icon.png pesait 100 Ko, info-icon.png 373 Ko) ; copies allegees dans assets/theme/icons/.
   [/https:\/\/vgthmind\.github\.io\/assets\/bigcartel\/((?:cart|products|info|contact|studio|suivi)-icon\.png)/g, (m, f) => `${BASE_PATH}/assets/theme/icons/${f}`],
   [/https:\/\/assets\.bigcartel\.com\/product_images\/405517188\/cover\+clean\.png(\?[^"'\s)]*)?/g, () => `${BASE_PATH}/assets/products/cd-vgtape/0.png`],
+  // Vidéos (reels, clip_N.mp4, dossier studio/) : copies dans assets/media/ (voir LOCAL_MEDIA).
+  ...(LOCAL_MEDIA ? [[/https:\/\/vgthmind\.github\.io\/assets\/bigcartel\/(reels\/|clip_\d+\.mp4|studio\/)/g, (m, f) => `${BASE_PATH}/assets/media/${f}`]] : []),
 ];
 function localizeBigCartelImages(text) {
   if (typeof text !== 'string' || (text.indexOf('assets.bigcartel.com') === -1 && text.indexOf('/assets/bigcartel/') === -1)) return text;
@@ -231,18 +241,6 @@ const SHOP_PAGES = [
 
 function rel(...p) { return path.join(...p); }
 function read(p) { return fs.readFileSync(p, 'utf8'); }
-
-function download(url) {
-  return new Promise((resolve, reject) => {
-    https.get(url + (url.includes('?') ? '&' : '?') + 'build=' + Date.now(), { headers: { 'User-Agent': 'vgthmind-shop-build/1.0' } }, (res) => {
-      if (res.statusCode !== 200) { reject(new Error(`${url} -> HTTP ${res.statusCode}`)); res.resume(); return; }
-      let data = '';
-      res.setEncoding('utf8');
-      res.on('data', (c) => (data += c));
-      res.on('end', () => resolve(data));
-    }).on('error', reject);
-  });
-}
 
 // --- base path ---------------------------------------------------------
 function prefixUrls(html) {
@@ -534,10 +532,10 @@ async function main() {
     if (Object.keys(entry).length) productsConfig[p.permalink] = entry;
   }
 
-  const devJs = await download(DEV_JS_URL);
-  const devCss = await download(DEV_CSS_URL);
+  const devJs = read(DEV_JS_SRC);
+  const devCss = read(DEV_CSS_SRC);
   DEV_CSS_VERSION = require('crypto').createHash('sha1').update(devCss).digest('hex').slice(0, 10);
-  const keywords = await download(DEV_KEYWORDS_URL);
+  const keywords = read(DEV_KEYWORDS_SRC);
 
   fs.rmSync(OUT_DIR, { recursive: true, force: true });
   fs.mkdirSync(OUT_DIR, { recursive: true });
@@ -672,6 +670,7 @@ async function main() {
   const themeSizedSrc = rel(ROOT, 'assets', 'theme-sized');
   if (fs.existsSync(themeSizedSrc)) fs.cpSync(themeSizedSrc, rel(OUT_DIR, 'assets', 'theme-sized'), { recursive: true });
   fs.cpSync(rel(ROOT, 'assets', 'theme'), rel(OUT_DIR, 'assets', 'theme'), { recursive: true });
+  if (LOCAL_MEDIA) fs.cpSync(rel(ROOT, 'assets', 'media'), rel(OUT_DIR, 'assets', 'media'), { recursive: true });
   // robots.txt: the prototype's "Disallow: /" until launch; then only the
   // admin is blocked, plus the sitemap. (Only effective once the shop is at
   // the root of its own domain - under /shop/, the noindex tag does the job.)
@@ -682,6 +681,8 @@ async function main() {
   // pages maison), jamais passé par le préfixe /shop (Sveltia lit
   // config.yml à côté de la page).
   fs.cpSync(rel(ROOT, 'admin'), rel(OUT_DIR, 'admin'), { recursive: true });
+  // Catégories pour l'assistant « nouvelle pièce » (le dépôt devient privé : plus de lecture directe sur GitHub).
+  fs.copyFileSync(rel(DATA_DIR, 'categories.json'), rel(OUT_DIR, 'admin', 'categories.json'));
 
   // sitemap.xml - inert for now (robots.txt still has "Disallow: /" until
   // this is the official shop, see robots.txt), ready for launch day: a

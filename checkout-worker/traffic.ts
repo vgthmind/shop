@@ -103,8 +103,11 @@ function stub(env: TrafficEnv) { return env.TRAFFIC.get(env.TRAFFIC.idFromName('
 // Routes ; renvoie null si ce n'est pas la sienne. /admin/* : appeler APRES le garde isAdmin.
 export async function trafficRoutes(request: Request, env: TrafficEnv, path: string, json: JsonFn): Promise<Response | null> {
   if (path === '/t' && request.method === 'POST') {
-    const empty = () => new Response(null, { status: 204, headers: { 'Access-Control-Allow-Origin': env.ALLOWED_ORIGIN } });
-    if (request.headers.get('Origin') !== env.ALLOWED_ORIGIN) return empty();
+    // ALLOWED_ORIGIN : liste séparée par des virgules (ancien site, .pages.dev, vgthmind.org).
+    const origin = request.headers.get('Origin') || '';
+    const allowed = String(env.ALLOWED_ORIGIN || '').split(',').map((s) => s.trim()).includes(origin);
+    const empty = () => new Response(null, { status: 204, headers: { 'Access-Control-Allow-Origin': allowed ? origin : 'null' } });
+    if (!allowed) return empty();
     const ua = request.headers.get('User-Agent') || '';
     if (isBot(ua)) return empty();
     let body: any = {};
@@ -114,7 +117,7 @@ export async function trafficRoutes(request: Request, env: TrafficEnv, path: str
     await stub(env).hit({
       ip: request.headers.get('CF-Connecting-IP') || '', ua,
       country: String((request as any).cf?.country || request.headers.get('CF-IPCountry') || ''),
-      path: p, ref: String(body.r || '').slice(0, 300), utm: String(body.u || '').slice(0, 30), hb: body.hb === true, own: new URL(env.ALLOWED_ORIGIN).hostname,
+      path: p, ref: String(body.r || '').slice(0, 300), utm: String(body.u || '').slice(0, 30), hb: body.hb === true, own: new URL(origin).hostname,
     });
     return empty();
   }

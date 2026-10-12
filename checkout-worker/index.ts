@@ -203,6 +203,22 @@ export class StockDO extends DurableObject {
 
 type JsonFn = (data: unknown, status?: number) => Response;
 
+// ALLOWED_ORIGIN = liste séparée par des virgules (github.io, .pages.dev, vgthmind.org) : on renvoie
+// l'origine de la requête si elle est dans la liste, sinon la première.
+function allowedOrigins(env: Env): string[] {
+  return String(env.ALLOWED_ORIGIN || '').split(',').map((s) => s.trim()).filter(Boolean);
+}
+function pickOrigin(request: Request, env: Env): string {
+  const o = request.headers.get('Origin') || '';
+  const list = allowedOrigins(env);
+  return list.includes(o) ? o : list[0] || '';
+}
+// Adresse du site pour les retours Stripe : l'ancien site garde son /shop, les autres sont à la racine.
+function siteBaseFor(request: Request, env: Env): string {
+  const o = pickOrigin(request, env);
+  return !o || o === new URL(env.SITE_BASE).origin ? env.SITE_BASE : o;
+}
+
 function stockStub(env: Env) {
   return env.STOCK.get(env.STOCK.idFromName('main'));
 }
@@ -210,7 +226,7 @@ function stockStub(env: Env) {
 export default {
   async fetch(request: Request, env: Env, ctx: any): Promise<Response> {
     const cors = {
-      'Access-Control-Allow-Origin': env.ALLOWED_ORIGIN,
+      'Access-Control-Allow-Origin': pickOrigin(request, env),
       'Access-Control-Allow-Methods': 'GET, POST, PUT, OPTIONS',
       'Access-Control-Allow-Headers': 'content-type, authorization',
       Vary: 'Origin',
@@ -504,8 +520,9 @@ async function checkout(request: Request, env: Env, key: string, json: JsonFn): 
   const params = new URLSearchParams();
   params.set('mode', 'payment');
   params.set('locale', 'auto');
-  params.set('success_url', `${env.SITE_BASE}/merci/?session_id={CHECKOUT_SESSION_ID}`);
-  params.set('cancel_url', `${env.SITE_BASE}/paiement-annule/?session_id={CHECKOUT_SESSION_ID}`);
+  const back = siteBaseFor(request, env);
+  params.set('success_url', `${back}/merci/?session_id={CHECKOUT_SESSION_ID}`);
+  params.set('cancel_url', `${back}/paiement-annule/?session_id={CHECKOUT_SESSION_ID}`);
   params.set('expires_at', String(Math.floor(Date.now() / 1000) + SESSION_MINUTES * 60 + 30));
   params.set('phone_number_collection[enabled]', 'true');
   params.set('allow_promotion_codes', 'true');
@@ -721,12 +738,17 @@ async function sendOrderEmails(env: Env, s: any) {
 async function oauthStart(request: Request, env: Env): Promise<Response> {
   if (!env.GITHUB_CLIENT_ID || !env.GITHUB_CLIENT_SECRET) return new Response('Connexion GitHub pas encore configurée.', { status: 503 });
   const state = crypto.randomUUID();
-  await env.HOLDS.put('oauth:' + state, '1', { expirationTtl: 600 });
+  // Le site qui ouvre la fenêtre de connexion (site_id = son nom d'hôte, envoyé par Sveltia et
+  // vg-admin-auth.js) : la réponse ne sera remise qu'à lui, s'il est dans ALLOWED_ORIGIN.
+  const siteId = new URL(request.url).searchParams.get('site_id') || '';
+  const opener = allowedOrigins(env).find((o) => new URL(o).hostname === siteId) || allowedOrigins(env)[0] || '';
+  await env.HOLDS.put('oauth:' + state, opener, { expirationTtl: 600 });
   const redirect = new URL('/callback', request.url).toString();
   const url = 'https://github.com/login/oauth/authorize?' + new URLSearchParams({
     client_id: env.GITHUB_CLIENT_ID,
     redirect_uri: redirect,
-    scope: 'public_repo',
+    // 'repo' (et plus 'public_repo') : le dépôt vgthmind/shop devient privé (accord de vgthmind du 2026-10-12).
+    scope: 'repo',
     state,
     allow_signup: 'false',
   });
@@ -737,9 +759,12 @@ async function oauthCallback(request: Request, env: Env): Promise<Response> {
   const params = new URL(request.url).searchParams;
   const state = params.get('state') || '';
   const code = params.get('code') || '';
+  const stored = state ? await env.HOLDS.get('oauth:' + state) : null;
+  // Anciennes connexions commencées avant ce changement : valeur '1' = premier site de la liste.
+  const opener = stored && stored !== '1' && allowedOrigins(env).includes(stored) ? stored : allowedOrigins(env)[0] || '';
   const page = (status: 'success' | 'error', content: object) => {
     const msg = `authorization:github:${status}:${JSON.stringify(content)}`;
-    const origin = JSON.stringify(env.ALLOWED_ORIGIN);
+    const origin = JSON.stringify(opener);
     const html = `<!doctype html><meta charset="utf-8"><title>Connexion</title><p>${status === 'success' ? 'Connecté, cette fenêtre va se fermer.' : 'Connexion refusée.'}</p><script>
 (function () {
   var msg = ${JSON.stringify(msg)};
@@ -755,7 +780,7 @@ async function oauthCallback(request: Request, env: Env): Promise<Response> {
 </script>`;
     return new Response(html, { headers: { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store' } });
   };
-  if (!state || !(await env.HOLDS.get('oauth:' + state))) return page('error', { message: 'Session de connexion expirée, réessaie.' });
+  if (!state || !stored) return page('error', { message: 'Session de connexion expirée, réessaie.' });
   await env.HOLDS.delete('oauth:' + state);
   const res = await fetch('https://github.com/login/oauth/access_token', {
     method: 'POST',

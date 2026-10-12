@@ -114,7 +114,7 @@
     ['fWeight', 'fMode', 'fAlone'].forEach(function (id) { $(id).addEventListener('input', ports); $(id).addEventListener('change', ports); });
     show(1);
     // Catégories : lues dans le dépôt (data/categories.json) ; grille de ports : fichier de l'admin.
-    fetch('https://raw.githubusercontent.com/vgthmind/shop/main/data/categories.json').then(function (r) { if (!r.ok) throw new Error(r.status); return r.json(); })
+    fetch('categories.json', { cache: 'no-store' }).then(function (r) { if (!r.ok) throw new Error(r.status); return r.json(); })
       .then(function (c) { categories = c; buildCats(); }).catch(function () { $('fCats').textContent = 'Catégories indisponibles.'; });
     fetch('shipping-config.json').then(function (r) { return r.json(); }).then(function (c) { config = c; }).catch(function () {});
   }

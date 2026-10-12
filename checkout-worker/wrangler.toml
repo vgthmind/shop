@@ -9,7 +9,8 @@ workers_dev = true
 #   RESEND_API_KEY, ALERT_EMAIL (adresse perso : jamais dans le depot)
 # Emails client : variable MAIL_FROM (domaine verifie dans Resend), vide = alerte seule.
 [vars]
-ALLOWED_ORIGIN = "https://vgthmind.github.io"
+# Sites autorisés (séparés par des virgules) : ancien aperçu, Cloudflare Pages, domaine.
+ALLOWED_ORIGIN = "https://vgthmind.github.io,https://vgthmind-shop.pages.dev,https://www.vgthmind.org,https://vgthmind.org"
 SITE_BASE = "https://vgthmind.github.io/shop"
 # "1" seulement le jour du passage en live (voir README) : tant que c'est "0",
 # toute cle sk_live_ est refusee.
