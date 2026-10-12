@@ -24,7 +24,7 @@
 | 5 | moi | `node outils/verifier-site.mjs https://www.vgthmind.org` + je t'envoie la liste de contrôle iPhone (accueil, une fiche, panier, paiement 1 € remboursé, mail de commande, suivi, 404) | 10 min |
 | 6 | toi | Test sur ton iPhone, ton lien Instagram compris. Tu dis « OK » | 10 min |
 
-**Apex `vgthmind.org` (sans www)** : ne touche à rien. La ligne `@` (hébergement IONOS) renvoie déjà vers `www`, donc vers le nouveau site.
+**Apex `vgthmind.org` (sans www)** : ne touche à rien au départ. La ligne `@` (hébergement IONOS) renvoie vers `www`, donc vers le nouveau site. Le contrôle de l'étape 5 vérifie qu'un lien SANS www (ex. `vgthmind.org/product/ch_0002`) arrive bien sur la même pièce. S'il arrive seulement sur l'accueil : IONOS → Domaines → vgthmind.org → **Redirection** → cocher « conserver le chemin / les sous-adresses ». Si IONOS ne le propose pas, l'autre solution (plus longue, à faire un autre jour) est de confier le DNS à Cloudflare.
 **BigCartel** : ne résilie pas avant 1 à 2 semaines. Rien à y changer (le domaine n'y pointe plus).
 
 ## Retour d'urgence (1 clic chacun)

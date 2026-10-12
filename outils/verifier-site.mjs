@@ -38,6 +38,19 @@ if (!priv) {
   if (admin.status === 200 && !/Connexion/i.test(await admin.text())) ko('admin accessible sans connexion ?'); else ok('admin protégé (statut ' + admin.status + ')');
 }
 
+// Sans www : les liens déjà diffusés (bio Instagram, mails) doivent arriver au même endroit, chemin conservé.
+if (!priv && /^https:\/\/www\./.test(origin) && products[0]) {
+  console.log('Adresse sans www');
+  for (const path of ['/', '/product/' + encodeURIComponent(products[0].permalink), '/products']) {
+    try {
+      const r = await fetch(origin.replace('://www.', '://') + path, { redirect: 'follow' });
+      const u = new URL(r.url);
+      if (r.status === 200 && u.origin === origin && u.pathname.replace(/\/$/, '') === path.replace(/\/$/, '')) ok('sans www ' + path + ' -> ' + u.pathname);
+      else ko(`sans www ${path} -> ${r.url} (${r.status}) : le chemin doit être conservé (redirection IONOS « avec le chemin »)`);
+    } catch (e) { ko('sans www ' + path + ' : ' + (e.cause && e.cause.code || e.message)); }
+  }
+}
+
 console.log('Paiement (le service de commande accepte ce site)');
 try {
   const pre = await fetch(worker + '/shipping/quote', { method: 'OPTIONS', headers: { Origin: origin, 'Access-Control-Request-Method': 'POST', 'Access-Control-Request-Headers': 'content-type' } });
