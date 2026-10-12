@@ -52,23 +52,14 @@
 
   function build() {
     var t = V.text(lang), box = el('div', 'vg-ship-picker');
-    var label = el('label', 'vg-ship-label', t.country); label.setAttribute('for', 'vg-ship-country');
+    var label = el('label', 'vg-ship-label', t.country); label.setAttribute('for', 'vg-ship-search');
     var sel = el('select'); sel.id = 'vg-ship-country';
     var all = V.countryList(lang);
-    // Recherche par nom (sans accent, ni majuscule) : la liste se réduit ; un seul résultat = choisi tout de suite.
-    function fill(q) {
-      var keep = country, f = plain(q || '');
+    function fill() { // liste complète, jamais filtrée : la liste déroulante montre toujours le pays choisi (ou « Choisis ton pays »)
       sel.innerHTML = '';
       var ph = el('option', '', t.choose); ph.value = ''; sel.appendChild(ph);
-      var n = 0, last = null;
-      all.forEach(function (c) {
-        var hit = !f || plain(c.name).indexOf(f) !== -1;
-        if (!hit && c.code !== keep) return;
-        var o = el('option', '', c.name); o.value = c.code; sel.appendChild(o);
-        if (hit) { n++; last = c; }
-      });
-      sel.value = keep;
-      return f && n === 1 && last ? last.code : '';
+      all.forEach(function (c) { var o = el('option', '', c.name); o.value = c.code; sel.appendChild(o); });
+      sel.value = country;
     }
     function choose(code) {
       country = code;
@@ -76,18 +67,31 @@
       try { document.dispatchEvent(new CustomEvent('vg-shipping-change', { detail: { country: country } })); } catch (e) {}
       update();
     }
+    // Recherche : une liste de résultats (boutons) sous le champ, sans accent ni majuscule ; toucher un résultat = pays choisi.
     var search = el('input', 'vg-ship-search'); search.type = 'search'; search.id = 'vg-ship-search';
     search.placeholder = lang === 'fr' ? 'Rechercher un pays…' : 'Search a country…';
-    search.setAttribute('aria-label', search.placeholder); search.autocomplete = 'off';
-    search.addEventListener('input', function () {
-      var only = fill(search.value);
-      if (only && only !== country) choose(only);
-    });
-    fill('');
+    search.setAttribute('aria-label', search.placeholder); search.autocomplete = 'off'; search.autocapitalize = 'off'; search.setAttribute('enterkeyhint', 'search');
+    var results = el('ul', 'vg-ship-results'); results.setAttribute('role', 'listbox'); results.hidden = true;
+    function hits() { var f = plain(search.value); return f ? all.filter(function (c) { return plain(c.name).indexOf(f) !== -1; }) : []; }
+    function showResults() {
+      var list = hits(); results.innerHTML = '';
+      results.hidden = !search.value.trim();
+      if (results.hidden) return;
+      if (!list.length) { var none = el('li', 'vg-ship-none', lang === 'fr' ? 'Aucun pays trouvé' : 'No country found'); results.appendChild(none); return; }
+      list.slice(0, 40).forEach(function (c) {
+        var li = el('li'), b = el('button', '', c.name); b.type = 'button'; b.setAttribute('role', 'option');
+        b.addEventListener('click', function () { search.value = ''; showResults(); search.blur(); choose(c.code); });
+        li.appendChild(b); results.appendChild(li);
+      });
+    }
+    search.addEventListener('input', showResults);
+    search.addEventListener('keydown', function (e) { if (e.key === 'Enter') { e.preventDefault(); var l = hits(); if (l.length) { search.value = ''; showResults(); search.blur(); choose(l[0].code); } } });
+    fill();
     sel.addEventListener('change', function () { choose(sel.value); });
     label.appendChild(search);
-    label.appendChild(sel);
     box.appendChild(label);
+    box.appendChild(results);
+    box.appendChild(el('label', 'vg-ship-label vg-ship-or', lang === 'fr' ? 'ou choisis dans la liste' : 'or pick from the list')).appendChild(sel);
     box.appendChild(el('p', 'vg-ship-summary'));
     var err = el('p', 'vg-ship-error'); err.setAttribute('role', 'alert'); box.appendChild(err);
     box.appendChild(el('p', 'vg-ship-note', t.note));
@@ -132,6 +136,8 @@
       + '.vg-ship-picker select{width:100%;min-height:44px;padding:8px 14px;border-radius:999px;border:1px solid rgba(0,0,0,.18);background:rgba(255,255,255,.6);font:inherit;font-size:16px}'
       + '.vg-ship-summary,.vg-ship-note,.vg-ship-error{margin:0;font-size:.85em}.vg-ship-note{opacity:.65}'
       + '.vg-ship-search{width:100%;min-height:44px;padding:8px 14px;border-radius:999px;border:1px solid rgba(0,0,0,.18);background:#fff;font:inherit;font-size:16px}'
+      + '.vg-ship-results{list-style:none;margin:0;padding:4px;max-height:240px;overflow:auto;border:1px solid rgba(0,0,0,.18);border-radius:14px;background:#fff;-webkit-overflow-scrolling:touch}.vg-ship-results[hidden]{display:none}'
+      + '.vg-ship-results button{display:block;width:100%;min-height:44px;padding:8px 12px;text-align:left;border:0;background:none;font:inherit;font-size:16px;border-radius:10px}.vg-ship-results button:active,.vg-ship-results button:hover{background:rgba(0,0,0,.07)}.vg-ship-none{padding:12px;opacity:.7}'
       + '.vg-ship-label{font-weight:600}.vg-ship-need select,.vg-ship-need .vg-ship-search{border:2px solid #3d4045;box-shadow:0 0 0 3px rgba(61,64,69,.15)}'
       + '.vg-ship-error{color:#a23b2a;font-weight:600}.vg-ship-error[hidden]{display:none}';
     document.head.appendChild(css);
