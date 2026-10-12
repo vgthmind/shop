@@ -25,7 +25,11 @@
       v.muted = true; v.playsInline = true; v.setAttribute('playsinline', ''); v.preload = 'auto'; v.src = url;
       function cleanup() { try { URL.revokeObjectURL(url); } catch (e) {} v.pause(); v.removeAttribute('src'); v.load(); }
       v.onerror = function () { cleanup(); reject(new Error('Cette vidéo ne peut pas être lue par ce navigateur (vidéo iPhone HEVC ? Essaie depuis Safari sur l\'iPhone).')); };
+      // iPhone : Safari ne charge pas la vidéo avant qu'on la lance. On la lance tout de suite (muette) ; elle est remise à zéro avant l'enregistrement.
+      var started = false, guard = setTimeout(function () { if (!started) { cleanup(); reject(new Error('La vidéo ne se charge pas (trop lourde pour ce navigateur ?). Raccourcis-la ou essaie depuis un PC.')); } }, 20000);
+      var first = v.play(); if (first && first.catch) first.catch(function () {});
       v.onloadedmetadata = function () {
+        started = true; clearTimeout(guard); try { v.pause(); v.currentTime = 0; } catch (e) {}
         var dur = Math.min(isFinite(v.duration) ? v.duration : maxS, maxS);
         var vw = v.videoWidth || 720, vh = v.videoHeight || 1280, k = Math.min(1, maxW / Math.max(1, Math.min(vw, vh)));
         var w = even(vw * k), h = even(vh * k);

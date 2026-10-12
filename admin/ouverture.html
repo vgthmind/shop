@@ -83,13 +83,18 @@
     }).catch(function (e) { say('Erreur : ' + e.message, true); });
   }
 
+  // Lit la durée. Sur iPhone, Safari ne charge pas une vidéo « hors page » tant qu'on ne la lance pas : on la lance (muette), et
+  // si rien ne vient au bout de 8 s on rend la main (durée inconnue) au lieu de rester bloqué sans message.
   function probe(file) {
     return new Promise(function (resolve) {
-      var v = document.createElement('video'), u = URL.createObjectURL(file);
-      v.preload = 'metadata'; v.muted = true;
-      v.onloadedmetadata = function () { URL.revokeObjectURL(u); resolve({ d: v.duration, w: v.videoWidth, h: v.videoHeight }); };
-      v.onerror = function () { URL.revokeObjectURL(u); resolve(null); };
+      var v = document.createElement('video'), u = URL.createObjectURL(file), done = false;
+      function fin(r) { if (done) return; done = true; clearTimeout(t); try { v.pause(); } catch (e) {} URL.revokeObjectURL(u); resolve(r); }
+      var t = setTimeout(function () { fin({ d: NaN, w: 0, h: 0 }); }, 8000);
+      v.preload = 'auto'; v.muted = true; v.playsInline = true; v.setAttribute('playsinline', '');
+      v.onloadedmetadata = function () { fin({ d: v.duration, w: v.videoWidth, h: v.videoHeight }); };
+      v.onerror = function () { fin(null); };
       v.src = u;
+      var p = v.play(); if (p && p.catch) p.catch(function () {});
     });
   }
   function b64(file) {
@@ -108,9 +113,10 @@
     files.forEach(function (f0) {
       chain = chain.then(function () {
         // Déjà un petit MP4 court : envoyé tel quel ; sinon conversion automatique (voir video-convert.js).
+        say('Préparation de ' + f0.name + '…');
         var small = /\.mp4$/i.test(f0.name) && f0.size <= MAX_BYTES;
         return (small ? probe(f0) : Promise.resolve(null)).then(function (m0) {
-          if (small && m0 && m0.d <= MAX_S) return f0;
+          if (small && m0 && !(m0.d > MAX_S)) return f0; // durée inconnue (NaN) : on laisse passer un petit MP4
           if (!window.VGVideoConvert || !VGVideoConvert.supported()) { say(f0.name + ' : trop lourd, trop long ou mauvais format, et ce navigateur ne sait pas convertir (utilise Safari ou Chrome à jour).', true); return null; }
           return VGVideoConvert.convert(f0, { maxSeconds: MAX_S, maxWidth: 720, bitrate: 1500000, maxBytes: MAX_BYTES - 262144, onProgress: function (p) { say('Conversion de ' + f0.name + ' : ' + Math.round(p * 100) + ' % (garde l\'écran allumé)'); } });
         }).then(function (f) {
