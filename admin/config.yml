@@ -48,7 +48,7 @@ collections:
         hint: "Une piece peut etre dans plusieurs categories a la fois (ex: un hoodie customise est Tops ET Customs/Upcycling)."
       - { label: "Retiree du site (archivee)", name: "archived", widget: "boolean", default: false, required: false, hint: "Cache la piece partout (pages, recherche, paiement) sans supprimer sa fiche. Prefere ceci a Supprimer." }
       - { label: "Badge UNIQUE PIECE", name: "unique", widget: "boolean", default: true, required: false, hint: "Affiche le badge « Unique piece » (masque automatiquement si la quantite de depart est superieure a 1)." }
-      - { label: "En vente", name: "in_stock", widget: "boolean", default: true, required: false, hint: "Decocher = Sold out a la main. Sinon le Sold out est automatique quand le stock (page « Stock ») arrive a 0." }
+      - { label: "En vente (ancien champ, ne sert plus : Sold out = stock a 0 dans la page Stock)", name: "in_stock", widget: "hidden", default: true, required: false }
       - { label: "Pastille couleur : nom", name: "color_name", widget: "string", required: false, hint: "ex: noir, blanc casse, bleu, rouge, vert, beige, gris, multicolore. Vide = pas de pastille." }
       - { label: "Pastille couleur : teinte", name: "color_hex", widget: "color", required: false, hint: "Couleur de la pastille. Teintes habituelles : noir #1a1a1a, blanc #f2f2f2, blanc casse #e9e3d6, gris #8a8a8a, beige #c19a6b, bleu #3d5a75, rouge #b3315c, vert #7a7a52, multicolore #c8a2c8." }
       - { label: "Reel (lien Instagram ou YouTube)", name: "reel_url", widget: "string", required: false, hint: "https://www.instagram.com/reel/... Vide = pas de reel." }
