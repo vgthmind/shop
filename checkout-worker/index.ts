@@ -32,6 +32,7 @@
 
 import { DurableObject } from 'cloudflare:workers';
 import { checkoutShipping } from './shipping-worker';
+import { handleContact } from './contact';
 import { customerEmail, sellerEmail, shippedEmail, REPLY_TO, langFor, countryName, type MailItem, type OrderData } from './emails';
 
 interface KV {
@@ -230,6 +231,14 @@ export default {
 
       // Prix de livraison d'un panier pour un pays (affichage du panier) : meme calcul que le paiement.
       if (path === '/shipping/quote' && request.method === 'POST') return await shippingQuote(request, env, json);
+
+      // Formulaire de contact (sans cle Stripe).
+      if (path === '/contact' && request.method === 'POST') {
+        if (!env.RESEND_API_KEY || !env.MAIL_FROM) return json({ error: 'unavailable' }, 503);
+        const body: any = await request.json().catch(() => null);
+        const r = await handleContact(body, { kv: env.HOLDS, from: env.MAIL_FROM, ip: request.headers.get('CF-Connecting-IP') || 'x', send: (f, t, su, h, tx, rt) => resendSend(env, f, t, su, h, tx, rt) });
+        return json(r.data, r.status);
+      }
 
       // Avec cle Stripe.
       const key = stripeKey(env);

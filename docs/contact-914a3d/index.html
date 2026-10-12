@@ -1052,13 +1052,13 @@ table.cart-table input{
   right:0;
   bottom:0;
   height:40%;
-  background:linear-gradient(to top, rgba(255,255,255,0.9), rgba(255,255,255,0));
+  background:linear-gradient(to top, #f4f2ec 0%, rgba(244,242,236,0.85) 35%, rgba(244,242,236,0) 100%);
   pointer-events:none;
   z-index:2;
 }
 .vg-hero-logo,
 .vg-hero-tagline{
-  text-shadow:0 1px 2px rgba(255,255,255,0.8), 0 0 10px rgba(255,255,255,0.6) !important;
+  text-shadow:0 1px 2px rgba(244,242,236,0.9), 0 0 10px rgba(244,242,236,0.7) !important;
 }
 
 /* === RETRAIT BANDEAU ANNONCE (juge nul) === */
@@ -1756,15 +1756,59 @@ ul.categories li.page a:hover{color:#3d4045 !important;background:transparent !i
   
     <main id="main" class="content custom-content" data-bc-hook="content">
       <h1>Contact</h1>
-      <p>Got a question about a piece, an order, a collab? The quickest and easiest way is to send me a DM on Instagram.</p>
-<p><a rel="noopener" href="https://www.instagram.com/vgthmind" target="_blank">@vgthmind on Instagram</a></p>
-<p>I usually reply within 24&ndash;48&nbsp;h.</p>
-<p><a href="mailto:vgthm66@gmail.com">vgthm66@gmail.com</a></p>
-<p>&nbsp;</p>
-<p>Une question sur une pi&egrave;ce, une commande, une collab&nbsp;? Le plus simple et le plus rapide reste de m'envoyer un message en DM sur Instagram.</p>
-<p><a rel="noopener" href="https://www.instagram.com/vgthmind" target="_blank">@vgthmind sur Instagram</a></p>
-<p>R&eacute;ponse en g&eacute;n&eacute;ral sous 24&nbsp;&agrave;&nbsp;48&nbsp;h.</p>
-<p><a href="mailto:vgthm66@gmail.com">vgthm66@gmail.com</a></p>
+      <p class="vg-lang-sep"><span>English</span></p>
+<p lang="en">Got a question about a piece, an order, a collab? Fill in the form, email me, or send a DM on Instagram. I usually reply within 24&ndash;48&nbsp;h.</p>
+<p lang="en"><a href="mailto:contact@vgthmind.org">contact@vgthmind.org</a> &middot; <a rel="noopener" href="https://www.instagram.com/vgthmind" target="_blank">@vgthmind on Instagram</a></p>
+<p class="vg-lang-sep"><span>Fran&ccedil;ais</span></p>
+<p lang="fr">Une question sur une pi&egrave;ce, une commande, une collab&nbsp;? Remplis le formulaire, &eacute;cris-moi un mail ou envoie un DM sur Instagram. R&eacute;ponse en g&eacute;n&eacute;ral sous 24&nbsp;&agrave;&nbsp;48&nbsp;h.</p>
+<p lang="fr"><a href="mailto:contact@vgthmind.org">contact@vgthmind.org</a> &middot; <a rel="noopener" href="https://www.instagram.com/vgthmind" target="_blank">@vgthmind sur Instagram</a></p>
+
+<form id="vg-contact-form" class="vg-contact-form" novalidate>
+  <div class="vg-cf-row"><label for="vgc-name">Nom / Name</label><input id="vgc-name" name="name" type="text" autocomplete="name" maxlength="100" required></div>
+  <div class="vg-cf-row"><label for="vgc-email">E-mail</label><input id="vgc-email" name="email" type="email" autocomplete="email" maxlength="200" required></div>
+  <div class="vg-cf-row"><label for="vgc-subject">Sujet / Subject</label><input id="vgc-subject" name="subject" type="text" maxlength="150" required></div>
+  <div class="vg-cf-row"><label for="vgc-message">Message</label><textarea id="vgc-message" name="message" rows="6" maxlength="3000" required></textarea></div>
+  <div class="vg-cf-trap" aria-hidden="true"><label for="vgc-website">Ne pas remplir</label><input id="vgc-website" name="website" type="text" tabindex="-1" autocomplete="off"></div>
+  <button type="submit" class="button vg-cf-send">Envoyer / Send</button>
+  <p lang="fr" id="vg-contact-status" class="vg-cf-status" role="status" aria-live="polite"></p>
+</form>
+<style>
+.vg-contact-form{max-width:560px;margin:28px 0 0;display:flex;flex-direction:column;gap:16px}
+.vg-cf-row{display:flex;flex-direction:column;gap:6px}
+.vg-cf-row label{font-size:12px;letter-spacing:.08em;text-transform:uppercase}
+.vg-cf-row input,.vg-cf-row textarea{font:inherit;font-size:16px;padding:12px;border:1px solid #171717;background:#fff;color:#171717;border-radius:6px;width:100%;box-sizing:border-box}
+.vg-cf-row input[aria-invalid="true"],.vg-cf-row textarea[aria-invalid="true"]{border-color:#b3261e;box-shadow:0 0 0 1px #b3261e}
+.vg-cf-trap{position:absolute!important;left:-9999px!important;width:1px;height:1px;overflow:hidden}
+.vg-cf-send{align-self:flex-start;min-height:44px;padding:12px 28px}
+.vg-cf-status{margin:0;font-size:15px}
+.vg-cf-status.ok{color:#1b5e20}.vg-cf-status.err{color:#b3261e}
+</style>
+<script>
+(function(){
+  var f=document.getElementById('vg-contact-form'); if(!f) return;
+  var st=document.getElementById('vg-contact-status'), btn=f.querySelector('button'), t0=Date.now();
+  var EP=window.VG_SHOP_CHECKOUT_ENDPOINT!==undefined?window.VG_SHOP_CHECKOUT_ENDPOINT:'https://vgthmind-shop-checkout.vgthm66.workers.dev';
+  function say(c,m){st.className='vg-cf-status '+c;st.textContent=m;}
+  f.addEventListener('submit',function(e){
+    e.preventDefault();
+    var d={t:Date.now()-t0},bad=null;
+    ['name','email','subject','message','website'].forEach(function(k){var el=f.elements[k];d[k]=el.value;el.removeAttribute('aria-invalid');});
+    ['name','email','subject','message'].forEach(function(k){var el=f.elements[k],v=el.value.trim();if(!v||(k==='email'&&!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(v))||(k==='message'&&v.length<5)){el.setAttribute('aria-invalid','true');if(!bad)bad=el;}});
+    if(bad){say('err','Merci de compléter les champs en rouge. / Please fill in the highlighted fields.');bad.focus();return;}
+    btn.disabled=true;say('','Envoi… / Sending…');
+    fetch(EP+'/contact',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(d)})
+      .then(function(r){return r.json().catch(function(){return {};}).then(function(j){return {s:r.status,j:j};});})
+      .then(function(x){
+        if(x.s===200&&x.j.ok){f.reset();say('ok','Message envoyé, merci ! Je te réponds vite. / Message sent, thank you! I will reply soon.');}
+        else if(x.s===429){say('err','Trop d’envois pour le moment, réessaie plus tard ou écris à contact@vgthmind.org. / Too many messages, please try later or email contact@vgthmind.org.');}
+        else{say('err','Le message n’a pas pu partir. Écris directement à contact@vgthmind.org. / Could not send. Please email contact@vgthmind.org directly.');}
+      })
+      .catch(function(){say('err','Connexion impossible. Écris directement à contact@vgthmind.org. / Connection failed. Please email contact@vgthmind.org directly.');})
+      .then(function(){btn.disabled=false;});
+  });
+})();
+</script>
+
     </main>
   
 
