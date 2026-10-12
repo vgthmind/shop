@@ -5,6 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="robots" content="noindex, nofollow" />
     <title>vgthmind — gestion des pieces</title>
+    <link rel="manifest" href="manifest.webmanifest" />
+    <link rel="apple-touch-icon" href="icon-192.png" />
   </head>
   <body>
     <!--
@@ -21,11 +23,13 @@
     -->
     <!-- Raccourcis vers les pages maison de l'admin (hors Sveltia). -->
     <nav style="position:fixed;right:12px;bottom:12px;z-index:2147483647;display:flex;gap:8px;font:13px system-ui,sans-serif">
+      <a href="catalogue.html" style="padding:8px 14px;border-radius:999px;background:#171717;color:#fff;text-decoration:none">Catalogue</a>
       <a href="studio-photo.html" style="padding:8px 14px;border-radius:999px;background:#171717;color:#fff;text-decoration:none">Nouvelle pièce</a>
       <a href="pieces.html" style="padding:8px 14px;border-radius:999px;background:#171717;color:#fff;text-decoration:none">Poids &amp; ports</a>
       <a href="stock.html"style="padding:8px 14px;border-radius:999px;background:#171717;color:#fff;text-decoration:none">Stock</a>
       <a href="commandes.html" style="padding:8px 14px;border-radius:999px;background:#171717;color:#fff;text-decoration:none">Commandes &amp; stats</a>
-      <a href="AIDE.md" style="padding:8px 14px;border-radius:999px;background:#fff;color:#171717;border:1px solid #ccc;text-decoration:none">Aide</a>
+      <a href="menu.html" style="padding:8px 14px;border-radius:999px;background:#171717;color:#fff;text-decoration:none">Tableau de bord</a>
+      <a href="aide.html" style="padding:8px 14px;border-radius:999px;background:#fff;color:#171717;border:1px solid #ccc;text-decoration:none">Aide</a>
     </nav>
     <script src="https://unpkg.com/@sveltia/cms@0.229.0/dist/sveltia-cms.js"></script>
   </body>

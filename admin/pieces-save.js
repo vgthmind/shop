@@ -63,5 +63,30 @@
     return { commit: nc.sha, saved: slugs, pieces: next };
   }
 
-  return { loadPieces: loadPieces, savePieces: savePieces };
+  // Écrit des fiches complètes (copie, ordre, archivage, aperçu) en UN commit. files : { slug: fiche }.
+  // Sans écraser un état modifié entre-temps : le commit est refusé si le dépôt a bougé (rien n'est écrit).
+  async function saveFiles(gh, files, message, say) {
+    say = say || function () {};
+    var slugs = Object.keys(files), tree = [], i;
+    if (!slugs.length) throw new Error('Rien à enregistrer.');
+    say('Création du commit…');
+    var ref = await gh('GET', '/git/ref/heads/' + BRANCH), head = ref.object.sha;
+    var commit = await gh('GET', '/git/commits/' + head);
+    for (i = 0; i < slugs.length; i++) {
+      var fiche = Object.assign({}, files[slugs[i]]); delete fiche.sha;
+      var blob = await gh('POST', '/git/blobs', { content: toB64(JSON.stringify(fiche, null, 2) + String.fromCharCode(10)), encoding: 'base64' });
+      tree.push({ path: DIR + slugs[i] + '.json', mode: '100644', type: 'blob', sha: blob.sha });
+    }
+    var newTree = await gh('POST', '/git/trees', { base_tree: commit.tree.sha, tree: tree });
+    var nc = await gh('POST', '/git/commits', { message: message + ' : ' + slugs.join(', ') + ' (page Catalogue)', tree: newTree.sha, parents: [head] });
+    try { await gh('PATCH', '/git/refs/heads/' + BRANCH, { sha: nc.sha, force: false }); }
+    catch (e) {
+      if (e.status === 422 || e.status === 409) throw new Error('Le dépôt a changé pendant l\'envoi. Rien n\'a été enregistré : réessaie.');
+      throw e;
+    }
+    say('Enregistré. Le site se reconstruit tout seul (1 à 2 min).');
+    return { commit: nc.sha, saved: slugs };
+  }
+
+  return { loadPieces: loadPieces, savePieces: savePieces, saveFiles: saveFiles };
 }));

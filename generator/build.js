@@ -655,6 +655,7 @@ async function main() {
   fs.copyFileSync(rel(ROOT, 'assets', 'vg-shipping-view.js'), rel(OUT_DIR, 'assets', 'vg-shipping-view.js'));
   fs.copyFileSync(rel(ROOT, 'assets', 'vg-shipping-picker.js'), rel(OUT_DIR, 'assets', 'vg-shipping-picker.js'));
   fs.copyFileSync(rel(ROOT, 'assets', 'vg-theme.js'), rel(OUT_DIR, 'assets', 'vg-theme.js'));
+  for (const f of ['vg-invoice.js', 'vg-traffic.js', 'vg-lang.js']) { if (fs.existsSync(rel(ROOT, 'assets', f))) fs.copyFileSync(rel(ROOT, 'assets', f), rel(OUT_DIR, 'assets', f)); }
   fs.cpSync(rel(ROOT, 'assets', 'vendor'), rel(OUT_DIR, 'assets', 'vendor'), { recursive: true });
   fs.cpSync(rel(ROOT, 'assets', 'fonts'), rel(OUT_DIR, 'assets', 'fonts'), { recursive: true });
   const productImagesSrc = rel(ROOT, 'assets', 'products');

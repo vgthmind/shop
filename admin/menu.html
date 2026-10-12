@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="robots" content="noindex, nofollow">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Admin vgthmind">
+  <meta name="theme-color" content="#171717">
+  <link rel="apple-touch-icon" href="icon-192.png">
+  <title>Admin boutique vgthmind</title>
+  <style>
+    :root { --bg: #f4f2ec; --ink: #171717; --muted: #6b6860; --line: rgba(0,0,0,.12); --card: rgba(255,255,255,.7); }
+    * { box-sizing: border-box; }
+    [hidden] { display: none !important; }
+    body { margin: 0; background: var(--bg); color: var(--ink); font: 16px/1.45 system-ui, -apple-system, "Segoe UI", sans-serif; }
+    main { max-width: 760px; margin: 0 auto; padding: 24px 16px 64px; }
+    h1 { font-size: 22px; letter-spacing: .04em; text-transform: uppercase; margin: 0 0 4px; }
+    h2 { font-size: 13px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); margin: 28px 0 8px; }
+    .muted { color: var(--muted); font-size: 14px; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 10px; }
+    a.tile { display: block; min-height: 76px; padding: 14px 16px; background: var(--card); border: 1px solid var(--line); border-radius: 14px; color: var(--ink); text-decoration: none; }
+    a.tile:hover, a.tile:focus-visible { border-color: var(--ink); outline: none; }
+    a.tile strong { display: block; font-size: 16px; }
+    a.tile span { color: var(--muted); font-size: 13px; }
+    .badge { display: inline-block; min-width: 22px; padding: 1px 7px; margin-left: 6px; border-radius: 999px; background: #a23b2a; color: #fff; font-size: 13px; text-align: center; }
+    button { min-height: 44px; padding: 8px 16px; border-radius: 999px; border: 1px solid var(--ink); background: var(--ink); color: #fff; font: inherit; cursor: pointer; }
+    .box { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 12px 16px; margin-top: 18px; }
+  </style>
+</head>
+<body>
+<main>
+  <h1>Admin boutique vgthmind</h1>
+  <p class="muted">Tout ce qu'il faut pour gérer la boutique. Tu es déconnecté automatiquement après 30 minutes sans rien faire.</p>
+
+  <div class="box" id="install" hidden>
+    <strong>Installer l'admin comme une appli</strong>
+    <p class="muted" id="install-help"></p>
+    <button type="button" id="install-btn" hidden>Installer</button>
+  </div>
+
+  <h2>Au quotidien</h2>
+  <div class="grid">
+    <a class="tile" href="commandes.html"><strong>Commandes <span class="badge" id="todo" hidden></span></strong><span>À expédier, suivi, bon de commande, facture</span></a>
+    <a class="tile" href="studio-photo.html"><strong>Nouvelle pièce</strong><span>Photos, détourage, fiche, mise en ligne</span></a>
+    <a class="tile" href="stock.html"><strong>Stock</strong><span>Quantités, sold out, sauvegardes</span></a>
+    <a class="tile" href="catalogue.html"><strong>Catalogue</strong><span>Ordre, copie, aperçu, archiver</span></a>
+  </div>
+
+  <h2>Réglages et chiffres</h2>
+  <div class="grid">
+    <a class="tile" href="pieces.html"><strong>Poids et ports</strong><span>Poids emballé, mode d'envoi, ports calculés</span></a>
+    <a class="tile" href="expedition.html"><strong>Expédition</strong><span>Grille Colissimo, lettre suivie, pays</span></a>
+    <a class="tile" href="export.html"><strong>Export compta</strong><span>CSV par mois, trimestre ou année</span></a>
+    <a class="tile" href="trafic.html"><strong>Trafic</strong><span>Visiteurs, pages, provenance, en direct</span></a>
+    <a class="tile" href="index.html"><strong>Modifier une fiche</strong><span>Texte, prix, photos (éditeur complet)</span></a>
+  </div>
+
+  <h2>Mes autres outils</h2>
+  <div class="grid">
+    <a class="tile" href="https://claude.ai/code/artifact/db6d1903-b71f-4c0e-b017-6e75ec769256" target="_blank" rel="noopener"><strong>Comptabilité</strong><span>Livre des recettes</span></a>
+    <a class="tile" href="https://claude.ai/code/artifact/2b28c866-cf8f-4971-b5b6-93c47f1d7a79" target="_blank" rel="noopener"><strong>Facturation</strong><span>Factures et devis</span></a>
+    <a class="tile" href="https://dashboard.stripe.com/" target="_blank" rel="noopener"><strong>Stripe</strong><span>Paiements, remboursements, codes promo</span></a>
+    <a class="tile" href="../" target="_blank" rel="noopener"><strong>Voir la boutique</strong><span>Le site tel que les clients le voient</span></a>
+    <a class="tile" href="aide.html"><strong>Mode d'emploi</strong><span>Pas à pas, et que faire en cas de souci</span></a>
+  </div>
+</main>
+<script src="vg-admin-auth.js"></script>
+<script>
+(function () {
+  'use strict';
+  var $ = function (id) { return document.getElementById(id); };
+  var standalone = window.matchMedia('(display-mode: standalone)').matches || navigator.standalone;
+  var deferred = null;
+  var ios = /iphone|ipad|ipod/i.test(navigator.userAgent);
+  if (!standalone) {
+    $('install').hidden = false;
+    $('install-help').textContent = ios
+      ? "Sur iPhone : ouvre cette page dans Safari, touche le bouton Partager (carré avec une flèche), puis « Sur l'écran d'accueil »."
+      : "Sur PC (Chrome ou Edge) : clique sur l'icône « Installer » à droite de la barre d'adresse, ou sur le bouton ci-dessous quand il apparaît.";
+  }
+  window.addEventListener('beforeinstallprompt', function (e) { e.preventDefault(); deferred = e; $('install-btn').hidden = false; });
+  $('install-btn').addEventListener('click', function () { if (deferred) { deferred.prompt(); deferred = null; $('install-btn').hidden = true; } });
+
+  // Nombre de commandes à expédier (si connecté).
+  if (window.vgAdminToken()) {
+    window.vgAdminApi('/orders').then(function (d) {
+      var n = (d.orders || []).filter(function (o) { return !o.shipped && o.livemode; }).length;
+      if (n) { $('todo').textContent = n; $('todo').hidden = false; }
+    }).catch(function () {});
+  }
+})();
+</script>
+</body>
+</html>

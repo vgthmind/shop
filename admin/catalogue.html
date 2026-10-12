@@ -1,0 +1,147 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex, nofollow">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="apple-touch-icon" href="icon-192.png">
+  <title>vgthmind — catalogue</title>
+  <style>
+    :root { --bg: #f4f2ec; --ink: #171717; --muted: #6b6860; --line: rgba(0,0,0,.12); --card: rgba(255,255,255,.6); --ok: #2f7d4a; --warn: #a86400; }
+    * { box-sizing: border-box; }
+    [hidden] { display: none !important; }
+    body { margin: 0; background: var(--bg); color: var(--ink); font: 15px/1.45 system-ui, -apple-system, "Segoe UI", sans-serif; }
+    main { max-width: 900px; margin: 0 auto; padding: 24px 16px 96px; }
+    h1 { font-size: 22px; letter-spacing: .04em; text-transform: uppercase; margin: 0 0 4px; }
+    nav a { color: var(--muted); font-size: 13px; margin-right: 12px; }
+    .muted { color: var(--muted); font-size: 13px; }
+    .bar { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin: 16px 0; }
+    button, a.btn { min-height: 40px; padding: 8px 14px; border-radius: 999px; border: 1px solid var(--line); background: #fff; color: var(--ink); font: inherit; cursor: pointer; text-decoration: none; display: inline-flex; align-items: center; }
+    button.primary { background: var(--ink); color: #fff; border-color: var(--ink); }
+    button:disabled { opacity: .5; cursor: default; }
+    input[type=search], input[type=text] { flex: 1 1 200px; padding: 9px 12px; border: 1px solid var(--line); border-radius: 999px; background: #fff; font: inherit; }
+    .piece { display: flex; gap: 12px; align-items: center; background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 10px 12px; margin: 8px 0; flex-wrap: wrap; }
+    .piece.changed { background: rgba(255,226,122,.3); }
+    .piece img { width: 56px; height: 64px; object-fit: contain; border-radius: 6px; background: var(--bg); flex: none; }
+    .piece .nm { flex: 1 1 180px; min-width: 0; }
+    .piece .acts { display: flex; gap: 6px; flex-wrap: wrap; }
+    .tag { font-size: 12px; padding: 2px 8px; border-radius: 999px; border: 1px solid var(--line); }
+    .tag.live { color: var(--ok); border-color: var(--ok); }
+    .tag.preview { color: var(--warn); border-color: var(--warn); }
+    .tag.archived { color: var(--muted); }
+    #savebar { position: fixed; left: 0; right: 0; bottom: 0; background: var(--ink); color: #fff; padding: 12px 16px; display: flex; gap: 12px; align-items: center; justify-content: center; flex-wrap: wrap; }
+    #savebar button { background: #fff; }
+    #msg { min-height: 1.4em; }
+  </style>
+</head>
+<body>
+<main>
+  <nav><a href="menu.html">← Tableau de bord</a><a href="studio-photo.html">Nouvelle pièce</a><a href="pieces.html">Poids &amp; ports</a></nav>
+  <h1>Catalogue</h1>
+  <p class="muted">Ordre d'affichage, copie d'une pièce (séries), aperçu avant mise en ligne, archivage. Rien n'est publié tant que tu n'as pas cliqué « Enregistrer ».</p>
+
+  <div class="bar" id="login"><button type="button" class="primary" id="login-btn">Se connecter avec GitHub</button></div>
+
+  <div id="app" hidden>
+    <div class="bar">
+      <input type="search" id="filter" placeholder="Chercher une pièce…" aria-label="Chercher une pièce">
+      <button type="button" id="refresh">Actualiser</button>
+      <span class="muted" id="count"></span>
+    </div>
+    <div id="list"></div>
+  </div>
+  <p id="msg" role="status" aria-live="polite"></p>
+</main>
+<div id="savebar" hidden><span id="savecount"></span><button type="button" id="save">Enregistrer</button><button type="button" id="cancel">Annuler les changements</button></div>
+
+<script src="catalogue-core.js"></script>
+<script src="pieces-save.js"></script>
+<script src="studio-publish.js"></script>
+<script>
+(function () {
+  'use strict';
+  var $ = function (id) { return document.getElementById(id); };
+  var pieces = [], changes = {}; // changes : slug -> fiche modifiée / créée
+  var LABEL = { live: 'En ligne', preview: 'Aperçu (non listée)', archived: 'Archivée' };
+
+  function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+  function say(t) { $('msg').textContent = t || ''; }
+  function merged() { // fiches enregistrées + changements en attente
+    var m = {}; pieces.forEach(function (p) { m[p.slug] = p; });
+    Object.keys(changes).forEach(function (s) { m[s] = changes[s]; });
+    return Object.keys(m).map(function (s) { return m[s]; });
+  }
+  function thumb(p) {
+    var u = (p.images && p.images[0]) || '';
+    if (!u) return '<span class="ph"></span>';
+    var sized = '../assets/products-sized/320/' + u.replace(/^\/?assets\/products\//, '').replace(/\.\w+$/, '.webp');
+    return '<img alt="" loading="lazy" src="' + esc(sized) + '" onerror="this.onerror=null;this.src=\'..' + esc(u) + '\'">';
+  }
+  function apply(map) { Object.keys(map).forEach(function (s) { changes[s] = map[s]; }); draw(); }
+
+  function draw() {
+    var q = $('filter').value.trim().toLowerCase();
+    var all = VGCatalogue.sorted(merged());
+    var list = all.filter(function (p) { return !q || p.slug.toLowerCase().indexOf(q) !== -1 || String(p.name || '').toLowerCase().indexOf(q) !== -1; });
+    $('list').innerHTML = list.map(function (p) {
+      var st = VGCatalogue.state(p), isNew = changes[p.slug] && !pieces.some(function (x) { return x.slug === p.slug; });
+      return '<div class="piece' + (changes[p.slug] ? ' changed' : '') + '" data-slug="' + esc(p.slug) + '">' + thumb(p)
+        + '<div class="nm"><strong>' + esc(p.name || p.slug) + '</strong> <span class="tag ' + st + '">' + LABEL[st] + (isNew ? ' · nouvelle copie' : '') + '</span>'
+        + '<div class="muted">' + esc(p.slug) + ' · ' + esc(p.price) + ' €' + (p.position != null ? ' · n° ' + esc(p.position) : '') + '</div></div>'
+        + '<div class="acts">'
+        + (st === 'archived' ? '' : '<button type="button" data-act="up" aria-label="Monter ' + esc(p.name) + '">▲</button><button type="button" data-act="down" aria-label="Descendre ' + esc(p.name) + '">▼</button>')
+        + '<button type="button" data-act="dup">Dupliquer</button>'
+        + (st === 'preview' ? '<button type="button" data-act="publish" class="primary">Publier</button>' : '')
+        + (st === 'live' ? '<button type="button" data-act="hide">Passer en aperçu</button>' : '')
+        + (st === 'archived' ? '<button type="button" data-act="restore">Remettre en ligne</button>' : '<button type="button" data-act="archive">Archiver</button>')
+        + (isNew ? '' : '<a class="btn" target="_blank" rel="noopener" href="../product/' + encodeURIComponent(p.slug) + '">Voir la page</a>')
+        + '</div></div>';
+    }).join('') || '<p class="muted">Aucune pièce.</p>';
+    var n = Object.keys(changes).length;
+    $('count').textContent = all.length + ' pièces';
+    $('savebar').hidden = !n; $('savecount').textContent = n + ' pièce' + (n > 1 ? 's' : '') + ' modifiée' + (n > 1 ? 's' : '');
+  }
+
+  $('list').addEventListener('click', function (e) {
+    var act = e.target.getAttribute('data-act'), row = e.target.closest('.piece');
+    if (!act || !row) return;
+    var slug = row.getAttribute('data-slug'), all = merged(), p = all.filter(function (x) { return x.slug === slug; })[0], one = {};
+    if (act === 'up' || act === 'down') return apply(VGCatalogue.move(all, slug, act === 'up' ? -1 : 1));
+    if (act === 'dup') {
+      var name = window.prompt('Nom de la copie (ex. ' + (p.name || slug) + ' bleu) :', '');
+      if (name === null) return;
+      var r = VGCatalogue.duplicate(all, slug, name);
+      if (r.error) return say(r.error);
+      one[r.slug] = r.product; apply(one);
+      return say('Copie « ' + r.product.name + ' » créée en aperçu. Enregistre, attends 1 à 2 min, vérifie la page, puis « Publier ». Les photos sont celles de l\'original : change-les dans « Nouvelle pièce » ou l\'admin Pièces.');
+    }
+    if (act === 'publish') one[slug] = VGCatalogue.setHidden(p, false);
+    if (act === 'hide') one[slug] = VGCatalogue.setHidden(p, true);
+    if (act === 'archive') one[slug] = VGCatalogue.setArchived(p, true);
+    if (act === 'restore') one[slug] = VGCatalogue.setArchived(p, false);
+    apply(one);
+  });
+
+  function load() {
+    say('Chargement des pièces…');
+    return VGPiecesSave.loadPieces(VGStudioPublish.api).then(function (res) {
+      pieces = res; changes = {}; $('login').hidden = true; $('app').hidden = false; draw(); say('');
+    }).catch(function (e) { say('Erreur : ' + e.message); });
+  }
+
+  $('save').addEventListener('click', function () {
+    var n = Object.keys(changes).length;
+    $('save').disabled = true;
+    VGPiecesSave.saveFiles(VGStudioPublish.api, changes, 'Catalogue (ordre, copie, archivage, aperçu)', say).then(function () {
+      return load().then(function () { say('Enregistré (' + n + '). Le site se reconstruit tout seul (1 à 2 min).'); });
+    }).catch(function (e) { say('Erreur : ' + e.message); }).then(function () { $('save').disabled = false; });
+  });
+  $('cancel').addEventListener('click', function () { changes = {}; draw(); say('Changements annulés.'); });
+  $('filter').addEventListener('input', draw);
+  $('refresh').addEventListener('click', function () { if (!Object.keys(changes).length || confirm('Abandonner les changements non enregistrés ?')) load(); });
+  $('login-btn').addEventListener('click', function () { VGStudioPublish.login().then(load).catch(function (e) { say(e.message); }); });
+})();
+</script>
+</body>
+</html>

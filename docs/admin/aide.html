@@ -1,0 +1,127 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex, nofollow">
+  <link rel="apple-touch-icon" href="icon-192.png">
+  <title>Mode d'emploi — admin vgthmind</title>
+  <style>
+    :root { --bg: #f4f2ec; --ink: #171717; --muted: #6b6860; --line: rgba(0,0,0,.12); }
+    body { margin: 0; background: var(--bg); color: var(--ink); font: 17px/1.55 system-ui, -apple-system, "Segoe UI", sans-serif; }
+    main { max-width: 720px; margin: 0 auto; padding: 24px 16px 80px; }
+    h1 { font-size: 24px; letter-spacing: .04em; text-transform: uppercase; margin: 8px 0 4px; }
+    h2 { font-size: 19px; margin: 36px 0 6px; padding-top: 12px; border-top: 1px solid var(--line); }
+    nav a { color: var(--muted); font-size: 14px; margin-right: 12px; }
+    ol, ul { padding-left: 22px; } li { margin: 6px 0; }
+    .tip { background: rgba(255,255,255,.7); border: 1px solid var(--line); border-radius: 12px; padding: 10px 14px; margin: 12px 0; }
+    code { background: rgba(0,0,0,.07); padding: 1px 6px; border-radius: 6px; }
+    .toc li { margin: 2px 0; }
+  </style>
+</head>
+<body>
+<main>
+  <nav><a href="menu.html">← Tableau de bord</a></nav>
+  <h1>Mode d'emploi</h1>
+  <p>Pour gérer la boutique sans jamais écrire une ligne de code. Tout se passe depuis le <a href="menu.html">tableau de bord</a> : sur iPhone comme sur PC, les mêmes grosses tuiles.</p>
+  <ul class="toc">
+    <li><a href="#connexion">Se connecter</a></li>
+    <li><a href="#piece">Mettre une pièce en ligne</a></li>
+    <li><a href="#serie">Faire une série (copier une pièce)</a></li>
+    <li><a href="#commande">Gérer une commande</a></li>
+    <li><a href="#expedier">Expédier et prévenir le client</a></li>
+    <li><a href="#soldout">Mettre une pièce en sold out (ou la remettre)</a></li>
+    <li><a href="#compta">Exporter pour la compta</a></li>
+    <li><a href="#facture">Facture d'une commande</a></li>
+    <li><a href="#install">Installer l'admin comme une appli</a></li>
+    <li><a href="#probleme">Que faire en cas de problème</a></li>
+  </ul>
+
+  <h2 id="connexion">Se connecter</h2>
+  <ol>
+    <li>Ouvre l'admin (raccourci « Admin boutique vgthmind » sur le PC, ou l'icône sur l'iPhone).</li>
+    <li>Touche <strong>« Se connecter avec GitHub »</strong> sur la page demandée. Seul ton compte GitHub est accepté.</li>
+    <li>Si tu ne fais rien pendant 30 minutes, tu es déconnecté tout seul (sécurité) : reclique simplement sur le bouton.</li>
+  </ol>
+  <div class="tip">Protège ton compte GitHub avec la double authentification (clé d'accès / passkey ou application). C'est la vraie porte d'entrée de l'admin.</div>
+
+  <h2 id="piece">Mettre une pièce en ligne</h2>
+  <ol>
+    <li>Tableau de bord → <strong>Nouvelle pièce</strong>.</li>
+    <li>Ajoute les photos : elles sont détourées automatiquement. Depuis l'iPhone, le PC doit être allumé avec le détourage lancé (voir « Détourage iPhone » dans A-FAIRE).</li>
+    <li>Remplis le nom, le prix, la description (anglais, ligne vide, français), les catégories, la quantité (1 = pièce unique), la couleur.</li>
+    <li>Publie. Le site se met à jour tout seul en 1 à 2 minutes.</li>
+    <li>Tableau de bord → <strong>Poids et ports</strong> : indique le poids emballé et le mode (colis ou lettre suivie). Les frais de port se calculent tout seuls pour tous les pays.</li>
+    <li>Le lien Instagram (reel) est facultatif : la fiche s'affiche très bien sans.</li>
+  </ol>
+
+  <h2 id="serie">Faire une série (copier une pièce)</h2>
+  <ol>
+    <li>Tableau de bord → <strong>Catalogue</strong> → bouton <strong>Dupliquer</strong> à côté de la pièce.</li>
+    <li>Donne un nom à la copie (ex. « Cache-cou bleu »), puis <strong>Enregistrer</strong> (barre noire en bas).</li>
+    <li>La copie est d'abord <em>en aperçu</em> : sa page existe mais elle n'apparaît pas dans la boutique. Attends 1 à 2 minutes, clique <strong>Voir la page</strong> pour vérifier.</li>
+    <li>Quand c'est bon : <strong>Publier</strong>, puis <strong>Enregistrer</strong>.</li>
+    <li>Change les photos de la copie dans <strong>Modifier une fiche</strong> (la copie démarre avec les photos de l'original).</li>
+  </ol>
+  <p>Même écran pour : changer l'ordre d'affichage (flèches ▲ ▼), <strong>Archiver</strong> une pièce (elle disparaît du site mais la fiche reste, rien n'est supprimé), la remettre en ligne.</p>
+
+  <h2 id="commande">Gérer une commande</h2>
+  <ol>
+    <li>Tu reçois un mail d'alerte à chaque nouvelle commande (il arrive sur ton téléphone comme n'importe quel mail).</li>
+    <li>Tableau de bord → <strong>Commandes</strong>. L'onglet « À expédier » liste ce qui reste à envoyer ; le détail montre les pièces, la taille, l'adresse, le pays et le port.</li>
+    <li><strong>Bon de commande (imprimer)</strong> : une page prête à imprimer, à glisser dans le colis ou à recopier sur l'étiquette.</li>
+    <li>Tu peux marquer « en préparation » : le client le voit sur sa page de suivi.</li>
+  </ol>
+
+  <h2 id="expedier">Expédier et prévenir le client</h2>
+  <ol>
+    <li>Colle l'étiquette, dépose le colis.</li>
+    <li>Sur la commande : <strong>Marquer expédiée…</strong>, tape le <strong>numéro de suivi</strong>, valide.</li>
+    <li>Le mail « ta commande est partie » (avec le lien de suivi La Poste) part <strong>tout seul</strong> au client, en anglais ou en français selon son pays. Rien d'autre à faire.</li>
+    <li>Une erreur ? « Annuler expédiée » puis recommence ; « Renvoyer le mail » renvoie le message.</li>
+  </ol>
+
+  <h2 id="soldout">Mettre une pièce en sold out (ou la remettre)</h2>
+  <ul>
+    <li>Une vente la passe automatiquement en sold out à 0 exemplaire.</li>
+    <li>À la main : Tableau de bord → <strong>Stock</strong> → mets <strong>0</strong> → Enregistrer (visible sous 15 secondes).</li>
+    <li>Pour la remettre en vente : mets le nombre d'exemplaires → Enregistrer.</li>
+    <li>Pour la retirer complètement du site : Catalogue → <strong>Archiver</strong>.</li>
+  </ul>
+
+  <h2 id="compta">Exporter pour la compta</h2>
+  <ol>
+    <li>Tableau de bord → <strong>Export compta</strong>.</li>
+    <li>Choisis le mois, le trimestre ou l'année, puis télécharge le fichier CSV (il s'ouvre dans Excel). Il ne contient aucun nom de client.</li>
+    <li>Tuile <strong>Comptabilité</strong> : ton livre des recettes. Tuile <strong>Facturation</strong> : ton outil de factures.</li>
+  </ol>
+
+  <h2 id="facture">Facture d'une commande</h2>
+  <ul>
+    <li>Sur la commande : bouton <strong>Facture</strong> → une page s'ouvre → <strong>Imprimer / Enregistrer en PDF</strong>. Numéro de la forme <code>W-2026-001</code>.</li>
+    <li>Le client peut aussi la télécharger lui-même depuis la page « Suivre ma commande » du site.</li>
+    <li>Les commandes de test portent un numéro <code>TEST-…</code> et la mention « aucune valeur ».</li>
+  </ul>
+
+  <h2 id="install">Installer l'admin comme une appli</h2>
+  <ul>
+    <li><strong>iPhone</strong> : ouvre le tableau de bord dans Safari → bouton Partager → « Sur l'écran d'accueil ».</li>
+    <li><strong>PC</strong> : dans Chrome ou Edge, icône « Installer » à droite de la barre d'adresse (ou bouton « Installer » du tableau de bord).</li>
+  </ul>
+
+  <h2 id="probleme">Que faire en cas de problème</h2>
+  <ul>
+    <li><strong>« Connexion expirée »</strong> : reclique sur « Se connecter avec GitHub ». Rien n'est perdu.</li>
+    <li><strong>Une modif n'apparaît pas sur le site</strong> : attends 2 minutes et recharge la page (touche Ctrl+F5 sur PC). Le site se reconstruit à chaque enregistrement.</li>
+    <li><strong>Un client ne reçoit pas son mail</strong> : demande-lui de regarder ses spams ; sinon, sur la commande, « Renvoyer le mail ».</li>
+    <li><strong>Une pièce vendue apparaît encore en vente</strong> : page Stock, mets 0, Enregistrer.</li>
+    <li><strong>Un client dit qu'il ne peut pas payer</strong> : la pièce est peut-être réservée par quelqu'un d'autre pendant 30 minutes (anti double vente). Il peut réessayer plus tard.</li>
+    <li><strong>J'ai fait une erreur sur le catalogue</strong> : GitHub garde toutes les versions. Dis-le à Claude (« annule le dernier changement du catalogue »).</li>
+    <li><strong>Sauvegardes</strong> : le stock et l'état des commandes sont sauvegardés chaque nuit (gardés 180 jours). Pages <strong>Stock</strong> et <strong>Commandes</strong> : « Télécharger la dernière » ou « Restaurer depuis un fichier ». Le catalogue est sauvegardé à chaque enregistrement (historique GitHub).</li>
+    <li><strong>Alerte par mail</strong> : si tu reçois « [vgthmind ALERTE] … » (Worker planté, paiement échoué, mail non parti), note le sujet et envoie-le à Claude.</li>
+    <li><strong>Codes promo</strong> : se créent dans Stripe (Catalogue de produits → Coupons → code promotionnel). Le champ apparaît tout seul au paiement.</li>
+    <li>Si rien ne marche : écris-moi à Claude avec une capture d'écran.</li>
+  </ul>
+</main>
+</body>
+</html>

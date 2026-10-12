@@ -501,7 +501,7 @@
       order: 'Commande', placed: 'passée le', steps: ['Reçue', 'En préparation', 'Expédiée'],
       s_received: 'Ta commande est bien reçue.', s_preparing: 'Ta commande est en cours de préparation.', s_shipped: 'Ta commande est partie.',
       items: 'Articles', size: 'Taille', qty: 'Qté', each: 'l\'unité', shipping: 'Livraison', total: 'Total', address: 'Adresse de livraison',
-      parcel: 'Numéro de suivi', trackBtn: 'Suivre mon colis', noTracking: 'Le numéro de suivi n\'est pas encore disponible.', again: 'Suivre une autre commande',
+      parcel: 'Numéro de suivi', invoice: 'Télécharger ma facture', trackBtn: 'Suivre mon colis', noTracking: 'Le numéro de suivi n\'est pas encore disponible.', again: 'Suivre une autre commande',
     },
     en: {
       title: 'Track my order', intro: 'Enter your order number (in your confirmation email) and the email address used for the order.',
@@ -512,7 +512,7 @@
       order: 'Order', placed: 'placed on', steps: ['Received', 'Being prepared', 'Shipped'],
       s_received: 'Your order has been received.', s_preparing: 'Your order is being prepared.', s_shipped: 'Your order is on its way.',
       items: 'Items', size: 'Size', qty: 'Qty', each: 'each', shipping: 'Shipping', total: 'Total', address: 'Delivery address',
-      parcel: 'Tracking number', trackBtn: 'Track my parcel', noTracking: 'The tracking number isn\'t available yet.', again: 'Track another order',
+      parcel: 'Tracking number', invoice: 'Download my invoice', trackBtn: 'Track my parcel', noTracking: 'The tracking number isn\'t available yet.', again: 'Track another order',
     },
   };
 
@@ -589,6 +589,7 @@
         + '<h2 class="vg-track-h">' + esc(t.address) + '</h2>'
         + '<p class="vg-track-address">' + esc((d.address || []).concat(countryLabel(d.country)).filter(Boolean).join('\n')) + '</p>'
         + parcel
+        + '<p class="vg-track-invoice"><button type="button" class="button vg-track-invoice-btn">' + esc(t.invoice) + '</button></p>'
         + '<p class="vg-track-again"><button type="button" class="button button--checkout vg-track-back">' + esc(t.again) + '</button></p>';
       lookup.hidden = true; result.hidden = false;
     }
@@ -597,6 +598,21 @@
       a.addEventListener('click', function (e) { e.preventDefault(); applyLang(a.getAttribute('data-lang')); });
     });
     result.addEventListener('click', function (e) {
+      if (e.target.closest && e.target.closest('.vg-track-invoice-btn')) {
+        var btn = e.target.closest('.vg-track-invoice-btn'), req = result.__req;
+        if (!req) return;
+        var go = function () {
+          var p = fetch(ENDPOINT + '/invoice', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(req) })
+            .then(function (r) { return r.json().then(function (d) { if (!d.ok) throw new Error(t.error); return d.invoice; }); });
+          window.VGInvoice.openAsync(p, lang);
+        };
+        if (window.VGInvoice) return go();
+        var sc = document.createElement('script');
+        var me = document.querySelector('script[src*="vg-shop-cart.js"]');
+        sc.src = (me ? me.getAttribute('src') : '/assets/vg-shop-cart.js').replace('vg-shop-cart.js', 'vg-invoice.js');
+        sc.onload = go; document.head.appendChild(sc);
+        return;
+      }
       if (!e.target.closest || !e.target.closest('.vg-track-back')) return;
       result.hidden = true; result.innerHTML = ''; result.__data = null; lookup.hidden = false;
       emailInput.value = ''; showMsg(''); refInput.focus();
@@ -610,7 +626,7 @@
       fetch(ENDPOINT + '/track', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ref: ref, email: email }) })
         .then(function (r) { return r.json().catch(function () { return {}; }).then(function (d) { return { status: r.status, d: d }; }); })
         .then(function (res) {
-          if (res.d && res.d.ok) { drawResult(res.d); window.scrollTo(0, 0); return; }
+          if (res.d && res.d.ok) { result.__req = { ref: ref, email: email }; drawResult(res.d); window.scrollTo(0, 0); return; }
           showMsg(res.status === 429 ? t.rate : res.status === 404 ? t.notfound : t.error);
         })
         .catch(function () { showMsg(t.error); })

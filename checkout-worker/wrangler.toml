@@ -19,6 +19,8 @@ ADMIN_GITHUB_LOGIN = "vgthmind"
 MAIL_FROM = "vgthmind <commande@vgthmind.org>"
 # Identifiant (public) de l'OAuth App GitHub de l'admin ; son secret est un
 # secret Cloudflare (GITHUB_CLIENT_SECRET).
+# Adresse de l'émetteur imprimée sur les factures (vide = seulement « vgthmind, Vitry-sur-Seine »). À remplir par vgthmind.
+INVOICE_SELLER_ADDRESS = ""
 GITHUB_CLIENT_ID = "Ov23liAh57fi8Xa7RNNg"
 
 # Commandes expediees, sauvegardes du stock, etats OAuth (identifiant de
@@ -32,9 +34,17 @@ id = "de2360d770d64089b018c6f56d48bb85"
 name = "STOCK"
 class_name = "StockDO"
 
+[[durable_objects.bindings]]
+name = "TRAFFIC"
+class_name = "TrafficDO"
+
 [[migrations]]
 tag = "v1"
 new_sqlite_classes = ["StockDO"]
+
+[[migrations]]
+tag = "v2"
+new_sqlite_classes = ["TrafficDO"]
 
 # Sauvegarde du stock chaque jour a 03:30 UTC (KV backup:<date>, 180 jours).
 [triggers]

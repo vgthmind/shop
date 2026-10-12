@@ -33,13 +33,16 @@
 import { DurableObject } from 'cloudflare:workers';
 import { checkoutShipping } from './shipping-worker';
 import { handleContact } from './contact';
+import { trafficRoutes } from './traffic';
+import { buildInvoice, parisYear } from './invoice';
+export { TrafficDO } from './traffic';
 import { customerEmail, sellerEmail, shippedEmail, REPLY_TO, langFor, countryName, type MailItem, type OrderData } from './emails';
 
 interface KV {
   get(key: string): Promise<string | null>;
   put(key: string, value: string, opts?: { expirationTtl?: number }): Promise<void>;
   delete(key: string): Promise<void>;
-  list(opts?: { prefix?: string; limit?: number }): Promise<{ keys: { name: string }[] }>;
+  list(opts?: { prefix?: string; limit?: number; cursor?: string }): Promise<{ keys: { name: string }[]; list_complete?: boolean; cursor?: string }>;
 }
 
 interface Env {
@@ -58,6 +61,8 @@ interface Env {
   ADMIN_GITHUB_LOGIN: string; // seul compte GitHub admin
   HOLDS: KV; // commandes expediees, sauvegardes du stock, etats OAuth
   STOCK: any; // DurableObjectNamespace<StockDO>
+  TRAFFIC: any; // DurableObjectNamespace<TrafficDO>
+  INVOICE_SELLER_ADDRESS?: string; // adresse de l'émetteur sur les factures (à remplir par vgthmind ; vide = non affichée)
 }
 
 interface ShippingLine { amount_alone: number; country?: { code: string } }
@@ -170,6 +175,18 @@ export class StockDO extends DurableObject {
     return { already: false };
   }
 
+  // Numéro de facture W-AAAA-NNN : attribué une fois par commande (même session = même numéro), compteur par année.
+  async invoiceNumber(sessionId: string, year: number) {
+    const storage = (this as any).ctx.storage;
+    const have = await storage.get('i:' + sessionId);
+    if (have) return have as string;
+    const n = ((await storage.get('ic:' + year)) || 0) + 1;
+    await storage.put('ic:' + year, n);
+    const num = `W-${year}-${String(n).padStart(3, '0')}`;
+    await storage.put('i:' + sessionId, num);
+    return num;
+  }
+
   async setStock(values: Record<string, number>) {
     const storage = (this as any).ctx.storage;
     for (const [slug, n] of Object.entries(values)) {
@@ -203,6 +220,8 @@ export default {
       // Sans cle Stripe.
       if (path === '/status') return await status(env);
       if (path === '/stock' && request.method === 'GET') return await publicStock(env, cors);
+      if (path === '/t') { const r = await trafficRoutes(request, env, path, json); if (r) return r; }
+      if ((path === '/auth' || path === '/callback') && !(await allow(env, 'rl:login:' + (request.headers.get('CF-Connecting-IP') || 'x'), 12, 900))) return json({ error: 'Trop de tentatives de connexion, réessaie dans 15 minutes.' }, 429);
       if (path === '/auth') return await oauthStart(request, env);
       if (path === '/callback') return await oauthCallback(request, env);
       if (path.startsWith('/admin/')) {
@@ -226,6 +245,28 @@ export default {
           return v ? new Response(v, { headers: { 'Content-Type': 'application/json', 'Content-Disposition': `attachment; filename="stock-${k.slice(7)}.json"`, ...cors } }) : json({ error: 'Introuvable.' }, 404);
         }
         if (path === '/admin/backup' && request.method === 'POST') return json(await backupStock(env));
+        if (path === '/admin/obackups' && request.method === 'GET') {
+          const list = await env.HOLDS.list({ prefix: 'obackup:' });
+          return json({ backups: list.keys.map((k) => k.name).sort().reverse() });
+        }
+        if (path === '/admin/obackup' && request.method === 'GET') {
+          const k = new URL(request.url).searchParams.get('key') || 'obackup:latest';
+          if (!/^obackup:[\w-]+$/.test(k)) return json({ error: 'Clé invalide.' }, 400);
+          const v = await env.HOLDS.get(k);
+          return v ? new Response(v, { headers: { 'Content-Type': 'application/json', 'Content-Disposition': `attachment; filename="commandes-${k.slice(8)}.json"`, ...cors } }) : json({ error: 'Introuvable.' }, 404);
+        }
+        if (path === '/admin/obackup' && request.method === 'POST') return json(await backupOrders(env));
+        if (path === '/admin/obackup-restore' && request.method === 'POST') {
+          const body: any = await request.json().catch(() => null);
+          if (!body || typeof body !== 'object') return json({ error: 'Fichier invalide.' }, 400);
+          return json({ ok: true, restored: await restoreOrders(env, body) });
+        }
+        const tr = await trafficRoutes(request, env, path, json); if (tr) return tr;
+        if (path === '/admin/invoice' && request.method === 'GET') {
+          const sk = stripeKey(env);
+          if (!sk.ok) return json({ error: sk.error }, 503);
+          return await invoiceFor(env, sk.value, String(new URL(request.url).searchParams.get('id') || ''), json);
+        }
         return json({ error: 'Not found' }, 404);
       }
 
@@ -249,10 +290,12 @@ export default {
       if (path === '/webhook' && request.method === 'POST') return await webhook(request, env, json);
       if (path === '/orders' && request.method === 'GET') return await listOrders(request, env, key.value, json);
       if (path === '/track' && request.method === 'POST') return await trackOrder(request, env, key.value, json);
+      if (path === '/invoice' && request.method === 'POST') return await trackOrder(request, env, key.value, json, true);
       if (path === '/orders/preparing' && request.method === 'POST') return await markPreparing(request, env, json);
       if (path === '/orders/shipped' && request.method === 'POST') return await markShipped(request, env, json);
       if (path === '/orders/shipped-mail' && request.method === 'POST') return await sendShippedMail(request, env, key.value, json);
     } catch (e: any) {
+      await alertAdmin(env, 'worker-' + path, `Le Worker a planté sur ${path}`, String(e && e.stack ? e.stack : e).slice(0, 1500));
       return json({ error: 'Erreur interne : ' + (e && e.message ? e.message : e) }, 500);
     }
     return json({ error: 'Not found' }, 404);
@@ -261,6 +304,7 @@ export default {
   // Sauvegarde quotidienne du stock (cron dans wrangler.toml).
   async scheduled(_event: any, env: Env, ctx: any) {
     ctx.waitUntil(backupStock(env));
+    ctx.waitUntil(backupOrders(env));
   },
 };
 
@@ -314,6 +358,52 @@ async function backupStock(env: Env) {
   await env.HOLDS.put(`backup:${date}`, value, { expirationTtl: BACKUP_DAYS * 86400 });
   await env.HOLDS.put('backup:latest', value);
   return { ok: true, date, count: Object.keys(stock).length };
+}
+
+// Sauvegarde de l'état des commandes (expédiée / en préparation / numéros VG-…) : le détail des commandes reste chez Stripe.
+async function ordersState(env: Env) {
+  const out: { shipped: Record<string, unknown>; preparing: Record<string, unknown>; refs: Record<string, string> } = { shipped: {}, preparing: {}, refs: {} };
+  const plan: [string, 'shipped' | 'preparing' | 'refs'][] = [['shipped:', 'shipped'], ['preparing:', 'preparing'], ['sref:', 'refs']];
+  for (const [prefix, bucket] of plan) {
+    let cursor: string | undefined;
+    for (let page = 0; page < 20; page++) {
+      const r = await env.HOLDS.list({ prefix, cursor });
+      for (const k of r.keys) {
+        const v = await env.HOLDS.get(k.name);
+        if (v == null) continue;
+        const id = k.name.slice(prefix.length);
+        (out[bucket] as any)[id] = bucket === 'refs' ? v : JSON.parse(v);
+      }
+      if (r.list_complete !== false || !r.cursor) break;
+      cursor = r.cursor;
+    }
+  }
+  return out;
+}
+
+async function backupOrders(env: Env) {
+  const date = new Date().toISOString().slice(0, 10);
+  const state = await ordersState(env);
+  const value = JSON.stringify({ date, ...state }, null, 1);
+  await env.HOLDS.put(`obackup:${date}`, value, { expirationTtl: BACKUP_DAYS * 86400 });
+  await env.HOLDS.put('obackup:latest', value);
+  return { ok: true, date, shipped: Object.keys(state.shipped).length, preparing: Object.keys(state.preparing).length, refs: Object.keys(state.refs).length };
+}
+
+// Restauration : n'écrit que des entrées bien formées (identifiants Stripe, numéros VG-XXXXXX).
+async function restoreOrders(env: Env, data: any) {
+  let n = 0;
+  for (const bucket of ['shipped', 'preparing'] as const) {
+    for (const [id, v] of Object.entries((data && data[bucket]) || {})) {
+      if (!isSessionId(id) || typeof v !== 'object' || !v) continue;
+      await env.HOLDS.put(bucket + ':' + id, JSON.stringify(v)); n++;
+    }
+  }
+  for (const [id, ref] of Object.entries((data && data.refs) || {})) {
+    if (!isSessionId(id) || !/^VG-[A-Z0-9]{6}$/.test(String(ref))) continue;
+    await env.HOLDS.put('sref:' + id, String(ref)); await env.HOLDS.put('ref:' + ref, id); n++;
+  }
+  return n;
 }
 
 // --- Frais de livraison (affichage du panier) ---
@@ -486,6 +576,12 @@ async function webhook(request: Request, env: Env, json: JsonFn): Promise<Respon
   const event = JSON.parse(payload);
   const s = event.data && event.data.object;
   if (!s) return json({ received: true });
+  if (event.type === 'payment_intent.payment_failed' || event.type === 'checkout.session.async_payment_failed') {
+    const why = s.last_payment_error?.message || s.last_payment_error?.code || 'raison inconnue';
+    const amount = ((s.amount ?? s.amount_total ?? 0) / 100).toFixed(2);
+    await alertAdmin(env, 'payment-failed:' + s.id, 'Un paiement Stripe a échoué', `Montant : ${amount} ${String(s.currency || 'eur').toUpperCase()}\nRaison : ${why}\nObjet Stripe : ${s.id}\nMode : ${event.livemode ? 'réel' : 'test'}`);
+    return json({ received: true });
+  }
   if (event.type === 'checkout.session.expired') {
     if (s.metadata?.cart_id) await stockStub(env).release(s.metadata.cart_id);
     return json({ received: true });
@@ -510,7 +606,8 @@ async function processPaid(env: Env, s: any) {
     : String(meta.slugs || '').split(',').filter(Boolean).map((slug: string) => ({ slug, qty: 1 }));
   const catalog = await loadCatalog(env);
   await stockStub(env).confirm(s.id, meta.cart_id || '', items, catalogDefaults(catalog));
-  await sendOrderEmails(env, s).catch(() => {}); // un echec d'email ne bloque jamais la commande
+  await sendOrderEmails(env, s).catch((e) => alertAdmin(env, 'mail-' + s.id, "Un mail de commande n'est pas parti", `Commande ${s.id} : ${String(e && e.message ? e.message : e)}`)); // un échec d'email ne bloque jamais la commande
+  if (s.livemode) await stockStub(env).invoiceNumber(s.id, parisYear(s.created || Math.floor(Date.now() / 1000))).catch(() => {});
 }
 
 // --- Emails de commande (Resend) ---------------------------------------------
@@ -589,11 +686,13 @@ async function sendOrderEmails(env: Env, s: any) {
     const m = sellerEmail(order);
     const ok = await resendSend(env, customerFrom || 'vgthmind <onboarding@resend.dev>', alertTo, m.subject, m.html, m.text, REPLY_TO);
     if (ok) done.alert = 1;
+    else await alertAdmin(env, 'mail-seller-' + s.id, "Le mail de commande (vendeur) n'est pas parti", `Commande ${s.id} : Resend a refusé l'envoi.`);
   }
   if (needClient && order.email) {
     const m = customerEmail(order);
     const ok = await resendSend(env, customerFrom, order.email, m.subject, m.html, m.text, REPLY_TO);
     if (ok) done.client = 1;
+    else await alertAdmin(env, 'mail-client-' + s.id, "Le mail de confirmation client n'est pas parti", `Commande ${s.id} (${order.ref}) : Resend a refusé l'envoi vers le client.`);
   }
   await env.HOLDS.put(doneKey, JSON.stringify(done), { expirationTtl: 60 * 60 * 24 * 90 });
 }
@@ -717,7 +816,7 @@ function timingSafeEqual(a: string, b: string) {
 // Session admin : « vgs.<expiration>.<signature> », signée par SESSION_SECRET,
 // valable 30 jours, renouvelée via /admin/renew. Le navigateur la garde en
 // localStorage et l'envoie en Authorization (pas de cookie tiers : Safari les bloque).
-const SESSION_TTL = 60 * 60 * 24 * 30;
+const SESSION_TTL = 60 * 60 * 12; // 12 h, renouvelée tant que l'admin sert (déconnexion auto après 30 min d'inactivité côté navigateur)
 
 async function sessionSig(env: Env, exp: number): Promise<string> {
   const key = await crypto.subtle.importKey('raw', new TextEncoder().encode(env.SESSION_SECRET || ''), { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']);
@@ -847,7 +946,7 @@ async function bump(env: Env, key: string): Promise<number> {
 
 // Page /suivi : ne renvoie rien sans le bon couple numero + e-mail. Tous les
 // echecs (numero inconnu, e-mail faux, commande non payee) donnent la meme reponse.
-async function trackOrder(request: Request, env: Env, key: string, json: JsonFn): Promise<Response> {
+async function trackOrder(request: Request, env: Env, key: string, json: JsonFn, asInvoice = false): Promise<Response> {
   let body: any = {};
   try { body = await request.json(); } catch (e) {}
   const ip = request.headers.get('CF-Connecting-IP') || 'inconnue';
@@ -867,6 +966,7 @@ async function trackOrder(request: Request, env: Env, key: string, json: JsonFn)
   if (!full.ok || s.payment_status !== 'paid') return fail();
   if (String(s.customer_details?.email || '').trim().toLowerCase() !== email) return fail();
 
+  if (asInvoice) return await invoiceFor(env, key, sessionId, json, s);
   const [shippedRaw, preparingRaw] = await Promise.all([env.HOLDS.get('shipped:' + sessionId), env.HOLDS.get('preparing:' + sessionId)]);
   const shipped = shippedRaw ? JSON.parse(shippedRaw) : null;
   const ship = (s.collected_information && s.collected_information.shipping_details) || s.shipping_details || {};
@@ -910,6 +1010,43 @@ async function sendShippedMail(request: Request, env: Env, key: string, json: Js
   shipped.notified = Math.floor(Date.now() / 1000);
   await env.HOLDS.put('shipped:' + id, JSON.stringify(shipped));
   return json({ ok: true, shipped });
+}
+
+// Facture d'une commande payée (client via /invoice avec numéro + e-mail, admin via /admin/invoice).
+async function invoiceFor(env: Env, key: string, sessionId: string, json: JsonFn, loaded?: any): Promise<Response> {
+  if (!isSessionId(sessionId)) return json({ error: 'Identifiant invalide.' }, 400);
+  let s = loaded;
+  if (!s) {
+    const full = await stripeCall(key, 'GET', `/v1/checkout/sessions/${sessionId}?${SESSION_EXPAND}`);
+    if (!full.ok) return json({ error: full.data.error?.message || 'Erreur Stripe' }, 502);
+    s = full.data;
+  }
+  if (s.payment_status !== 'paid') return json({ error: 'Commande non payée.' }, 400);
+  const ref = await assignRef(env, sessionId);
+  const number = s.livemode ? await stockStub(env).invoiceNumber(sessionId, parisYear(s.created)) : 'TEST-' + ref;
+  const lines = (await mailItems(env, s.line_items?.data || [], (c) => String(c / 100))).map((i) => ({ name: i.name, size: i.size, qty: i.qty || 1, unit: i.unit ? Number(i.unit) : 0, amount: Number(i.amount) }));
+  return json({ ok: true, invoice: buildInvoice(s, lines as any, { number, ref, sellerAddress: (env.INVOICE_SELLER_ADDRESS || '').trim() }) });
+}
+
+// Limite d'appels : max appels par fenêtre (secondes) pour une clé. Renvoie false quand la limite est atteinte.
+async function allow(env: Env, key: string, max: number, windowSec: number): Promise<boolean> {
+  const n = Number(await env.HOLDS.get(key)) || 0;
+  if (n >= max) return false;
+  await env.HOLDS.put(key, String(n + 1), { expirationTtl: Math.max(60, windowSec) });
+  return true;
+}
+
+// Alerte mail à ALERT_EMAIL (une seule fois par type d'incident et par 10 min, pour ne pas inonder la boîte).
+async function alertAdmin(env: Env, kind: string, subject: string, detail: string) {
+  try {
+    const to = (env.ALERT_EMAIL || '').trim(), from = (env.MAIL_FROM || '').trim();
+    if (!env.RESEND_API_KEY || !to || !from) return;
+    const k = 'alert:' + kind.slice(0, 120);
+    if (await env.HOLDS.get(k)) return;
+    await env.HOLDS.put(k, '1', { expirationTtl: 600 });
+    const html = '<p><b>' + subject.replace(/[<>&]/g, '') + '</b></p><pre style="white-space:pre-wrap">' + detail.replace(/[<>&]/g, '') + '</pre>';
+    await resendSend(env, from, to, '[vgthmind ALERTE] ' + subject, html, subject + '\n\n' + detail);
+  } catch (e) { /* une alerte ne doit jamais faire planter le reste */ }
 }
 
 async function stripeCall(key: string, method: string, path: string, params?: URLSearchParams) {
