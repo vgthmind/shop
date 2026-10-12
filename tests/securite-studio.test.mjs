@@ -11,13 +11,18 @@ const ENDPOINT = 'https://vgthmind-shop-checkout.vgthm66.workers.dev';
 
 async function publisher() {
   const calls = [];
-  const fetch = async (url, opt = {}) => { calls.push(url); return { ok: false, status: 500, json: async () => ({ message: 'non appelé' }) }; };
-  let onMsg = null;
-  const win = { open: () => ({ postMessage() {} }), addEventListener: (t, f) => { onMsg = f; }, removeEventListener() {}, VG_RETRY_MS: 0, location: { hostname: 'x' } };
+  // Vérification du jeton (GET du dépôt) acceptée ; tout autre appel compte comme « parti vers GitHub ».
+  const fetch = async (url, opt = {}) => {
+    if (url === 'https://api.github.com/repos/vgthmind/shop' && !opt.method) return { ok: true, status: 200, json: async () => ({}) };
+    calls.push(url); return { ok: false, status: 500, json: async () => ({ message: 'non appelé' }) };
+  };
+  const mem = { 'vg-github-pat': 'github_pat_test' };
+  const localStorage = { getItem: (k) => mem[k] ?? null, setItem: (k, v) => { mem[k] = v; }, removeItem: (k) => { delete mem[k]; } };
+  const win = { open: () => ({ postMessage() {} }), addEventListener() {}, removeEventListener() {}, VG_RETRY_MS: 0, location: { hostname: 'x' }, localStorage };
   const ctx = vm.createContext({ window: win, fetch, btoa, atob, TextEncoder, TextDecoder, Uint8Array, setTimeout, location: win.location, console });
   vm.runInContext(PUB, ctx);
   const P = win.VGStudioPublish;
-  const logged = P.login(); onMsg({ origin: ENDPOINT, data: 'authorization:github:success:{"token":"t"}' }); await logged;
+  await P.login();
   return { P, calls };
 }
 const base = { slug: 'ch_9', isNew: true, piece: { name: 'CH_9', slug: 'ch_9', price: 10 }, replace: true };

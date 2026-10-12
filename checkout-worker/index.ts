@@ -653,7 +653,9 @@ async function oauthStart(request: Request, env: Env): Promise<Response> {
   const url = 'https://github.com/login/oauth/authorize?' + new URLSearchParams({
     client_id: env.GITHUB_CLIENT_ID,
     redirect_uri: redirect,
-    scope: 'public_repo',
+    // Aucune portée : la connexion sert seulement à prouver que c'est le compte admin (session du Worker).
+    // Les écritures dans le dépôt passent par un jeton « fine-grained » limité à vgthmind/shop (admin).
+    scope: '',
     state,
     allow_signup: 'false',
   });
@@ -698,9 +700,9 @@ async function oauthCallback(request: Request, env: Env): Promise<Response> {
   if (String(user.login || '').toLowerCase() !== String(env.ADMIN_GITHUB_LOGIN).toLowerCase()) {
     return page('error', { message: 'Ce compte GitHub n\'a pas accès à cet admin.' });
   }
-  // `token` reste pour Sveltia (il en a besoin pour publier sur GitHub) ; les
-  // pages Stock/Commandes n'utilisent que `session`.
-  return page('success', { token: data.access_token, provider: 'github', session: await makeSession(env) });
+  // Le jeton OAuth n'est plus envoyé au navigateur (2026-10-12) : les pages admin et Sveltia
+  // écrivent avec le jeton « fine-grained » limité au dépôt shop que vgthmind colle lui-même.
+  return page('success', { provider: 'github', session: await makeSession(env) });
 }
 
 // --- /status -----------------------------------------------------------------

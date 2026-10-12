@@ -57,7 +57,24 @@
   <h2>Mes liens (gardés sur cet appareil)</h2>
   <p class="muted">Colle l'adresse de ton outil de compta et de ton Facturier une fois : le lien reste sur cet appareil (rien n'est publié sur le site).</p>
   <div class="grid" id="mine"></div>
+
+  <h2>Jeton GitHub</h2>
+  <p class="muted" id="pat-state">Le jeton GitHub (limité au dépôt de la boutique) se colle une fois, au premier enregistrement depuis Catalogue, Poids &amp; ports ou Nouvelle pièce. <a href="https://github.com/vgthmind/shop/blob/main/rapports-nuit/GUIDE-JETON-GITHUB.md" target="_blank" rel="noopener noreferrer">Comment le créer ↗</a></p>
+  <p><button type="button" id="pat-forget">Oublier le jeton sur cet appareil</button></p>
 </main>
+<script>
+(function () {
+  // Jeton collé dans l'admin (admin/studio-publish.js, clé vg-github-pat) : à effacer sur un appareil prêté ou avant de le donner.
+  var b = document.getElementById('pat-forget');
+  var has = false; try { has = !!localStorage.getItem('vg-github-pat'); } catch (e) {}
+  if (!has) { b.disabled = true; b.textContent = 'Aucun jeton gardé sur cet appareil'; }
+  b.addEventListener('click', function () {
+    if (!confirm('Oublier le jeton GitHub sur cet appareil ? Il faudra le coller à nouveau (ou en créer un nouveau).')) return;
+    try { localStorage.removeItem('vg-github-pat'); } catch (e) {}
+    b.disabled = true; b.textContent = 'Jeton oublié ✓';
+  });
+})();
+</script>
 <script>
 (function () {
   'use strict';

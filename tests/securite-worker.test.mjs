@@ -211,3 +211,24 @@ test('connexion : un message d’erreur piégé ne sort jamais du script de la p
     assert.doesNotMatch(html, /<script>alert/);
   } finally { globalThis.fetch = realFetch; }
 });
+
+test('connexion GitHub : aucune portée demandée, et le jeton OAuth ne part jamais vers le navigateur', async () => {
+  reset();
+  const auth = await call('GET', '/auth');
+  const loc = new URL(auth.headers.get('location'));
+  assert.equal(loc.searchParams.get('scope'), '');
+  const state = loc.searchParams.get('state');
+  const realFetch = globalThis.fetch;
+  globalThis.fetch = async (url) => {
+    const u = String(url);
+    if (u.startsWith('https://github.com/login/oauth/access_token')) return new Response(JSON.stringify({ access_token: 'gho_SECRETOAUTH' }));
+    if (u === 'https://api.github.com/user') return new Response(JSON.stringify({ login: 'vgthmind' }));
+    return realFetch(url);
+  };
+  try {
+    const html = await (await call('GET', '/callback?code=abc&state=' + encodeURIComponent(state))).text();
+    assert.match(html, /authorization:github:success/);
+    assert.match(html, /session/);
+    assert.doesNotMatch(html, /gho_SECRETOAUTH/);
+  } finally { globalThis.fetch = realFetch; }
+});

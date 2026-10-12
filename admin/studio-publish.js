@@ -1,10 +1,9 @@
 /* Studio photo — publication des photos d'une pièce, par le MÊME chemin que l'admin actuel (Sveltia) :
-   1. connexion « Se connecter avec GitHub » via le Worker (/auth -> /callback), seul le compte admin passe ;
-      le Worker renvoie au navigateur le jeton OAuth (portée public_repo) que Sveltia utilise déjà ;
+   1. jeton GitHub « fine-grained » limité au dépôt vgthmind/shop, collé une fois par vgthmind (voir login()) ;
    2. le navigateur écrit directement dans le dépôt vgthmind/shop, branche main, avec l'API GitHub
       (un seul commit : photos + data/products/<slug>.json) ;
    3. l'Action « Build shop » reconstruit data/catalog.json, les tailles d'images et docs/ (1 à 2 min).
-   AUCUN jeton n'est écrit dans le code ni dans le dépôt : le jeton vit en mémoire dans cet onglet, jamais stocké. */
+   AUCUN jeton n'est écrit dans le code ni dans le dépôt : le jeton est gardé dans ce navigateur seulement (localStorage). */
 (function (root) {
   'use strict';
   var ENDPOINT = root.VG_ENDPOINT || 'https://vgthmind-shop-checkout.vgthm66.workers.dev';
@@ -12,8 +11,63 @@
   var token = '';
   var MAX_PHOTO_BYTES = 25 * 1024 * 1024;
 
-  // Même poignée de main que Sveltia / vgAdminLogin, mais on garde `token` (en mémoire seulement).
-  function login() {
+  // Connexion GitHub (2026-10-12) : un jeton « fine-grained » créé par vgthmind, limité au seul dépôt
+  // vgthmind/shop (guide : rapports-nuit/GUIDE-JETON-GITHUB.md), collé une fois et gardé sur cet appareil.
+  // Le jeton de la connexion « Se connecter avec GitHub » (OAuth) n'est plus utilisé pour écrire : il
+  // ouvrait tous les dépôts publics du compte. L'OAuth ne sert plus qu'à la session du Worker (stock).
+  var PAT_KEY = 'vg-github-pat';
+  var GUIDE = 'https://github.com/vgthmind/shop/blob/main/rapports-nuit/GUIDE-JETON-GITHUB.md';
+  function store() { try { return root.localStorage || null; } catch (e) { return null; } }
+  function savedPat() { var ls = store(); try { return ls ? ls.getItem(PAT_KEY) || '' : ''; } catch (e) { return ''; } }
+  function keepPat(t) { var ls = store(); try { if (ls) ls.setItem(PAT_KEY, t); } catch (e) { /* navigation privée */ } }
+  function forget() { token = ''; var ls = store(); try { if (ls) ls.removeItem(PAT_KEY); } catch (e) { /* rien */ } }
+
+  // Vérifie le jeton auprès de GitHub. Refuse les jetons « classiques » (ghp_…) : ils ouvrent tous les dépôts.
+  async function checkPat(t) {
+    t = String(t || '').replace(/\s+/g, '');
+    if (!t) throw new Error('Colle ton jeton GitHub.');
+    if (/^(ghp|gho|ghu|ghs|ghr)_/.test(t)) throw new Error('Ce jeton est un jeton « classique » : il ouvre tous tes dépôts. Crée plutôt un jeton « Fine-grained » limité au dépôt shop (voir le guide).');
+    var r;
+    try { r = await fetch(API + '/repos/' + REPO, { headers: { Authorization: 'Bearer ' + t, Accept: 'application/vnd.github+json' } }); }
+    catch (e) { throw new Error('Pas de connexion à GitHub : vérifie ta connexion internet puis réessaie.'); }
+    if (r.status === 401) throw new Error('GitHub refuse ce jeton : il est expiré, supprimé ou mal copié. Recopie-le, ou crée-en un nouveau (voir le guide).');
+    if (r.status === 403 || r.status === 404) throw new Error('Ce jeton n’a pas accès au dépôt vgthmind/shop. Dans « Repository access », choisis « Only select repositories » puis « vgthmind/shop ».');
+    if (!r.ok) throw new Error('GitHub ne répond pas (' + r.status + '). Réessaie dans une minute.');
+    return t;
+  }
+
+  // Petite fenêtre « Colle ton jeton » (créée à la volée : les pages Catalogue, Pièces et Studio n'ont rien à prévoir).
+  function askPat(firstMsg) {
+    return new Promise(function (resolve, reject) {
+      var d = root.document;
+      if (!d || !d.body) { reject(new Error('Jeton GitHub manquant.')); return; }
+      var box = d.createElement('div');
+      box.setAttribute('role', 'dialog'); box.setAttribute('aria-modal', 'true');
+      box.style.cssText = 'position:fixed;inset:0;z-index:99999;background:rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center;padding:16px;box-sizing:border-box';
+      box.innerHTML = '<form style="background:#fff;color:#111;max-width:440px;width:100%;box-sizing:border-box;border-radius:14px;padding:18px;font:15px/1.45 system-ui,sans-serif">'
+        + '<p style="margin:0 0 8px;font-weight:600">Jeton GitHub de la boutique</p>'
+        + '<p style="margin:0 0 10px">Colle ici le jeton que tu as créé sur GitHub (il commence par <code>github_pat_</code>). Il reste gardé sur cet appareil.</p>'
+        + '<input name="t" type="password" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="github_pat_…" style="width:100%;box-sizing:border-box;font:16px monospace;padding:10px;border:1px solid #bbb;border-radius:8px">'
+        + '<p data-msg style="margin:8px 0 0;color:#b00020;min-height:1em"></p>'
+        + '<p style="margin:8px 0 12px"><a href="' + GUIDE + '" target="_blank" rel="noopener noreferrer">Comment créer ce jeton ?</a></p>'
+        + '<div style="display:flex;gap:8px;justify-content:flex-end"><button type="button" data-no>Annuler</button><button type="submit" style="font-weight:600">Valider</button></div></form>';
+      var form = box.querySelector('form'), input = box.querySelector('input'), msg = box.querySelector('[data-msg]');
+      msg.textContent = firstMsg || '';
+      function close() { if (box.parentNode) box.parentNode.removeChild(box); }
+      box.querySelector('[data-no]').addEventListener('click', function () { close(); reject(new Error('Connexion annulée.')); });
+      form.addEventListener('submit', function (e) {
+        e.preventDefault();
+        msg.textContent = 'Vérification…';
+        checkPat(input.value).then(function (t) { close(); resolve(t); }, function (err) { msg.textContent = err.message; });
+      });
+      d.body.appendChild(box);
+      try { input.focus(); } catch (e) { /* iPhone */ }
+    });
+  }
+
+  // Session du Worker (stock), seulement si la page la demande et qu'elle manque. La fenêtre GitHub s'ouvre
+  // tout de suite (dans le clic), sinon Safari la bloque. Le jeton OAuth éventuellement renvoyé est ignoré.
+  function workerSession() {
     return new Promise(function (resolve, reject) {
       var popup = root.open(ENDPOINT + '/auth?provider=github&site_id=' + encodeURIComponent(location.hostname), 'vg-github-login', 'width=600,height=720');
       if (!popup) { reject(new Error('Fenêtre bloquée par le navigateur : autorise les pop-ups pour ce site.')); return; }
@@ -26,11 +80,24 @@
         root.removeEventListener('message', onMessage);
         var payload = {};
         try { payload = JSON.parse(m[2]); } catch (err) { /* vide */ }
-        if (m[1] === 'success' && payload.token) { token = payload.token; resolve(true); }
-        else reject(new Error(payload.message || 'Connexion refusée.'));
+        if (m[1] === 'success' && payload.session) {
+          var ls = store(); try { if (ls) ls.setItem('vg-admin-session', payload.session); } catch (err) { /* rien */ }
+          resolve(true);
+        } else reject(new Error(payload.message || 'Connexion refusée.'));
       }
       root.addEventListener('message', onMessage);
     });
+  }
+
+  // login({ session: true }) : Catalogue (stock + GitHub) ; login() : Pièces et Studio (GitHub seulement).
+  function login(o) {
+    var needSession = !!(o && o.session) && !(root.vgAdminToken && root.vgAdminToken());
+    var first = needSession ? workerSession() : Promise.resolve(true);
+    return first.then(function () {
+      var saved = savedPat();
+      if (!saved) return askPat();
+      return checkPat(saved).catch(function (e) { forget(); return askPat(e.message); });
+    }).then(function (t) { token = t; keepPat(t); return true; });
   }
 
   // Connexion coupée / GitHub qui hoquette (502, 503, 504) : on réessaie 3 fois (1 s, 2 s). Sans danger : lire, créer un blob
@@ -57,7 +124,12 @@
       }
       if ((r.status === 502 || r.status === 503 || r.status === 504) && attempt < 3) { await wait(RETRY_MS * (attempt + 1)); continue; }
       var d = await r.json().catch(function () { return {}; });
-      if (!r.ok) { var e = new Error((d && d.message) || ('GitHub ' + r.status)); e.status = r.status; throw e; }
+      if (!r.ok) {
+        var why = (d && d.message) || ('GitHub ' + r.status);
+        if (r.status === 401) why = 'GitHub refuse le jeton (expiré ou supprimé) : recharge la page et colle un nouveau jeton.';
+        else if (r.status === 403 && /personal access token/i.test(why)) why = 'Le jeton ne peut pas écrire : sur GitHub, mets « Contents » sur « Read and write » (voir le guide).';
+        var e = new Error(why); e.status = r.status; throw e;
+      }
       return d;
     }
   }
@@ -156,5 +228,5 @@
     catch (e) { if (e.status === 404) return false; throw e; }
   }
 
-  root.VGStudioPublish = { login: login, publish: publish, api: gh, readJson: readJson, exists: exists, connected: function () { return !!token; }, logout: function () { token = ''; } };
+  root.VGStudioPublish = { login: login, publish: publish, api: gh, readJson: readJson, exists: exists, connected: function () { return !!token; }, logout: function () { token = ''; }, forget: forget };
 })(window);

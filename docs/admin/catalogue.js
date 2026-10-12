@@ -71,7 +71,7 @@
   $('login-btn').addEventListener('click', function () {
     $('login-msg').textContent = 'Connexion…';
     window.addEventListener('message', captureSession);
-    Pub.login().then(function () { $('login-msg').textContent = ''; return load(); })
+    Pub.login({ session: true }).then(function () { $('login-msg').textContent = ''; return load(); })
       .catch(function (e) { $('login-msg').textContent = e.message; })
       .then(function () { setTimeout(function () { window.removeEventListener('message', captureSession); }, 1000); });
   });

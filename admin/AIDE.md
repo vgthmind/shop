@@ -1,7 +1,7 @@
 # Aide de l'admin `/shop/`
 
 Adresses :
-- Pièces : https://vgthmind.github.io/shop/admin/ → « Se connecter avec GitHub » (compte vgthmind).
+- Pièces : https://vgthmind.github.io/shop/admin/ → « Sign In Using Access Token » et colle ton jeton GitHub (guide : rapports-nuit/GUIDE-JETON-GITHUB.md).
 - Stock : https://vgthmind.github.io/shop/admin/stock.html (bouton « Stock » en bas à droite de l'admin).
 - Commandes & stats : https://vgthmind.github.io/shop/admin/commandes.html.
 - Paiements, remboursements, codes promo : tableau de bord Stripe.
@@ -53,4 +53,4 @@ Stripe → Catalogue de produits → Coupons → créer un coupon, puis un « co
 Champ « Mots-clés de recherche » : mots en plus du nom et de la description (ex. hoodie, sweat, capuche).
 
 ## Connexion
-« Se connecter avec GitHub » (même bouton sur toutes les pages de l'admin). Seul le compte GitHub vgthmind est accepté. Si GitHub te déconnecte (après une longue période sans connexion), reclique simplement sur le bouton.
+« Se connecter avec GitHub » (même bouton sur toutes les pages de l'admin). Seul le compte GitHub vgthmind est accepté. Si GitHub te déconnecte (après une longue période sans connexion), reclique simplement sur le bouton. Pour enregistrer dans la boutique (Catalogue, Poids & ports, Nouvelle pièce), l'admin te demande en plus, une fois par appareil, ton jeton GitHub limité à la boutique : https://github.com/vgthmind/shop/blob/main/rapports-nuit/GUIDE-JETON-GITHUB.md

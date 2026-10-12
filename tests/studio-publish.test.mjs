@@ -14,6 +14,7 @@ function world(hooks = {}) {
     const m = opt.method || 'GET', p = url.replace('https://api.github.com/repos/vgthmind/shop', '');
     st.calls.push(m + ' ' + p);
     if (hooks.fail) { const f = hooks.fail(m, p, st); if (f === 'throw') throw new TypeError('Failed to fetch'); if (typeof f === 'number') return res(f, { message: 'x' }); if (f === 'lost') { /* appliqué mais réponse perdue : voir PATCH */ } }
+    if (m === 'GET' && p === '') return hooks.repo ? hooks.repo(opt, res) : res(200, { full_name: 'vgthmind/shop' });
     if (m === 'GET' && p.startsWith('/contents/data/products/')) return res(404, { message: 'Not Found' });
     if (m === 'GET' && p.startsWith('/git/ref/heads/')) return res(200, { object: { sha: st.refSha } });
     if (m === 'GET' && p.startsWith('/git/commits/')) return res(200, { tree: { sha: 't0' } });
@@ -26,16 +27,23 @@ function world(hooks = {}) {
     }
     return res(500, { message: 'inattendu ' + m + ' ' + p });
   }
+  fetch.st = st;
   return { st, fetch };
 }
 
-async function load(fetch) {
-  let onMsg = null;
-  const win = { open: () => ({ postMessage() {} }), addEventListener: (t, f) => { onMsg = f; }, removeEventListener() {}, VG_RETRY_MS: 0, location: { hostname: 'x' } };
+function memStore(init = {}) { const m = { ...init }; return { m, getItem: (k) => (k in m ? m[k] : null), setItem: (k, v) => { m[k] = String(v); }, removeItem: (k) => { delete m[k]; } }; }
+function boot(fetch, store = memStore({ 'vg-github-pat': 'github_pat_test' }), extra = {}) {
+  const w = { opened: 0, onMsg: null };
+  const win = { open: () => { w.opened++; return { postMessage() {} }; }, addEventListener: (t, f) => { w.onMsg = f; }, removeEventListener() {}, VG_RETRY_MS: 0, location: { hostname: 'x' }, localStorage: store, ...extra };
   const ctx = vm.createContext({ window: win, fetch, btoa, atob, TextEncoder, TextDecoder, Uint8Array, setTimeout, location: win.location, console });
   vm.runInContext(SRC, ctx);
-  const P = win.VGStudioPublish;
-  const logged = P.login(); onMsg({ origin: ENDPOINT, data: 'authorization:github:success:{"token":"t"}' }); await logged;
+  return { P: win.VGStudioPublish, w, store };
+}
+async function load(fetch) {
+  const { P } = boot(fetch);
+  await P.login();
+  // la vérification du jeton (GET du dépôt) ne compte pas dans les appels « d'envoi » des tests
+  if (fetch.st) fetch.st.calls.length = 0;
   return P;
 }
 const opts = (extra = {}) => ({ slug: 'ch_9', isNew: true, piece: { name: 'CH_9', slug: 'ch_9', price: 10 }, files: [{ name: '0.webp', data: new Uint8Array([1, 2]) }, { name: '1.webp', data: new Uint8Array([3]) }], replace: true, ...extra });
@@ -101,4 +109,43 @@ test('vidéo de plus de 40 Mo : refusée avant tout envoi', async () => {
   await assert.rejects(P.publish(opts({ reelVideo: { data: new Uint8Array(40 * 1024 * 1024 + 1) } })), /Vidéo trop lourde/);
   assert.equal(w.st.calls.length, 0);
   assert.equal((await P.publish(opts({ reelVideo: { data: new Uint8Array(1024) } }))).commit, 'c1');
+});
+
+test('jeton : le jeton gardé sur l’appareil sert directement, sans fenêtre GitHub', async () => {
+  const seen = [];
+  const w = world({ repo: (opt, res) => { seen.push(opt.headers.Authorization); return res(200, {}); } });
+  const { P, w: win } = boot(w.fetch);
+  await P.login();
+  assert.equal(P.connected(), true); assert.equal(win.opened, 0);
+  assert.deepEqual(seen, ['Bearer github_pat_test']);
+});
+
+test('jeton : un jeton « classique » (tous les dépôts) est refusé et oublié', async () => {
+  const w = world();
+  const { P, store } = boot(w.fetch, memStore({ 'vg-github-pat': 'ghp_abc' }));
+  await assert.rejects(P.login(), /Jeton GitHub manquant/);
+  assert.equal(store.getItem('vg-github-pat'), null);
+  assert.equal(w.st.calls.length, 0); // jamais envoyé à GitHub
+});
+
+test('jeton : expiré (401) → oublié, jamais réutilisé', async () => {
+  const w = world({ repo: (opt, res) => res(401, { message: 'Bad credentials' }) });
+  const { P, store } = boot(w.fetch);
+  await assert.rejects(P.login());
+  assert.equal(store.getItem('vg-github-pat'), null); assert.equal(P.connected(), false);
+});
+
+test('jeton : le jeton OAuth renvoyé par l’ancienne connexion est ignoré, seule la session est gardée', async () => {
+  const auths = [];
+  const w = world();
+  const spy = async (url, opt = {}) => { auths.push((opt.headers || {}).Authorization); return w.fetch(url, opt); };
+  const { P, w: win, store } = boot(spy, memStore({ 'vg-github-pat': 'github_pat_test' }), { vgAdminToken: () => '' });
+  const logged = P.login({ session: true });
+  assert.equal(win.opened, 1);
+  win.onMsg({ origin: ENDPOINT, data: 'authorization:github:success:{"token":"gho_oauth","session":"s.9999999999.x"}' });
+  await logged;
+  assert.equal(store.getItem('vg-admin-session'), 's.9999999999.x');
+  await P.api('GET', '/git/ref/heads/main');
+  // toutes les lectures/écritures GitHub partent avec le jeton fine-grained, jamais le jeton OAuth
+  assert.deepEqual([...new Set(auths)], ['Bearer github_pat_test']);
 });
