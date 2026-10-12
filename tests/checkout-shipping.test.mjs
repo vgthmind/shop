@@ -111,3 +111,15 @@ test('port fixe à 0 sur la fiche = pas un port gratuit : traité comme une piè
 test('code pays en minuscules accepté', async () => {
   assert.equal((await checkoutShipping(env(), [fresh('n')], w('n'), 'intl', 'de')).cents, 1500);
 });
+
+test('panier mixte lettre + colis en France : un seul colis, port offert ; lettre seule 4 €', async () => {
+  const l = fresh('l', { weight_g: 50, mode: 'lettre' }), c = fresh('c', { weight_g: 500, mode: 'colis' });
+  assert.equal((await checkoutShipping(env(), [l, c], w('l', 'c'), 'fr', 'FR')).cents, 0);
+  assert.equal((await checkoutShipping(env(), [l], w('l'), 'fr', 'FR')).cents, 400);
+});
+
+test('lettre à l’étranger : part en colis (29 € Canada, 15 € Belgique), jamais le forfait lettre', async () => {
+  const l = fresh('l', { weight_g: 50, mode: 'lettre' });
+  assert.equal((await checkoutShipping(env(), [l], w('l'), 'intl', 'CA')).cents, 2900);
+  assert.equal((await checkoutShipping(env(), [l], w('l'), 'intl', 'BE')).cents, 1500);
+});

@@ -121,6 +121,8 @@
       + '<label>… zones concernées (ids, vide = toutes)<input data-path="free_shipping.zones" data-list="1" value="' + esc((fs.zones || []).join(', ')) + '"></label>'
       + field('Carton, par colis (g)', 'packaging.carton_g', 'number', 'step="1" min="0"')
       + field('Enveloppe lettre (g)', 'packaging.envelope_g', 'number', 'step="1" min="0"')
+      + '<label>Lettre suivie proposée ?<select data-path="lettre.enabled" data-bool="1"><option value="1">Oui</option><option value="0">Non (tout part en colis)</option></select></label>'
+      + '<label>Lettre : pays acceptés (codes à 2 lettres, séparés par des virgules)<input data-path="lettre.countries" data-list="1" value="' + esc(((cfg.lettre && cfg.lettre.countries) || []).join(', ')) + '"></label>'
       + field('Lettre : nombre max de pièces', 'lettre.max_pieces', 'number', 'step="1" min="1"')
       + field('Lettre : poids max, enveloppe comprise (g)', 'lettre.max_weight_g', 'number', 'step="10" min="1"')
       + '<label>Forfait client : par commande ou par colis ?<select data-path="customer_pricing.basis"><option value="per_order">Par commande (1er colis = forfait, colis en plus = vrai coût)</option><option value="per_parcel">Par colis (chaque colis paie le forfait)</option></select></label>'
@@ -217,7 +219,10 @@
     if (el.hasAttribute('data-path')) {
       var v = el.value;
       if (el.hasAttribute('data-bool')) v = v === '1';
-      else if (el.hasAttribute('data-list')) v = v.split(',').map(function (s) { return s.trim(); }).filter(Boolean);
+      else if (el.hasAttribute('data-list')) {
+        v = v.split(',').map(function (s) { return s.trim(); }).filter(Boolean);
+        if (el.getAttribute('data-path') === 'lettre.countries') v = v.map(function (s) { return s.toUpperCase(); });
+      }
       else if (el.type === 'number') v = num(v);
       setp(el.getAttribute('data-path'), v);
     } else if (el.hasAttribute('data-z')) {
@@ -251,6 +256,11 @@
 
   function check() {
     if (!cfg.zones.length) return 'Aucune zone.';
+    var L = cfg.lettre;
+    if (L && L.enabled !== false) {
+      if (!(L.max_weight_g > 0) || !(L.max_pieces >= 1)) return 'Lettre suivie : poids max et nombre de pièces à renseigner (ou désactiver la lettre).';
+      if (!(L.countries || []).length || (L.countries || []).some(function (c) { return !/^[A-Z]{2}$/.test(c); })) return 'Lettre suivie : pays = codes à 2 lettres (ex. FR).';
+    }
     for (var i = 0; i < cfg.zones.length; i++) {
       var z = cfg.zones[i];
       if (!z.id || !z.countries.length || !z.brackets.length) return 'Zone incomplète : ' + (z.id || i + 1);

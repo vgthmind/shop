@@ -139,10 +139,11 @@
   function lettreParcel(config, country, units) {
     var l = config.lettre;
     if (!l || !l.enabled || !Array.isArray(l.brackets) || !l.brackets.length) return null;
-    if ((l.countries || []).indexOf(String(country || '').toUpperCase()) === -1) return null;
+    if ((l.countries || []).map(function (x) { return String(x).toUpperCase(); }).indexOf(String(country || '').toUpperCase()) === -1) return null;
     if (!units.every(function (u) { return u.mode === 'lettre'; })) return null;
     var packed = packUnits({ max_pieces: l.max_pieces, max_weight_g: l.max_weight_g, tare_g: pkg(config).envelope_g }, units);
     if (packed.length !== 1) return null;
+    if (toInt(l.max_weight_g, 0) && packed[0].weight_g > toInt(l.max_weight_g, 0)) return null; // une seule piece trop lourde pour la lettre
     var pr = bracketPriceCents(l, packed[0].weight_g);
     return pr === null ? null : buildParcel('lettre', packed[0], pr);
   }
@@ -153,7 +154,7 @@
     var basis = (config.customer_pricing && config.customer_pricing.basis) === 'per_parcel' ? 'per_parcel' : 'per_order';
     var paid = parcels.map(function () { return 0; });
     parcels.forEach(function (p, i) { // parcels est deja trie du plus lourd au plus leger
-      if (p.kind === 'lettre') paid[i] = cents(tier.lettre_flat);
+      if (p.kind === 'lettre') paid[i] = tier.lettre_flat === undefined || tier.lettre_flat === null ? p.priceCents : cents(tier.lettre_flat); // palier sans forfait lettre : vrai tarif, jamais 0 par oubli
       else if (tier.colis_free) paid[i] = 0;
       else if (basis === 'per_parcel' || i === 0) paid[i] = cents(tier.first_flat);
       else paid[i] = p.priceCents;

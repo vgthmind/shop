@@ -192,3 +192,22 @@ test('repli : pas utilisé quand le poids est connu', () => {
   const r = quoteOrFallback(base, { items: [{ slug: 'p', qty: 1, weight_g: 420, legacy: { fr: 4, intl: 8 } }] }, 'FR');
   assert.equal(r.fallback, undefined); assert.equal(r.costCents, 929);
 });
+
+test('lettre : pays acceptés réglables (Belgique ajoutée, minuscules tolérées), lettre désactivable', () => {
+  const be = cfg((x) => { x.lettre.countries = ['fr', 'be']; });
+  const r = q([w('a', 100, { mode: 'lettre' })], 'BE', {}, be);
+  assert.equal(r.parcels[0].kind, 'lettre'); assert.equal(r.tier, 'UE'); assert.equal(r.totalCents, r.costCents); assert.ok(r.totalCents > 0); // palier UE sans forfait lettre : vrai tarif, jamais 0 par oubli
+  assert.equal(q([w('a', 100, { mode: 'lettre' })], 'FR', {}, be).parcels[0].kind, 'lettre');
+  const off = cfg((x) => { x.lettre.enabled = false; });
+  assert.equal(q([w('a', 100, { mode: 'lettre' })], 'FR', {}, off).parcels[0].kind, 'colis');
+});
+test('lettre : poids max réglable (enveloppe comprise) et client paie le forfait lettre (4 €) en France', () => {
+  const small = cfg((x) => { x.lettre.max_weight_g = 100; });
+  assert.equal(q([w('a', 80, { mode: 'lettre' })], 'FR', {}, small).parcels[0].kind, 'lettre'); // 80 + 20 = 100 g
+  assert.equal(q([w('a', 81, { mode: 'lettre' })], 'FR', {}, small).parcels[0].kind, 'colis');  // 101 g : trop lourd
+  assert.equal(q([w('a', 48, { mode: 'lettre' })], 'FR').totalCents, 400);
+});
+test('admin Expédition : réglages lettre (activée, pays, poids max, pièces max) présents dans la page', () => {
+  const html = readFileSync(new URL('../admin/expedition.html', import.meta.url), 'utf8');
+  for (const p of ['lettre.enabled', 'lettre.countries', 'lettre.max_weight_g', 'lettre.max_pieces']) assert.ok(html.includes('data-path="' + p + '"') || html.includes("'" + p + "'"), p);
+});
