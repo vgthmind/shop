@@ -594,6 +594,17 @@ async function main() {
       product: p,
     }), p);
   }
+  // /products/<slug> : variante d'adresse d'une fiche (la vraie, celle de
+  // BigCartel, est /product/<slug>). Page de renvoi immédiat pour qu'aucun
+  // ancien lien ne tombe sur la 404, quelle que soit la forme partagée.
+  const escH = (v) => String(v || '').replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
+  for (const p of catalog.products) {
+    const to = `${BASE_PATH}/product/${encodeURI(p.permalink)}`;
+    write(`products/${p.permalink}/index.html`, '<!doctype html><meta charset="utf-8"><meta name="robots" content="noindex">'
+      + `<meta http-equiv="refresh" content="0;url=${to}"><link rel="canonical" href="${SITE_ORIGIN_URL}${to}">`
+      + `<script>location.replace(${JSON.stringify(to)} + location.search + location.hash)</script>`
+      + `<title>${escH(p.name)} | vgthmind</title><a href="${to}">${escH(p.name)}</a>`);
+  }
   // /contact (formulaire natif BigCartel, sans backend ici) : renvoie vers
   // la vraie page Contact (Instagram + e-mail), celle de la navigation.
   const contactUrl = `${BASE_PATH}/contact-914a3d`;
