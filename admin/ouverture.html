@@ -48,13 +48,14 @@
   <div id="app" hidden>
     <div class="card">
       <label for="file"><strong>Ajouter des clips</strong></label><br>
-      <input type="file" id="file" accept="video/*" multiple>
+      <input type="file" id="file" accept="video/mp4,video/quicktime,video/*,.mp4,.mov,.m4v" multiple>
       <p class="muted">Une vidéo trop lourde ou trop longue (ou au format iPhone .mov) est <strong>convertie toute seule</strong> en petit MP4 muet de 8 s maximum, directement ici : garde l'écran allumé pendant la conversion (autant de secondes que la vidéo).</p>
       <p class="muted">Le site se reconstruit tout seul (1 à 2 min) : les nouveaux clips apparaissent ensuite à l'ouverture.</p>
     </div>
     <div class="card"><strong id="count">Clips</strong><div id="list"></div></div>
   </div>
   <p id="msg" role="status" aria-live="polite"></p>
+  <pre id="log" style="white-space:pre-wrap;font:12px/1.4 ui-monospace,monospace;color:#444;background:#fff;border:1px solid #ddd;border-radius:8px;padding:8px;min-height:2em" aria-label="Journal"></pre>
 </main>
 <script src="video-convert.js"></script>
 <script src="studio-publish.js"></script>
@@ -107,40 +108,59 @@
   }
   function slug(name) { return name.replace(/\.[^.]+$/, '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'clip'; }
 
-  $('file').addEventListener('change', function () {
-    var files = Array.prototype.slice.call(this.files || []), input = this;
-    var chain = Promise.resolve(), ok = 0;
-    files.forEach(function (f0) {
-      chain = chain.then(function () {
-        // Déjà un petit MP4 court : envoyé tel quel ; sinon conversion automatique (voir video-convert.js).
-        say('Préparation de ' + f0.name + '…');
-        var small = /\.mp4$/i.test(f0.name) && f0.size <= MAX_BYTES;
-        return (small ? probe(f0) : Promise.resolve(null)).then(function (m0) {
-          if (small && m0 && !(m0.d > MAX_S)) return f0; // durée inconnue (NaN) : on laisse passer un petit MP4
-          if (!window.VGVideoConvert || !VGVideoConvert.supported()) { say(f0.name + ' : trop lourd, trop long ou mauvais format, et ce navigateur ne sait pas convertir (utilise Safari ou Chrome à jour).', true); return null; }
-          return VGVideoConvert.convert(f0, { maxSeconds: MAX_S, maxWidth: 720, bitrate: 1500000, maxBytes: MAX_BYTES - 262144, onProgress: function (p) { say('Conversion de ' + f0.name + ' : ' + Math.round(p * 100) + ' % (garde l\'écran allumé)'); } });
-        }).then(function (f) {
-          if (!f) return;
-          if (f.size > MAX_BYTES) { say(f0.name + ' : encore trop lourd après conversion (' + (f.size / 1048576).toFixed(1) + ' Mo, maximum 3 Mo).', true); return; }
-          return probe(f).then(function (m) {
-            if (!m) { say(f0.name + ' : fichier vidéo illisible.', true); return; }
-            if (isFinite(m.d) && m.d > MAX_S + 0.5) { say(f0.name + ' : trop long (' + Math.round(m.d) + ' s, maximum ' + MAX_S + ' s).', true); return; }
-            return b64(f).then(function (data) {
-              say('Envoi de ' + f0.name + '…');
-              var name = slug(f0.name) + '.mp4';
-              return api('GET', '/contents/' + DIR + '/' + name + '?ref=' + BRANCH).then(function (ex) { return ex && ex.sha; }, function () { return null; }).then(function (sha) {
-                var body = { message: 'Vidéo d\'ouverture : ' + name, content: data, branch: BRANCH };
-                if (sha) body.sha = sha;
-                return api('PUT', '/contents/' + DIR + '/' + name, body);
-              }).then(function () { ok++; });
-            });
-          });
-        });
-      }).catch(function (e) { say(f0.name + ' : ' + e.message, true); });
+  // Journal visible dans la page (pas de console sur iPhone) : chaque étape + toute erreur de script.
+  function log(t) { var l = $('log'); if (l) l.textContent += new Date().toLocaleTimeString('fr-FR') + '  ' + t + '\n'; }
+  window.addEventListener('error', function (e) { log('ERREUR script : ' + (e.message || e)); });
+  window.addEventListener('unhandledrejection', function (e) { log('ERREUR : ' + (e.reason && e.reason.message || e.reason)); });
+  log('Page chargée. Admin v' + (window.VG_ADMIN_VERSION || '?') + (window.VGVideoConvert && VGVideoConvert.supported() ? ' · conversion possible' : ' · conversion non disponible sur ce navigateur (MP4 légers seulement)'));
+
+  function put(f0, f) {
+    return b64(f).then(function (data) {
+      say('Envoi de ' + f0.name + '…'); log('envoi vers GitHub (' + Math.round(f.size / 1024) + ' Ko)…');
+      var name = slug(f0.name) + '.mp4';
+      return api('GET', '/contents/' + DIR + '/' + name + '?ref=' + BRANCH).then(function (ex) { return ex && ex.sha; }, function () { return null; }).then(function (sha) {
+        var body = { message: 'Vidéo d\'ouverture : ' + name, content: data, branch: BRANCH };
+        if (sha) body.sha = sha;
+        return api('PUT', '/contents/' + DIR + '/' + name, body);
+      });
     });
-    chain.then(function () { input.value = ''; return load(); }).then(function () { if (ok) say(ok + ' clip' + (ok > 1 ? 's' : '') + ' ajouté' + (ok > 1 ? 's' : '') + '. Le site se reconstruit (1 à 2 min).'); })
-      .catch(function (e) { say('Erreur : ' + e.message, true); });
-  });
+  }
+  // Un fichier : petit MP4 = envoyé TEL QUEL (aucune lecture, aucune conversion) ; sinon conversion si le navigateur sait.
+  async function handleOne(f0) {
+    log('fichier : ' + f0.name + ' · ' + (f0.size / 1048576).toFixed(2) + ' Mo · type ' + (f0.type || '?'));
+    say('Préparation de ' + f0.name + '…');
+    var f = f0;
+    var asIs = /\.(mp4|m4v)$/i.test(f0.name) && f0.type !== 'video/quicktime' && f0.size <= MAX_BYTES;
+    if (asIs) { log('petit MP4 : envoi tel quel, sans conversion'); }
+    else {
+      if (!window.VGVideoConvert || !VGVideoConvert.supported()) { say(f0.name + ' : trop lourd ou format à convertir (.mov…), et ce navigateur ne sait pas convertir. Envoie un MP4 de moins de 3 Mo, ou ajoute-le depuis un PC.', true); log('conversion impossible ici'); return false; }
+      log('conversion…');
+      f = await VGVideoConvert.convert(f0, { maxSeconds: MAX_S, maxWidth: 720, bitrate: 1500000, maxBytes: MAX_BYTES - 262144, onProgress: function (p) { say('Conversion de ' + f0.name + ' : ' + Math.round(p * 100) + ' % (garde l\'écran allumé)'); } });
+      log('conversion terminée : ' + (f.size / 1048576).toFixed(2) + ' Mo');
+      if (f.size > MAX_BYTES) { say(f0.name + ' : encore trop lourd après conversion (' + (f.size / 1048576).toFixed(1) + ' Mo, maximum 3 Mo).', true); return false; }
+    }
+    await put(f0, f);
+    log('envoyé');
+    return true;
+  }
+  var busy = false;
+  async function onFiles(input) {
+    var files = Array.prototype.slice.call(input.files || []);
+    if (busy || !files.length) return;
+    busy = true; var ok = 0;
+    try {
+      say(files.length + ' fichier' + (files.length > 1 ? 's' : '') + ' choisi' + (files.length > 1 ? 's' : '') + '…'); log('choix de ' + files.length + ' fichier(s)');
+      for (var i = 0; i < files.length; i++) {
+        try { if (await handleOne(files[i])) ok++; }
+        catch (e) { say(files[i].name + ' : ' + e.message, true); log('ÉCHEC : ' + e.message); }
+      }
+      input.value = ''; await load();
+      if (ok) say(ok + ' clip' + (ok > 1 ? 's' : '') + ' ajouté' + (ok > 1 ? 's' : '') + '. Le site se reconstruit (1 à 2 min).');
+    } catch (e) { say('Erreur : ' + e.message, true); log('ERREUR : ' + e.message); }
+    busy = false;
+  }
+  $('file').addEventListener('change', function () { onFiles(this); });
+  $('file').addEventListener('input', function () { onFiles(this); }); // certains Safari n'envoient que « input »
 
   $('list').addEventListener('click', function (e) {
     var name = e.target.getAttribute && e.target.getAttribute('data-del');

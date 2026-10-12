@@ -55,7 +55,14 @@
         if (j && j.ready) { awakeUntil = Date.now() + 5 * 60 * 1000; return; }
         if (j && j.error) throw unavailable('Le serveur de détourage a un problème : ' + j.error);
       } catch (e) { if (e && e.code === 'unavailable') throw e; }
-      if (Date.now() - t0 > wakeLimit()) throw unavailable(isLocalServer() ? 'Le serveur de détourage ne tourne pas sur ce PC : double-clique sur « Lancer-detourage.bat » (dossier detourage-server), puis relance.' : isTunnel() ? 'Le PC ne répond pas. Vérifie qu’il est allumé, que la fenêtre « Détourage iPhone » est ouverte, puis rouvre le DERNIER lien envoyé (l’adresse change à chaque lancement).' : 'Le serveur de détourage ne répond pas.');
+      if (Date.now() - t0 > wakeLimit()) {
+        // Diagnostic : le serveur répond-il quand même (sans qu'on puisse lire la réponse) ? Alors c'est ce SITE qui est refusé, pas une panne.
+        var answers = false;
+        try { await fetchTimeout(SERVER_URL + '/health', { mode: 'no-cors', cache: 'no-store' }, 4000); answers = true; } catch (e2) { /* ne répond pas */ }
+        if (answers) throw unavailable('Le serveur de détourage tourne, mais il refuse ce site (adresse ' + location.origin + '). Récupère la dernière version du dossier « detourage-server » sur ton PC (fichier server.js), ferme la fenêtre noire, puis relance « Lancer-detourage.bat ».');
+        if (isLocalServer() && isIOS) throw unavailable('Sur iPhone, « localhost » désigne l’iPhone lui-même, pas ton PC. Sur le PC, double-clique sur « Lancer-detourage-iphone.bat », puis ouvre dans Safari le lien de la page qui s’affiche (fichier lien-iphone.html).');
+        throw unavailable(isLocalServer() ? 'Le serveur de détourage ne répond pas sur ce PC : double-clique sur « Lancer-detourage.bat » (dossier detourage-server). S’il est déjà lancé et que ça ne marche pas, double-clique sur « Arreter-detourage.bat » puis relance « Lancer-detourage.bat ».' : isTunnel() ? 'Le PC ne répond pas. Vérifie qu’il est allumé, que la fenêtre « Détourage iPhone » est ouverte, puis rouvre le DERNIER lien envoyé (l’adresse change à chaque lancement).' : 'Le serveur de détourage ne répond pas.');
+      }
       shown = true;
       onStatus(isLocalServer() ? 'Recherche du serveur de détourage sur ce PC…' : 'Réveil du serveur de détourage, 1 à 3 min (' + Math.round((Date.now() - t0) / 1000) + ' s)…');
       await sleep(5000);

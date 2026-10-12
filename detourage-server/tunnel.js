@@ -27,7 +27,7 @@ function ensureToken(file) {
 
 function studioUrl() {
   if (process.env.STUDIO_URL) return process.env.STUDIO_URL;
-  let base = 'https://vgthmind.github.io/shop';
+  let base = 'https://vgthmind-shop.pages.dev'; // l'admin est sur Cloudflare Pages (plus sur github.io)
   try { base = JSON.parse(fs.readFileSync(path.join(DIR, '..', 'data', 'shop-settings.json'), 'utf8')).site_url || base; } catch (e) { /* valeur par défaut */ }
   return base.replace(/\/$/, '') + '/admin/studio-photo.html';
 }
@@ -64,11 +64,22 @@ async function main() {
   const token = ensureToken(TOKEN_FILE);
   const env = Object.assign({}, process.env, { HOST: '127.0.0.1', PORT: String(PORT) });
   delete env.DETOURAGE_OPEN;
+  // Port 7860 déjà pris (ancien serveur, ou « Lancer-detourage.bat » ouvert) : on le dit clairement AVANT de démarrer.
+  const busy = await new Promise((resolve) => {
+    const req = http.get({ host: '127.0.0.1', port: PORT, path: '/health', timeout: 3000 }, (res) => { res.resume(); resolve('repond'); });
+    req.on('timeout', () => { req.destroy(); resolve('bloque'); });
+    req.on('error', (e) => resolve(e && e.code === 'ECONNREFUSED' ? '' : 'bloque'));
+  });
+  if (busy) {
+    console.error('\nERREUR : le port ' + PORT + ' est deja occupe (' + (busy === 'repond' ? 'un serveur de detourage est deja lance, probablement « Lancer-detourage.bat »' : 'un ancien serveur bloque') + ').');
+    console.error('Double-clique sur « Arreter-detourage.bat » (meme dossier), puis relance « Lancer-detourage-iphone.bat ».');
+    process.exit(1);
+  }
   const server = spawn(process.execPath, [process.env.SERVER_JS || path.join(DIR, 'server.js')], { cwd: DIR, env, stdio: ['ignore', 'inherit', 'inherit'] });
   let tunnel = null;
   const stop = () => { try { server.kill(); } catch (e) { /* déjà arrêté */ } try { if (tunnel) tunnel.kill(); } catch (e) { /* idem */ } };
   process.on('exit', stop); process.on('SIGINT', () => process.exit(0)); process.on('SIGTERM', () => process.exit(0));
-  server.on('exit', (c) => { console.error('Le serveur de détourage s’est arrêté (code ' + c + '). Si « Lancer-detourage.bat » est déjà ouvert, ferme-le et relance.'); process.exit(1); });
+  server.on('exit', (c) => { console.error('Le serveur de détourage s’est arrêté (code ' + c + '). Si « Lancer-detourage.bat » est déjà ouvert, double-clique sur « Arreter-detourage.bat » puis relance.'); process.exit(1); });
   await waitHealth(PORT, 60000);
   console.log('Serveur de détourage démarré. Ouverture du tunnel…');
 

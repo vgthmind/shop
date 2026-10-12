@@ -12,7 +12,7 @@ const ort = require('onnxruntime-node');
 
 const PORT = Number(process.env.PORT) || 7860;
 const MODEL = process.env.MODEL_PATH || path.join(__dirname, 'models', 'model.onnx');
-const ALLOWED = (process.env.ALLOWED_ORIGINS || 'https://vgthmind.github.io').split(',').map(function (s) { return s.trim().replace(/\/$/, ''); }).filter(Boolean);
+const ALLOWED = (process.env.ALLOWED_ORIGINS || 'https://vgthmind-shop.pages.dev,https://vgthmind.github.io,https://vgthmind.org,https://www.vgthmind.org').split(',').map(function (s) { return s.trim().replace(/\/$/, ''); }).filter(Boolean);
 const MAX_PER_DAY = Number(process.env.MAX_PER_DAY) || 100; // garde-fou de coût : au-delà, 429 jusqu'au lendemain (UTC)
 const ALLOW_NO_ORIGIN = process.env.ALLOW_NO_ORIGIN === '1'; // tests locaux seulement
 let day = '', used = 0;
@@ -118,14 +118,15 @@ var server = http.createServer(function (req, res) {
 // Port déjà pris = presque toujours une AUTRE fenêtre de détourage déjà ouverte : ce n'est pas une panne.
 server.on('error', function (e) {
   if (e && e.code === 'EADDRINUSE') {
-    http.get({ host: '127.0.0.1', port: PORT, path: '/health', timeout: 2000 }, function (r) {
+    var done = false;
+    function fin(code, lines) { if (done) return; done = true; lines.forEach(function (l) { console.log(l); }); process.exit(code); }
+    var req = http.get({ host: '127.0.0.1', port: PORT, path: '/health', timeout: 3000 }, function (r) {
       r.resume();
-      console.log('\nLe serveur de détourage tourne DÉJÀ (une autre fenêtre noire est ouverte). Rien à relancer :');
-      console.log('garde l\'autre fenêtre ouverte, ferme celle-ci, et utilise le studio photo normalement.');
-      process.exit(0);
-    }).on('error', function () {
-      console.log('\nLe port', PORT, 'est pris par un autre programme (pas par le détourage). Ferme les fenêtres noires de détourage, ou redémarre le PC, puis relance.');
-      process.exit(1);
+      fin(0, ['', 'Le serveur de detourage tourne DEJA (une autre fenetre est ouverte). Rien a relancer :', 'garde l\'autre fenetre ouverte et utilise le studio photo normalement.']);
+    });
+    req.on('timeout', function () { req.destroy(); });
+    req.on('error', function () {
+      fin(1, ['', 'ERREUR : le port ' + PORT + ' est occupe par un programme qui ne repond pas (probablement un ancien serveur de detourage reste bloque).', 'Double-clique sur « Arreter-detourage.bat » (meme dossier), puis relance ce fichier.']);
     });
     return;
   }
