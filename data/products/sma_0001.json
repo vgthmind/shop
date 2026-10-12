@@ -19,8 +19,6 @@
   "position": 22,
   "created_at": "2026-06-21T11:24:03.000Z",
   "stripe_payment_link": "",
-  "shipping_fr": 4,
-  "shipping_intl": 8,
   "quantity": 0,
   "weight_g": 420,
   "mode": "colis",

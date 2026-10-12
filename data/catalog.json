@@ -1,5 +1,5 @@
 {
-  "fetched_at": "2026-10-11T23:57:20.911Z",
+  "fetched_at": "2026-10-12T05:45:39.591Z",
   "source": "data/products/*.json (admin)",
   "store": {
     "name": "vgthmind",
@@ -71,7 +71,7 @@
       "option_groups": [],
       "shipping": [
         {
-          "amount_alone": 5,
+          "amount_alone": 0,
           "amount_with_others": 0,
           "country": {
             "id": 15,
@@ -80,19 +80,21 @@
           }
         },
         {
-          "amount_alone": 25,
+          "amount_alone": 29,
           "amount_with_others": 0
         }
       ],
       "weight_g": 550,
       "mode": "colis",
       "alone": false,
+      "shipping_derived": true,
       "stripe_payment_link": "",
       "quantity": 1,
       "unique": true,
       "color_hex": "#1a1a1a",
       "color_name": "noir",
       "reel_url": "https://www.instagram.com/reel/DadQylcstXm/",
+      "size": "",
       "reel_video": "",
       "search_keywords": [],
       "image": {
@@ -171,7 +173,7 @@
       "option_groups": [],
       "shipping": [
         {
-          "amount_alone": 5,
+          "amount_alone": 0,
           "amount_with_others": 0,
           "country": {
             "id": 15,
@@ -180,19 +182,21 @@
           }
         },
         {
-          "amount_alone": 25,
+          "amount_alone": 29,
           "amount_with_others": 0
         }
       ],
       "weight_g": 550,
       "mode": "colis",
       "alone": false,
+      "shipping_derived": true,
       "stripe_payment_link": "",
       "quantity": 1,
       "unique": true,
       "color_hex": "#1a1a1a",
       "color_name": "noir",
       "reel_url": "https://www.instagram.com/reel/Da3BCM5sblI/",
+      "size": "",
       "reel_video": "",
       "search_keywords": [],
       "image": {
@@ -271,7 +275,7 @@
       "option_groups": [],
       "shipping": [
         {
-          "amount_alone": 5,
+          "amount_alone": 0,
           "amount_with_others": 0,
           "country": {
             "id": 15,
@@ -280,19 +284,21 @@
           }
         },
         {
-          "amount_alone": 25,
+          "amount_alone": 29,
           "amount_with_others": 0
         }
       ],
       "weight_g": 550,
       "mode": "colis",
       "alone": false,
+      "shipping_derived": true,
       "stripe_payment_link": "",
       "quantity": 1,
       "unique": true,
       "color_hex": "#9a9a9a",
       "color_name": "gris",
       "reel_url": "https://www.instagram.com/reel/Da8M1VzMmoS/",
+      "size": "",
       "reel_video": "",
       "search_keywords": [],
       "image": {
@@ -371,7 +377,7 @@
       "option_groups": [],
       "shipping": [
         {
-          "amount_alone": 5,
+          "amount_alone": 0,
           "amount_with_others": 0,
           "country": {
             "id": 15,
@@ -380,19 +386,21 @@
           }
         },
         {
-          "amount_alone": 25,
+          "amount_alone": 29,
           "amount_with_others": 0
         }
       ],
       "weight_g": 550,
       "mode": "colis",
       "alone": false,
+      "shipping_derived": true,
       "stripe_payment_link": "",
       "quantity": 1,
       "unique": true,
       "color_hex": "#f2f2f2",
       "color_name": "blanc",
       "reel_url": "https://www.instagram.com/reel/Da5kXNzsk48/",
+      "size": "",
       "reel_video": "",
       "search_keywords": [],
       "image": {
@@ -471,7 +479,7 @@
       "option_groups": [],
       "shipping": [
         {
-          "amount_alone": 5,
+          "amount_alone": 0,
           "amount_with_others": 0,
           "country": {
             "id": 15,
@@ -480,19 +488,21 @@
           }
         },
         {
-          "amount_alone": 25,
+          "amount_alone": 29,
           "amount_with_others": 0
         }
       ],
       "weight_g": 550,
       "mode": "colis",
       "alone": false,
+      "shipping_derived": true,
       "stripe_payment_link": "",
       "quantity": 1,
       "unique": true,
       "color_hex": "#7a7a52",
       "color_name": "vert",
       "reel_url": "https://www.instagram.com/reel/Da0b_6Js-H9/",
+      "size": "",
       "reel_video": "",
       "search_keywords": [],
       "image": {
@@ -565,7 +575,7 @@
       "option_groups": [],
       "shipping": [
         {
-          "amount_alone": 5,
+          "amount_alone": 0,
           "amount_with_others": 0,
           "country": {
             "id": 15,
@@ -574,19 +584,21 @@
           }
         },
         {
-          "amount_alone": 30,
+          "amount_alone": 29,
           "amount_with_others": 0
         }
       ],
       "weight_g": 420,
       "mode": "colis",
       "alone": true,
+      "shipping_derived": true,
       "stripe_payment_link": "",
       "quantity": 0,
       "unique": true,
       "color_hex": "#1a1a1a",
       "color_name": "noir",
       "reel_url": "https://www.instagram.com/reel/Daf1SYrspSJ/",
+      "size": "",
       "reel_video": "",
       "search_keywords": [],
       "image": {
@@ -659,7 +671,7 @@
       "option_groups": [],
       "shipping": [
         {
-          "amount_alone": 5,
+          "amount_alone": 0,
           "amount_with_others": 0,
           "country": {
             "id": 15,
@@ -668,19 +680,21 @@
           }
         },
         {
-          "amount_alone": 30,
+          "amount_alone": 29,
           "amount_with_others": 0
         }
       ],
       "weight_g": 420,
       "mode": "colis",
       "alone": true,
+      "shipping_derived": true,
       "stripe_payment_link": "",
       "quantity": 1,
       "unique": true,
       "color_hex": "#8f8f8f",
       "color_name": "gris",
       "reel_url": "https://www.instagram.com/reel/Daar6bhMwFf/",
+      "size": "",
       "reel_video": "",
       "search_keywords": [],
       "image": {
@@ -753,7 +767,7 @@
       "option_groups": [],
       "shipping": [
         {
-          "amount_alone": 5,
+          "amount_alone": 0,
           "amount_with_others": 0,
           "country": {
             "id": 15,
@@ -762,19 +776,21 @@
           }
         },
         {
-          "amount_alone": 30,
+          "amount_alone": 29,
           "amount_with_others": 0
         }
       ],
       "weight_g": 420,
       "mode": "colis",
       "alone": true,
+      "shipping_derived": true,
       "stripe_payment_link": "",
       "quantity": 1,
       "unique": true,
       "color_hex": "#f2f2f2",
       "color_name": "blanc",
       "reel_url": "https://www.instagram.com/reel/DaViROPsAMG/",
+      "size": "",
       "reel_video": "",
       "search_keywords": [],
       "image": {
@@ -862,7 +878,7 @@
       "option_groups": [],
       "shipping": [
         {
-          "amount_alone": 5,
+          "amount_alone": 0,
           "amount_with_others": 0,
           "country": {
             "id": 15,
@@ -871,19 +887,21 @@
           }
         },
         {
-          "amount_alone": 9,
+          "amount_alone": 29,
           "amount_with_others": 0
         }
       ],
       "weight_g": 550,
       "mode": "colis",
       "alone": true,
+      "shipping_derived": true,
       "stripe_payment_link": "",
       "quantity": 1,
       "unique": true,
       "color_hex": "#e9e3d6",
       "color_name": "blanc cassé",
       "reel_url": "https://www.instagram.com/reel/DZVLUk7skMC/",
+      "size": "",
       "reel_video": "",
       "search_keywords": [],
       "image": {
@@ -967,7 +985,7 @@
       "option_groups": [],
       "shipping": [
         {
-          "amount_alone": 4,
+          "amount_alone": 0,
           "amount_with_others": 0,
           "country": {
             "id": 15,
@@ -976,19 +994,21 @@
           }
         },
         {
-          "amount_alone": 8.38,
+          "amount_alone": 29,
           "amount_with_others": 0
         }
       ],
       "weight_g": 180,
       "mode": "colis",
       "alone": false,
+      "shipping_derived": true,
       "stripe_payment_link": "",
       "quantity": 1,
       "unique": true,
       "color_hex": "#c19a6b",
       "color_name": "beige",
       "reel_url": "https://www.instagram.com/reel/DZpwgMBsvLS/",
+      "size": "",
       "reel_video": "",
       "search_keywords": [],
       "image": {
@@ -1076,7 +1096,7 @@
       "option_groups": [],
       "shipping": [
         {
-          "amount_alone": 5,
+          "amount_alone": 0,
           "amount_with_others": 0,
           "country": {
             "id": 15,
@@ -1085,19 +1105,21 @@
           }
         },
         {
-          "amount_alone": 10,
+          "amount_alone": 29,
           "amount_with_others": 0
         }
       ],
       "weight_g": 550,
       "mode": "colis",
       "alone": true,
+      "shipping_derived": true,
       "stripe_payment_link": "",
       "quantity": 1,
       "unique": true,
       "color_hex": "#b3315c",
       "color_name": "rouge",
       "reel_url": "https://www.instagram.com/reel/DSQKH0oDNJ8/",
+      "size": "",
       "reel_video": "",
       "search_keywords": [],
       "image": {
@@ -1185,7 +1207,7 @@
       "option_groups": [],
       "shipping": [
         {
-          "amount_alone": 5.5,
+          "amount_alone": 0,
           "amount_with_others": 0,
           "country": {
             "id": 15,
@@ -1194,19 +1216,21 @@
           }
         },
         {
-          "amount_alone": 15,
+          "amount_alone": 29,
           "amount_with_others": 0
         }
       ],
       "weight_g": 570,
       "mode": "colis",
       "alone": true,
+      "shipping_derived": true,
       "stripe_payment_link": "",
       "quantity": 1,
       "unique": true,
       "color_hex": "#3d5a75",
       "color_name": "bleu",
       "reel_url": "https://www.instagram.com/reel/DRzv1AIjBMh/",
+      "size": "",
       "reel_video": "",
       "search_keywords": [],
       "image": {
@@ -1298,19 +1322,21 @@
           }
         },
         {
-          "amount_alone": 9.8,
+          "amount_alone": 29,
           "amount_with_others": 0
         }
       ],
       "weight_g": 300,
       "mode": "colis",
       "alone": false,
+      "shipping_derived": true,
       "stripe_payment_link": "",
       "quantity": 1,
       "unique": true,
       "color_hex": "#1a1a1a",
       "color_name": "noir",
       "reel_url": "https://www.instagram.com/p/DPHLT6DjLHL/",
+      "size": "",
       "reel_video": "",
       "search_keywords": [],
       "image": {
@@ -1402,19 +1428,21 @@
           }
         },
         {
-          "amount_alone": 10.9,
+          "amount_alone": 29,
           "amount_with_others": 0
         }
       ],
       "weight_g": 550,
       "mode": "colis",
       "alone": true,
+      "shipping_derived": true,
       "stripe_payment_link": "",
       "quantity": 1,
       "unique": true,
       "color_hex": "#5f6f7f",
       "color_name": "gris",
       "reel_url": "",
+      "size": "",
       "reel_video": "",
       "search_keywords": [],
       "image": {
@@ -1506,19 +1534,21 @@
           }
         },
         {
-          "amount_alone": 10.9,
+          "amount_alone": 29,
           "amount_with_others": 0
         }
       ],
       "weight_g": 550,
       "mode": "colis",
       "alone": true,
+      "shipping_derived": true,
       "stripe_payment_link": "",
       "quantity": 1,
       "unique": true,
       "color_hex": "#a3b0bd",
       "color_name": "bleu",
       "reel_url": "",
+      "size": "",
       "reel_video": "",
       "search_keywords": [],
       "image": {
@@ -1610,19 +1640,21 @@
           }
         },
         {
-          "amount_alone": 10.2,
+          "amount_alone": 29,
           "amount_with_others": 0
         }
       ],
       "weight_g": 550,
       "mode": "colis",
       "alone": true,
+      "shipping_derived": true,
       "stripe_payment_link": "",
       "quantity": 1,
       "unique": true,
       "color_hex": "#1a1a1a",
       "color_name": "noir",
       "reel_url": "",
+      "size": "",
       "reel_video": "",
       "search_keywords": [],
       "image": {
@@ -1714,19 +1746,21 @@
           }
         },
         {
-          "amount_alone": 8.45,
+          "amount_alone": 29,
           "amount_with_others": 0
         }
       ],
       "weight_g": 400,
       "mode": "colis",
       "alone": true,
+      "shipping_derived": true,
       "stripe_payment_link": "",
       "quantity": 1,
       "unique": true,
       "color_hex": "#1a1a1a",
       "color_name": "noir",
       "reel_url": "https://www.instagram.com/p/DPHLT6DjLHL/?img_index=4",
+      "size": "",
       "reel_video": "",
       "search_keywords": [],
       "image": {
@@ -1799,7 +1833,7 @@
       "option_groups": [],
       "shipping": [
         {
-          "amount_alone": 2.35,
+          "amount_alone": 0,
           "amount_with_others": 0,
           "country": {
             "id": 15,
@@ -1808,19 +1842,21 @@
           }
         },
         {
-          "amount_alone": 9.85,
+          "amount_alone": 29,
           "amount_with_others": 0
         }
       ],
       "weight_g": 420,
       "mode": "colis",
       "alone": true,
+      "shipping_derived": true,
       "stripe_payment_link": "",
       "quantity": 1,
       "unique": true,
       "color_hex": "#7f92a3",
       "color_name": "gris",
       "reel_url": "",
+      "size": "",
       "reel_video": "",
       "search_keywords": [],
       "image": {
@@ -1903,7 +1939,7 @@
       "option_groups": [],
       "shipping": [
         {
-          "amount_alone": 3.5,
+          "amount_alone": 4,
           "amount_with_others": 0,
           "country": {
             "id": 15,
@@ -1912,19 +1948,21 @@
           }
         },
         {
-          "amount_alone": 4.5,
+          "amount_alone": 29,
           "amount_with_others": 0
         }
       ],
       "weight_g": 50,
       "mode": "lettre",
       "alone": false,
+      "shipping_derived": true,
       "stripe_payment_link": "",
       "quantity": 5,
       "unique": false,
       "color_hex": "",
       "color_name": "",
       "reel_url": "https://www.instagram.com/reel/DKkEQYzI6pF/",
+      "size": "",
       "reel_video": "",
       "search_keywords": [],
       "image": {
@@ -2006,7 +2044,7 @@
       "option_groups": [],
       "shipping": [
         {
-          "amount_alone": 1.9,
+          "amount_alone": 0,
           "amount_with_others": 0,
           "country": {
             "id": 15,
@@ -2018,12 +2056,14 @@
       "weight_g": 300,
       "mode": "colis",
       "alone": false,
+      "shipping_derived": true,
       "stripe_payment_link": "",
       "quantity": 1,
       "unique": true,
       "color_hex": "#3a5f8a",
       "color_name": "bleu",
       "reel_url": "",
+      "size": "",
       "reel_video": "",
       "search_keywords": [],
       "image": {
@@ -2109,19 +2149,21 @@
           }
         },
         {
-          "amount_alone": 8.45,
+          "amount_alone": 29,
           "amount_with_others": 0
         }
       ],
       "weight_g": 550,
       "mode": "colis",
       "alone": true,
+      "shipping_derived": true,
       "stripe_payment_link": "",
       "quantity": 1,
       "unique": true,
       "color_hex": "#141414",
       "color_name": "noir",
       "reel_url": "https://www.instagram.com/reel/CsyvGjlIaY2/",
+      "size": "",
       "reel_video": "",
       "search_keywords": [],
       "image": {
@@ -2209,7 +2251,7 @@
       "option_groups": [],
       "shipping": [
         {
-          "amount_alone": 4,
+          "amount_alone": 0,
           "amount_with_others": 0,
           "country": {
             "id": 15,
@@ -2218,19 +2260,21 @@
           }
         },
         {
-          "amount_alone": 8,
+          "amount_alone": 29,
           "amount_with_others": 0
         }
       ],
       "weight_g": 420,
       "mode": "colis",
       "alone": true,
+      "shipping_derived": true,
       "stripe_payment_link": "",
       "quantity": 0,
       "unique": true,
       "color_hex": "#5c5c5c",
       "color_name": "gris",
       "reel_url": "https://www.instagram.com/reel/DZkpLbVMzOZ/",
+      "size": "",
       "reel_video": "",
       "search_keywords": [],
       "image": {
@@ -2309,7 +2353,7 @@
       "option_groups": [],
       "shipping": [
         {
-          "amount_alone": 5,
+          "amount_alone": 0,
           "amount_with_others": 0,
           "country": {
             "id": 15,
@@ -2318,19 +2362,21 @@
           }
         },
         {
-          "amount_alone": 9,
+          "amount_alone": 29,
           "amount_with_others": 0
         }
       ],
       "weight_g": 550,
       "mode": "colis",
       "alone": false,
+      "shipping_derived": true,
       "stripe_payment_link": "",
       "quantity": 0,
       "unique": true,
       "color_hex": "#1b2a4a",
       "color_name": "noir",
       "reel_url": "https://www.instagram.com/reel/DZnLpDOsk9m/",
+      "size": "",
       "reel_video": "",
       "search_keywords": [],
       "image": {
@@ -2418,7 +2464,7 @@
       "option_groups": [],
       "shipping": [
         {
-          "amount_alone": 5.35,
+          "amount_alone": 0,
           "amount_with_others": 0,
           "country": {
             "id": 15,
@@ -2427,19 +2473,21 @@
           }
         },
         {
-          "amount_alone": 15,
+          "amount_alone": 29,
           "amount_with_others": 0
         }
       ],
       "weight_g": 420,
       "mode": "colis",
       "alone": true,
+      "shipping_derived": true,
       "stripe_payment_link": "",
       "quantity": 0,
       "unique": true,
       "color_hex": "#8a95a3",
       "color_name": "gris",
       "reel_url": "https://www.instagram.com/reel/DR43MPwDAC3/",
+      "size": "",
       "reel_video": "",
       "search_keywords": [],
       "image": {
@@ -2536,19 +2584,21 @@
           }
         },
         {
-          "amount_alone": 8,
+          "amount_alone": 29,
           "amount_with_others": 0
         }
       ],
       "weight_g": 48,
       "mode": "lettre",
       "alone": false,
+      "shipping_derived": true,
       "stripe_payment_link": "",
       "quantity": 0,
       "unique": false,
       "color_hex": "#f2f2f2",
       "color_name": "blanc",
       "reel_url": "https://www.instagram.com/reel/DRr_YfqjIuF/",
+      "size": "",
       "reel_video": "",
       "search_keywords": [],
       "image": {
@@ -2621,7 +2671,7 @@
       "option_groups": [],
       "shipping": [
         {
-          "amount_alone": 5.7,
+          "amount_alone": 0,
           "amount_with_others": 0,
           "country": {
             "id": 15,
@@ -2630,19 +2680,21 @@
           }
         },
         {
-          "amount_alone": 15.9,
+          "amount_alone": 29,
           "amount_with_others": 0
         }
       ],
       "weight_g": 420,
       "mode": "colis",
       "alone": true,
+      "shipping_derived": true,
       "stripe_payment_link": "",
       "quantity": 0,
       "unique": true,
       "color_hex": "#8a8a8a",
       "color_name": "gris",
       "reel_url": "",
+      "size": "",
       "reel_video": "",
       "search_keywords": [],
       "image": {
@@ -2724,7 +2776,7 @@
       "option_groups": [],
       "shipping": [
         {
-          "amount_alone": 1.9,
+          "amount_alone": 0,
           "amount_with_others": 0,
           "country": {
             "id": 15,
@@ -2736,12 +2788,14 @@
       "weight_g": 300,
       "mode": "colis",
       "alone": false,
+      "shipping_derived": true,
       "stripe_payment_link": "",
       "quantity": 0,
       "unique": true,
       "color_hex": "#1a1a1a",
       "color_name": "noir",
       "reel_url": "",
+      "size": "",
       "reel_video": "",
       "search_keywords": [],
       "image": {

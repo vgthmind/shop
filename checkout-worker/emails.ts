@@ -75,9 +75,9 @@ const T = {
     withdrawal: "Droit de rétractation de 14 jours à compter de la réception, sauf pour les pièces réalisées sur commande personnalisée (art. L221-28 3° du Code de la consommation). Modalités, frais de retour et remboursement : page Livraison & retours.",
     cgv: 'Conditions générales de vente',
     returns: 'Livraison & retours',
-    formTitle: 'Formulaire type de rétractation (à renvoyer uniquement si vous souhaitez vous rétracter)',
+    formTitle: 'Formulaire type de rétractation (à renvoyer uniquement si tu souhaites te rétracter)',
     form: [
-      `À l'attention de vgthmind, ${CONTACT_EMAIL} (adresse postale : voir Mentions légales) :`,
+      `À l'attention de vgthmind, ${CONTACT_EMAIL} (adresse postale de retour envoyée par mail sur demande) :`,
       'Je vous notifie par la présente ma rétractation du contrat portant sur la vente du bien ci-dessous :',
       'Commandé le / reçu le :', 'Numéro de commande :', 'Nom du consommateur :', 'Adresse du consommateur :',
       'Signature du consommateur (uniquement en cas de notification sur papier) :', 'Date :',
@@ -111,7 +111,7 @@ const T = {
     returns: 'Shipping & returns',
     formTitle: 'Model withdrawal form (complete and return only if you wish to withdraw)',
     form: [
-      `To vgthmind, ${CONTACT_EMAIL} (postal address: see Legal notice):`,
+      `To vgthmind, ${CONTACT_EMAIL} (postal return address sent by email on request):`,
       'I hereby give notice that I withdraw from my contract of sale of the following good:',
       'Ordered on / received on:', 'Order number:', 'Name of consumer:', 'Address of consumer:',
       'Signature of consumer (only if this form is notified on paper):', 'Date:',
