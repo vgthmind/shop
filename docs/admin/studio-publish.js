@@ -10,6 +10,7 @@
   var ENDPOINT = root.VG_ENDPOINT || 'https://vgthmind-shop-checkout.vgthm66.workers.dev';
   var REPO = 'vgthmind/shop', BRANCH = 'main', API = 'https://api.github.com';
   var token = '';
+  var MAX_PHOTO_BYTES = 25 * 1024 * 1024;
 
   // Même poignée de main que Sveltia / vgAdminLogin, mais on garde `token` (en mémoire seulement).
   function login() {
@@ -72,8 +73,13 @@
   async function publish(opts) {
     var say = opts.onStatus || function () {}, slug = opts.slug;
     if (!token) throw new Error('Pas connecté à GitHub.');
-    if (!/^[^\s\/\\.][^\s\/\\]*$/.test(slug)) throw new Error('Slug invalide (pas d\'espace, de point ni de barre).');
+    if (!/^[^\s\/\\.][^\s\/\\]*$/.test(slug) || /[\x00-\x1f?#%"'<>|*:]/.test(slug) || slug.length > 100) throw new Error('Slug invalide (pas d\'espace, de point ni de barre).');
     if (!opts.files.length) throw new Error('Aucune photo à publier.');
+    // Seulement des images (WebP/PNG/JPEG) de taille raisonnable : rien d'autre ne part dans le dépôt public.
+    opts.files.forEach(function (f) {
+      if (!/^[\w-]{1,40}\.(webp|png|jpe?g)$/i.test(String(f.name || ''))) throw new Error('Fichier refusé (images WebP, PNG ou JPEG seulement) : ' + f.name);
+      if (!f.data || f.data.length > MAX_PHOTO_BYTES) throw new Error('Photo trop lourde (' + Math.round((f.data ? f.data.length : 0) / 1048576) + ' Mo, ' + (MAX_PHOTO_BYTES / 1048576) + ' Mo maximum) : ' + f.name);
+    });
     if (opts.reelVideo && opts.reelVideo.data.length > 40 * 1024 * 1024) throw new Error('Vidéo trop lourde (' + Math.round(opts.reelVideo.data.length / 1048576) + ' Mo, 40 Mo maximum) : exporte-la en plus léger.');
     var jsonPath = 'data/products/' + slug + '.json';
 

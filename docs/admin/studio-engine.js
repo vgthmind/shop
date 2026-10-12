@@ -30,7 +30,8 @@
   function isTunnel() { return /^https:[/][/][a-z0-9-]+[.]trycloudflare[.]com(:|[/]|$)/i.test(SERVER_URL); }
   // local : 20 s ; tunnel du PC : 30 s (le PC répond tout de suite ou est éteint) ; hébergeur endormi : 6 min
   function wakeLimit() { return WAKE_TIMEOUT_MS || (isLocalServer() ? 20000 : isTunnel() ? 30000 : 6 * 60 * 1000); }
-  function authHeaders(h) { h = h || {}; if (TOKEN && !isLocalServer()) h['X-VG-Token'] = TOKEN; return h; } // test local uniquement
+  // Mot de passe du tunnel : envoyé SEULEMENT à une adresse de tunnel Cloudflare (jamais à un autre serveur saisi à la main).
+  function authHeaders(h) { h = h || {}; if (TOKEN && isTunnel()) h['X-VG-Token'] = TOKEN; return h; }
 
   var isIOS = /iP(hone|ad|od)/.test(navigator.userAgent) ||
     (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);

@@ -44,9 +44,17 @@
     return c;
   }
 
+  var MAX_PHOTO_IN = 60 * 1024 * 1024;
   async function addFiles(list) {
     draftOff = false;
-    var files = Array.prototype.slice.call(list).filter(function (f) { return /^image\//.test(f.type) || /\.(heic|heif|jpe?g|png|webp)$/i.test(f.name); });
+    var all = Array.prototype.slice.call(list);
+    // Images seulement (pas de SVG : il peut contenir du code), 60 Mo maximum par photo.
+    var files = all.filter(function (f) { return (/^image\//.test(f.type) && !/svg/i.test(f.type)) || /\.(heic|heif|jpe?g|png|webp)$/i.test(f.name); });
+    if (files.length < all.length) notice('Fichier(s) ignoré(s) : seulement des photos (JPEG, PNG, WebP, HEIC).', true);
+    files = files.filter(function (f) {
+      if (f.size <= MAX_PHOTO_IN) return true;
+      notice('Photo trop lourde : ' + f.name + ' (' + Math.round(f.size / 1048576) + ' Mo, 60 Mo maximum).', true); return false;
+    });
     for (var i = 0; i < files.length; i++) {
       try {
         var src = await decode(files[i]);
@@ -176,11 +184,17 @@
     $('fReelVideo').onchange = function (e) {
       var f = e.target.files[0]; reelFile = null; if (!f) { msg(''); return; }
       if (f.size > MAX) { msg('Vidéo trop lourde (' + Math.round(f.size / 1048576) + ' Mo, 40 Mo maximum) : exporte-la en plus léger.', true); return; }
-      var v = document.createElement('video'), u = URL.createObjectURL(f);
-      v.muted = true; v.preload = 'metadata';
-      v.onloadedmetadata = function () { URL.revokeObjectURL(u); reelFile = f; scheduleDraft(); msg('Vidéo prête (' + Math.round(f.size / 1048576 * 10) / 10 + ' Mo, ' + Math.round(v.duration) + ' s).'); };
-      v.onerror = function () { URL.revokeObjectURL(u); msg('Cette vidéo ne peut pas être lue par ce navigateur (vidéo iPhone HEVC ?) : exporte-la en MP4 H.264.', true); };
-      v.src = u; msg('Lecture…');
+      // Vrai fichier vidéo MP4/MOV (signature « ftyp » au début du fichier), pas autre chose renommé.
+      msg('Lecture…');
+      f.slice(0, 12).arrayBuffer().then(function (buf) {
+        var h = new Uint8Array(buf);
+        if (String.fromCharCode(h[4], h[5], h[6], h[7]) !== 'ftyp') { msg('Ce fichier n’est pas une vidéo MP4 : exporte-la en MP4 H.264.', true); return; }
+        var v = document.createElement('video'), u = URL.createObjectURL(f);
+        v.muted = true; v.preload = 'metadata';
+        v.onloadedmetadata = function () { URL.revokeObjectURL(u); reelFile = f; scheduleDraft(); msg('Vidéo prête (' + Math.round(f.size / 1048576 * 10) / 10 + ' Mo, ' + Math.round(v.duration) + ' s).'); };
+        v.onerror = function () { URL.revokeObjectURL(u); msg('Cette vidéo ne peut pas être lue par ce navigateur (vidéo iPhone HEVC ?) : exporte-la en MP4 H.264.', true); };
+        v.src = u;
+      }).catch(function () { msg('Vidéo illisible.', true); });
     };
   })();
   function remove(i) {
