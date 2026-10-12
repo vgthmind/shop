@@ -1,12 +1,3 @@
-# PROTOTYPE - a mettre a jour au lancement officiel, voir README.md.
-# Pour l'instant, tout est bloque (double protection avec le noindex sur
-# chaque page) tant que ce n'est pas la boutique officielle.
 User-agent: *
-Disallow: /
-
-# Au lancement : remplacer par
-# User-agent: *
-# Disallow: /admin/
-# Sitemap: https://vgthmind.github.io/shop/sitemap.xml
-# (et enlever le noindex de index.html et product.html, mais garder celui
-# de admin/index.html qui doit rester bloque en permanence)
+Disallow: /shop/admin/
+Sitemap: https://www.vgthmind.org/sitemap.xml

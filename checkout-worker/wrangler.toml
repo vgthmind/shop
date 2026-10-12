@@ -11,7 +11,7 @@ workers_dev = true
 [vars]
 # Sites autorisés (séparés par des virgules) : ancien aperçu, Cloudflare Pages, domaine.
 ALLOWED_ORIGIN = "https://vgthmind.github.io,https://vgthmind-shop.pages.dev,https://www.vgthmind.org,https://vgthmind.org"
-SITE_BASE = "https://vgthmind.github.io/shop"
+SITE_BASE = "https://www.vgthmind.org"
 # Où le Worker lit le catalogue (products.json) et la grille d'envoi : le site Cloudflare Pages (plus l'aperçu GitHub, arrêté).
 CATALOG_BASE = "https://vgthmind-shop.pages.dev"
 # "1" seulement le jour du passage en live (voir README) : tant que c'est "0",
