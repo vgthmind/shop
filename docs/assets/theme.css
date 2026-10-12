@@ -743,7 +743,7 @@ a.skip-link:focus {
 
 header {
   display: grid;
-  grid-template-columns: 1fr 50% 1fr;
+  grid-template-columns: auto 1fr auto; /* colonne du menu = tout l'espace libre (avant : 50 % fixe, « Un projet ? » passait à la ligne) */
   -webkit-flex-shrink: 0;
   flex-shrink: 0;
   border-bottom: 1px solid transparent;

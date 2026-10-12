@@ -222,7 +222,7 @@ const CUSTOM_PAGES = [
   { name: 'Contact', url: '/contact-914a3d', permalink: 'contact-914a3d' },
   { name: 'Studio', url: '/studio', permalink: 'studio' },
   // Pièce sur demande / production / collab : parcours étape par étape (theme/pages/sur-demande.html + assets/vg-demande.js).
-  { name: 'Start a project', url: '/sur-demande', permalink: 'sur-demande' },
+  { name: 'Got a project?', url: '/sur-demande', permalink: 'sur-demande' },
 ];
 // Pages legales : liens du pied de page uniquement (required_pages du gabarit),
 // pas dans le menu du haut.

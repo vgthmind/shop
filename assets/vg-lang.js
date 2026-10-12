@@ -25,7 +25,7 @@
     'Accessories': 'Accessoires', 'Info & Terms': 'Infos & conditions', 'Track my order': 'Suivre ma commande', 'Cart': 'Panier', 'Cart (': 'Panier (',
     'Add to cart': 'Ajouter au panier', 'Sold out': 'Vendu', 'Sold Out': 'Vendu', 'Your cart is empty': 'Ton panier est vide', 'Search': 'Rechercher',
     'Unique piece': 'Pièce unique', 'UNIQUE PIECE': 'PIÈCE UNIQUE', 'Menu': 'Menu', 'Shop': 'Boutique',
-    'Start a project': 'Proposer un projet', 'My request': 'Ma demande', 'Enter': 'Entrer',
+    'Got a project?': 'Un projet ?', 'My request': 'Ma demande', 'Enter': 'Entrer',
     'Latest Drop': 'Dernier drop', '✦ Latest Drop': '✦ Dernier drop'
   };
   var EN = { 'Voir le post · @vgthmind': 'View the post · @vgthmind', 'Voir la piece portee · @vgthmind': 'See the piece worn · @vgthmind', 'Mentions légales': 'Legal notice', 'Confidentialité': 'Privacy', 'Produits': 'Products', 'PRODUITS': 'PRODUCTS', 'Boutique': 'Shop' };
@@ -65,7 +65,7 @@
     });
   }
   // Titres d'onglet : partie avant « | ». FR = textes anglais d'origine traduits, EN = textes français d'origine traduits.
-  var TITLE_FR = { 'Start a project': 'Proposer un projet', 'Cart': 'Panier', 'Products': 'Boutique', 'All': 'Tout', 'Tops': 'Hauts', 'Pants/Shorts': 'Pantalons/Shorts', 'Accessories': 'Accessoires', 'My request': 'Ma demande', 'Latest Drop': 'Dernier drop' };
+  var TITLE_FR = { 'Got a project?': 'Un projet ?', 'Cart': 'Panier', 'Products': 'Boutique', 'All': 'Tout', 'Tops': 'Hauts', 'Pants/Shorts': 'Pantalons/Shorts', 'Accessories': 'Accessoires', 'My request': 'Ma demande', 'Latest Drop': 'Dernier drop' };
   var TITLE_EN = {
     'vgthmind — créations fabriquées en France': 'vgthmind — handmade in France', 'Boutique — créations vgthmind': 'Shop — vgthmind',
     'Infos & conditions de vente': 'Info & terms of sale', 'Mentions légales': 'Legal notice', 'Confidentialité': 'Privacy', 'Suivre ma commande': 'Track my order'
