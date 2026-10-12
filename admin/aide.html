@@ -33,6 +33,7 @@
     <li><a href="#soldout">Mettre une pièce en sold out (ou la remettre)</a></li>
     <li><a href="#compta">Exporter pour la compta</a></li>
     <li><a href="#facture">Facture d'une commande</a></li>
+    <li><a href="#demandes">Demandes sur mesure (custom, sur-mesure, production, collab)</a></li>
     <li><a href="#install">Installer l'admin comme une appli</a></li>
     <li><a href="#probleme">Que faire en cas de problème</a></li>
   </ul>
@@ -102,6 +103,20 @@
     <li>Le client peut aussi la télécharger lui-même depuis la page « Suivre ma commande » du site.</li>
     <li>Les commandes de test portent un numéro <code>TEST-…</code> et la mention « aucune valeur ».</li>
   </ul>
+
+  <h2 id="demandes">Demandes sur mesure (custom, sur-mesure, production, collab)</h2>
+  <p>Les clients remplissent la page <strong>« Proposer un projet »</strong> du site (bouton dans le menu et sur la page Studio). Tu reçois un mail « Nouvelle demande D-XXXXXX » avec toutes les réponses ; le client reçoit « demande bien reçue » avec le lien de sa page privée. Tout se gère dans Tableau de bord → <strong>Demandes</strong> (clique sur une demande pour l'ouvrir).</p>
+  <p><strong>Custom et sur-mesure</strong> (paiement en ligne, 3 étapes) :</p>
+  <ol>
+    <li><strong>Devis.</strong> Échange d'abord par mail si besoin (« Répondre par mail » : le statut passe en « En discussion »). Puis remplis le titre de la pièce, le prix total, le délai (et le poids emballé si la pièce est lourde) → <strong>Envoyer le devis au client</strong>. Il reçoit un mail avec le bouton pour payer l'acompte (30 % par défaut). Avant de payer, il doit cocher la mention (acompte et non arrhes, pas de rétractation, acompte conservé) : la date et le texte sont gardés dans le journal.</li>
+    <li><strong>Acompte payé</strong> → tu reçois une alerte, la demande passe toute seule en <em>En fabrication</em>. Le client a sa facture d'acompte sur sa page. L'acompte n'apparaît pas dans « Commandes » (rien à expédier) mais il est bien dans l'Export compta (nature « acompte »).</li>
+    <li><strong>Photos de validation.</strong> Pièce finie : <strong>Ajouter des photos</strong> (depuis l'iPhone ou le PC), puis <strong>Envoyer pour validation</strong>. Le client reçoit les photos avec « Je valide et je paie le solde » ou « Je demande une retouche ». 1 retouche est incluse (réglable) : tu reçois une alerte, la demande repasse en fabrication, tu renvoies de nouvelles photos. Au-delà, le client voit « retouche supplémentaire sur devis » et tu reçois une alerte : réponds-lui par mail.</li>
+    <li><strong>Solde payé</strong> (prix total − acompte + port selon son pays) → la commande arrive dans <strong>Commandes</strong> comme les autres : mail de confirmation, « Marquer expédiée » + numéro de suivi (la demande passe alors en <em>Envoyée</em>), facture qui déduit l'acompte. Passe ensuite la demande en <em>Terminée</em>.</li>
+  </ol>
+  <p><strong>Sans réponse du client</strong> (automatique, chaque heure) : relance par mail au bout de 7 jours, alerte pour toi à 14 jours, puis à 30 jours après les photos l'alerte « acompte conservé » (règle des CGV). Tu décides ensuite : relancer à la main, ou passer en <em>Terminée</em> / <em>Refusée</em>. Si c'est toi qui refuses ou abandonnes après l'acompte : rembourse-le en entier dans Stripe (Paiements → le paiement → Rembourser), puis passe la demande en <em>Refusée</em>.</p>
+  <p><strong>Production visuelle et collab</strong> : aucun paiement automatique. Réponds avec « Répondre par mail » (devis, caution par chèque, contrat) et change le statut à la main.</p>
+  <p><strong>Réglages</strong> (onglet en haut de la page Demandes) : prix « à partir de » (refusés s'ils sont sous le prix boutique équivalent), % d'acompte, délais de relance / alerte / acompte conservé, retouches incluses, et la photo de chaque carte du parcours (fichier ou photo de la boutique, « Origine » pour revenir à la photo de départ). Si tu changes l'acompte, les délais ou les retouches, mets aussi à jour les CGV.</p>
+  <div class="tip">Les fichiers des clients sont privés (visibles seulement connecté). Ils sont effacés automatiquement 6 mois après la fin de la demande ; une demande sans suite ou terminée est effacée 12 mois après le dernier échange. Les photos de la pièce finie restent si le client a donné son accord. « Supprimer la demande » efface tout de suite (demande d'un client, RGPD).</div>
 
   <h2 id="install">Installer l'admin comme une appli</h2>
   <ul>

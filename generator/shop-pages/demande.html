@@ -1,0 +1,35 @@
+<div class="vgr" id="vgr" data-cgv="/infos-conditions-generales" data-suivi="/suivi/" data-new="/sur-demande">
+<p class="vgr-kicker"><span data-l="fr">Ma demande</span><span data-l="en">My request</span></p>
+<div id="vgr-body" aria-live="polite"><p>…</p></div>
+</div>
+<style>
+.vgr{--ink:#171717;--muted:#6b6860;--line:rgba(0,0,0,.14);--err:#b3261e;--ok:#1b5e20;max-width:720px;margin:0 auto;padding:0 0 48px}
+.vgr *{box-sizing:border-box}
+.vgr-kicker{font:500 11px 'IBM Plex Mono',monospace;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin:0 0 6px}
+.vgr h1{font-family:'Space Grotesk',sans-serif;font-size:clamp(26px,5.5vw,38px);line-height:1.08;margin:0 0 6px}
+.vgr h2{font-family:'Space Grotesk',sans-serif;font-size:22px;margin:28px 0 10px}
+.vgr .tag{display:inline-block;padding:3px 10px;border-radius:999px;border:1px solid var(--ink);font:500 11px 'IBM Plex Mono',monospace;letter-spacing:.06em;text-transform:uppercase;margin:0 0 16px}
+.vgr .box{border:1px solid var(--line);border-radius:12px;background:#fff;padding:14px 16px;margin:12px 0;animation:vgr-in .35s cubic-bezier(.2,.8,.2,1) both}
+@keyframes vgr-in{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+.vgr table{width:100%;border-collapse:collapse}
+.vgr td{padding:8px 0;border-bottom:1px solid var(--line);vertical-align:top}
+.vgr td.n{text-align:right;white-space:nowrap}
+.vgr tr.big td{font-weight:700;font-size:17px}
+.vgr .muted{color:var(--muted);font-size:14px}
+.vgr .btn{display:inline-block;min-height:46px;padding:12px 24px;border-radius:999px;border:1px solid var(--ink);background:var(--ink);color:#fff;font:inherit;font-weight:600;cursor:pointer;text-decoration:none;transition:transform .12s ease,opacity .15s}
+.vgr .btn:active{transform:scale(.97)}
+.vgr .btn[disabled]{opacity:.45;cursor:default}
+.vgr .btn.ghost{background:transparent;color:var(--ink)}
+.vgr .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-top:14px}
+.vgr .check{display:flex;gap:10px;align-items:flex-start;font-size:14px;line-height:1.45;cursor:pointer;margin:12px 0}
+.vgr .check input{width:22px;height:22px;flex:none;margin:1px 0 0;accent-color:#171717}
+.vgr textarea,.vgr select{font:inherit;font-size:16px;padding:12px;border:1px solid var(--ink);border-radius:8px;width:100%;background:#fff;color:var(--ink)}
+.vgr .photos{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px;margin:12px 0}
+.vgr .photos img{width:100%;border-radius:10px;background:#f4f2ec;display:block;animation:vgr-in .4s ease both;animation-delay:calc(var(--i,0) * 60ms)}
+.vgr .err{color:var(--err);min-height:1.2em;font-size:14px}
+.vgr .okmsg{color:var(--ok)}
+@media (max-width:520px){.vgr .row .btn{flex:1 1 auto;text-align:center}.vgr .photos{grid-template-columns:1fr 1fr}}
+@media (prefers-reduced-motion:reduce){.vgr .box,.vgr .photos img{animation:none!important}.vgr .btn{transition:none!important}}
+</style>
+<script src="/assets/vg-invoice.js" defer></script>
+<script src="/assets/vg-ma-demande.js" defer></script>

@@ -42,6 +42,7 @@
   <h2>Au quotidien</h2>
   <div class="grid">
     <a class="tile" href="commandes.html"><strong>Commandes <span class="badge" id="todo" hidden></span></strong><span>À expédier, suivi, bon de commande, facture</span></a>
+    <a class="tile" href="demandes.html"><strong>Demandes <span class="badge" id="reqs" hidden></span></strong><span>Pièces sur demande, productions, collabs : devis, acompte, validation</span></a>
     <a class="tile" href="studio-photo.html"><strong>Nouvelle pièce</strong><span>Photos, détourage, fiche, mise en ligne</span></a>
     <a class="tile" href="stock.html"><strong>Stock</strong><span>Quantités, sold out, sauvegardes</span></a>
     <a class="tile" href="catalogue.html"><strong>Catalogue</strong><span>Ordre, copie, aperçu, archiver</span></a>
@@ -85,8 +86,13 @@
   // Nombre de commandes à expédier (si connecté).
   if (window.vgAdminToken()) {
     window.vgAdminApi('/orders').then(function (d) {
-      var n = (d.orders || []).filter(function (o) { return !o.shipped && o.livemode; }).length;
+      var n = (d.orders || []).filter(function (o) { return !o.shipped && o.livemode && o.kind !== 'deposit'; }).length;
       if (n) { $('todo').textContent = n; $('todo').hidden = false; }
+    }).catch(function () {});
+    // Demandes à traiter : nouvelles, retouches demandées, validées (solde attendu).
+    window.vgAdminApi('/admin/requests').then(function (d) {
+      var n = (d.requests || []).filter(function (r) { return r.status === 'nouvelle' || r.forfeited || (r.validation && r.status === 'validation' && r.validation.retouches.some(function (x) { return x.extra; })); }).length;
+      if (n) { $('reqs').textContent = n; $('reqs').hidden = false; }
     }).catch(function () {});
   }
 })();

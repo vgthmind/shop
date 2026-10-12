@@ -15,13 +15,14 @@
 
   function html(inv, lang) {
     var t = T[lang] || T.fr;
+    var title = (lang === 'en' ? inv.titleEn : inv.title) || t.title; // « Facture d'acompte » pour une pièce sur demande
     var money = function (n) { return new Intl.NumberFormat(t.locale, { style: 'currency', currency: inv.currency || 'EUR' }).format(n || 0); };
     var date = new Date(inv.date * 1000).toLocaleDateString(t.locale, { day: '2-digit', month: 'long', year: 'numeric', timeZone: 'Europe/Paris' });
     var rows = inv.lines.map(function (l) {
       return '<tr><td>' + esc(l.name) + (l.size ? '<br><small>' + t.size + ' ' + esc(l.size) + '</small>' : '') + '</td><td class="n">' + esc(l.qty) + '</td><td class="n">' + money(l.unit) + '</td><td class="n">' + money(l.amount) + '</td></tr>';
     }).join('');
     return '<!doctype html><html lang="' + (lang === 'en' ? 'en' : 'fr') + '"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="robots" content="noindex">'
-      + '<title>' + t.title + ' ' + esc(inv.number) + '</title><style>'
+      + '<title>' + esc(title) + ' ' + esc(inv.number) + '</title><style>'
       + 'body{font:14px/1.5 system-ui,-apple-system,Segoe UI,sans-serif;color:#171717;max-width:760px;margin:24px auto;padding:0 16px}'
       + 'h1{font-size:26px;margin:0 0 4px;letter-spacing:.04em;text-transform:uppercase}.top{display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap;border-bottom:2px solid #171717;padding-bottom:12px}'
       + '.parties{display:flex;gap:24px;flex-wrap:wrap;margin:18px 0}.parties div{flex:1 1 240px}.lbl{font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:#6b6860}'
@@ -33,14 +34,15 @@
       + '@media print{button{display:none}body{margin:0}}</style></head><body>'
       + '<button onclick="window.print()">' + t.print + '</button>'
       + (inv.test ? '<div class="test">' + t.test + '</div>' : '')
-      + '<div class="top"><div><h1>' + t.title + '</h1><div>' + t.no + ' ' + esc(inv.number) + '<br>' + t.date + ' : ' + esc(date) + '<br>' + t.order + ' ' + esc(inv.ref) + '</div></div>'
+      + '<div class="top"><div><h1>' + esc(title) + '</h1><div>' + t.no + ' ' + esc(inv.number) + '<br>' + t.date + ' : ' + esc(date) + '<br>' + t.order + ' ' + esc(inv.ref) + '</div></div>'
       + '<div style="text-align:right"><strong>' + esc(inv.seller.name) + '</strong><br>' + esc(inv.seller.line2) + '<br>' + t.siret + ' ' + esc(inv.seller.siret) + '<br>' + esc(inv.seller.email) + '</div></div>'
       + '<div class="parties"><div><div class="lbl">' + t.customer + '</div><strong>' + esc(inv.customer.name) + '</strong><br>' + inv.customer.address.map(esc).join('<br>') + (inv.customer.country ? '<br>' + esc(inv.customer.country) : '') + '<br>' + esc(inv.customer.email) + '</div></div>'
       + '<table><thead><tr><th>' + t.desc + '</th><th class="n">' + t.qty + '</th><th class="n">' + t.unit + '</th><th class="n">' + t.amount + '</th></tr></thead><tbody>' + rows + '</tbody></table>'
       + '<table class="tot"><tr><td></td><td class="n">' + t.shipping + '</td><td class="n" style="width:120px">' + money(inv.shipping) + '</td></tr>'
-      + (inv.discount ? '<tr><td></td><td class="n">' + t.discount + '</td><td class="n">−' + money(inv.discount) + '</td></tr>' : '')
+      + (inv.deductions || []).map(function (d) { return '<tr><td></td><td class="n">' + esc(d.label) + '</td><td class="n">−' + money(d.amount) + '</td></tr>'; }).join('')
+      + (inv.discount ?'<tr><td></td><td class="n">' + t.discount + '</td><td class="n">−' + money(inv.discount) + '</td></tr>' : '')
       + '<tr class="grand"><td></td><td class="n">' + t.total + '</td><td class="n">' + money(inv.total) + '</td></tr></table>'
-      + '<p class="mention">' + esc(inv.vat) + '<br>' + t.paid + '</p></body></html>';
+      + '<p class="mention">' + (inv.notes || []).map(function (n) { return esc(n) + '<br>'; }).join('') + esc(inv.vat) + '<br>' + t.paid + '</p></body></html>';
   }
 
   // Ouvre la facture dans un nouvel onglet (à appeler dans un clic : sinon le navigateur bloque la fenêtre).

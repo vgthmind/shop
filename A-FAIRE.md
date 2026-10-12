@@ -11,6 +11,31 @@ Si Stripe refuse quelque chose, il n'y a aucune case à cocher : la clé a déj�
 
 ---
 
+## D. « Proposer un projet » (pièces sur demande) : 3 choses à faire
+
+### D1. Activer R2 (stockage des photos / vidéos des demandes), 5 minutes
+Gratuit jusqu'à 10 Go stockés par mois (+ 1 million d'envois et 10 millions de lectures par mois). Une demande pèse au plus ~130 Mo, et les fichiers s'effacent tout seuls 6 mois après la fin de la demande : tu resteras très loin de la limite. Cloudflare demande quand même une carte bancaire pour ouvrir R2.
+1. Va sur **dash.cloudflare.com** (même compte que le Worker), menu de gauche **R2 Object Storage** (parfois rangé sous « Stockage et bases de données »).
+2. Clique **Activer R2** / **Purchase R2** (offre gratuite), ajoute ta carte si on te la demande. Tu ne payes rien sous les limites gratuites.
+3. **Create bucket** : nom **`vgthmind-demandes`** (exactement), **Location** : laisse « Automatic » **ou** choisis la juridiction **« European Union (EU) »** (mieux pour le RGPD). Note bien ce que tu as choisi.
+4. Ne rends **rien public** : pas de « Public access », pas de domaine, pas de jeton d'API à créer. Le Worker y accède tout seul.
+5. Dis-moi **« R2 activé, juridiction EU »** (ou « Automatic ») : j'active le stockage dans le Worker et je redéploie. Tant que ce n'est pas fait, le formulaire marche quand même, mais le client ne peut envoyer qu'un lien (WeTransfer, Drive) et tu ne peux pas ajouter les photos de la pièce finie.
+
+### D2. Alerte de facturation Cloudflare (2 minutes)
+Pour être prévenu si un jour tu dépasses la partie gratuite (il n'y a pas de plafond de dépense chez Cloudflare) :
+1. dash.cloudflare.com → **Notifications** (menu du compte) → **Add** (Ajouter).
+2. Choisis **« Usage Based Billing »** (facturation à l'usage). Produit : **R2** (fais-en une pour « Storage » et une pour « Class A Operations » si on te propose de choisir), seuil : par ex. **5 Go** pour le stockage, **500 000** pour les opérations.
+3. Destinataire : contact@vgthmind.org → **Save**.
+4. En plus (bonne habitude) : **Manage Account → Billing** : vérifie de temps en temps « Usage » ; tant que c'est 0,00 $, tout va bien.
+Si les noms de menus ont changé, cherche « Notifications » puis « billing » : c'est le même réglage.
+
+### D3. Valider mes propositions
+- Les photos des cartes du parcours (liste dans le résumé de Claude) : tu peux les changer à tout moment dans Admin → Demandes → Réglages.
+- La section **5 bis** de `chantier/CGV-PROPOSITION.html` (passages surlignés en jaune).
+- Ensuite, test complet en mode test avec Claude : demande custom → devis → acompte (carte `4242 4242 4242 4242`, c'est toi qui la tapes) → photos → validation → solde → expédition.
+
+---
+
 ## A. Détourage depuis l'iPhone (tunnel Cloudflare)
 
 Testé de bout en bout sur ce PC : le tunnel démarre, le détourage aboutit par l'adresse Cloudflare avec le mot de passe, et il est refusé sans le mot de passe.

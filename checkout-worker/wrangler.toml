@@ -22,6 +22,8 @@ MAIL_FROM = "vgthmind <commande@vgthmind.org>"
 # Adresse de l'émetteur imprimée sur les factures (vide = seulement « vgthmind, Vitry-sur-Seine »). À remplir par vgthmind.
 INVOICE_SELLER_ADDRESS = ""
 GITHUB_CLIENT_ID = "Ov23liAh57fi8Xa7RNNg"
+# Adresse publique de ce Worker (photos de la pièce finie dans les mails « valide ta pièce »).
+WORKER_BASE = "https://vgthmind-shop-checkout.vgthm66.workers.dev"
 
 # Commandes expediees, sauvegardes du stock, etats OAuth (identifiant de
 # stockage, pas un secret).
@@ -38,6 +40,19 @@ class_name = "StockDO"
 name = "TRAFFIC"
 class_name = "TrafficDO"
 
+# Pièces sur demande : demandes, statuts, devis, réglages (prix « à partir de », acompte, délais).
+[[durable_objects.bindings]]
+name = "REQUESTS"
+class_name = "RequestsDO"
+
+# Fichiers joints des demandes (photos / vidéos du client, photos de la pièce finie, photos des cartes).
+# Bucket privé, juridiction Union européenne (créé par vgthmind le 2026-10-12). Sans lui, le formulaire
+# propose seulement un lien (WeTransfer, Drive…).
+[[r2_buckets]]
+binding = "FILES"
+bucket_name = "vgthmind-demandes"
+jurisdiction = "eu"
+
 [[migrations]]
 tag = "v1"
 new_sqlite_classes = ["StockDO"]
@@ -46,6 +61,11 @@ new_sqlite_classes = ["StockDO"]
 tag = "v2"
 new_sqlite_classes = ["TrafficDO"]
 
-# Sauvegarde du stock chaque jour a 03:30 UTC (KV backup:<date>, 180 jours).
+[[migrations]]
+tag = "v3"
+new_sqlite_classes = ["RequestsDO"]
+
+# Sauvegarde du stock chaque jour a 03:30 UTC (KV backup:<date>, 180 jours) ;
+# toutes les heures (:15) : relances, alertes et durées de conservation des demandes.
 [triggers]
-crons = ["30 3 * * *"]
+crons = ["30 3 * * *", "15 * * * *"]

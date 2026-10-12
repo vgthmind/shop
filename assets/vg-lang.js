@@ -24,10 +24,11 @@
     'Home': 'Accueil', 'Products': 'Boutique', 'Latest Drop': 'Nouveautés', 'All': 'Tout', 'Tops': 'Hauts', 'Pants/Shorts': 'Pantalons/Shorts',
     'Accessories': 'Accessoires', 'Info & Terms': 'Infos & conditions', 'Track my order': 'Suivre ma commande', 'Cart': 'Panier', 'Cart (': 'Panier (',
     'Add to cart': 'Ajouter au panier', 'Sold out': 'Vendu', 'Sold Out': 'Vendu', 'Your cart is empty': 'Ton panier est vide', 'Search': 'Rechercher',
-    'Unique piece': 'Pièce unique', 'UNIQUE PIECE': 'PIÈCE UNIQUE', 'Menu': 'Menu', 'Shop': 'Boutique'
+    'Unique piece': 'Pièce unique', 'UNIQUE PIECE': 'PIÈCE UNIQUE', 'Menu': 'Menu', 'Shop': 'Boutique',
+    'Start a project': 'Proposer un projet', 'My request': 'Ma demande'
   };
   var EN = { 'Mentions légales': 'Legal notice', 'Confidentialité': 'Privacy', 'Produits': 'Products', 'PRODUITS': 'PRODUCTS' };
-  var SELECTORS = 'nav.sections a, #navigation-modal a, .navigation-modal a, footer a, .welcome_button, .add-to-cart-button, .product-status, .product-list-thumb-status, .unique-badge, .alert-message__text, .vg-back-link, .vg-cart-btn, h1.page-title, .featured-title, .cart-header h1, .page_list a';
+  var SELECTORS = 'nav.sections a, #navigation-modal a, .navigation-modal a, footer a, .welcome_button, .add-to-cart-button, .product-status, .product-list-thumb-status, .unique-badge, .alert-message__text, .vg-back-link, .vg-cart-btn, h1.page-title, body.custom h1, .featured-title, .cart-header h1, .page_list a';
 
   function textNodes(el) {
     var out = [], w = document.createTreeWalker(el, NodeFilter.SHOW_TEXT, null);
@@ -108,6 +109,8 @@
     // Pages dont le contenu est écrit par JavaScript (panier, merci, suivi) : on recharge pour tout retraduire.
     if (document.querySelector('.cart-wrapper, [data-vg-track], #vg-order-result, .vg-order-result')) { location.reload(); return; }
     apply();
+    // Pages qui se retraduisent seules sans perdre la saisie (parcours « Proposer un projet », « Ma demande »).
+    try { document.dispatchEvent(new CustomEvent('vg:lang', { detail: l })); } catch (e) {}
   }
   function addButton() {
     var ul = document.querySelector('nav.utility ul');

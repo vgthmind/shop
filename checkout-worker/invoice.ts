@@ -17,6 +17,8 @@ export interface Invoice {
   total: number;
   vat: string;
   ref: string;
+  // Pièce sur demande : titre (« Facture d’acompte »), acompte déduit du solde, mentions.
+  title?: string; titleEn?: string; kind?: string; deductions?: { label: string; amount: number }[]; notes?: string[];
 }
 
 export const SELLER = { name: 'vgthmind', city: 'Vitry-sur-Seine, France', siret: '952 025 369 00028', email: 'contact@vgthmind.org' };
@@ -28,7 +30,7 @@ export function parisYear(unixSeconds: number): number {
 
 export function buildInvoice(s: any, lines: InvoiceLine[], opts: { number: string; ref: string; sellerAddress?: string }): Invoice {
   const ship = (s.collected_information && s.collected_information.shipping_details) || s.shipping_details || {};
-  const a = ship.address || {};
+  const a = ship.address || s.customer_details?.address || {}; // acompte : pas de livraison, adresse de facturation
   const addr = [a.line1, a.line2, [a.postal_code, a.city].filter(Boolean).join(' '), a.state].filter(Boolean);
   return {
     number: opts.number,

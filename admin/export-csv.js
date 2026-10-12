@@ -51,7 +51,8 @@
     var shipping = round2(o.shipping), total = round2(o.total);
     return {
       date: ('0' + t.d).slice(-2) + '/' + ('0' + t.m).slice(-2) + '/' + t.y,
-      ref: o.ref || '', designation: designation, nature: 'Vente de marchandises', method: 'Carte bancaire (Stripe)',
+      ref: (o.ref || '') + (o.request ? ' / ' + o.request : ''), designation: designation, // pièce sur demande : + numéro de demande D-…
+      nature: o.kind === 'deposit' ? 'Vente de marchandises (acompte)' : o.kind === 'balance' ? 'Vente de marchandises (solde)' : 'Vente de marchandises', method: 'Carte bancaire (Stripe)',
       items: round2(total - shipping), shipping: shipping, discount: round2(o.discount), total: total, created: o.created,
     };
   }

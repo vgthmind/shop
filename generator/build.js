@@ -207,6 +207,8 @@ const CUSTOM_PAGES = [
   { name: 'Info & Terms', url: '/infos-conditions-generales', permalink: 'infos-conditions-generales' },
   { name: 'Contact', url: '/contact-914a3d', permalink: 'contact-914a3d' },
   { name: 'Studio', url: '/studio', permalink: 'studio' },
+  // Pièce sur demande / production / collab : parcours étape par étape (theme/pages/sur-demande.html + assets/vg-demande.js).
+  { name: 'Start a project', url: '/sur-demande', permalink: 'sur-demande' },
 ];
 // Pages legales : liens du pied de page uniquement (required_pages du gabarit),
 // pas dans le menu du haut.
@@ -221,6 +223,8 @@ const SHOP_PAGES = [
   { name: 'Payment cancelled / Paiement annulé', url: '/paiement-annule', permalink: 'paiement-annule' },
   // Suivi de commande (numero + e-mail) : lien discret du pied de page, jamais dans le sitemap, toujours noindex.
   { name: 'Track my order', url: '/suivi', permalink: 'suivi' },
+  // Page privée d'une demande (lien secret du mail : devis, acompte, validation sur photos, solde). Jamais indexée.
+  { name: 'My request', url: '/demande', permalink: 'demande' },
   // GitHub Pages sert 404.html pour toute adresse inconnue sous /shop/.
   { name: 'Page not found / Page introuvable', url: '/404', permalink: '404', out: '404.html' },
 ];
@@ -426,7 +430,7 @@ function injectAround(html, parts, product, relPath) {
   // structurées Product (prix, stock) pour Google. Rien sur les pages
   // techniques (merci, paiement-annule, 404, contact).
   let seoTags = '';
-  if (relPath && !/^(merci|paiement-annule|suivi|404|contact\/)/.test(relPath)) {
+  if (relPath && !/^(merci|paiement-annule|suivi|demande\/|404|contact\/)/.test(relPath)) {
     const escA = (v) => String(v || '').replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
     const pagePath = '/' + relPath.replace(/index\.html$/, '').replace(/\/$/, '');
     const url = SHOP_SETTINGS.site_url.replace(/\/$/, '') + (pagePath === '/' ? '/' : pagePath);
@@ -455,7 +459,7 @@ function injectAround(html, parts, product, relPath) {
     seoTags,
     // Prototype: hidden from search engines until data/shop-settings.json
     // says "public": true (launch day, see README).
-    SHOP_SETTINGS.public && !/^suivi\//.test(relPath || '') ? '' : '<meta name="robots" content="noindex, nofollow">',
+    SHOP_SETTINGS.public && !/^(suivi|demande)\//.test(relPath || '') ? '' : '<meta name="robots" content="noindex, nofollow">',
     // Stock réel lu au chargement (assets/vg-shop-cart.js) : « Add to cart »
     // masqué le temps de la réponse (2,6 s max, puis affiché quoi qu'il arrive).
     '<script>(function(d){d.classList.add("vg-stock-pending");setTimeout(function(){d.classList.remove("vg-stock-pending")},2600)})(document.documentElement)</script>'
@@ -655,9 +659,11 @@ async function main() {
   fs.copyFileSync(rel(ROOT, 'assets', 'vg-shipping-view.js'), rel(OUT_DIR, 'assets', 'vg-shipping-view.js'));
   fs.copyFileSync(rel(ROOT, 'assets', 'vg-shipping-picker.js'), rel(OUT_DIR, 'assets', 'vg-shipping-picker.js'));
   fs.copyFileSync(rel(ROOT, 'assets', 'vg-theme.js'), rel(OUT_DIR, 'assets', 'vg-theme.js'));
-  for (const f of ['vg-invoice.js', 'vg-traffic.js', 'vg-lang.js']) { if (fs.existsSync(rel(ROOT, 'assets', f))) fs.copyFileSync(rel(ROOT, 'assets', f), rel(OUT_DIR, 'assets', f)); }
+  for (const f of ['vg-invoice.js', 'vg-traffic.js', 'vg-lang.js', 'vg-demande.js', 'vg-ma-demande.js']) { if (fs.existsSync(rel(ROOT, 'assets', f))) fs.copyFileSync(rel(ROOT, 'assets', f), rel(OUT_DIR, 'assets', f)); }
   fs.cpSync(rel(ROOT, 'assets', 'vendor'), rel(OUT_DIR, 'assets', 'vendor'), { recursive: true });
   fs.cpSync(rel(ROOT, 'assets', 'fonts'), rel(OUT_DIR, 'assets', 'fonts'), { recursive: true });
+  // Photos des cartes du parcours « Proposer un projet » (WebP 400 / 800 px, tirées de la boutique et du portfolio).
+  if (fs.existsSync(rel(ROOT, 'assets', 'demande'))) fs.cpSync(rel(ROOT, 'assets', 'demande'), rel(OUT_DIR, 'assets', 'demande'), { recursive: true });
   const productImagesSrc = rel(ROOT, 'assets', 'products');
   if (fs.existsSync(productImagesSrc)) fs.cpSync(productImagesSrc, rel(OUT_DIR, 'assets', 'products'), { recursive: true });
   // Product photo widths (generator/resize-images.js), used by `constrain`.

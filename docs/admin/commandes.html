@@ -42,7 +42,7 @@
 </head>
 <body>
 <main>
-  <nav><a href="menu.html">← Tableau de bord</a> <a href="stock.html">Stock</a> <a href="export.html">Export compta</a></nav>
+  <nav><a href="menu.html">← Tableau de bord</a> <a href="stock.html">Stock</a> <a href="export.html">Export compta</a> <a href="demandes.html">Demandes</a></nav>
   <h1>Commandes</h1>
   <p class="muted">Paiements reçus via Stripe (100 derniers).</p>
 
@@ -154,6 +154,7 @@
     if (filter === 'stats') { drawStats(); return; }
     var needle = (($('q') && $('q').value) || '').trim().toLowerCase().replace(/^vg[\s-]*/, '');
     var list = orders.filter(function (o) {
+      if (o.kind === 'deposit') return false; // acompte d'une pièce sur demande : rien à expédier (onglet Demandes ; compté dans l'export compta)
       if (needle && [o.ref, o.name, o.email].join(' ').toLowerCase().replace(/vg-/g, '').indexOf(needle) === -1) return false;
       return filter === 'all' || needle || (filter === 'todo' ? !o.shipped : !!o.shipped);
     });

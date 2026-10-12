@@ -104,20 +104,20 @@ const T = {
   },
 };
 
-const FONT = "-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif";
-const INK = '#171717';
-const MUTED = '#6b6860';
-const LINE = '#e2ded3';
-const BG = '#f4f2ec';
+export const FONT = "-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif";
+export const INK = '#171717';
+export const MUTED = '#6b6860';
+export const LINE = '#e2ded3';
+export const BG = '#f4f2ec';
 
-const para = (s: string, extra = '') => `<p style="margin:0 0 14px;font:15px/1.55 ${FONT};color:${INK};${extra}">${s}</p>`;
-const heading = (s: string) => `<p style="margin:28px 0 10px;font:bold 12px ${FONT};letter-spacing:2px;text-transform:uppercase;color:${MUTED}">${esc(s)}</p>`;
-const link = (href: string, s: string) => `<a href="${esc(href)}" style="color:${INK};text-decoration:underline">${s}</a>`;
-const button = (href: string, label: string) =>
+export const para = (s: string, extra = '') => `<p style="margin:0 0 14px;font:15px/1.55 ${FONT};color:${INK};${extra}">${s}</p>`;
+export const heading = (s: string) => `<p style="margin:28px 0 10px;font:bold 12px ${FONT};letter-spacing:2px;text-transform:uppercase;color:${MUTED}">${esc(s)}</p>`;
+export const link = (href: string, s: string) => `<a href="${esc(href)}" style="color:${INK};text-decoration:underline">${s}</a>`;
+export const button = (href: string, label: string) =>
   `<table role="presentation" cellpadding="0" cellspacing="0" style="margin:6px 0 4px"><tr><td style="border-radius:999px;background:${INK}">`
   + `<a href="${esc(href)}" style="display:inline-block;padding:13px 26px;border-radius:999px;background:${INK};color:#ffffff;font:bold 14px ${FONT};text-decoration:none">${esc(label)}</a></td></tr></table>`;
 
-function shell(lang: string, title: string, inner: string) {
+export function shell(lang: string, title: string, inner: string) {
   return `<!doctype html><html lang="${lang}"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="light"><title>${esc(title)}</title></head>`
     + `<body style="margin:0;padding:0;background:${BG}"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:${BG}"><tr><td align="center" style="padding:20px 12px">`
     + `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:580px;background:#ffffff;border:1px solid ${LINE}">`

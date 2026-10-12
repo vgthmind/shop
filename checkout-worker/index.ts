@@ -36,6 +36,8 @@ import { handleContact } from './contact';
 import { trafficRoutes } from './traffic';
 import { buildInvoice, parisYear } from './invoice';
 export { TrafficDO } from './traffic';
+import { requestRoutes, requestsCron, onRequestPaid, onShipped, requestInvoiceParts, type ReqDeps } from './requests';
+export { RequestsDO } from './requests';
 import { customerEmail, sellerEmail, shippedEmail, REPLY_TO, langFor, countryName, type MailItem, type OrderData } from './emails';
 
 interface KV {
@@ -63,6 +65,9 @@ interface Env {
   STOCK: any; // DurableObjectNamespace<StockDO>
   TRAFFIC: any; // DurableObjectNamespace<TrafficDO>
   INVOICE_SELLER_ADDRESS?: string; // adresse de l'émetteur sur les factures (à remplir par vgthmind ; vide = non affichée)
+  REQUESTS?: any; // DurableObjectNamespace<RequestsDO> (pièces sur demande)
+  FILES?: any; // R2 : fichiers joints des demandes (absent tant que R2 n'est pas activé)
+  WORKER_BASE?: string; // adresse publique de ce Worker (liens des photos dans les mails)
 }
 
 interface ShippingLine { amount_alone: number; country?: { code: string } }
@@ -206,7 +211,7 @@ export default {
   async fetch(request: Request, env: Env, ctx: any): Promise<Response> {
     const cors = {
       'Access-Control-Allow-Origin': env.ALLOWED_ORIGIN,
-      'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+      'Access-Control-Allow-Methods': 'GET, POST, PUT, OPTIONS',
       'Access-Control-Allow-Headers': 'content-type, authorization',
       Vary: 'Origin',
     };
@@ -262,6 +267,7 @@ export default {
           return json({ ok: true, restored: await restoreOrders(env, body) });
         }
         const tr = await trafficRoutes(request, env, path, json); if (tr) return tr;
+        const ra = await requestRoutes(request, env, reqDeps(env), path, json, true); if (ra) return ra;
         if (path === '/admin/invoice' && request.method === 'GET') {
           const sk = stripeKey(env);
           if (!sk.ok) return json({ error: sk.error }, 503);
@@ -280,6 +286,9 @@ export default {
         const r = await handleContact(body, { kv: env.HOLDS, from: env.MAIL_FROM, ip: request.headers.get('CF-Connecting-IP') || 'x', send: (f, t, su, h, tx, rt) => resendSend(env, f, t, su, h, tx, rt) });
         return json(r.data, r.status);
       }
+
+      // Pièces sur demande (formulaire, page « Ma demande », acompte, validation, solde).
+      const rp = await requestRoutes(request, env, reqDeps(env), path, json, false); if (rp) return rp;
 
       // Avec cle Stripe.
       const key = stripeKey(env);
@@ -302,9 +311,13 @@ export default {
   },
 
   // Sauvegarde quotidienne du stock (cron dans wrangler.toml).
-  async scheduled(_event: any, env: Env, ctx: any) {
-    ctx.waitUntil(backupStock(env));
-    ctx.waitUntil(backupOrders(env));
+  // Toutes les heures : relances et conservation des demandes ; la nuit (03:30 UTC) : sauvegardes.
+  async scheduled(event: any, env: Env, ctx: any) {
+    if (!event || !event.cron || event.cron === '30 3 * * *') {
+      ctx.waitUntil(backupStock(env));
+      ctx.waitUntil(backupOrders(env));
+    }
+    ctx.waitUntil(requestsCron(env as any, reqDeps(env)).catch((e) => alertAdmin(env, 'req-cron', 'Cron des demandes en erreur', String(e && e.stack ? e.stack : e))));
   },
 };
 
@@ -598,6 +611,12 @@ async function webhook(request: Request, env: Env, json: JsonFn): Promise<Respon
 // vienne du webhook ou de la page Merci).
 async function processPaid(env: Env, s: any) {
   const meta = s.metadata || {};
+  // Pièce sur demande : l'acompte n'est pas une commande (rien à expédier) ; le solde suit le circuit normal ci-dessous.
+  if (meta.kind === 'deposit' || meta.kind === 'balance') await onRequestPaid(env as any, reqDeps(env), s, (env.WORKER_BASE || '').replace(/\/$/, ''));
+  if (meta.kind === 'deposit') {
+    if (s.livemode) await stockStub(env).invoiceNumber(s.id, parisYear(s.created || Math.floor(Date.now() / 1000))).catch(() => {});
+    return;
+  }
   const items: Item[] = meta.items
     ? String(meta.items).split(',').filter(Boolean).map((x: string) => {
       const [slug, q] = x.split(':');
@@ -855,6 +874,8 @@ async function listOrders(request: Request, env: Env, key: string, json: JsonFn)
     orders.push({
       id: s.id,
       ref,
+      kind: s.metadata?.kind || 'order', // 'deposit' = acompte d'une demande (rien à expédier, mais compté dans l'export compta)
+      request: s.metadata?.request || '',
       created: s.created,
       livemode: !!s.livemode,
       total: s.amount_total / 100,
@@ -883,6 +904,7 @@ async function markShipped(request: Request, env: Env, json: JsonFn): Promise<Re
   }
   const value = { at: Math.floor(Date.now() / 1000), tracking: String(body.tracking || '').trim().slice(0, 100) };
   await env.HOLDS.put('shipped:' + body.id, JSON.stringify(value));
+  await onShipped(env as any, reqDeps(env), body.id, value.tracking, new URL(request.url).origin).catch(() => {});
   return json({ ok: true, shipped: value });
 }
 
@@ -1014,18 +1036,51 @@ async function sendShippedMail(request: Request, env: Env, key: string, json: Js
 
 // Facture d'une commande payée (client via /invoice avec numéro + e-mail, admin via /admin/invoice).
 async function invoiceFor(env: Env, key: string, sessionId: string, json: JsonFn, loaded?: any): Promise<Response> {
-  if (!isSessionId(sessionId)) return json({ error: 'Identifiant invalide.' }, 400);
+  const r = await invoiceData(env, key, sessionId, loaded);
+  return r.ok ? json({ ok: true, invoice: r.invoice }) : json({ error: r.error }, r.status || 400);
+}
+
+// Facture d'un paiement : commande, acompte d'une demande (« Facture d'acompte ») ou solde (prix total − acompte).
+// Numéro W-AAAA-NNN unique et suivi pour tous les paiements réels (même compteur).
+async function invoiceData(env: Env, key: string, sessionId: string, loaded?: any): Promise<{ ok: boolean; invoice?: any; error?: string; status?: number }> {
+  if (!isSessionId(sessionId)) return { ok: false, error: 'Identifiant invalide.', status: 400 };
   let s = loaded;
   if (!s) {
     const full = await stripeCall(key, 'GET', `/v1/checkout/sessions/${sessionId}?${SESSION_EXPAND}`);
-    if (!full.ok) return json({ error: full.data.error?.message || 'Erreur Stripe' }, 502);
+    if (!full.ok) return { ok: false, error: full.data.error?.message || 'Erreur Stripe', status: 502 };
     s = full.data;
   }
-  if (s.payment_status !== 'paid') return json({ error: 'Commande non payée.' }, 400);
+  if (s.payment_status !== 'paid') return { ok: false, error: 'Commande non payée.', status: 400 };
+  const kind = s.metadata?.kind;
+  const seller = { sellerAddress: (env.INVOICE_SELLER_ADDRESS || '').trim() };
+  const num = async (id: string, created: number, testRef: string) => (s.livemode ? await stockStub(env).invoiceNumber(id, parisYear(created)) : 'TEST-' + testRef);
+  if (kind === 'deposit' || kind === 'balance') {
+    const req = String(s.metadata.request || '');
+    const ref = kind === 'deposit' ? req : await assignRef(env, sessionId);
+    const number = await num(sessionId, s.created, kind === 'deposit' ? req + '-A' : ref);
+    const depNumber = kind === 'balance' ? String(s.metadata.deposit_invoice || '') || (s.livemode && isSessionId(String(s.metadata.deposit_session || '')) ? await stockStub(env).invoiceNumber(s.metadata.deposit_session, parisYear(Number(s.metadata.deposit_date) || s.created)) : 'TEST-' + req + '-A') : '';
+    const parts = requestInvoiceParts(s, depNumber);
+    const inv: any = buildInvoice(s, parts.lines as any, { number, ref, ...seller });
+    inv.title = parts.title; inv.titleEn = parts.titleEn; inv.deductions = parts.deductions; inv.notes = parts.notes; inv.kind = kind;
+    return { ok: true, invoice: inv };
+  }
   const ref = await assignRef(env, sessionId);
-  const number = s.livemode ? await stockStub(env).invoiceNumber(sessionId, parisYear(s.created)) : 'TEST-' + ref;
+  const number = await num(sessionId, s.created, ref);
   const lines = (await mailItems(env, s.line_items?.data || [], (c) => String(c / 100))).map((i) => ({ name: i.name, size: i.size, qty: i.qty || 1, unit: i.unit ? Number(i.unit) : 0, amount: Number(i.amount) }));
-  return json({ ok: true, invoice: buildInvoice(s, lines as any, { number, ref, sellerAddress: (env.INVOICE_SELLER_ADDRESS || '').trim() }) });
+  return { ok: true, invoice: buildInvoice(s, lines as any, { number, ref, ...seller }) };
+}
+
+// Dépendances du module « pièces sur demande » (requests.ts), pour éviter les imports croisés.
+function reqDeps(env: Env): ReqDeps {
+  return {
+    stripeKey: () => { const k = stripeKey(env); return k.ok ? k.value : null; },
+    stripe: stripeCall,
+    send: (f, t, su, h, tx, rt) => resendSend(env, f, t, su, h, tx, rt),
+    alert: (k, su, d) => alertAdmin(env, k, su, d),
+    shipping: (product, country) => checkoutShipping(env as any, [product], new Map([[product.permalink, 1]]), country === 'FR' ? 'fr' : 'intl', country),
+    invoice: async (sessionId) => { const k = stripeKey(env); return k.ok ? invoiceData(env, k.value, sessionId) : { ok: false, error: k.error, status: 503 }; },
+    catalog: () => loadCatalog(env),
+  };
 }
 
 // Limite d'appels : max appels par fenêtre (secondes) pour une clé. Renvoie false quand la limite est atteinte.
