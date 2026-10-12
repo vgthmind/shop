@@ -30,7 +30,7 @@ Le tableau de bord de l'admin a déjà le lien direct vers ta **Comptabilité** 
 
 ## 8. Relire les textes (10–20 min, à ton rythme)
 - `chantier/CGV-A-VERIFIER.md` (médiateur, délai de rétractation, pays livrés) et `chantier/CGV-PROPOSITION.html` (surligné jaune = à remplir ; section 5 bis « sur demande »).
-- **TVA** : le site dit « art. L. 223-3 du CIBS » dans les mentions légales, mais les factures disent encore « art. 293 B du CGI ». À harmoniser avec ton comptable (je ne tranche pas un texte juridique).
+- **TVA** : décidé, « TVA non applicable, article 293 B du CGI » partout (mentions légales, factures). Rien à faire avant 2027.
 - Page Confidentialité (durée de conservation des messages : 12 mois, choix de ma part).
 - **Adresse de l'émetteur sur les factures** : une facture française porte normalement le nom et l'adresse du vendeur. Pour l'instant : « vgthmind, Vitry-sur-Seine, SIRET ». Si tu veux ajouter l'adresse : dis-le-moi.
 - Nouveau texte (livraison) : « Livraison via La Poste (Colissimo, ou lettre suivie pour les petites pièces en France) ».

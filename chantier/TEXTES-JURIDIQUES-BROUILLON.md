@@ -33,19 +33,13 @@ Je ne choisis rien : chaque point a plusieurs options, avec ce que ça implique.
 - **Point à décider** : qui paie le retour (la loi permet de le mettre à la charge du client à condition de l'écrire avant l'achat : c'est ce que dit le texte ci-dessus ; alternative : tu le paies, geste commercial).
 - Le brouillon `chantier/CGV-PROPOSITION.html` cite encore l'ancien Gmail pour la rétractation : à remplacer par contact@vgthmind.org.
 
-## 3. Mention TVA : « art. 293 B du CGI » ou « art. L. 223-3 du CIBS » ?
-**Constat** : ton site est incohérent aujourd'hui. Mentions légales : « TVA non applicable, art. L. 223-3 du CIBS ». Factures du site : « TVA non applicable, art. 293 B du CGI ». Ton Facturier (outil séparé) utilise lui aussi le CGI à ce jour. Le CIBS (Code des impositions sur les biens et services) a vocation à remplacer le CGI pour la TVA ; **la date et la numérotation exactes sont à confirmer par ton comptable ou impots.gouv.fr**, je n'ai pas pu les vérifier ici.
-
-**Options** :
-- **A. Tout en « 293 B du CGI »** (mentions légales, CGV, factures, Facturier). Le plus répandu aujourd'hui sur les factures de micro-entrepreneurs ; risque : devenir obsolète quand la référence au CIBS sera obligatoire.
-- **B. Tout en « L. 223-3 du CIBS »** (changer les factures du site : une ligne dans `checkout-worker/invoice.ts`, et ton Facturier).
-- **C. Mention neutre sans article** : « TVA non applicable (franchise en base) ». Moins précis ; certains trouvent que l'article doit être cité.
-- Dans tous les cas, **cohérence** entre site et factures, et vérifier que tu restes sous les seuils de la franchise en base (le dépassement fait basculer en TVA).
-
-**Textes** :
-- FR A : « TVA non applicable, art. 293 B du CGI. » — FR B : « TVA non applicable, art. L. 223-3 du CIBS. » — FR C : « TVA non applicable (franchise en base). »
-- EN A : « VAT not applicable, art. 293 B of the French Tax Code (CGI). » — EN B : « VAT not applicable, art. L. 223-3 of the CIBS. » — EN C : « VAT not applicable (small-business exemption). »
-- Quand tu choisis, je modifie en une fois : `theme/pages/mentions-legales.html`, `checkout-worker/invoice.ts` (VAT_MENTION) et les CGV.
+## 3. Mention TVA : décidée (293 B du CGI)
+**Décision de vgthmind** : partout « **TVA non applicable, article 293 B du CGI** » ; la recodification dans le CIBS (Code des impositions sur les biens et services) est reportée au 1er janvier 2027.
+- FR : « TVA non applicable, article 293 B du CGI. »
+- EN : « VAT not applicable, article 293 B of the French Tax Code (CGI). »
+- Mentions légales (FR et EN) : mis à jour dans `theme/pages/mentions-legales.html`. Factures du site : déjà identiques (`checkout-worker/invoice.ts`, `VAT_MENTION`). Ton Facturier : déjà en 293 B.
+- À reprendre courant 2027, quand la mention CIBS deviendra la bonne : changer ces trois endroits en une fois.
+- Reste à toi : vérifier que tu restes sous les seuils de la franchise en base.
 
 ## 4. Autres points à relire (déjà dans CGV-A-VERIFIER.md)
 Délais d'envoi, pays livrés, droit applicable, langue qui fait foi, conditions de location/collab. Rien n'est écrit : dis-moi tes choix.

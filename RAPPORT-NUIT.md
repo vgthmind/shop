@@ -38,7 +38,7 @@ Déjà là et gardé (vérifié, ouvert sur iPhone sans erreur ni débordement) 
 ## 6. Pas pu faire seul / pourquoi
 - **Paiement réel Stripe (test 4242, live)** : il faut ta carte et tes secrets, et je ne peux pas atteindre Stripe d'ici.
 - **Compta, drops 18 h, Stripe live** : il me manque tes secrets (la liste exacte et les clics sont dans A-FAIRE.md ; tout le code est prêt).
-- **Texte juridique** : TVA (CIBS / 293 B), médiateur, adresse de l'émetteur sur les factures, adresse de retour : décisions à toi (je n'ai rien inventé).
+- **Texte juridique** : médiateur, adresse de l'émetteur sur les factures, adresse de retour : décisions à toi (je n'ai rien inventé).
 - **Tarif lettre suivie à l'international** : la lettre suivie reste proposée en France seulement (réglage « pays acceptés » de l'admin Expédition) ; Colissimo couvre tous les pays.
 - **Serveur de détourage hébergé (Hugging Face)** : abandonné comme demandé, rien n'en a été poussé ; le détourage reste sur PC + tunnel iPhone.
 - Une branche de plus (`bascule-prete`) et celle de la nuit peuvent générer des « aperçus » Cloudflare Pages (adresses de test non publiques) : sans conséquence.
@@ -57,3 +57,5 @@ Rapport de la nuit précédente : `rapports-nuit/2026-10-12-au-13.md`.
 - **Checklist** des deux tests (paiement 4242, éditeur « Modifier une fiche » sur iPhone) : `chantier/CHECKLIST-TESTS.md`.
 - **Détourage** : `onnxruntime-node` installé (1er essai en échec à cause du téléchargement d'une option GPU inutile, 2e essai avec `--ignore-scripts` réussi) : **les 9 tests du détourage passent** (dossier `node_modules` non versionné, lockfile remis tel quel). Rien du détourage n'a été modifié.
 - Tout est sur la branche de la nuit ; `bascule-prete` n'est pas touchée (elle recevra ce complément à la fusion). Rien en ligne, rien fusionné.
+
+- **TVA tranchée** : « TVA non applicable, article 293 B du CGI » partout (mentions légales FR/EN mises à jour sur la branche, factures déjà identiques) ; CIBS reporté au 1er janvier 2027. Rien en ligne.
