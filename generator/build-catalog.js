@@ -69,7 +69,7 @@ function buildProduct(admin, imageMap) {
   const realCats = admin.categories || [];
   // hidden: true = page + paiement OK, mais ni liste, ni categorie, ni sitemap
   // (produit test du passage en live).
-  if (realCats.length === 0 && admin.hidden !== true) throw new Error(`Produit "${admin.name}": aucune categorie (data/products/${admin.slug}.json)`);
+  if (realCats.length === 0 && admin.hidden !== true && admin.draft !== true) throw new Error(`Produit "${admin.name}": aucune categorie (data/products/${admin.slug}.json)`);
   for (const perm of realCats) {
     if (!byPermalink.has(perm)) throw new Error(`Produit "${admin.name}": categorie "${perm}" inconnue (voir data/categories.json)`);
   }
@@ -80,8 +80,8 @@ function buildProduct(admin, imageMap) {
     imageMap[url] = url; // identity: already-local paths, see generator/filters.js productImageUrl()
     return Object.assign({ url }, dims);
   });
-  const categories = admin.hidden === true ? [] : [...realCats.map((perm) => byPermalink.get(perm)), ALL];
-  if (admin.latest_drop && admin.hidden !== true)categories.push(LATEST_DROP);
+  const categories = admin.hidden === true || admin.draft === true ? [] : [...realCats.map((perm) => byPermalink.get(perm)), ALL];
+  if (admin.latest_drop && admin.hidden !== true && admin.draft !== true)categories.push(LATEST_DROP);
 
   // quantity = STARTING stock only (1 = one-of-a-kind, the default). The real
   // stock lives in the checkout Worker (Durable Object): sales count it down
@@ -89,7 +89,9 @@ function buildProduct(admin, imageMap) {
   // available; assets/vg-shop-cart.js marks "Sold out" from the Worker's
   // /stock, and the checkout refuses a piece with no stock left - so if the
   // Worker is down, pieces still show and the payment stays the final check.
-  const quantity = Number.isInteger(admin.quantity) && admin.quantity >= 0
+  // draft (brouillon, page Catalogue) : page visible par son lien pour l'aperçu,
+  // absente des listes (hidden) et jamais achetable (stock de départ 0).
+  const quantity = admin.draft === true ? 0 : Number.isInteger(admin.quantity) && admin.quantity >= 0
     ? admin.quantity
     : (admin.in_stock === false ? 0 : 1);
   const inStock = true;
@@ -125,7 +127,8 @@ function buildProduct(admin, imageMap) {
     }],
     artists: [],
     categories,
-    ...(admin.hidden === true ? { hidden: true } : {}),
+    ...(admin.hidden === true || admin.draft === true ? { hidden: true } : {}),
+    ...(admin.draft === true ? { draft: true } : {}),
     option_groups: [],
     // ships_intl:false = France only (no "everywhere else" line, as on
     // BigCartel for SC_0008/SC_0009): the cart and the checkout Worker
