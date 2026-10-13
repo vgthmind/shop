@@ -133,6 +133,57 @@ test('formulaire : prénom ET nom obligatoires, date souhaitée selon le délai 
   assert.deepEqual(pub.leadWeeks, { location: { min: 2, max: 2 }, custom: { min: 2, max: 3 }, surmesure: { min: 3, max: 4 } });
 });
 
+test('mesures par catégorie : sur-mesure obligatoire (sauf « je ne sais pas » ou « en parler »), custom facultatif, lignes ⚠ à redemander', async () => {
+  const SM = { ...FORM, type: 'surmesure', piece: 'pantalon', mcat: 'bas', mv: { height: '178', usual: 'M', waist: '80', hips: '98', inseam: '80', floor: '104' } };
+  const noWaist = await submit({ ...SM, mv: { ...SM.mv, waist: '' } });
+  assert.deepEqual(noWaist.fields, ['measures'], 'une mesure manque');
+  const bad = await submit({ ...SM, mv: { ...SM.mv, hips: 'grand' } });
+  assert.deepEqual(bad.fields, ['measures'], 'valeur non numérique');
+  const full = await submit({ ...SM, mapprox: true, mother: 'Taille haute' });
+  assert.equal(full.ok, true);
+  const rec = await getReq(full.id) || (await call('/requests/confirm', { id: full.id, k: full.k }), await getReq(full.id));
+  assert.match(rec.fields.measures, /Catégorie : Pantalon \/ short/);
+  assert.match(rec.fields.measures, /^⚠ Mesures approximatives$/m);
+  assert.match(rec.fields.measures, /Tour de bassin : 98 cm/);
+  assert.match(rec.fields.measures, /Autre précision : Taille haute/);
+  const unk = await submit({ ...SM, mv: { ...SM.mv, inseam: '' }, mu: { inseam: true } });
+  assert.equal(unk.ok, true);
+  const r2 = await getReq(unk.id) || (await call('/requests/confirm', { id: unk.id, k: unk.k }), await getReq(unk.id));
+  assert.match(r2.fields.measures, /^⚠ Longueur d’entrejambe : je ne sais pas$/m);
+  const optOnly = await submit({ ...SM, mv: { ...SM.mv, thigh: 'beaucoup' } });
+  assert.deepEqual(optOnly.fields, ['measures'], 'une mesure « si tu peux » remplie doit rester un nombre');
+  const talk = await submit({ ...SM, mv: {}, mtalk: true });
+  assert.equal(talk.ok, true, 'je préfère en parler : jamais bloquant');
+  const noCat = await submit({ ...SM, mcat: '', mv: {} });
+  assert.deepEqual(noCat.fields, ['measures']);
+});
+
+test('mesures par catégorie : custom facultatif, jamais de « je ne sais pas »', async () => {
+  const custom = await submit({ ...FORM, mcat: 'haut', mv: { chest: '95' } });
+  assert.equal(custom.ok, true, 'custom : le reste est facultatif');
+  const rc = await getReq(custom.id) || (await call('/requests/confirm', { id: custom.id, k: custom.k }), await getReq(custom.id));
+  assert.match(rc.fields.measures, /Tour de poitrine : 95 cm/);
+  assert.doesNotMatch(rc.fields.measures, /Carrure/);
+  const customUnk = await submit({ ...FORM, mcat: 'haut', mv: {}, mu: { chest: true } });
+  assert.equal((await getReq(customUnk.id) || (await call('/requests/confirm', { id: customUnk.id, k: customUnk.k }), await getReq(customUnk.id))).fields.measures.includes('je ne sais pas'), false, 'custom : pas de « je ne sais pas »');
+});
+
+test('mesures : cache-cou et accessoire sans taille ni taille portée ; accessoire = largeur et hauteur séparées', async () => {
+  const cou = await submit({ ...FORM, type: 'surmesure', piece: 'haut', mcat: 'cou', mv: { head: '57', neck: '38' } });
+  assert.equal(cou.ok, true, 'cache-cou : pas de taille demandée');
+  const rc = await getReq(cou.id) || (await call('/requests/confirm', { id: cou.id, k: cou.k }), await getReq(cou.id));
+  assert.doesNotMatch(rc.fields.measures, /Taille/);
+  assert.match(rc.fields.measures, /Tour d’encolure : 38 cm/);
+  assert.doesNotMatch(rc.fields.measures, /Hauteur/, 'les « si tu peux » vides ne sont pas écrites');
+  const accBad = await submit({ ...FORM, type: 'surmesure', piece: 'haut', mcat: 'acc', mv: { aw: '20' } });
+  assert.deepEqual(accBad.fields, ['measures'], 'la hauteur manque');
+  const acc = await submit({ ...FORM, type: 'surmesure', piece: 'haut', mcat: 'acc', mv: { aw: '20', ah: '12' } });
+  assert.equal(acc.ok, true);
+  const ra = await getReq(acc.id) || (await call('/requests/confirm', { id: acc.id, k: acc.k }), await getReq(acc.id));
+  assert.match(ra.fields.measures, /Largeur : 20 cm/);
+  assert.match(ra.fields.measures, /Hauteur : 12 cm/);
+});
+
 test('formulaire : robots ignorés, champs obligatoires par branche, champs d’une autre branche jetés', async () => {
   const bot = await submit({ ...FORM, website: 'spam' });
   assert.equal(bot.ok, true);

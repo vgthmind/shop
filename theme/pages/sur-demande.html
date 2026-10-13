@@ -51,6 +51,42 @@
 .vgd-check{display:flex;gap:10px;align-items:flex-start;font-size:15px;line-height:1.4;cursor:pointer}
 .vgd-check input{width:22px;height:22px;flex:none;margin:1px 0 0;accent-color:#171717}
 .vgd-note{border-left:2px solid var(--ink);padding:4px 0 4px 12px;color:#333;font-size:14px;margin:4px 0}
+.vgd-link{background:none;border:0;padding:6px 0;font:inherit;font-size:14px;color:var(--muted);text-decoration:underline;cursor:pointer}
+.vgd-recap dd{white-space:pre-line}
+.vgm-guide{position:sticky;top:8px;z-index:4;background:#faf8f3;border:1px solid var(--line);border-radius:12px;padding:10px 8px 4px}
+.vgm-svg{display:block;width:100%;height:auto;max-width:520px;max-height:34vh;margin:0 auto;overflow:visible}
+.vgm-svg .ol{fill:none;stroke:#171717;stroke-width:1.2;stroke-linecap:round;stroke-linejoin:round}
+.vgm-svg .ol2{fill:none;stroke:#171717;stroke-width:.5;stroke-opacity:.5;stroke-linecap:round}
+.vgm-svg .ht{fill:url(#vgm-hatch);stroke:none;opacity:.9}
+.vgm-svg .pencil{filter:url(#vgm-pencil)}
+.vgm-svg .pencil.s{filter:url(#vgm-pencil-s)}
+.vgm-svg .s path{vector-effect:non-scaling-stroke}
+.vgm-svg .lt{fill:none;stroke:#171717;stroke-opacity:.38;stroke-width:.8;stroke-linecap:round}
+.vgm-svg .gd{fill:none;stroke:#171717;stroke-opacity:.35;stroke-width:.9;stroke-dasharray:2 3}
+.vgm-svg .s{vector-effect:non-scaling-stroke}
+.vgm-svg .vt{font:500 10px 'IBM Plex Mono',monospace;letter-spacing:.12em;text-transform:uppercase;fill:#6b6860;text-anchor:middle}
+.vgm-svg .m .ln{fill:none;stroke:#171717;stroke-width:1.2;stroke-dasharray:3 3}
+.vgm-svg .m .ar{stroke:#171717;stroke-width:1.2;fill:none}
+.vgm-svg .m .hz{fill:none;stroke:#b9bcc4;stroke-width:9;stroke-linecap:round;opacity:0;filter:url(#vgm-halo);transition:opacity .2s}
+.vgm-svg .m .hzf{fill:#c3c6cd;stroke:none}
+.vgm-svg .bd .b{fill:#faf8f3;stroke:#171717;stroke-width:1.2}
+.vgm-svg .bd text{font:600 11px 'IBM Plex Mono',monospace;fill:#171717;text-anchor:middle}
+.vgm-svg .m.on .hz{opacity:.95}
+.vgm-svg .m.on .ln{stroke-width:2.1;stroke-dasharray:none}
+.vgm-svg .m.on .ar{stroke-width:2.1}
+.vgm-svg .m.on .bd .b{fill:url(#vgm-chrome);stroke-width:1.8}
+.vgm-rows{display:flex;flex-direction:column;gap:10px}
+.vgm-sub{margin:6px 0 -4px;font:500 11px 'IBM Plex Mono',monospace;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+.vgm-row{padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:#fff;transition:border-color .15s,box-shadow .15s}
+.vgm-row.on{border-color:var(--ink);box-shadow:0 0 0 1px var(--ink),0 0 14px rgba(185,188,196,.85)}
+.vgm-row label{display:flex;align-items:center;gap:8px}
+.vgm-n{display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;border-radius:50%;border:1px solid var(--ink);font:600 11px 'IBM Plex Mono',monospace;letter-spacing:0;flex:none}
+.vgm-row.on .vgm-n{background:linear-gradient(180deg,#fbfbfc 0%,#cfd1d6 48%,#ececef 100%);border-width:1.6px}
+.vgm-in{display:flex;gap:8px;align-items:stretch}
+.vgm-in input{flex:1 1 auto;min-width:0}
+.vgm-dk{flex:none;min-height:44px;padding:0 12px;border-radius:8px;border:1px solid var(--line);background:#fff;color:var(--muted);font:inherit;font-size:13px;cursor:pointer}
+.vgm-dk[aria-pressed="true"]{background:var(--ink);color:#fff;border-color:var(--ink)}
+.vgm-row.unk input{background:#f4f2ec;color:var(--muted)}
 .vgd-nav{display:flex;gap:10px;align-items:center;margin-top:26px;flex-wrap:wrap}
 .vgd-btn{min-height:46px;padding:12px 26px;border-radius:999px;border:1px solid var(--ink);background:var(--ink);color:#fff;font:inherit;font-weight:600;cursor:pointer;transition:transform .12s ease,opacity .15s ease}
 .vgd-btn:active{transform:scale(.97)}
@@ -77,4 +113,5 @@
 @media (max-width:520px){.vgd-cards{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.vgd-cards.big{grid-template-columns:1fr 1fr}.vgd-card .t{font-size:14px}.vgd-nav .vgd-btn{flex:1 1 auto}.vgd-recap dl{grid-template-columns:1fr}.vgd-recap dt{margin-top:6px}}
 @media (prefers-reduced-motion:reduce){.vgd-step,.vgd-card,.vgd-recap section,.vgd-card[aria-pressed="true"]::after{animation:none!important;opacity:1!important;transform:none!important}.vgd-card,.vgd-chip,.vgd-btn,.vgd-progress i{transition:none!important}}
 </style>
+<script src="/assets/vg-mesures.js" defer></script>
 <script src="/assets/vg-demande.js" defer></script>
