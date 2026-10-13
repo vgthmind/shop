@@ -9,22 +9,38 @@
   <meta name="theme-color" content="#171717">
   <title>Admin boutique vgthmind</title>
   <style>
-    :root { --bg: #f4f2ec; --ink: #171717; --muted: #6b6860; --line: rgba(0,0,0,.12); --card: rgba(255,255,255,.7); }
     * { box-sizing: border-box; }
     [hidden] { display: none !important; }
-    body { margin: 0; background: var(--bg); color: var(--ink); font: 16px/1.45 system-ui, -apple-system, "Segoe UI", sans-serif; }
-    main { max-width: 760px; margin: 0 auto; padding: 24px 16px 64px; }
-    h1 { font-size: 22px; letter-spacing: .04em; text-transform: uppercase; margin: 0 0 4px; }
-    h2 { font-size: 13px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); margin: 28px 0 8px; }
-    .muted { color: var(--muted); font-size: 14px; }
-    .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 10px; }
-    a.tile { display: block; min-height: 76px; padding: 14px 16px; background: var(--card); border: 1px solid var(--line); border-radius: 14px; color: var(--ink); text-decoration: none; }
-    a.tile:hover, a.tile:focus-visible { border-color: var(--ink); outline: none; }
-    a.tile strong { display: block; font-size: 16px; }
-    a.tile span { color: var(--muted); font-size: 13px; }
-    .badge { display: inline-block; min-width: 22px; padding: 1px 7px; margin-left: 6px; border-radius: 999px; background: #a23b2a; color: #fff; font-size: 13px; text-align: center; }
-    button { min-height: 44px; padding: 8px 16px; border-radius: 999px; border: 1px solid var(--ink); background: var(--ink); color: #fff; font: inherit; cursor: pointer; }
-    .box { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 12px 16px; margin-top: 18px; }
+    body { margin: 0; background: #f4f2ec; color: #171717; font: 16px/1.45 system-ui, -apple-system, "Segoe UI", sans-serif; -webkit-text-size-adjust: 100%; }
+    .today { list-style: none; margin: 0; padding: 0; }
+    .today li { border-top: 1px solid var(--line); }
+    .today li:first-child { border-top: 0; }
+    .today a { display: flex; align-items: center; gap: 12px; min-height: 48px; padding: 8px 0; color: var(--ink); text-decoration: none; }
+    .today a:hover b { text-decoration: underline; }
+    .today .n { min-width: 30px; text-align: center; }
+    .today .ok { color: var(--muted); padding: 12px 0; }
+    .big { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin: 14px 0 6px; }
+    .big .vg-btn { min-height: 64px; font-size: 13px; text-align: center; flex-direction: column; gap: 4px; }
+    .big small { font: 400 10px/1.2 var(--f-mono); letter-spacing: .04em; opacity: .75; text-transform: none; }
+    .kpis { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-top: 12px; }
+    .kpis b { display: block; font: 700 26px/1.1 var(--f-title); }
+    .kpis span { color: var(--muted); font-size: 13px; }
+    .cols { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 12px; }
+    .row { display: flex; justify-content: space-between; gap: 12px; padding: 7px 0; border-top: 1px solid var(--line); }
+    .row:first-of-type { border-top: 0; }
+    .row span:first-child { overflow-wrap: anywhere; }
+    .row .n2 { font-variant-numeric: tabular-nums; font-weight: 500; white-space: nowrap; }
+    #chart { width: 100%; height: 96px; display: block; }
+    .sec { font: 500 12px/1 var(--f-mono); letter-spacing: .08em; text-transform: uppercase; color: var(--muted); margin: 0 0 10px; }
+    .box { background: #fff; border: 1px solid var(--line); border-radius: 18px; padding: 12px 16px; margin-bottom: 12px; }
+    .box p { margin: 4px 0 8px; font-size: 14px; }
+    .head-links { display: flex; gap: 8px; flex-wrap: wrap; }
+    @media (max-width: 759px) {
+      .big { grid-template-columns: 1fr; }
+      .big .vg-btn { min-height: 56px; flex-direction: row; justify-content: space-between; }
+      .kpis { grid-template-columns: 1fr 1fr; }
+      .cols { grid-template-columns: 1fr; }
+    }
   </style>
 <link rel="icon" href="../assets/theme/admin/favicon.svg?v=3" type="image/svg+xml">
 <link rel="icon" href="../assets/theme/admin/favicon-32.png?v=3" type="image/png" sizes="32x32">
@@ -33,54 +49,71 @@
 <link rel="apple-touch-icon" sizes="180x180" href="../assets/theme/admin/apple-touch-icon.png?v=3">
 </head>
 <body>
-<main>
-  <h1>Admin boutique vgthmind</h1>
-  <p class="muted">Tout ce qu'il faut pour gérer la boutique. Tu es déconnecté automatiquement après 30 minutes sans rien faire.</p>
+<main class="vg-page">
+  <div class="vg-head">
+    <div><h1>Tableau de bord</h1><p class="vg-sub" id="day"></p></div>
+  </div>
 
   <div class="box" id="install" hidden>
     <strong>Installer l'admin comme une appli</strong>
-    <p class="muted" id="install-help"></p>
-    <button type="button" id="install-btn" hidden>Installer</button>
+    <p class="vg-muted" id="install-help"></p>
+    <button type="button" class="vg-btn" id="install-btn" hidden>Installer</button>
   </div>
 
-  <h2>Au quotidien</h2>
-  <div class="grid">
-    <a class="tile" href="commandes.html"><strong>Commandes <span class="badge" id="todo" hidden></span></strong><span>À expédier, suivi, bon de commande, facture</span></a>
-    <a class="tile" href="demandes.html"><strong>Demandes <span class="badge" id="reqs" hidden></span></strong><span>Pièces sur demande, productions, collabs : devis, acompte, validation</span></a>
-    <a class="tile" href="studio-photo.html"><strong>Nouvelle pièce</strong><span>Photos, détourage, fiche, mise en ligne</span></a>
-    <a class="tile" href="stock.html"><strong>Stock</strong><span>Quantités, sold out, sauvegardes</span></a>
-    <a class="tile" href="catalogue.html"><strong>Catalogue</strong><span>Ordre, copie, aperçu, archiver</span></a>
-    <a class="tile" href="promos.html"><strong>Codes promo</strong><span>Créer, limiter, désactiver un code</span></a>
+  <div class="box" id="login" hidden>
+    <p>Connecte-toi pour voir tes commandes et tes chiffres.</p>
+    <button type="button" class="vg-btn" id="login-btn">Se connecter avec GitHub</button>
+    <p class="vg-muted" id="login-msg" role="status"></p>
   </div>
 
-  <h2>Réglages et chiffres</h2>
-  <div class="grid">
-    <a class="tile" href="pieces.html"><strong>Poids et ports</strong><span>Poids emballé, mode d'envoi, ports calculés</span></a>
-    <a class="tile" href="expedition.html"><strong>Expédition</strong><span>Grille Colissimo, lettre suivie, pays</span></a>
-    <a class="tile" href="export.html"><strong>Export compta</strong><span>CSV par mois, trimestre ou année</span></a>
-    <a class="tile" href="ouverture.html"><strong>Vidéos d'ouverture</strong><span>Clips de l'écran « Enter » de l'accueil</span></a>
-    <a class="tile" href="etat.html"><strong>État du système</strong><span>Clés, mode test/live, stock, sauvegardes</span></a>
-    <a class="tile" href="trafic.html"><strong>Trafic</strong><span>Visiteurs, pages, provenance, en direct</span></a>
-    <a class="tile" href="index.html"><strong>Modifier une fiche</strong><span>Texte, prix, photos (éditeur complet)</span></a>
-  </div>
+  <div id="app" hidden>
+    <section class="vg-card" aria-labelledby="t-today">
+      <p class="sec" id="t-today">Aujourd'hui</p>
+      <ul class="today" id="today"><li class="ok">Chargement…</li></ul>
+      <div class="big">
+        <a class="vg-btn" href="studio-photo.html">+ Nouvelle pièce</a>
+        <a class="vg-btn ghost" href="#" aria-disabled="true" title="Arrive avec l'étape « Pièces »">Préparer un drop<small>bientôt</small></a>
+        <a class="vg-btn ghost" href="#" aria-disabled="true" title="Arrive avec l'étape « Pièces »">Pièce rapide (iPhone)<small>bientôt</small></a>
+      </div>
+    </section>
 
-  <h2>Mes autres outils</h2>
-  <div class="grid">
-    <a class="tile" href="https://outils-e073a53c.pages.dev/comptabilite" target="_blank" rel="noopener"><strong>Comptabilité</strong><span>Livre des recettes</span></a>
-    <a class="tile" href="https://outils-e073a53c.pages.dev/facturation" target="_blank" rel="noopener"><strong>Facturation</strong><span>Factures et devis</span></a>
-    <a class="tile" href="https://dashboard.stripe.com/" target="_blank" rel="noopener"><strong>Stripe</strong><span>Paiements, remboursements, codes promo</span></a>
-    <a class="tile" href="../" target="_blank" rel="noopener"><strong>Voir la boutique</strong><span>Le site tel que les clients le voient</span></a>
-    <a class="tile" href="aide.html"><strong>Mode d'emploi</strong><span>Pas à pas, et que faire en cas de souci</span></a>
+    <div class="kpis">
+      <div class="vg-card"><b id="k-ca">–</b><span>chiffre d'affaires, 30 jours</span></div>
+      <div class="vg-card"><b id="k-n">–</b><span>commandes, 30 jours</span></div>
+      <div class="vg-card"><b id="k-avg">–</b><span>panier moyen</span></div>
+      <div class="vg-card"><b id="k-vis">–</b><span>visiteurs, 7 jours</span></div>
+    </div>
+    <p class="vg-muted" id="k-note" style="margin:6px 4px 0;font-size:13px"></p>
+
+    <section class="vg-card" style="margin-top:12px">
+      <p class="sec">Visiteurs par jour (30 jours)</p>
+      <svg id="chart" viewBox="0 0 300 90" preserveAspectRatio="none" role="img" aria-label="Visiteurs par jour"></svg>
+      <p class="vg-muted" style="margin:6px 0 0;font-size:13px"><span id="live">–</span> en ce moment · <a href="trafic.html">Voir le détail des visites</a></p>
+    </section>
+
+    <div class="cols">
+      <section class="vg-card"><p class="sec">Par mois</p><div id="months"><span class="vg-muted">–</span></div></section>
+      <section class="vg-card"><p class="sec">Pièces qui rapportent le plus</p><div id="top"><span class="vg-muted">–</span></div></section>
+    </div>
+    <p class="vg-muted" style="margin:10px 4px 0;font-size:13px">Chiffres calculés sur les 100 derniers paiements (ventes réelles ; s'il n'y en a pas encore, ventes de test). Remboursements déduits.</p>
   </div>
 </main>
 <script src="vg-admin-auth.js"></script>
+<script src="vg-admin-ui.js"></script>
+<script src="menu-stats.js"></script>
 <script>
 (function () {
   'use strict';
   var $ = function (id) { return document.getElementById(id); };
+  var S = window.VGMenuStats;
+  function esc(s) { return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
+  function eur(n) { return (Math.round((n || 0) * 100) / 100).toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' €'; }
+
+  $('day').textContent = new Date().toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' });
+
+  // Installation comme une appli.
   var standalone = window.matchMedia('(display-mode: standalone)').matches || navigator.standalone;
-  var deferred = null;
-  var ios = /iphone|ipad|ipod/i.test(navigator.userAgent);
+  var deferred = null, ios = /iphone|ipad|ipod/i.test(navigator.userAgent);
   if (!standalone) {
     $('install').hidden = false;
     $('install-help').textContent = ios
@@ -90,18 +123,54 @@
   window.addEventListener('beforeinstallprompt', function (e) { e.preventDefault(); deferred = e; $('install-btn').hidden = false; });
   $('install-btn').addEventListener('click', function () { if (deferred) { deferred.prompt(); deferred = null; $('install-btn').hidden = true; } });
 
-  // Nombre de commandes à expédier (si connecté).
-  if (window.vgAdminToken()) {
-    window.vgAdminApi('/orders').then(function (d) {
-      var n = (d.orders || []).filter(function (o) { return !o.shipped && o.livemode && o.kind !== 'deposit'; }).length;
-      if (n) { $('todo').textContent = n; $('todo').hidden = false; }
-    }).catch(function () {});
-    // Demandes à traiter : nouvelles, retouches demandées, validées (solde attendu).
-    window.vgAdminApi('/admin/requests').then(function (d) {
-      var n = (d.requests || []).filter(function (r) { return r.status === 'nouvelle' || r.forfeited || (r.validation && r.status === 'validation' && r.validation.retouches.some(function (x) { return x.extra; })); }).length;
-      if (n) { $('reqs').textContent = n; $('reqs').hidden = false; }
-    }).catch(function () {});
+  var todo = { orders: null, requests: null, schedule: null, soldout: null };
+  function drawToday() {
+    var rows = [];
+    if (todo.orders) rows.push(['todo', todo.orders, 'commande' + (todo.orders > 1 ? 's' : '') + ' à expédier', 'commandes.html']);
+    if (todo.requests) rows.push(['todo', todo.requests, 'demande' + (todo.requests > 1 ? 's' : '') + ' à traiter', 'demandes.html']);
+    var d = S.nextDrop(todo.schedule, Date.now());
+    if (d) rows.push(['plan', d.count, 'pièce' + (d.count > 1 ? 's' : '') + ' programmée' + (d.count > 1 ? 's' : '') + ' ' + S.inWords(d.at, Date.now()), 'catalogue.html']);
+    if (todo.soldout) rows.push(['bad', todo.soldout, 'pièce' + (todo.soldout > 1 ? 's' : '') + ' épuisée' + (todo.soldout > 1 ? 's' : ''), 'stock.html']);
+    $('today').innerHTML = rows.length ? rows.map(function (r) {
+      return '<li><a href="' + r[3] + '"><span class="vg-pill n ' + r[0] + '">' + r[1] + '</span><b>' + esc(r[2]) + '</b></a></li>';
+    }).join('') : '<li class="ok">Rien en attente. Tout est à jour.</li>';
   }
+
+  function drawChart(series) {
+    var max = Math.max.apply(null, series.map(function (p) { return p.visitors; }).concat([1])), n = series.length, w = 300 / Math.max(n, 1);
+    $('chart').innerHTML = series.map(function (p, i) {
+      var h = Math.round(p.visitors / max * 84);
+      return '<rect x="' + (i * w + w * .12).toFixed(1) + '" y="' + (88 - h) + '" width="' + (w * .76).toFixed(1) + '" height="' + Math.max(h, 1) + '" rx="1.5" fill="#171717"><title>' + esc(p.day) + ' : ' + p.visitors + ' visiteurs</title></rect>';
+    }).join('');
+  }
+
+  function drawOrders(orders) {
+    var st = S.salesStats(orders, Date.now());
+    $('k-ca').textContent = eur(st.ca30); $('k-n').textContent = st.n30; $('k-avg').textContent = st.n30 ? eur(st.avg30) : '–';
+    $('k-note').textContent = st.test ? 'Aucune vente réelle pour l\'instant : chiffres de TEST.' : '';
+    $('months').innerHTML = st.months.length ? st.months.map(function (m) { return '<div class="row"><span>' + esc(m.label) + ' · ' + m.n + ' commande' + (m.n > 1 ? 's' : '') + '</span><span class="n2">' + eur(m.total) + '</span></div>'; }).join('') : '<span class="vg-muted">Pas encore de ventes.</span>';
+    $('top').innerHTML = st.top.length ? st.top.map(function (p) { return '<div class="row"><span>' + esc(p.name) + '</span><span class="n2">' + eur(p.amount) + '</span></div>'; }).join('') : '<span class="vg-muted">Pas encore de ventes.</span>';
+  }
+
+  function load() {
+    if (!window.vgAdminToken()) { $('login').hidden = false; $('app').hidden = true; return; }
+    $('login').hidden = true; $('app').hidden = false;
+    var api = window.vgAdminApi;
+    api('/orders').then(function (d) {
+      var orders = d.orders || [];
+      todo.orders = S.toShip(orders); drawToday(); drawOrders(orders);
+    }).catch(function (e) { if (e.status !== 401) { $('k-note').textContent = 'Commandes : ' + e.message; } else { $('login').hidden = false; $('app').hidden = true; } });
+    api('/admin/requests').then(function (d) { todo.requests = S.requestsTodo(d.requests || []); drawToday(); }).catch(function () {});
+    api('/admin/schedule').then(function (d) { todo.schedule = d.schedule || []; drawToday(); }).catch(function () {});
+    api('/admin/stock').then(function (d) { todo.soldout = Object.keys(d.stock || {}).filter(function (s) { return d.names && d.names[s] && d.stock[s].stock <= 0; }).length; drawToday(); }).catch(function () {});
+    api('/admin/traffic?days=30').then(function (r) {
+      drawChart(r.series || []);
+      $('k-vis').textContent = (r.series || []).slice(-7).reduce(function (s, p) { return s + p.visitors; }, 0);
+      $('live').textContent = r.live != null ? r.live + ' visiteur' + (r.live > 1 ? 's' : '') : '–';
+    }).catch(function () { $('k-vis').textContent = '–'; });
+  }
+  $('login-btn').addEventListener('click', function () { window.vgAdminLogin().then(load).catch(function (e) { $('login-msg').textContent = e.message; }); });
+  load();
 })();
 </script>
 </body>

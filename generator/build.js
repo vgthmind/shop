@@ -532,6 +532,15 @@ function injectAround(html, parts, product, relPath) {
 // Pages de redirection de l'ancien aperçu GitHub Pages : index.html + 404.html (GitHub sert 404.html pour toute adresse
 // inconnue du dossier), qui renvoient /shop/<chemin>?<requête>#<ancre> vers <site_url>/<chemin>?<requête>#<ancre>.
 // Chemin inconnu (hors pages du site) = accueil. Désinscrit aussi le service worker et vide les caches de l'ancien admin.
+// Bandeau « Version de test » sur toutes les pages de la boutique tant que data/shop-settings.json n'a pas "public": true
+// (même interrupteur que le noindex : il disparaît à la bascule, sans rien d'autre à faire). Ne gêne aucun clic.
+const TEST_BANNER = '<div id="vg-test-banner" role="note" style="position:fixed;left:0;right:0;bottom:0;z-index:2147483000;padding:5px 10px calc(5px + env(safe-area-inset-bottom));background:rgba(23,23,23,.88);color:#f4f2ec;font:11px/1.35 IBM Plex Mono,ui-monospace,monospace;letter-spacing:.03em;text-align:center;pointer-events:none">Version de test : aucun paiement réel, carte de test 4242 4242 4242 4242</div>';
+function testBanner(html, relPath) {
+  if (SHOP_SETTINGS.public || typeof html !== 'string' || !/\.html$/.test(relPath || '') || /^admin\//.test(relPath)) return html;
+  const i = html.lastIndexOf('</body>');
+  return i === -1 ? html : html.slice(0, i) + TEST_BANNER + '\n' + html.slice(i);
+}
+
 function writeRedirectStub(catalog) {
   const site = SHOP_SETTINGS.site_url.replace(/\/$/, '');
   const top = ['products', 'cart', 'contact', 'contact-914a3d', 'merci', 'paiement-annule', 'suivi', 'demande', 'studio', 'sur-demande',
@@ -628,7 +637,7 @@ async function main() {
   const write = (relPath, html) => {
     const dest = rel(OUT_DIR, relPath);
     fs.mkdirSync(path.dirname(dest), { recursive: true });
-    fs.writeFileSync(dest, localizeBigCartelImages(html));
+    fs.writeFileSync(dest, testBanner(localizeBigCartelImages(html), relPath));
   };
   // page_title is assigned at the top of the real layout (before
   // <!DOCTYPE html>), but page templates (products.html, cart.html) print it
@@ -766,7 +775,8 @@ async function main() {
   const ogSrc = rel(ROOT, 'assets', 'products-og');
   if (fs.existsSync(ogSrc)) fs.cpSync(ogSrc, rel(OUT_DIR, 'assets', 'products-og'), { recursive: true });
   if (LOCAL_MEDIA) fs.cpSync(rel(ROOT, 'assets', 'media'), rel(OUT_DIR, 'assets', 'media'), { recursive: true });
-  fs.copyFileSync(rel(ROOT, 'generator', '_headers'), rel(OUT_DIR, '_headers'));
+  // Boutique pas encore publique : aucun moteur de recherche ne doit garder une page (en plus du noindex et de robots.txt).
+  fs.writeFileSync(rel(OUT_DIR, '_headers'), fs.readFileSync(rel(ROOT, 'generator', '_headers'), 'utf8') + (SHOP_SETTINGS.public ? '' : '\n/*\n  X-Robots-Tag: noindex, nofollow\n'));
   // Anciennes adresses BigCartel : /product/<ancien nom> -> /product/<permalink> (301). Les 27 adresses de l'ancienne
   // boutique existent à l'identique ; on ajoute les variantes que l'ancien site acceptait ou que d'anciens liens
   // (Instagram, mails) peuvent contenir : nom de la pièce, sans accents, tirets/underscores échangés.
