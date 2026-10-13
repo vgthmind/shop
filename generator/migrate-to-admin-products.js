@@ -15,7 +15,7 @@ const ROOT = path.join(__dirname, '..');
 // The original BigCartel-imported catalog (generator/import-catalog.js),
 // kept untouched on disk so this migration can be re-run/audited later -
 // data/catalog.json itself is now generator/build-catalog.js's output.
-const CATALOG_PATH = process.argv[2] || path.join(ROOT, 'data', 'catalog.bigcartel-import.json');
+const CATALOG_PATH = process.argv[2] || path.join(ROOT, 'archives', 'catalog.bigcartel-import.json');
 const PRODUCTS_DIR = path.join(ROOT, 'data', 'products');
 
 function shippingFor(p) {

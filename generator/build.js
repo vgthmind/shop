@@ -298,7 +298,7 @@ function wrapInlineScripts(html) {
 // --- data --------------------------------------------------------------
 function loadCatalog() {
   const p = rel(DATA_DIR, 'catalog.json');
-  if (!fs.existsSync(p)) throw new Error(`Missing ${p} - run generator/import-catalog.js first.`);
+  if (!fs.existsSync(p)) throw new Error(`Missing ${p} - run generator/build-catalog.js first.`);
   const c = JSON.parse(read(p));
   // BigCartel's Liquid exposes product.has_default_option (one option, no
   // option groups -> hidden input, no "Select variant" dropdown); its
@@ -623,6 +623,7 @@ async function main() {
   const contactUrl = `${BASE_PATH}/contact-914a3d`;
   write('contact/index.html', '<!doctype html><meta charset="utf-8"><meta name="robots" content="noindex">'
     + `<meta http-equiv="refresh" content="0;url=${contactUrl}"><link rel="canonical" href="${contactUrl}">`
+    + FAVICON_LINKS
     + `<title>Contact | vgthmind</title><a href="${contactUrl}">Contact</a>`);
   page('cart/index.html', src.cart, Object.assign({}, base, {
     page: { name: 'Cart', permalink: 'cart', category: 'cart', full_url: '/cart' },

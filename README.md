@@ -30,8 +30,7 @@ generator/        moteur Liquid + générateur (Node, zéro dépendance)
   build-catalog.js    data/products/*.json (admin) -> data/catalog.json
   build.js            rend theme/ + data/catalog.json -> docs/
   migrate-to-admin-products.js  outil ponctuel (déjà utilisé une fois, voir plus bas)
-  import-catalog.js   outil ponctuel de RE-SEED depuis le catalogue BigCartel
-                       EN LIGNE (jamais lancé automatiquement, voir plus bas)
+  (archives/import-catalog.js : ancien outil de RE-SEED depuis BigCartel, archivé hors build)
 admin/            interface de gestion (Sveltia CMS) - ajouter/modifier/
                   retirer une pièce sans toucher au code, voir "Admin" ci-dessous
 data/products/    UNE PIÈCE = UN FICHIER JSON - la vraie source du catalogue,
@@ -70,14 +69,14 @@ node generator/build.js           # -> docs/
 (= `npm run build`. Avant de pousser : `git pull --rebase`, l'Action pousse
 aussi des commits.)
 
-**`generator/import-catalog.js` n'est plus utilisé par le build normal.**
+**`archives/import-catalog.js` (archivé le 2026-10-13) n'est plus utilisé par le build normal.**
 Le catalogue réel de BigCartel (27 pièces, importées le 2026-10-05) a été
 migré une fois vers `data/products/*.json` par
 `generator/migrate-to-admin-products.js` (déjà fait, pas à refaire) :
 `data/products/*.json` est maintenant la seule source de vérité, modifiable
 depuis `admin/` sans jamais retoucher au catalogue BigCartel en ligne. Si un
 jour il faut re-synchroniser depuis BigCartel (ex. après une grosse mise à
-jour faite là-bas), relancer `import-catalog.js` puis
+jour faite là-bas), relancer `node archives/import-catalog.js --i-know-this-overwrites-catalog` puis
 `migrate-to-admin-products.js data/catalog.json` RÉÉCRIT entièrement les
 fichiers `data/products/*.json` à partir de ce qui est en ligne sur
 BigCartel — donc aussi les éditions faites depuis `admin/` entre-temps

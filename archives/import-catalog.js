@@ -6,6 +6,9 @@
 // Usage: node generator/import-catalog.js [--store-url https://vgthmind.bigcartel.com]
 
 'use strict';
+// ARCHIVE (2026-10-13) : hors build, jamais lance automatiquement. Il ecrase data/catalog.json avec le
+// catalogue BigCartel EN LIGNE : refuse de tourner sans --i-know-this-overwrites-catalog.
+if (!process.argv.includes('--i-know-this-overwrites-catalog')) { console.error('Archive : import-catalog.js ecraserait data/catalog.json. Voir archives/README.md.'); process.exit(1); }
 const fs = require('fs');
 const path = require('path');
 const http = require('http');
