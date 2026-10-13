@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="robots" content="noindex, nofollow">
+  <meta name="theme-color" content="#171717">
+  <title>Plus — admin vgthmind</title>
+  <style>
+    * { box-sizing: border-box; }
+    [hidden] { display: none !important; }
+    body { margin: 0; background: #f4f2ec; color: #171717; font: 16px/1.45 system-ui, -apple-system, "Segoe UI", sans-serif; -webkit-text-size-adjust: 100%; }
+    .sec { font: 500 12px/1 var(--f-mono); letter-spacing: .08em; text-transform: uppercase; color: var(--muted); margin: 26px 0 10px; }
+    .tiles { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 12px; }
+    a.tile { display: block; min-height: 80px; padding: 14px 16px; background: #fff; border: 1px solid var(--line); border-radius: 18px; color: var(--ink); text-decoration: none; box-shadow: 0 1px 2px rgba(0,0,0,.04); }
+    a.tile:hover, a.tile:focus-visible { border-color: var(--ink); outline: none; }
+    a.tile strong { display: block; font: 700 15px/1.2 var(--f-title); letter-spacing: .03em; text-transform: uppercase; margin-bottom: 4px; }
+    a.tile span { color: var(--muted); font-size: 13px; }
+    .foot { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; margin-top: 30px; }
+    .box { background: #fff; border: 1px solid var(--line); border-radius: 18px; padding: 12px 16px; margin-bottom: 12px; }
+    .box p { margin: 4px 0 8px; font-size: 14px; }
+  </style>
+<link rel="icon" href="../assets/theme/admin/favicon.svg?v=3" type="image/svg+xml">
+<link rel="icon" href="../assets/theme/admin/favicon-32.png?v=3" type="image/png" sizes="32x32">
+<link rel="icon" href="../assets/theme/admin/favicon-16.png?v=3" type="image/png" sizes="16x16">
+<link rel="shortcut icon" href="../assets/theme/admin/favicon.ico?v=3">
+<link rel="apple-touch-icon" sizes="180x180" href="../assets/theme/admin/apple-touch-icon.png?v=3">
+</head>
+<body>
+<main class="vg-page">
+  <div class="vg-head"><div><h1>Plus</h1><p class="vg-sub">Tout le reste de l'admin, rangé par sujet.</p></div></div>
+
+  <h2 class="sec">Pièces</h2>
+  <div class="tiles">
+    <a class="tile" href="studio-photo.html"><strong>Nouvelle pièce</strong><span>Photos, détourage, fiche, mise en ligne</span></a>
+    <a class="tile" href="catalogue.html"><strong>Catalogue</strong><span>Ordre, copie, aperçu, programmer, archiver</span></a>
+    <a class="tile" href="stock.html"><strong>Stock</strong><span>Quantités, épuisées, sauvegardes du stock</span></a>
+    <a class="tile" href="pieces.html"><strong>Poids et ports</strong><span>Poids emballé, mode d'envoi, ports calculés</span></a>
+    <a class="tile" href="index.html"><strong>Avancé : éditeur complet</strong><span>Modifier une fiche, tous les champs (éditeur technique)</span></a>
+  </div>
+
+  <h2 class="sec">Livraison et compta</h2>
+  <div class="tiles">
+    <a class="tile" href="expedition.html"><strong>Livraison</strong><span>Zones, tarifs La Poste, tranches, simulateur de panier</span></a>
+    <a class="tile" href="export.html"><strong>Compta : export</strong><span>CSV des ventes par mois, trimestre ou année</span></a>
+    <a class="tile" href="https://outils-e073a53c.pages.dev/comptabilite" target="_blank" rel="noopener"><strong>Comptabilité</strong><span>Livre des recettes (mot de passe)</span></a>
+    <a class="tile" href="https://outils-e073a53c.pages.dev/facturation" target="_blank" rel="noopener"><strong>Facturation</strong><span>Factures et devis (mot de passe)</span></a>
+  </div>
+
+  <h2 class="sec">Le site</h2>
+  <div class="tiles">
+    <a class="tile" href="trafic.html"><strong>Visites : détail</strong><span>Pages, provenance, pays, appareil, remise à zéro des tests</span></a>
+    <a class="tile" href="ouverture.html"><strong>Vidéos d'ouverture</strong><span>Clips de l'écran « Enter » de l'accueil</span></a>
+    <a class="tile" href="etat.html"><strong>Santé du site</strong><span>Clés, mode test/live, stock, dernière sauvegarde</span></a>
+    <a class="tile" href="commandes.html"><strong>Sauvegardes des commandes</strong><span>Sauvegarder, télécharger, restaurer (bas de la page Commandes)</span></a>
+    <a class="tile" href="aide.html"><strong>Aide</strong><span>Mode d'emploi pas à pas, et que faire en cas de souci</span></a>
+  </div>
+
+  <h2 class="sec">Liens</h2>
+  <div class="tiles">
+    <a class="tile" href="https://dashboard.stripe.com/" target="_blank" rel="noopener"><strong>Stripe</strong><span>Paiements, remboursements, codes promo</span></a>
+    <a class="tile" href="../" target="_blank" rel="noopener"><strong>Voir la boutique</strong><span>Le site tel que les clients le voient</span></a>
+  </div>
+
+  <div class="box" id="install" style="margin-top:26px" hidden>
+    <strong>Installer l'admin comme une appli</strong>
+    <p class="vg-muted" id="install-help"></p>
+    <button type="button" class="vg-btn" id="install-btn" hidden>Installer</button>
+  </div>
+
+  <div class="foot">
+    <button type="button" class="vg-btn ghost" id="logout">Se déconnecter</button>
+    <span class="vg-muted" id="ver" style="font-size:13px"></span>
+  </div>
+</main>
+<script src="vg-admin-auth.js"></script>
+<script src="vg-admin-ui.js"></script>
+<script>
+(function () {
+  'use strict';
+  var $ = function (id) { return document.getElementById(id); };
+  $('ver').textContent = 'Admin v' + window.VG_ADMIN_VERSION;
+  $('logout').addEventListener('click', function () {
+    var b = $('logout'); b.disabled = true; b.textContent = 'Déconnexion…';
+    var done = false;
+    function leave() { if (!done) { done = true; location.replace('connexion.html'); } }
+    window.vgAdminLogout(true).then(leave); setTimeout(leave, 2500);
+  });
+  var standalone = window.matchMedia('(display-mode: standalone)').matches || navigator.standalone;
+  var deferred = null, ios = /iphone|ipad|ipod/i.test(navigator.userAgent);
+  if (!standalone) {
+    $('install').hidden = false;
+    $('install-help').textContent = ios
+      ? "Sur iPhone : ouvre cette page dans Safari, touche le bouton Partager (carré avec une flèche), puis « Sur l'écran d'accueil »."
+      : "Sur PC (Chrome ou Edge) : clique sur l'icône « Installer » à droite de la barre d'adresse, ou sur le bouton ci-dessous quand il apparaît.";
+  }
+  window.addEventListener('beforeinstallprompt', function (e) { e.preventDefault(); deferred = e; $('install-btn').hidden = false; });
+  $('install-btn').addEventListener('click', function () { if (deferred) { deferred.prompt(); deferred = null; $('install-btn').hidden = true; } });
+})();
+</script>
+</body>
+</html>
