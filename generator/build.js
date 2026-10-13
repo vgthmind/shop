@@ -394,7 +394,7 @@ function headContent(page, product, imageMap) {
 // crawler/share-preview picks is not guaranteed to be "the last one". Drop
 // the generic occurrence of each tag headContent() overrides so there is
 // only ever one of each - theme/custom/head.html itself is untouched.
-const PRODUCT_META_OVERRIDES = ['name="description"', 'property="og:description"', 'property="og:image"', 'name="twitter:description"', 'name="twitter:image"'];
+const PRODUCT_META_OVERRIDES = ['name="description"', 'property="og:description"', 'property="og:image"', 'property="og:image:type"', 'property="og:image:width"', 'property="og:image:height"', 'name="twitter:description"', 'name="twitter:image"'];
 function stripGenericMeta(html, names) {
   for (const n of names) {
     html = html.replace(new RegExp(`<meta ${n}[^>]*>\\n?`), '');
