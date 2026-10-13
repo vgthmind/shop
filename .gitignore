@@ -34,6 +34,6 @@ detourage-server/lien-iphone.html
 # Vidéos : sources dans assets/media/, publiées seulement par le build Cloudflare Pages (pas en double dans docs/)
 docs/assets/media/
 
-# Relevé DNS (copie de vgthmind, local seulement)
+# Relevé DNS (copie locale seulement)
 chantier/DNS-ACTUEL.md
 assets/products-og/
