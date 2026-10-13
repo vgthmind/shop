@@ -21,7 +21,7 @@
   } catch (e) {}
   // Numéro de version de l'admin, affiché en petit en bas à gauche de chaque page : permet de vérifier qu'on a bien la dernière version.
   // À changer à chaque mise à jour de l'admin (aaaa-mm-jj + lettre).
-  window.VG_ADMIN_VERSION = '2026-10-13-k';
+  window.VG_ADMIN_VERSION = '2026-10-13-l';
   function showVersion() {
     try {
       var d = document.createElement('div'); d.id = 'vg-admin-version'; d.textContent = 'Admin v' + window.VG_ADMIN_VERSION;
@@ -88,8 +88,8 @@
   //   1. la fenêtre GitHub renvoie la session à cette page (postMessage) : ordinateur ;
   //   2. la page garde un code secret (lc) ; le Worker dépose la session sous ce code et la page la réclame (/auth/claim) :
   //      iPhone / appli installée, où la fenêtre GitHub n'a aucun lien avec la page d'origine. Ce code est aussi gardé
-  //      (3 min) pour reprendre l'attente si la page est rechargée ou recréée pendant la connexion.
-  var LC = 'vg-login-code', LC_MS = 3 * 60 * 1000;
+  //      (10 min : le temps du code à deux facteurs) pour reprendre l'attente si la page est rechargée ou recréée pendant la connexion.
+  var LC = 'vg-login-code', LC_MS = 10 * 60 * 1000;
   function randomCode() {
     var a = new Uint8Array(16); (window.crypto || window.msCrypto).getRandomValues(a);
     return Array.prototype.map.call(a, function (b) { return ('0' + b.toString(16)).slice(-2); }).join('');
@@ -166,12 +166,12 @@
     return fetch(ENDPOINT + '/admin/logout', { method: 'POST', headers: { Authorization: 'Bearer ' + s }, keepalive: true }).catch(function () {});
   };
 
-  // Bouton « Se déconnecter » visible sur toutes les pages de l'admin (sauf la page de connexion).
+  // Bouton « Se déconnecter » en haut de chaque page (il défile avec la page : jamais au-dessus d'un bouton Enregistrer) sur toutes les pages de l'admin (sauf la page de connexion).
   function logoutButton() {
     try {
       if (/\/admin\/connexion/.test(location.pathname) || document.getElementById('vg-logout-global')) return;
       var st = document.createElement('style');
-      st.textContent = '#logout{display:none!important}#vg-logout-global{position:fixed;top:8px;right:8px;z-index:2147483646;font:600 13px/1 system-ui,sans-serif;padding:9px 14px;border-radius:999px;border:1px solid #171717;background:#171717;color:#fff;cursor:pointer}';
+      st.textContent = '#logout{display:none!important}body{padding-top:48px!important}#vg-logout-global{position:absolute;top:8px;right:8px;z-index:50;font:600 13px/1 system-ui,sans-serif;padding:9px 14px;border-radius:999px;border:1px solid #171717;background:#171717;color:#fff;cursor:pointer}';
       document.head.appendChild(st);
       var b = document.createElement('button');
       b.type = 'button'; b.id = 'vg-logout-global'; b.textContent = 'Se déconnecter';

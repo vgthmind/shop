@@ -243,7 +243,7 @@
 
   // Taille des deux panneaux : la photo entière, à son vrai rapport, sans dépasser 75 % de la hauteur d'écran.
   function layoutStages() {
-    var p = photos[sel]; if (!p) return;
+    var p = photos[sel]; if (!p || !$('cutPanel').clientWidth) return; // étape 2 masquée : rien à mesurer (relance à l'affichage)
     [['cutPanel', stageC], ['origPanel', stageO]].forEach(function (a) {
       var panel = $(a[0]), maxW = panel.clientWidth - 2, w, h = maxW * p.h / p.w;
       if (h > innerHeight * 0.75) { h = innerHeight * 0.75; }
@@ -649,5 +649,5 @@
     document.addEventListener('fullscreenchange', function () { if (!document.fullscreenElement && !box.hidden) close(); });
   })();
 
-  window.VGStudio = { colorSample: colorSample, count: function () { return exportable().length; }, pending: pendingCount, _state: function () { return { photos: photos, params: params }; } };
+  window.VGStudio = { relayout: layoutStages, total: function () { return photos.length; }, colorSample: colorSample, count: function () { return exportable().length; }, pending: pendingCount, _state: function () { return { photos: photos, params: params }; } };
 })();

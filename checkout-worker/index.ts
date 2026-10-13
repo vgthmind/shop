@@ -421,6 +421,7 @@ export default {
       if (path === '/track' && request.method === 'POST') return await trackOrder(request, env, key.value, json);
       if (path === '/invoice' && request.method === 'POST') return await trackOrder(request, env, key.value, json, true);
       if (path === '/orders/preparing' && request.method === 'POST') return await markPreparing(request, env, json);
+      if (path === '/orders/refund' && request.method === 'POST') return await refundOrder(request, env, key.value, json);
       if (path === '/orders/shipped' && request.method === 'POST') return await markShipped(request, env, json);
       if (path === '/orders/shipped-mail' && request.method === 'POST') return await sendShippedMail(request, env, key.value, json);
     } catch (e: any) {
@@ -1061,10 +1062,10 @@ async function oauthCallback(request: Request, env: Env): Promise<Response> {
   const page = (status: 'success' | 'error', content: object) => {
     const msg = `authorization:github:${status}:${JSON.stringify(content)}`;
     const origin = JSON.stringify(opener);
-    const html = `<!doctype html><meta charset="utf-8"><title>Connexion</title><p>${status === 'success' ? 'Connecté, cette fenêtre va se fermer.' : 'Connexion refusée.'}</p><script>
+    const html = `<!doctype html><meta charset="utf-8"><title>Connexion</title><p>${status === 'success' ? 'Connecté ✓ Cette fenêtre va se fermer ; sinon, reviens simplement dans l’appli.' : 'Connexion refusée.'}</p><script>
 (function () {
   var msg = ${JSON.stringify(msg)};
-  var RET = ${JSON.stringify(x.ret || '')};
+  var RET = ${JSON.stringify(x.ret ? x.ret + (status === 'success' ? (x.ret.indexOf('?') < 0 ? '?' : '&') + 'done=1' : '') : '')};
   function receive(e) {
     if (e.origin !== ${origin}) return;
     window.opener.postMessage(msg, e.origin);
@@ -1099,7 +1100,7 @@ async function oauthCallback(request: Request, env: Env): Promise<Response> {
   // `token` reste pour Sveltia (il en a besoin pour publier sur GitHub) ; les
   // pages Stock/Commandes n'utilisent que `session`.
   const session = await makeSession(env);
-  if (x.lc) await env.HOLDS.put('lc:' + x.lc, session, { expirationTtl: 120 }); // seulement la session, jamais le jeton GitHub
+  if (x.lc) await env.HOLDS.put('lc:' + x.lc, session, { expirationTtl: 600 }); // seulement la session, jamais le jeton GitHub
   return page('success', { token: data.access_token, provider: 'github', session });
 }
 
@@ -1281,6 +1282,35 @@ async function markShipped(request: Request, env: Env, json: JsonFn): Promise<Re
 }
 
 // « En preparation » : pose a la main depuis l'admin (bouton a cote de « expediee »).
+// Remboursement depuis Commandes (admin). Sans montant : tout ce qui reste à rembourser. Le webhook charge.refunded
+// marque ensuite la commande « remboursée » (avoir, alerte), exactement comme pour un remboursement fait dans Stripe.
+async function refundOrder(request: Request, env: Env, key: string, json: JsonFn): Promise<Response> {
+  if (!(await isAdmin(request, env))) return json({ error: 'Non autorisé.' }, 401);
+  let body: any = {};
+  try { body = await request.json(); } catch (e) {}
+  const id = String(body.id || '');
+  if (!isSessionId(id)) return json({ error: 'Identifiant invalide.' }, 400);
+  const prev = JSON.parse((await env.HOLDS.get('refunded:' + id)) || 'null');
+  if (prev && prev.full) return json({ error: 'Cette commande est déjà remboursée en totalité.' }, 409);
+  const s = await stripeCall(key, 'GET', '/v1/checkout/sessions/' + id);
+  if (!s.ok) return json({ error: (s.data.error && s.data.error.message) || 'Commande introuvable chez Stripe.' }, 502);
+  const pi = typeof s.data.payment_intent === 'string' ? s.data.payment_intent : s.data.payment_intent && s.data.payment_intent.id;
+  if (!pi) return json({ error: 'Aucun paiement à rembourser sur cette commande.' }, 400);
+  const p = new URLSearchParams({ payment_intent: pi });
+  let cents = 0;
+  if (body.amount !== undefined && body.amount !== null && body.amount !== '') {
+    const eur = Number(String(body.amount).replace(',', '.'));
+    cents = Math.round(eur * 100);
+    if (!isFinite(eur) || cents < 1 || cents > (s.data.amount_total || 0)) return json({ error: 'Montant invalide (entre 0,01 € et le total de la commande).' }, 400);
+    p.set('amount', String(cents));
+  }
+  p.set('metadata[reason]', 'admin_commandes');
+  p.set('metadata[session]', id);
+  const r = await stripeCall(key, 'POST', '/v1/refunds', p, { 'Idempotency-Key': 'vg-adminrefund-' + id + '-' + cents + '-' + Math.floor(Date.now() / 60000) });
+  if (!r.ok) return json({ error: (r.data.error && r.data.error.message) || 'Remboursement refusé par Stripe.' }, 502);
+  return json({ ok: true, refund: r.data.id, amount: (r.data.amount || 0) / 100, status: r.data.status });
+}
+
 async function markPreparing(request: Request, env: Env, json: JsonFn): Promise<Response> {
   if (!(await isAdmin(request, env))) return json({ error: 'Non autorisé.' }, 401);
   let body: any = {};
@@ -1397,6 +1427,8 @@ async function sendShippedMail(request: Request, env: Env, key: string, json: Js
   const raw = await env.HOLDS.get('shipped:' + id);
   if (!raw) return json({ error: "Marque d'abord la commande « expédiée »." }, 400);
   const shipped = JSON.parse(raw);
+  const newTracking = String(body.tracking || '').trim().slice(0, 100);
+  if (newTracking) shipped.tracking = newTracking; // numéro saisi au moment d'envoyer le mail (oubli à « Marquer expédiée »)
   const full = await stripeCall(key, 'GET', `/v1/checkout/sessions/${id}?${SESSION_EXPAND}`);
   if (!full.ok) return json({ error: full.data.error?.message || 'Erreur Stripe' }, 502);
   const order = await buildOrder(env, full.data);

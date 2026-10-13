@@ -115,3 +115,9 @@ test('sauvegarde nocturne des commandes : états expédiée / préparation / num
   assert.equal(b.refs[SID], 'VG-ABC234');
   assert.ok(await kv.get('obackup:' + b.date));
 });
+
+test('remboursement depuis Commandes : refusé sans session admin', async () => {
+  reset();
+  const r = await worker.fetch(new Request('https://w.invalid/orders/refund', { method: 'POST', body: JSON.stringify({ id: SID }) }), env(), {});
+  assert.equal(r.status, 401);
+});
