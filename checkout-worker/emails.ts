@@ -59,6 +59,7 @@ const T = {
     thanks: "Merci pour ta commande ! 🖤 Elle est bien reçue et je m'en occupe avec soin.",
     bye: 'À très vite,',
     shippedLead: 'Bonne nouvelle : ta commande est partie.',
+    invoiceNote: 'Ta facture est disponible à tout moment sur la page de suivi de ta commande.',
     tracking: 'Numéro de suivi',
     track: 'Suivre mon colis',
     order: 'Ta commande',
@@ -86,6 +87,7 @@ const T = {
     thanks: "Thank you for your order! 🖤 It's been received and I'll take good care of it.",
     bye: 'See you soon,',
     shippedLead: 'Good news: your order has shipped.',
+    invoiceNote: 'Your invoice is available at any time on your order tracking page.',
     tracking: 'Tracking number',
     track: 'Track my parcel',
     order: 'Your order',
@@ -203,6 +205,7 @@ export function shippedEmail(o: OrderData, tracking: string) {
     + `<p style="margin:18px 0 4px;font:13px ${FONT};color:${MUTED}">${t.ref} ${esc(o.ref)}</p>`
     + heading(t.order) + itemsTable(o, t, false)
     + heading(t.shipTo) + para(o.address.map(esc).join('<br>'))
+    + para(esc(t.invoiceNote), 'margin-top:8px') + button(o.orderUrl, t.view)
     + para(esc(t.help), 'margin-top:8px')
     + para(esc(t.thanksEnd), 'margin:18px 0 0')
     + signature(t));
@@ -211,7 +214,7 @@ export function shippedEmail(o: OrderData, tracking: string) {
     ...(tracking ? ['', `${t.tracking} : ${tracking}`, `${t.track} : ${url}`] : []), '',
     `${t.ref} ${o.ref}`, ...itemLines(o, t), '',
     t.shipTo.toUpperCase(), ...o.address, '',
-    t.help, '', t.thanksEnd, 'vgthmind', `Instagram : ${INSTAGRAM_URL}`, CONTACT_EMAIL,
+    `${t.invoiceNote} ${o.orderUrl}`, '', t.help, '', t.thanksEnd, 'vgthmind', `Instagram : ${INSTAGRAM_URL}`, CONTACT_EMAIL,
   ].join('\n');
   return { subject, html, text };
 }

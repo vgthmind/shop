@@ -354,3 +354,17 @@ test('remboursement : charge.refunded marque la commande « remboursée » (KV) 
   assert.ok(mails.some((m) => /rembours/i.test(m.subject)));
   assert.deepEqual(await stock(), before);
 });
+
+test('avoir : une commande remboursée donne une facture avec un avoir lié (total), côté client (/invoice) et admin', async () => {
+  const j = await checkoutLang('fr', 'uniq', 'BE');
+  const id = j.url.split('/').pop(); const full = pay(id, { country: 'BE' });
+  await webhook('checkout.session.completed', full);
+  const ref = /o=(VG-[A-Z0-9]{6})/.exec(mails.find((m) => m.to[0] === 'client@example.com').html)[1];
+  let r = await (await call('/invoice', { ref, email: 'client@example.com' })).json();
+  assert.equal(r.ok, true); assert.equal(r.invoice.credit, undefined);
+  await webhook('charge.refunded', { id: 'ch_1', payment_intent: 'pi_test', amount: 2500, amount_refunded: 2500, currency: 'eur' });
+  r = await (await call('/invoice', { ref, email: 'client@example.com' })).json();
+  assert.equal(r.invoice.credit.full, true); assert.equal(r.invoice.credit.amount, 25); assert.match(r.invoice.credit.number, /^TEST-AV-/);
+  const t = await (await call('/track', { ref, email: 'client@example.com' })).json();
+  assert.equal(t.refunded, true);
+});

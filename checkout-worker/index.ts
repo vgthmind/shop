@@ -220,6 +220,14 @@ export class StockDO extends DurableObject {
     return num;
   }
 
+  // Numeros de facture deja attribues (lecture seule) : { session -> W-AAAA-NNN }.
+  async invoiceNumbers(ids: string[]) {
+    const storage = (this as any).ctx.storage;
+    const out: Record<string, string> = {};
+    for (const id of ids) { const v = await storage.get('i:' + id); if (v) out[id] = v as string; }
+    return out;
+  }
+
   // Supprime des entrées de stock (pièces de test, pièces disparues).
   async deleteStock(slugs: string[]) {
     const storage = (this as any).ctx.storage;
@@ -1224,6 +1232,8 @@ async function listOrders(request: Request, env: Env, key: string, json: JsonFn)
     const l = await env.HOLDS.list({ prefix: 'refunded:' });
     for (const k of l.keys) { const v = await env.HOLDS.get(k.name); if (v) refunds.set(k.name.slice(9), JSON.parse(v)); }
   } catch (e) {}
+  let invNums: Record<string, string> = {};
+  try { invNums = await stockStub(env).invoiceNumbers(sessions.filter((x) => x.livemode).map((x) => x.id)); } catch (e) {}
   const orders = [];
   let catalog: Product[] = [];
   try { catalog = await loadCatalog(env); } catch (e) {}
@@ -1249,6 +1259,7 @@ async function listOrders(request: Request, env: Env, key: string, json: JsonFn)
       shipped: shipped ? JSON.parse(shipped) : null,
       preparing: preparing ? JSON.parse(preparing) : null,
       refunded: refunds.get(s.id) || null,
+      invoice_no: invNums[s.id] || '',
     });
   }
   return json({ orders });
@@ -1368,6 +1379,7 @@ async function trackOrder(request: Request, env: Env, key: string, json: JsonFn,
     shipping: (s.shipping_cost?.amount_total || 0) / 100,
     discount: (s.total_details?.amount_discount || 0) / 100,
     total: s.amount_total / 100,
+    refunded: !!(await env.HOLDS.get('refunded:' + sessionId)),
     tracking,
     trackUrl: tracking ? 'https://www.laposte.fr/outils/suivre-vos-envois?code=' + encodeURIComponent(tracking) : '',
   });
@@ -1429,7 +1441,14 @@ async function invoiceData(env: Env, key: string, sessionId: string, loaded?: an
   const ref = await assignRef(env, sessionId);
   const number = await num(sessionId, s.created, ref);
   const lines = (await mailItems(env, s.line_items?.data || [], (c) => String(c / 100))).map((i) => ({ name: i.name, size: i.size, qty: i.qty || 1, unit: i.unit ? Number(i.unit) : 0, amount: Number(i.amount) }));
-  return { ok: true, invoice: buildInvoice(s, lines as any, { number, ref, ...seller }) };
+  const inv: any = buildInvoice(s, lines as any, { number, ref, ...seller });
+  // Commande remboursée (webhook charge.refunded) : avoir lié à la facture, total ou partiel.
+  const rf = await env.HOLDS.get('refunded:' + sessionId);
+  if (rf) {
+    const r = JSON.parse(rf);
+    inv.credit = { number: (s.livemode ? 'AV-' : 'TEST-AV-') + number.replace(/^TEST-/, ''), original: number, at: r.at, amount: Number(r.amount) || 0, full: !!r.full };
+  }
+  return { ok: true, invoice: inv };
 }
 
 // Dépendances du module « pièces sur demande » (requests.ts), pour éviter les imports croisés.

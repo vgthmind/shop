@@ -6,14 +6,30 @@
   var T = {
     fr: { title: 'Facture', no: 'N°', date: 'Date', seller: 'Émetteur', customer: 'Client', desc: 'Désignation', qty: 'Qté', unit: 'Prix unitaire', amount: 'Montant',
       shipping: 'Livraison', discount: 'Remise', total: 'Total payé', paid: 'Réglée par carte bancaire (Stripe).', siret: 'SIRET', order: 'Commande', size: 'Taille',
+      credit: 'Avoir', creditOf: 'Avoir relatif à la facture N°', creditTotal: 'Total remboursé', creditMention: "Remboursé sur le moyen de paiement d'origine.",
       test: 'FACTURE DE TEST : aucune valeur', print: 'Imprimer / Enregistrer en PDF', locale: 'fr-FR' },
     en: { title: 'Invoice', no: 'No.', date: 'Date', seller: 'Seller', customer: 'Customer', desc: 'Description', qty: 'Qty', unit: 'Unit price', amount: 'Amount',
       shipping: 'Shipping', discount: 'Discount', total: 'Total paid', paid: 'Paid by card (Stripe).', siret: 'SIRET', order: 'Order', size: 'Size',
+      credit: 'Credit note', creditOf: 'Credit note for invoice No.', creditTotal: 'Total refunded', creditMention: 'Refunded to the original payment method.',
       test: 'TEST INVOICE: no value', print: 'Print / Save as PDF', locale: 'en-GB' }
   };
   function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
 
-  function html(inv, lang) {
+  // mode « credit » : l'avoir (inv.credit) d'une commande remboursée, montants en négatif.
+  function creditView(inv, lang) {
+    var c = inv.credit, copy = JSON.parse(JSON.stringify(inv)), L = T[lang] || T.fr;
+    copy.number = c.number; copy.date = c.at; copy.title = 'Avoir'; copy.titleEn = 'Credit note'; copy.deductions = null; copy.discount = 0;
+    if (c.full) { copy.lines = inv.lines.map(function (l) { return { name: l.name, size: l.size, qty: l.qty, unit: -l.unit, amount: -l.amount }; }); copy.shipping = -inv.shipping; copy.discount = inv.discount ? -inv.discount : 0; }
+    else { copy.lines = [{ name: 'Remboursement partiel / Partial refund', qty: 1, unit: -c.amount, amount: -c.amount }]; copy.shipping = 0; }
+    copy.total = -c.amount;
+    copy.notes = [L.creditOf + ' ' + c.original + '.'];
+    copy.paid = L.creditMention;
+    copy.totalLabel = L.creditTotal;
+    return copy;
+  }
+
+  function html(inv, lang, mode) {
+    if (mode === 'credit' && inv.credit) inv = creditView(inv, lang);
     var t = T[lang] || T.fr;
     var title = (lang === 'en' ? inv.titleEn : inv.title) || t.title; // « Facture d'acompte » pour une pièce sur demande
     var money = function (n) { return new Intl.NumberFormat(t.locale, { style: 'currency', currency: inv.currency || 'EUR' }).format(n || 0); };
@@ -41,23 +57,23 @@
       + '<table class="tot"><tr><td></td><td class="n">' + t.shipping + '</td><td class="n" style="width:120px">' + money(inv.shipping) + '</td></tr>'
       + (inv.deductions || []).map(function (d) { return '<tr><td></td><td class="n">' + esc(d.label) + '</td><td class="n">−' + money(d.amount) + '</td></tr>'; }).join('')
       + (inv.discount ?'<tr><td></td><td class="n">' + t.discount + '</td><td class="n">−' + money(inv.discount) + '</td></tr>' : '')
-      + '<tr class="grand"><td></td><td class="n">' + t.total + '</td><td class="n">' + money(inv.total) + '</td></tr></table>'
-      + '<p class="mention">' + (inv.notes || []).map(function (n) { return esc(n) + '<br>'; }).join('') + esc(inv.vat) + '<br>' + t.paid + '</p></body></html>';
+      + '<tr class="grand"><td></td><td class="n">' + (inv.totalLabel || t.total) + '</td><td class="n">' + money(inv.total) + '</td></tr></table>'
+      + '<p class="mention">' + (inv.notes || []).map(function (n) { return esc(n) + '<br>'; }).join('') + esc(inv.vat) + '<br>' + (inv.paid || t.paid) + '</p></body></html>';
   }
 
   // Ouvre la facture dans un nouvel onglet (à appeler dans un clic : sinon le navigateur bloque la fenêtre).
-  function open(inv, lang) {
+  function open(inv, lang, mode) {
     var w = root.open('', '_blank');
     if (!w) { alert('Fenêtre bloquée : autorise les pop-ups pour ce site.'); return; }
-    w.document.open(); w.document.write(html(inv, lang)); w.document.close();
+    w.document.open(); w.document.write(html(inv, lang, mode)); w.document.close();
   }
 
   // Ouvre tout de suite une page vide (dans le clic : pas bloquée), puis y écrit la facture quand elle arrive.
-  function openAsync(promise, lang) {
+  function openAsync(promise, lang, mode) {
     var w = root.open('', '_blank');
     if (!w) { alert('Fenêtre bloquée : autorise les pop-ups pour ce site.'); return Promise.resolve(false); }
     w.document.write('<p style="font:16px system-ui;padding:24px">…</p>');
-    return promise.then(function (inv) { w.document.open(); w.document.write(html(inv, lang)); w.document.close(); return true; })
+    return promise.then(function (inv) { w.document.open(); w.document.write(html(inv, lang, mode)); w.document.close(); return true; })
       .catch(function (e) { w.document.body.innerHTML = '<p style="font:16px system-ui;padding:24px">' + esc(e && e.message ? e.message : 'Erreur') + '</p>'; return false; });
   }
 

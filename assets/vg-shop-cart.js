@@ -546,7 +546,7 @@
       order: 'Commande', placed: 'passée le', steps: ['Reçue', 'En préparation', 'Expédiée'],
       s_received: 'Ta commande est bien reçue.', s_preparing: 'Ta commande est en cours de préparation.', s_shipped: 'Ta commande est partie.',
       items: 'Articles', size: 'Taille', qty: 'Qté', each: 'l\'unité', shipping: 'Livraison', discount: 'Remise', total: 'Total', address: 'Adresse de livraison',
-      parcel: 'Numéro de suivi', invoice: 'Télécharger ma facture', trackBtn: 'Suivre mon colis', noTracking: 'Le numéro de suivi n\'est pas encore disponible.', again: 'Suivre une autre commande',
+      parcel: 'Numéro de suivi', invoice: 'Télécharger ma facture', credit: 'Télécharger mon avoir', trackBtn: 'Suivre mon colis', noTracking: 'Le numéro de suivi n\'est pas encore disponible.', again: 'Suivre une autre commande',
     },
     en: {
       title: 'Track my order', intro: 'Enter your order number (in your confirmation email) and the email address used for the order.',
@@ -557,7 +557,7 @@
       order: 'Order', placed: 'placed on', steps: ['Received', 'Being prepared', 'Shipped'],
       s_received: 'Your order has been received.', s_preparing: 'Your order is being prepared.', s_shipped: 'Your order is on its way.',
       items: 'Items', size: 'Size', qty: 'Qty', each: 'each', shipping: 'Shipping', discount: 'Discount', total: 'Total', address: 'Delivery address',
-      parcel: 'Tracking number', invoice: 'Download my invoice', trackBtn: 'Track my parcel', noTracking: 'The tracking number isn\'t available yet.', again: 'Track another order',
+      parcel: 'Tracking number', invoice: 'Download my invoice', credit: 'Download my credit note', trackBtn: 'Track my parcel', noTracking: 'The tracking number isn\'t available yet.', again: 'Track another order',
     },
   };
 
@@ -636,7 +636,7 @@
         + '<h2 class="vg-track-h">' + esc(t.address) + '</h2>'
         + '<p class="vg-track-address">' + esc((d.address || []).concat(countryLabel(d.country)).filter(Boolean).join('\n')) + '</p>'
         + parcel
-        + '<p class="vg-track-invoice"><button type="button" class="button vg-track-invoice-btn">' + esc(t.invoice) + '</button></p>'
+        + '<p class="vg-track-invoice"><button type="button" class="button vg-track-invoice-btn">' + esc(t.invoice) + '</button>' + (d.refunded ? ' <button type="button" class="button vg-track-invoice-btn" data-mode="credit">' + esc(t.credit) + '</button>' : '') + '</p>'
         + '<p class="vg-track-again"><button type="button" class="button button--checkout vg-track-back">' + esc(t.again) + '</button></p>';
       lookup.hidden = true; result.hidden = false;
     }
@@ -648,7 +648,7 @@
         var go = function () {
           var p = fetch(ENDPOINT + '/invoice', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(req) })
             .then(function (r) { return r.json().then(function (d) { if (!d.ok) throw new Error(t.error); return d.invoice; }); });
-          window.VGInvoice.openAsync(p, lang);
+          window.VGInvoice.openAsync(p, lang, btn.getAttribute('data-mode') || '');
         };
         if (window.VGInvoice) return go();
         var sc = document.createElement('script');
