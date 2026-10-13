@@ -30,6 +30,8 @@
     .tag.on { color: var(--ok); border-color: var(--ok); } .tag.off { color: var(--muted); }
     #msg { min-height: 1.4em; margin: 12px 0; }
     @media (max-width: 520px) { form.card { grid-template-columns: 1fr; } }
+      .card { border-radius: 18px; box-shadow: 0 1px 2px rgba(0,0,0,.04), 0 6px 18px rgba(0,0,0,.04); }
+    button.primary { font-family: var(--f-mono, ui-monospace, monospace); letter-spacing: .03em; }
   </style>
 <link rel="icon" href="../assets/theme/admin/favicon.svg?v=3" type="image/svg+xml">
 <link rel="icon" href="../assets/theme/admin/favicon-32.png?v=3" type="image/png" sizes="32x32">
@@ -38,9 +40,9 @@
 <link rel="apple-touch-icon" sizes="180x180" href="../assets/theme/admin/apple-touch-icon.png?v=3">
 </head>
 <body>
-<main>
-  <nav><a href="menu.html">← Tableau de bord</a></nav>
-  <h1>Codes promo</h1>
+<main class="vg-page">
+  <nav class="vg-legacy-nav"><a href="menu.html">← Tableau de bord</a></nav>
+  <div class="vg-head"><div><h1>Codes promo</h1></div></div>
   <p class="muted">Le client tape son code sur la page de paiement (champ « code promotionnel », déjà actif). La remise porte sur les pièces, pas sur la livraison. Les codes vivent dans Stripe : on peut aussi les gérer là-bas.</p>
   <div id="login" class="card" hidden><p>Connexion requise.</p><button type="button" class="primary" id="login-btn">Se connecter avec GitHub</button></div>
   <div id="app" hidden>
