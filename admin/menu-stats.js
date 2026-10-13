@@ -56,5 +56,7 @@
       top: Object.keys(pieces).sort(function (a, b) { return pieces[b] - pieces[a]; }).slice(0, 5).map(function (n) { return { name: n, amount: pieces[n] }; })
     };
   }
-  return { toShip: toShip, requestsTodo: requestsTodo, nextDrop: nextDrop, inWords: inWords, salesStats: salesStats };
+  // Pièces du catalogue public (products.json) sans poids : les ports ne peuvent pas être calculés.
+  function noWeight(list) { return (list || []).filter(function (p) { return !(Math.floor(Number(p && p.weight_g)) > 0); }); }
+  return { noWeight: noWeight, toShip: toShip, requestsTodo: requestsTodo, nextDrop: nextDrop, inWords: inWords, salesStats: salesStats };
 }));
