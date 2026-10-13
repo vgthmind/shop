@@ -21,7 +21,7 @@
   } catch (e) {}
   // Numéro de version de l'admin, affiché en petit en bas à gauche de chaque page : permet de vérifier qu'on a bien la dernière version.
   // À changer à chaque mise à jour de l'admin (aaaa-mm-jj + lettre).
-  window.VG_ADMIN_VERSION = '2026-10-13-g';
+  window.VG_ADMIN_VERSION = '2026-10-13-h';
   function showVersion() {
     try {
       var d = document.createElement('div'); d.id = 'vg-admin-version'; d.textContent = 'Admin v' + window.VG_ADMIN_VERSION;
@@ -84,29 +84,73 @@
     if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(function () {});
   } catch (e) {}
 
+  // Connexion GitHub. Deux chemins pour récupérer la session, le premier qui répond gagne :
+  //   1. la fenêtre GitHub renvoie la session à cette page (postMessage) : ordinateur ;
+  //   2. la page garde un code secret (lc) ; le Worker dépose la session sous ce code et la page la réclame (/auth/claim) :
+  //      iPhone / appli installée, où la fenêtre GitHub n'a aucun lien avec la page d'origine. Ce code est aussi gardé
+  //      (3 min) pour reprendre l'attente si la page est rechargée ou recréée pendant la connexion.
+  var LC = 'vg-login-code', LC_MS = 3 * 60 * 1000;
+  function randomCode() {
+    var a = new Uint8Array(16); (window.crypto || window.msCrypto).getRandomValues(a);
+    return Array.prototype.map.call(a, function (b) { return ('0' + b.toString(16)).slice(-2); }).join('');
+  }
+  function pendingCode() {
+    try { var v = (localStorage.getItem(LC) || '').split(':'); return v[0] && Date.now() - Number(v[1]) < LC_MS ? v[0] : ''; } catch (e) { return ''; }
+  }
+  function acceptSession(session) {
+    try { localStorage.setItem(KEY, session); localStorage.removeItem(LC); } catch (e) {}
+    touch();
+  }
+  // Attend la session déposée sous ce code. Résout avec la session, ou rejette au bout de 3 min.
+  function waitForSession(code) {
+    return new Promise(function (resolve, reject) {
+      var stop = Date.now() + LC_MS, busy = false, done = false, timer;
+      function finish(fn, v) { if (done) return; done = true; clearInterval(timer); document.removeEventListener('visibilitychange', check); window.removeEventListener('focus', check); window.removeEventListener('pageshow', check); fn(v); }
+      function check() {
+        if (done || busy) return;
+        if (Date.now() > stop) { finish(reject, new Error('Connexion trop longue : réessaie.')); return; }
+        busy = true;
+        fetch(ENDPOINT + '/auth/claim?code=' + code, { cache: 'no-store' })
+          .then(function (r) { return r.ok ? r.json() : null; })
+          .then(function (d) { busy = false; if (d && d.session) finish(resolve, d.session); })
+          .catch(function () { busy = false; });
+      }
+      timer = setInterval(check, 1500);
+      document.addEventListener('visibilitychange', check);
+      window.addEventListener('focus', check); window.addEventListener('pageshow', check);
+      check();
+    });
+  }
+  // Reprise après rechargement de la page pendant une connexion en cours (null s'il n'y en a pas).
+  window.vgAdminResumeLogin = function () {
+    var code = pendingCode();
+    return code ? waitForSession(code).then(function (session) { acceptSession(session); return session; }) : null;
+  };
+
   window.vgAdminLogin = function () {
     return new Promise(function (resolve, reject) {
-      var popup = window.open(ENDPOINT + '/auth?provider=github&site_id=' + encodeURIComponent(location.hostname),
-        'vg-github-login', 'width=600,height=720');
-      if (!popup) { reject(new Error('Fenêtre bloquée par le navigateur : autorise les pop-ups pour ce site.')); return; }
+      var code = randomCode();
+      try { localStorage.setItem(LC, code + ':' + Date.now()); } catch (e) {}
+      var url = ENDPOINT + '/auth?provider=github&site_id=' + encodeURIComponent(location.hostname) + '&lc=' + code
+        + '&return=' + encodeURIComponent(location.origin + '/admin/connexion' + location.search);
+      var popup = window.open(url, 'vg-github-login', 'width=600,height=720');
+      var settled = false;
+      function ok(session) { if (settled) return; settled = true; window.removeEventListener('message', onMessage); acceptSession(session); resolve(session); }
+      function ko(err) { if (settled) return; settled = true; window.removeEventListener('message', onMessage); try { localStorage.removeItem(LC); } catch (e) {} reject(err); }
+      if (!popup) { location.href = url; return; } // fenêtre bloquée : connexion dans cette même fenêtre, reprise au retour
       function onMessage(e) {
         if (e.origin !== ENDPOINT) return;
         var data = String(e.data || '');
-        if (data === 'authorizing:github') { popup.postMessage(data, e.origin); return; }
+        if (data === 'authorizing:github') { try { popup.postMessage(data, e.origin); } catch (err) {} return; }
         var m = /^authorization:github:(success|error):(.*)$/.exec(data);
         if (!m) return;
-        window.removeEventListener('message', onMessage);
         var payload = {};
         try { payload = JSON.parse(m[2]); } catch (err) {}
-        if (m[1] === 'success' && payload.session) {
-          try { localStorage.setItem(KEY, payload.session); } catch (err) {}
-          touch();
-          resolve(payload.session);
-        } else {
-          reject(new Error(payload.message || 'Connexion refusée.'));
-        }
+        if (m[1] === 'success' && payload.session) ok(payload.session);
+        else ko(new Error(payload.message || 'Connexion refusée.'));
       }
       window.addEventListener('message', onMessage);
+      waitForSession(code).then(ok, ko); // chemin 2 : session réclamée avec le code
     });
   };
 
@@ -115,7 +159,7 @@
   // remote=true (bouton) : révocation par le Worker ; sinon (inactivité, session refusée) simple oubli local.
   window.vgAdminLogout = function (remote) {
     var s = '';
-    try { s = localStorage.getItem(KEY) || ''; localStorage.removeItem(KEY); localStorage.removeItem('vg-admin-token'); localStorage.removeItem(LAST); } catch (e) {}
+    try { s = localStorage.getItem(KEY) || ''; localStorage.removeItem(KEY); localStorage.removeItem('vg-admin-token'); localStorage.removeItem(LAST); localStorage.removeItem(LC); } catch (e) {}
     setCookie('');
     try { if (window.caches) caches.keys().then(function (ks) { ks.forEach(function (k) { caches.delete(k); }); }); } catch (e) {}
     if (!s || remote !== true) return Promise.resolve();

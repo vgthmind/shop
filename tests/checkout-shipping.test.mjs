@@ -21,13 +21,13 @@ test('toutes les pièces passent par la grille : le port dépend du pays choisi 
     assert.equal(r.cents, grid([{ slug: 'n', qty: 1, weight_g: 500, mode: 'colis' }], c), c); // = calcul admin
     got[c] = r.cents;
   }
-  assert.deepEqual(got, { FR: 0, BE: 2000, DE: 2000, CA: 4000, US: 4000, CH: 2000, GB: 2400, RE: 1900 });
+  assert.deepEqual(got, { FR: 0, BE: 2000, DE: 2000, CA: 3000, US: 3000, CH: 2000, GB: 2400, RE: 1900 });
 });
 
 test('ports fixes hérités de BigCartel : ignorés (la grille décide), même avec un port fixe énorme sur la fiche', async () => {
   const p = piece('a', { shipping_derived: undefined, shipping: line(99, 99) });
   assert.equal((await checkoutShipping(env(), [p], w('a'), 'fr', 'FR')).cents, 0);
-  assert.equal((await checkoutShipping(env(), [p], w('a'), 'intl', 'CA')).cents, 4000);
+  assert.equal((await checkoutShipping(env(), [p], w('a'), 'intl', 'CA')).cents, 3000);
 });
 
 test('pièce sans poids : refus, jamais gratuit, même avec un port fixe sur la fiche', async () => {
@@ -46,11 +46,13 @@ test('pays refusé reste refusé ; international sans pays : refusé (jamais un 
   assert.equal((await checkoutShipping(env(off), [piece('n')], w('n'), 'intl', 'CA')).error, 'country_not_served');
 });
 
-test('lettre en France : 4 € seule ; à l’étranger elle part en colis (18 € zone A, 39 € reste du monde), jamais le forfait lettre', async () => {
+test('lettre seule : 4 € en France ; à l’étranger lettre suivie internationale au vrai tarif arrondi (8 €) ; avec une autre pièce ou vers l’outre-mer : colis', async () => {
   const l = piece('l', { weight_g: 50, mode: 'lettre' });
   assert.equal((await checkoutShipping(env(), [l], w('l'), 'fr', 'FR')).cents, 400);
-  assert.equal((await checkoutShipping(env(), [l], w('l'), 'intl', 'BE')).cents, 1800);
-  assert.equal((await checkoutShipping(env(), [l], w('l'), 'intl', 'CA')).cents, 3900);
+  for (const c of ['BE', 'GB', 'NO', 'CA', 'US', 'JP']) assert.equal((await checkoutShipping(env(), [l], w('l'), 'intl', c)).cents, 800, c); // 70 g -> 100 g = 7,65 €
+  const other = piece('o', { weight_g: 500, mode: 'colis' });
+  assert.equal((await checkoutShipping(env(), [l, other], w('l', 'o'), 'intl', 'BE')).cents, 2000); // avec une autre pièce : un seul colis
+  assert.equal((await checkoutShipping(env(), [l], w('l'), 'intl', 'RE')).cents, 1300); // outre-mer : colis (186 g -> 500 g = 12,02 €, arrondi)
 });
 
 test('la quantité compte', async () => {
@@ -79,6 +81,7 @@ test('plus jamais à perte : le port facturé couvre le vrai tarif La Poste, 1 �
       const items = ps.slice(0, k).map((p) => ({ slug: p.permalink, qty: 1, weight_g: 550 }));
       const q = calc.quoteShipping(config, { items, subtotal: 100 }, c);
       const r = await checkoutShipping(env(), ps.slice(0, k), w(...ps.slice(0, k).map((p) => p.permalink)), 'intl', c);
+      if (k === 1 && (c === 'CA' || c === 'US')) { assert.equal(r.cents, 3000); continue; } // pièce seule : forfait 30 € voulu, différence à la charge du vendeur
       assert.ok(r.cents >= q.costCents, `${c} ${k} pièce(s) : ${r.cents} < coût ${q.costCents}`);
     }
   }

@@ -46,7 +46,13 @@
   }
   // Une session gardée dans ce navigateur n'est suivie qu'une fois VÉRIFIÉE par le serveur : si elle a été fermée ailleurs
   // (déconnexion, expiration), on l'oublie et on propose de se reconnecter au lieu de repartir vers la page admin.
-  var tok = window.vgAdminToken();
+  // Connexion GitHub déjà lancée (page rechargée ou recréée pendant la connexion, iPhone) : on reprend l'attente de la session.
+  var resumed = window.vgAdminResumeLogin();
+  if (resumed) {
+    msg.textContent = 'Connexion en cours…';
+    resumed.then(function () { try { sessionStorage.removeItem('vg-go'); } catch (e) {} go(); }).catch(function (e) { msg.textContent = e.message; });
+  }
+  var tok = resumed ? '' : window.vgAdminToken();
   if (tok) {
     msg.textContent = 'Vérification de ta session…';
     fetch(window.VG_ENDPOINT + '/admin/renew', { method: 'POST', headers: { Authorization: 'Bearer ' + tok } })

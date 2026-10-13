@@ -26,10 +26,10 @@ test('1 short de 420 g en France : coût 9,29 €, offert au client, perte 9,29 
   assert.equal(r.parcels.length, 1); assert.equal(r.parcels[0].weight_g, 558);
   assert.equal(r.costCents, 929); assert.equal(r.totalCents, 0); assert.equal(r.gapCents, -929); assert.equal(r.tier, 'FR');
 });
-test('1 pièce au Canada : 570 g + carton = 708 g, tarif zone C 39,19 €, client 40 € (forfait 39 € relevé au vrai coût, arrondi à l’euro)', () => {
+test('1 pièce au Canada : 570 g + carton = 708 g, tarif zone C 39,19 €, client 30 € (pièce seule vers le Canada : forfait 30 €, la différence est à la charge du vendeur)', () => {
   const r = q([w('jean', 570)], 'CA');
-  assert.equal(r.zone, 'C'); assert.equal(r.tier, 'MONDE'); assert.equal(r.parcels.length, 1);
-  assert.equal(r.costCents, 3919); assert.equal(r.totalCents, 4000); assert.equal(r.gapCents, 81);
+  assert.equal(r.zone, 'C'); assert.equal(r.tier, 'CAUS'); assert.equal(r.parcels.length, 1);
+  assert.equal(r.costCents, 3919); assert.equal(r.totalCents, 3000); assert.equal(r.gapCents, -919); assert.equal(r.tier, 'CAUS');
 });
 
 test('2 pièces qui partagent un colis : poids additionnés, UN seul carton, forfait zone A 18 € relevé au vrai coût (arrondi à l\'euro)', () => {
@@ -44,7 +44,7 @@ test('2 pièces « part seule » au Canada : 2 colis, vrai coût partout (jamais
   assert.equal(r.parcels.length, 2);
   assert.deepEqual(r.parcels.map((p) => p.weight_g), [708, 708]);
   assert.equal(r.costCents, 3919 * 2);
-  assert.equal(r.totalCents, 4000 + 3919); assert.equal(r.gapCents, 81); // 1er colis arrondi à l'euro, 2e au vrai tarif
+  assert.equal(r.totalCents, 4000 + 3919); assert.equal(r.gapCents, 81); // 2 pièces : plus de forfait de pièce seule // 1er colis arrondi à l'euro, 2e au vrai tarif
 });
 
 test('une pièce « part seule » + une pièce qui partage : 2 colis (carton chacun), zone A : 18 € par colis, jamais sous le vrai coût', () => {
@@ -63,19 +63,24 @@ test('le 1er colis (forfait) est le plus lourd de la commande (reste du monde)',
 test('palier « par colis » (zone A) : chaque colis paie le forfait ; réglable ailleurs', () => {
   const two = [{ slug: 'a', qty: 2, weight_g: 300, alone: true }];
   assert.equal(q(two, 'DE').totalCents, 1800 * 2); // 438 g -> 500 g = 14,99 : forfait 18 € par colis
-  assert.equal(q(two, 'CA').totalCents, 3900 + 3519); // reste du monde, par commande : 1er colis 39 €, le 2e au vrai tarif
+  assert.equal(q(two, 'NO').totalCents, 3900 + 2379); // reste du monde, par commande : 1er colis 39 €, le 2e au vrai tarif (zone B, 438 g -> 500 g = 23,79)
   const c = cfg((x) => { x.customer_pricing.tiers.find((t) => t.id === 'MONDE').basis = 'per_parcel'; });
-  assert.equal(q(two, 'CA', {}, c).totalCents, 3900 * 2);
+  assert.equal(q(two, 'NO', {}, c).totalCents, 3900 * 2);
 });
-test('reste du monde : 39 € la 1re pièce, +8 € par pièce en plus dans le colis, jamais sous le vrai coût La Poste', () => {
+test('reste du monde (Norvège…) : 39 € la 1re pièce, +8 € par pièce en plus dans le colis, jamais sous le vrai coût La Poste', () => {
   const c = cfg((x) => { x.customer_pricing.tiers.find((t) => t.id === 'MONDE').floor_real = false; });
   const n = (k) => Array.from({ length: k }, (_, i) => w('p' + i, 550));
-  assert.equal(q(n(1), 'CA', {}, c).totalCents, 3900);
-  assert.equal(q(n(2), 'CA', {}, c).totalCents, 4700); // sans plancher : 39 + 8
-  assert.equal(q(n(3), 'CA', {}, c).totalCents, 5500);
-  // avec le plancher (réglage livré), le prix suit les tranches La Poste quand le forfait ne les couvre pas
-  [1, 2, 3, 4].forEach((k) => assert.ok(q(n(k), 'CA').gapCents >= 0, k + ' pièce(s) ne doit pas être à perte'));
-  assert.deepEqual([1, 2, 3, 4, 5].map((k) => q(n(k), 'CA').totalCents), [4000, 5400, 5500, 7900, 7900]); // plancher arrondi à l'euro : 40 / 54 / 55 / 79
+  assert.deepEqual([1, 2, 3].map((k) => q(n(k), 'NO', {}, c).totalCents), [3900, 4700, 5500]); // sans plancher : 39 + 8 par pièce
+  [1, 2, 3, 4, 5].forEach((k) => assert.ok(q(n(k), 'NO').gapCents >= 0, k + ' pièce(s) ne doit pas être à perte'));
+  assert.deepEqual([1, 2, 3, 4, 5].map((k) => q(n(k), 'NO').totalCents), [3900, 4700, 5500, 6300, 7100]);
+});
+test('Canada / États-Unis : 1 pièce seule 30 € (à la charge du vendeur : 9,19 €), puis plancher arrondi à l’euro 54 / 55 / 79', () => {
+  const n = (k) => Array.from({ length: k }, (_, i) => w('p' + i, 550));
+  for (const c of ['CA', 'US']) {
+    assert.deepEqual([1, 2, 3, 4, 5].map((k) => q(n(k), c).totalCents), [3000, 5400, 5500, 7900, 7900], c);
+    assert.deepEqual([2, 3, 4, 5].map((k) => q(n(k), c).gapCents >= 0), [true, true, true, true], c); // à partir de 2 pièces : jamais à perte
+  }
+  assert.equal(q(n(1), 'CA').gapCents, -919);
 });
 
 test('France : colis offerts quel que soit le nombre de colis', () => {
@@ -98,9 +103,16 @@ test('lettre : tranches 20 g / 100 g / 2 kg (enveloppe comprise)', () => {
   assert.equal(q([w('a', 1980, { mode: 'lettre' })], 'FR').costCents, 1156);          // 2000 g
   assert.equal(q([w('a', 1981, { mode: 'lettre' })], 'FR').parcels[0].kind, 'colis'); // 2001 g : trop lourd -> colis
 });
-test('lettre hors France : colis', () => {
-  const r = q([w('a', 100, { mode: 'lettre' })], 'DE');
-  assert.equal(r.parcels[0].kind, 'colis'); assert.equal(r.costCents, 1499);
+test('lettre à l’étranger : lettre suivie internationale quand la pièce est SEULE (vrai tarif arrondi à l’euro) ; outre-mer ou autre pièce : colis', () => {
+  const r = q([w('a', 100, { mode: 'lettre' })], 'DE'); // 100 g + enveloppe 20 g = 120 g -> tranche 250 g
+  assert.equal(r.parcels[0].kind, 'lettre'); assert.equal(r.costCents, 1445); assert.equal(r.totalCents, 1500);
+  const cc = q([w('cache-cou', 48, { mode: 'lettre' })], 'BE'); // 68 g -> tranche 100 g
+  assert.equal(cc.parcels[0].kind, 'lettre'); assert.equal(cc.costCents, 765); assert.equal(cc.totalCents, 800);
+  for (const c of ['GB', 'NO', 'CA', 'US', 'JP']) assert.equal(q([w('cache-cou', 48, { mode: 'lettre' })], c).totalCents, 800, c);
+  assert.equal(q([w('a', 100, { mode: 'lettre' })], 'RE').parcels[0].kind, 'colis'); // outre-mer : colis
+  assert.equal(q([w('a', 100, { mode: 'lettre' }), w('b', 420)], 'DE').parcels[0].kind, 'colis'); // avec une autre pièce : colis
+  const off = cfg((x) => { x.lettre.international.enabled = false; });
+  assert.equal(q([w('a', 100, { mode: 'lettre' })], 'DE', {}, off).parcels[0].kind, 'colis');
 });
 test('lettre : 1 pièce max -> 2 pièces lettre partent en colis (un seul colis)', () => {
   const r = q([w('a', 100, { mode: 'lettre' }), w('b', 100, { mode: 'lettre' })], 'FR'); // 338 g
@@ -172,8 +184,8 @@ test('quoteByZone : une pièce seule, une ligne par zone livrée, coût / client
   const z = quoteByZone(base, { slug: 'a', weight_g: 400 }); // 538 g
   assert.deepEqual(z.map((x) => x.zone), ['FR', 'A', 'UK', 'B', 'C', 'OM1', 'OM2']);
   assert.deepEqual(z.map((x) => x.cost), [9.29, 19.39, 23.39, 28.39, 39.19, 19, 18.95]);
-  assert.deepEqual(z.map((x) => x.total), [0, 20, 24, 39, 40, 19, 19]);
-  assert.deepEqual(z.map((x) => x.gap), [-9.29, 0.61, 0.61, 10.61, 0.81, 0, 0.05]);
+  assert.deepEqual(z.map((x) => x.total), [0, 20, 24, 39, 30, 19, 19]); // zone C (échantillon : États-Unis) : pièce seule 30 €
+  assert.deepEqual(z.map((x) => x.gap), [-9.29, 0.61, 0.61, 10.61, -9.19, 0, 0.05]);
   assert.equal(quoteByZone(base, { slug: 'a', weight_g: 48, mode: 'lettre' })[0].kind, 'lettre');
 });
 
@@ -191,8 +203,9 @@ test('la grille porte ses sources et n\'est plus un exemple', () => {
   assert.equal(JSON.stringify(base).includes('REMPLACER'), false);
   assert.equal(base.free_shipping.enabled, false);
   assert.equal(base.customer_pricing.basis, 'per_order');
-  assert.deepEqual(base.customer_pricing.tiers.map((t) => t.id), ['FR', 'A', 'OM', 'UK', 'MONDE']);
-  assert.deepEqual(base.customer_pricing.tiers.map((t) => t.first_flat ?? t.lettre_flat ?? 'réel'), [4, 18, 'réel', 18, 39]);
+  assert.deepEqual(base.customer_pricing.tiers.map((t) => t.id), ['FR', 'A', 'OM', 'UK', 'CAUS', 'MONDE']);
+  assert.deepEqual(base.customer_pricing.tiers.map((t) => t.first_flat ?? t.lettre_flat ?? 'réel'), [4, 18, 'réel', 18, 39, 39]);
+  assert.equal(base.customer_pricing.tiers.find((t) => t.id === 'CAUS').single_flat, 30);
   assert.equal(base.customer_pricing.tiers.find((t) => t.id === 'MONDE').extra_piece, 8);
 });
 
@@ -223,7 +236,7 @@ test('repli : pas utilisé quand le poids est connu', () => {
 test('lettre : pays acceptés réglables (Belgique ajoutée, minuscules tolérées), lettre désactivable', () => {
   const be = cfg((x) => { x.lettre.countries = ['fr', 'be']; });
   const r = q([w('a', 100, { mode: 'lettre' })], 'BE', {}, be);
-  assert.equal(r.parcels[0].kind, 'lettre'); assert.equal(r.tier, 'A'); assert.equal(r.totalCents, r.costCents); assert.ok(r.totalCents > 0); // palier sans forfait lettre : vrai tarif, jamais 0 par oubli
+  assert.equal(r.parcels[0].kind, 'lettre'); assert.equal(r.tier, 'A'); assert.equal(r.totalCents, Math.ceil(r.costCents / 100) * 100); assert.ok(r.totalCents > 0); // palier sans forfait lettre : vrai tarif, jamais 0 par oubli
   assert.equal(q([w('a', 100, { mode: 'lettre' })], 'FR', {}, be).parcels[0].kind, 'lettre');
   const off = cfg((x) => { x.lettre.enabled = false; });
   assert.equal(q([w('a', 100, { mode: 'lettre' })], 'FR', {}, off).parcels[0].kind, 'colis');
@@ -243,10 +256,10 @@ test('admin Expédition : réglages lettre (activée, pays, poids max, pièces m
 test('Belgique ≠ États-Unis : zone A (18 €, relevé au vrai coût) contre zone C (39 €, relevé au vrai coût) ; coûts La Poste 2026 (500 g : 14,99 € / 35,19 €)', () => {
   const be = q([w('jean', 570)], 'BE'), us = q([w('jean', 570)], 'US');
   assert.equal(be.zone, 'A'); assert.equal(us.zone, 'C');
-  assert.equal(be.totalCents, 2000); assert.equal(us.totalCents, 4000);
+  assert.equal(be.totalCents, 2000); assert.equal(us.totalCents, 3000); // États-Unis : 1 pièce seule = 30 €
   assert.notEqual(be.totalCents, us.totalCents);
   assert.equal(q([w('a', 40)], 'BE').costCents, 1499);  // 178 g -> tranche 500 g, zone A
   assert.equal(q([w('a', 40)], 'BE').totalCents, 1800); // forfait 18 €
   assert.equal(q([w('a', 40)], 'US').costCents, 3519);  // 178 g -> tranche 500 g, zone C
-  assert.equal(q([w('a', 40)], 'US').totalCents, 3900); // forfait 39 €
+  assert.equal(q([w('a', 40)], 'US').totalCents, 3000); // pièce seule : 30 €
 });

@@ -38,7 +38,7 @@ test('ports par zone : France, zone A, reste du monde, outre-mer (coût réel, p
   assert.deepEqual(d.zones.map((z) => z.label), ['France', 'Zone A (UE, Suisse)', 'Reste du monde', 'Outre-mer 1', 'Outre-mer 2']);
   const [fr, ue, monde, om1, om2] = d.zones;
   assert.deepEqual([fr.cost, fr.total, fr.gap], [9.29, 0, -9.29]);
-  assert.deepEqual([ue.cost, ue.total], [19.39, 20]); assert.deepEqual([monde.cost, monde.total], [39.19, 40]); // plancher arrondi à l'euro
+  assert.deepEqual([ue.cost, ue.total], [19.39, 20]); assert.deepEqual([monde.cost, monde.total], [39.19, 30]); // 1 pièce seule vers les États-Unis : forfait 30 € ; zone A : plancher arrondi à l'euro
   assert.deepEqual([om1.cost, om1.total, om2.cost, om2.total], [19, 19, 18.95, 19]); // vrai tarif La Poste arrondi à l’euro supérieur
 });
 test('modeAdvice : signal seulement si l\'autre mode est moins cher, avec les deux montants', () => {

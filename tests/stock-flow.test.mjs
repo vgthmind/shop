@@ -219,12 +219,12 @@ test('mail de commande Belgique : bon pays, port 20 € (vrai tarif zone A 19,39
   assert.equal(mails.length, 2);
 });
 
-test('mail de commande Canada : port 40, total 50', async () => {
+test('mail de commande Canada : port 30 (1 pièce), total 40', async () => {
   const a = await checkout('cart-aaaaaaaa', 'uniq', 'CA');
-  assert.equal(stripeCreated[0].get('shipping_options[0][shipping_rate_data][fixed_amount][amount]'), '4000');
-  await webhook('checkout.session.completed', pay(a.id, { country: 'CA', ship: 4000, total: 5000 }));
+  assert.equal(stripeCreated[0].get('shipping_options[0][shipping_rate_data][fixed_amount][amount]'), '3000');
+  await webhook('checkout.session.completed', pay(a.id, { country: 'CA', ship: 3000, total: 4000 }));
   const client = mails.find((m) => m.to[0] === 'client@example.com'), seller = mails.find((m) => m.to[0] === 'alex-vendeur@example.com');
-  assert.match(seller.subject, /50,00 EUR — Canada/); assert.match(client.text, /€40.00/); assert.match(client.text, /€50.00/);
+  assert.match(seller.subject, /40,00 EUR — Canada/); assert.match(client.text, /€30.00/); assert.match(client.text, /€40.00/);
 });
 
 // --- Langue choisie sur le site : page Stripe, nom de la pièce, mails ---

@@ -43,12 +43,12 @@ const reset = () => { stripeBodies = []; released = 0; };
 test('quote : pays par pays pour une pièce (grille : zone A 18 €, reste du monde 39 €, relevés au vrai coût arrondi à l’euro)', async () => {
   const got = {};
   for (const c of ['FR', 'BE', 'DE', 'CA']) { const j = await (await post('/shipping/quote', { items: items('new1'), country: c })).json(); assert.equal(j.ok, true, c); got[c] = j.cents; }
-  assert.deepEqual(got, { FR: 0, BE: 2000, DE: 2000, CA: 4000 }); // 500 g + carton 138 g = 638 g -> tranche 1 kg
+  assert.deepEqual(got, { FR: 0, BE: 2000, DE: 2000, CA: 3000 }); // 500 g + carton 138 g = 638 g -> tranche 1 kg
 });
 
 test('quote : une ancienne pièce passe aussi par la grille (plus de port fixe : France offerte, Canada 39 €)', async () => {
   assert.equal((await (await post('/shipping/quote', { items: items('old1'), country: 'FR' })).json()).cents, 0);
-  assert.equal((await (await post('/shipping/quote', { items: items('old1'), country: 'CA' })).json()).cents, 3900); // 238 g -> 500 g = 35,19 : forfait 39 €
+  assert.equal((await (await post('/shipping/quote', { items: items('old1'), country: 'CA' })).json()).cents, 3000); // 238 g, 1 pièce vers le Canada : 30 €
 });
 
 test('quote : refus (pays bloqué, sans pays, pièce France seulement, pièce inconnue)', async () => {
@@ -70,11 +70,11 @@ test('checkout Belgique : port belge, adresse limitée à la Belgique', async ()
   assert.equal(s.get('metadata[country]'), 'BE');
 });
 
-test('checkout Canada : 40 € (39,19 arrondi), adresse limitée au Canada', async () => {
+test('checkout Canada : 30 € pour 1 pièce, adresse limitée au Canada', async () => {
   reset();
   await post('/checkout', { items: items('new1'), country: 'CA', cart_id: 'cart-12345678' });
   const s = stripeBodies[0];
-  assert.equal(s.get('shipping_options[0][shipping_rate_data][fixed_amount][amount]'), '4000');
+  assert.equal(s.get('shipping_options[0][shipping_rate_data][fixed_amount][amount]'), '3000');
   assert.deepEqual([...s.entries()].filter(([k]) => k.startsWith('shipping_address_collection')).map(([, v]) => v), ['CA']);
 });
 

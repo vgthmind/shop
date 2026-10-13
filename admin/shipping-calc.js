@@ -137,15 +137,26 @@
   }
 
   // Une lettre : uniquement si tout le panier tient dans UNE lettre. null sinon.
+  // Lettre suivie : France (lettre.countries, tranches de lettre) ou étranger (lettre.international : lettre suivie
+  // internationale, pour les zones listées ; jamais l'outre-mer). Seulement si TOUTES les pièces du panier sont en mode lettre
+  // et tiennent dans UNE lettre (nombre max de pièces, poids max) ; sinon tout part en colis.
   function lettreParcel(config, country, units) {
     var l = config.lettre;
-    if (!l || !l.enabled || !Array.isArray(l.brackets) || !l.brackets.length) return null;
-    if ((l.countries || []).map(function (x) { return String(x).toUpperCase(); }).indexOf(String(country || '').toUpperCase()) === -1) return null;
+    if (!l || !l.enabled) return null;
+    var c = String(country || '').toUpperCase();
+    var src = null;
+    if ((l.countries || []).map(function (x) { return String(x).toUpperCase(); }).indexOf(c) !== -1) src = l;
+    else if (l.international && l.international.enabled !== false) {
+      var z = findZone(config, c);
+      if (z && z.enabled !== false && (l.international.zones || []).indexOf(z.id) !== -1) src = l.international;
+    }
+    if (!src || !Array.isArray(src.brackets) || !src.brackets.length) return null;
     if (!units.every(function (u) { return u.mode === 'lettre'; })) return null;
-    var packed = packUnits({ max_pieces: l.max_pieces, max_weight_g: l.max_weight_g, tare_g: pkg(config).envelope_g }, units);
+    var maxPieces = src.max_pieces !== undefined ? src.max_pieces : l.max_pieces;
+    var packed = packUnits({ max_pieces: maxPieces, max_weight_g: src.max_weight_g, tare_g: pkg(config).envelope_g }, units);
     if (packed.length !== 1) return null;
-    if (toInt(l.max_weight_g, 0) && packed[0].weight_g > toInt(l.max_weight_g, 0)) return null; // une seule piece trop lourde pour la lettre
-    var pr = bracketPriceCents(l, packed[0].weight_g);
+    if (toInt(src.max_weight_g, 0) && packed[0].weight_g > toInt(src.max_weight_g, 0)) return null; // une seule piece trop lourde pour la lettre
+    var pr = bracketPriceCents(src, packed[0].weight_g);
     return pr === null ? null : buildParcel('lettre', packed[0], pr);
   }
 
@@ -154,6 +165,7 @@
   //   colis_free   livraison offerte ; lettre_flat forfait d'une lettre ;
   //   real         vrai tarif La Poste, colis par colis (outre-mer) ; round_eur : arrondi à l'euro supérieur ;
   //   first_flat   forfait du 1er colis ; extra_piece = supplément par pièce en plus dans CE colis ;
+  //   single_flat  forfait d'une commande d'UNE seule pièce (sans plancher : la différence est à la charge du vendeur) ;
   //   floor_real   le client ne paie jamais moins que le vrai tarif La Poste du colis (jamais à perte) ;
   //   floor_round_eur  ce plancher est arrondi à l'euro supérieur (53,99 -> 54 €) ;
   //   basis        'per_parcel' : chaque colis paye le forfait ; 'per_order' (défaut) : seul le 1er, les suivants au vrai tarif.
@@ -161,11 +173,16 @@
     if (!tier) return parcels.map(function (p) { return p.priceCents; }); // pas de palier : tarif reel
     var basis = (tier.basis || (config.customer_pricing && config.customer_pricing.basis)) === 'per_parcel' ? 'per_parcel' : 'per_order';
     var paid = parcels.map(function () { return 0; });
+    var totalPieces = parcels.reduce(function (n, p) { return n + (p.pieces || 1); }, 0);
     parcels.forEach(function (p, i) { // parcels est deja trie du plus lourd au plus leger
-      if (p.kind === 'lettre') { paid[i] = tier.lettre_flat === undefined || tier.lettre_flat === null ? p.priceCents : cents(tier.lettre_flat); return; } // palier sans forfait lettre : vrai tarif, jamais 0 par oubli
+      if (p.kind === 'lettre') { // palier sans forfait lettre : vrai tarif (arrondi à l'euro supérieur si le palier arrondit), jamais 0 par oubli
+        paid[i] = tier.lettre_flat === undefined || tier.lettre_flat === null ? (tier.floor_round_eur || tier.round_eur ? Math.ceil(p.priceCents / 100) * 100 : p.priceCents) : cents(tier.lettre_flat);
+        return;
+      }
       if (tier.colis_free) { paid[i] = 0; return; }
       if (tier.real) { paid[i] = tier.round_eur ? Math.ceil(p.priceCents / 100) * 100 : p.priceCents; return; }
       if (!(basis === 'per_parcel' || i === 0)) { paid[i] = p.priceCents; return; }
+      if (tier.single_flat !== undefined && tier.single_flat !== null && totalPieces === 1) { paid[i] = cents(tier.single_flat); return; } // commande d'UNE seule pièce : forfait particulier
       var flat = cents(tier.first_flat) + cents(tier.extra_piece) * Math.max(0, (p.pieces || 1) - 1);
       var floor = tier.floor_real ? (tier.floor_round_eur ? Math.ceil(p.priceCents / 100) * 100 : p.priceCents) : 0;
       paid[i] = Math.max(flat, floor);

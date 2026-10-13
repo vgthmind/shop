@@ -1,5 +1,5 @@
 {
-  "version": 6,
+  "version": 7,
   "currency": "EUR",
   "_sources": {
     "verifie_le": "2026-10-07",
@@ -7,7 +7,7 @@
     "colissimo_outre_mer": "https://www.laposte.fr/professionnel/tarif-colissimo  (tarifs Colissimo Outre-mer au 1er janvier 2026, releves a l'identique le 2026-10-13 : OM 1 = Guadeloupe, Martinique, Guyane, Reunion, Mayotte, Saint-Pierre-et-Miquelon, Saint-Martin, Saint-Barthelemy ; OM 2 = Nouvelle-Caledonie, Polynesie, Wallis-et-Futuna, TAAF). Des taxes locales (octroi de mer) peuvent etre demandees a la reception.",
     "lettre_verte_suivie": "https://www.laposte.fr/tarif-lettre-suivie  (France, affranchissement en ligne ; version timbre physique dans lettre.brackets_timbre)",
     "pays_suspendus": "https://aide.laposte.fr/contenu/quelles-sont-les-destinations-internationales-suspendues-et-pourquoi  (+ Russie et Bielorussie : choix du vendeur)",
-    "prix_client": "Forfaits et regles : decisions du vendeur, 2026-10-13 (France offerte ; zone A et Royaume-Uni 18 EUR par colis ; reste du monde 39 EUR + 8 EUR par piece en plus ; outre-mer au vrai tarif La Poste). « floor_real » : jamais moins que le vrai tarif La Poste du colis, « floor_round_eur » : ce plancher est arrondi a l'euro superieur."
+    "prix_client": "Forfaits et regles : decisions du vendeur, 2026-10-13 (France offerte ; zone A et Royaume-Uni 18 EUR par colis ; reste du monde 39 EUR + 8 EUR par piece en plus ; outre-mer au vrai tarif La Poste). « floor_real » : jamais moins que le vrai tarif La Poste du colis, « floor_round_eur » : ce plancher est arrondi a l'euro superieur. Canada / Etats-Unis : 1 piece seule = 30 EUR (decision du 2026-10-13, le vendeur prend le reste a sa charge)."
   },
   "packaging": {
     "carton_g": 138,
@@ -101,6 +101,19 @@
         "floor_round_eur": true
       },
       {
+        "id": "CAUS",
+        "name": "Canada et Etats-Unis : 30 EUR pour une seule piece (difference a la charge du vendeur), puis 39 EUR + 8 EUR par piece en plus avec plancher",
+        "countries": [
+          "CA",
+          "US"
+        ],
+        "single_flat": 30,
+        "first_flat": 39,
+        "extra_piece": 8,
+        "floor_real": true,
+        "floor_round_eur": true
+      },
+      {
         "id": "MONDE",
         "name": "Reste du monde (zone B, Canada, Etats-Unis…) : 1re piece + supplement par piece en plus",
         "countries": [
@@ -188,7 +201,46 @@
         "max_g": 2000,
         "price": 11.64
       }
-    ]
+    ],
+    "international": {
+      "enabled": true,
+      "label": "Lettre suivie internationale",
+      "zones": [
+        "A",
+        "UK",
+        "B",
+        "C"
+      ],
+      "max_weight_g": 2000,
+      "max_pieces": 1,
+      "brackets": [
+        {
+          "max_g": 20,
+          "price": 5.05
+        },
+        {
+          "max_g": 100,
+          "price": 7.65
+        },
+        {
+          "max_g": 250,
+          "price": 14.45
+        },
+        {
+          "max_g": 500,
+          "price": 19.4
+        },
+        {
+          "max_g": 1000,
+          "price": 34.5
+        },
+        {
+          "max_g": 2000,
+          "price": 34.5
+        }
+      ],
+      "_note": "Tarifs 2026 (timbre) : https://www.laposte.fr/tarifs-postaux-etranger. Pour une piece en mode lettre SEULE dans le panier (jamais avec une autre piece : colis). Le suivi peut s arreter a la frontiere selon le pays (La Poste). Pas pour l outre-mer (colis)."
+    }
   },
   "zones": [
     {

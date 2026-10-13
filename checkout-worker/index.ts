@@ -301,6 +301,7 @@ export default {
       if (path === '/stock' && request.method === 'GET') return await publicStock(env, cors);
       if (path === '/t') { const r = await trafficRoutes(request, env, path, json); if (r) return r; }
       if ((path === '/auth' || path === '/callback') && !(await allow(env, 'rl:login:' + (request.headers.get('CF-Connecting-IP') || 'x'), 12, 900))) return json({ error: 'Trop de tentatives de connexion, réessaie dans 15 minutes.' }, 429);
+      if (path === '/auth/claim' && request.method === 'GET') return await oauthClaim(request, env, json);
       if (path === '/auth') return await oauthStart(request, env);
       if (path === '/callback') return await oauthCallback(request, env);
       if (path.startsWith('/admin/')) {
@@ -429,7 +430,6 @@ export default {
     env = await withSiteBase(env);
     // Chaque minute : mises en ligne programmées (rien d'autre).
     if (event && event.cron === '* * * * *') {
-      ctx.waitUntil(oneOffs(env).catch(() => {}));
       ctx.waitUntil(publishCron(env).catch((e) => alertAdmin(env, 'publish-cron', 'Mise en ligne programmée en erreur', String(e && e.stack ? e.stack : e))));
       return;
     }
@@ -583,15 +583,6 @@ async function restoreOrders(env: Env, data: any) {
     await env.HOLDS.put('sref:' + id, String(ref)); await env.HOLDS.put('ref:' + ref, id); n++;
   }
   return n;
-}
-
-// Opérations uniques, lancées par le cron de la minute et marquées « faites » dans KV (une seule exécution).
-// 2026-10-13 : achats de test de CH_0002 et CH_0004 -> stock remis à la quantité de la fiche (voir aussi la page admin « Stock »).
-async function oneOffs(env: Env) {
-  const flag = 'oneoff:restock-ch_0002-ch_0004-2026-10-13';
-  if (await env.HOLDS.get(flag)) return;
-  await stockStub(env).deleteStock(['ch_0002', 'ch_0004']);
-  await env.HOLDS.put(flag, new Date().toISOString());
 }
 
 // --- Frais de livraison (affichage du panier) ---
@@ -994,6 +985,14 @@ async function oauthStart(request: Request, env: Env): Promise<Response> {
   const siteId = new URL(request.url).searchParams.get('site_id') || '';
   const opener = allowedOrigins(env).find((o) => new URL(o).hostname === siteId) || allowedOrigins(env)[0] || '';
   await env.HOLDS.put('oauth:' + state, opener, { expirationTtl: 600 });
+  // Connexion de l'admin maison depuis un iPhone / une appli installée : la fenêtre GitHub n'a pas toujours de lien avec la page
+  // d'origine (pas de postMessage). La page garde donc un code secret (lc) ; la session est déposée sous ce code et la page
+  // la réclame (/auth/claim, une seule fois). `return` = page de connexion où revenir si la fenêtre ne peut pas se fermer.
+  const q = new URL(request.url).searchParams;
+  const lc = /^[a-f0-9]{32}$/.test(q.get('lc') || '') ? String(q.get('lc')) : '';
+  let ret = '';
+  try { const u = new URL(q.get('return') || ''); if (allowedOrigins(env).includes(u.origin) && u.pathname.startsWith('/admin/')) ret = u.origin + u.pathname + u.search; } catch (e) { /* pas de page de retour */ }
+  if (lc || ret) await env.HOLDS.put('oauthx:' + state, JSON.stringify({ lc, ret }), { expirationTtl: 600 });
   const redirect = new URL('/callback', request.url).toString();
   const url = 'https://github.com/login/oauth/authorize?' + new URLSearchParams({
     client_id: env.GITHUB_CLIENT_ID,
@@ -1013,12 +1012,16 @@ async function oauthCallback(request: Request, env: Env): Promise<Response> {
   const stored = state ? await env.HOLDS.get('oauth:' + state) : null;
   // Anciennes connexions commencées avant ce changement : valeur '1' = premier site de la liste.
   const opener = stored && stored !== '1' && allowedOrigins(env).includes(stored) ? stored : allowedOrigins(env)[0] || '';
+  let x: { lc?: string; ret?: string } = {};
+  try { x = JSON.parse((state && (await env.HOLDS.get('oauthx:' + state))) || '{}') || {}; } catch (e) { x = {}; }
+  if (state) await env.HOLDS.delete('oauthx:' + state);
   const page = (status: 'success' | 'error', content: object) => {
     const msg = `authorization:github:${status}:${JSON.stringify(content)}`;
     const origin = JSON.stringify(opener);
     const html = `<!doctype html><meta charset="utf-8"><title>Connexion</title><p>${status === 'success' ? 'Connecté, cette fenêtre va se fermer.' : 'Connexion refusée.'}</p><script>
 (function () {
   var msg = ${JSON.stringify(msg)};
+  var RET = ${JSON.stringify(x.ret || '')};
   function receive(e) {
     if (e.origin !== ${origin}) return;
     window.opener.postMessage(msg, e.origin);
@@ -1027,6 +1030,9 @@ async function oauthCallback(request: Request, env: Env): Promise<Response> {
   }
   window.addEventListener('message', receive, false);
   if (window.opener) window.opener.postMessage('authorizing:github', ${origin});
+  // Pas de fenêtre d'origine (iPhone, appli installée) : on tente de fermer, sinon retour à la page de connexion,
+  // qui retrouve la session par son code.
+  setTimeout(function () { try { window.close(); } catch (e) {} setTimeout(function () { if (RET) location.replace(RET); }, 700); }, 2500);
 })();
 </script>`;
     return new Response(html, { headers: { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store' } });
@@ -1049,7 +1055,20 @@ async function oauthCallback(request: Request, env: Env): Promise<Response> {
   }
   // `token` reste pour Sveltia (il en a besoin pour publier sur GitHub) ; les
   // pages Stock/Commandes n'utilisent que `session`.
-  return page('success', { token: data.access_token, provider: 'github', session: await makeSession(env) });
+  const session = await makeSession(env);
+  if (x.lc) await env.HOLDS.put('lc:' + x.lc, session, { expirationTtl: 120 }); // seulement la session, jamais le jeton GitHub
+  return page('success', { token: data.access_token, provider: 'github', session });
+}
+
+// La page de connexion réclame la session déposée sous son code secret (une seule lecture).
+async function oauthClaim(request: Request, env: Env, json: JsonFn): Promise<Response> {
+  if (!(await allow(env, 'rl:claim:' + (request.headers.get('CF-Connecting-IP') || 'x'), 300, 900))) return json({ error: 'Trop de demandes.' }, 429);
+  const code = new URL(request.url).searchParams.get('code') || '';
+  if (!/^[a-f0-9]{32}$/.test(code)) return json({ error: 'Code invalide.' }, 400);
+  const session = await env.HOLDS.get('lc:' + code);
+  if (!session) return json({ pending: true });
+  await env.HOLDS.delete('lc:' + code);
+  return json({ session });
 }
 
 // --- /status -----------------------------------------------------------------
