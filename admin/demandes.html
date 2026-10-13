@@ -57,6 +57,17 @@
     .picker .grid img { cursor: pointer; aspect-ratio: 4/5; }
     @media (max-width: 560px) { dl.ans { grid-template-columns: 1fr; } dl.ans dt { margin-top: 6px; } }
     .ans .warn{display:inline-block;background:#fff3cd;color:#7a4b00;border-radius:4px;padding:1px 6px;margin:1px 0;font-weight:600}
+    .req { border-left: 5px solid var(--line); }
+    .req.todo { border-left-color: #c9741a; } .req.ok { border-left-color: var(--ok); } .req.err { border-left-color: var(--err); }
+    .tag.st.todo { color: #fff; background: #c9741a; border-color: #c9741a; } .tag.st.ok { color: #fff; background: var(--ok); border-color: var(--ok); } .tag.st.err { color: #fff; background: var(--err); border-color: var(--err); }
+    .req.open > header { padding-bottom: 8px; }
+    .req.open h3 { border-top: 1px solid var(--line); padding-top: 12px; }
+    .meas { background: #fff; border: 1px solid var(--line); border-radius: 14px; padding: 4px 14px 10px; margin: 8px 0; }
+    .meas h3 { border-top: 0 !important; padding-top: 0 !important; margin-top: 10px; }
+    .ml { padding: 5px 0; border-bottom: 1px dashed var(--line); font-size: 14px; overflow-wrap: anywhere; }
+    .ml:last-child { border-bottom: 0; }
+    .ml.warn { background: #fff3cd; color: #7a4b00; font-weight: 600; border-radius: 6px; padding: 5px 8px; margin: 2px 0; border-bottom: 0; }
+    @media (max-width: 560px) { .req > header > div:last-child { width: 100%; } .req .actions button, .req .actions .btn { min-height: 44px; } .form { grid-template-columns: 1fr; } }
 </style>
 <link rel="icon" href="../assets/theme/admin/favicon.svg?v=3" type="image/svg+xml">
 <link rel="icon" href="../assets/theme/admin/favicon-32.png?v=3" type="image/png" sizes="32x32">
@@ -180,17 +191,22 @@
     if (r.files.length) f.push('<span class="tag">' + r.files.length + ' fichier(s)</span>');
     return f.join(' ');
   }
+  function stCls(r) { return r.status === 'terminee' || r.status === 'envoyee' ? 'ok' : r.status === 'refusee' ? 'err' : r.status === 'nouvelle' || r.status === 'brouillon' ? 'todo' : ''; }
   function item(r) {
     var head = '<header data-open="' + r.id + '"><div><span class="tag ref">' + esc(r.id) + '</span> <span class="branch">' + esc(r.typeLabel) + '</span><br><strong>' + esc(r.client.name) + '</strong> <span class="muted">· ' + esc(country(r.client.country)) + ' · ' + esc(date(r.created)) + '</span></div>'
-      + '<div><span class="tag st">' + esc(LABEL[r.status] || r.status) + '</span> ' + flags(r) + '</div></header>';
-    if (r.id !== open) return '<article class="req" id="r-' + r.id + '">' + head + '</article>';
-    return '<article class="req" id="r-' + r.id + '">' + head + detail(r) + '</article>';
+      + '<div><span class="tag st ' + stCls(r) + '">' + esc(LABEL[r.status] || r.status) + '</span> ' + flags(r) + '</div></header>';
+    if (r.id !== open) return '<article class="req ' + stCls(r) + '" id="r-' + r.id + '">' + head + '</article>';
+    return '<article class="req open ' + stCls(r) + '" id="r-' + r.id + '">' + head + detail(r) + '</article>';
   }
   function detail(r) {
     var paid = r.type === 'custom' || r.type === 'surmesure', q = r.quote, h = '';
-    h += '<h3>Réponses du client</h3><dl class="ans"><dt>Parcours</dt><dd><b>' + esc(r.typeLabel) + '</b></dd>' + r.answers.map(function (a) { return '<dt>' + esc(a[0]) + '</dt><dd>' + String(a[1]).split('\n').map(function (l) { return l.charAt(0) === '⚠' ? '<span class="warn">' + esc(l) + '</span>' : esc(l); }).join('<br>') + '</dd>'; }).join('')
+    var meas = r.answers.filter(function (a) { return a[0] === 'Mesures' || a[0] === 'Measurements'; })[0];
+    var others = r.answers.filter(function (a) { return a !== meas; });
+    var mlines = function (t) { return String(t).split('\n').map(function (l) { return l.charAt(0) === '⚠' ? '<div class="ml warn">' + esc(l) + '</div>' : '<div class="ml">' + esc(l) + '</div>'; }).join(''); };
+    h += '<h3>Réponses du client</h3><dl class="ans"><dt>Parcours</dt><dd><b>' + esc(r.typeLabel) + '</b></dd>' + others.map(function (a) { return '<dt>' + esc(a[0]) + '</dt><dd>' + String(a[1]).split('\n').map(function (l) { return l.charAt(0) === '⚠' ? '<span class="warn">' + esc(l) + '</span>' : esc(l); }).join('<br>') + '</dd>'; }).join('')
       + '<dt>Contact</dt><dd><a href="mailto:' + esc(r.client.email) + '">' + esc(r.client.email) + '</a> · ' + esc(country(r.client.country)) + ' · langue ' + esc(r.lang.toUpperCase()) + '</dd>'
-      + '<dt>Accord photos</dt><dd>' + (r.photosConsent ? 'Oui (site + réseaux) : photos de la pièce finie gardées' : 'Non') + '</dd></dl>';
+      + '<dt>Accord photos</dt><dd>' + (r.photosConsent ? 'Oui (site + réseaux) : photos de la pièce finie gardées' : 'Non') + '</dd></dl>'
+      + (meas ? '<div class="meas"><h3>Mesures' + (/⚠/.test(meas[1]) ? ' <span class="tag warn">à redemander</span>' : '') + '</h3>' + mlines(meas[1]) + '</div>' : '');
     h += '<h3>Fichiers du client</h3>' + (r.files.length ? '<div class="grid" data-thumbs="files">' + r.files.map(function (f) { return '<div class="thumb">' + (f.kind === 'photo' ? '<img data-key="' + esc(f.key) + '" alt="">' : '<button type="button" data-video="' + esc(f.key) + '" style="position:static;margin:30px auto;display:block">▶ Vidéo</button>') + '<span title="' + esc(f.name) + '">' + esc(f.name) + '</span></div>'; }).join('') + '</div>' : '<p class="muted">Aucun fichier' + (r.fields.link ? ' (lien ci-dessus)' : '') + '.</p>');
     h += '<h3>Statut et notes privées</h3><div class="actions"><select data-status>' + STATUS.map(function (s) { return '<option value="' + s[0] + '"' + (r.status === s[0] ? ' selected' : '') + '>' + esc(s[1]) + '</option>'; }).join('') + '</select><button type="button" data-act="status">Changer le statut</button></div>'
       + '<textarea data-notes placeholder="Notes privées (jamais montrées au client)">' + esc(r.notes) + '</textarea><div class="actions"><button type="button" data-act="notes">Enregistrer les notes</button></div>';
