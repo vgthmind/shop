@@ -1,0 +1,25 @@
+{
+  "name": "Test",
+  "price": 10,
+  "slug": "test",
+  "description": "test",
+  "categories": [
+    "tops"
+  ],
+  "latest_drop": false,
+  "unique": true,
+  "stripe_payment_link": "",
+  "color_name": "gris",
+  "color_hex": "#8a8a8a",
+  "weight_g": 500,
+  "mode": "colis",
+  "alone": false,
+  "in_stock": true,
+  "position": 28,
+  "created_at": "2026-10-13T21:13:39.163Z",
+  "quantity": 1,
+  "hidden": true,
+  "images": [
+    "/assets/products/test/vmv76hj31-0.webp"
+  ]
+}
