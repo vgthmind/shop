@@ -1,8 +1,10 @@
 {
   "name": "Cache-cou",
+  "name_en": "",
   "slug": "cache-cou",
   "price": 30,
-  "description": "White fleece neck warmer\r\nOne size\r\nOne-of-a-kind airbrushed design\r\nSurprise design at time of order!\r\n\r\nCache-cou en molleton blanc\r\nTaille Unique\r\nDesign unique fait à l'aérographe\r\nDesign surprise lors de la commande !",
+  "description": "*SOLDOUT*\nWhite fleece neck warmer\nOne size\nOne-of-a-kind airbrushed design\nSurprise design at time of order!\n\nCache-cou en molleton blanc\nTaille Unique\nDesign unique fait à l'aérographe\nDesign surprise lors de la commande !",
+  "keywords": [],
   "images": [
     "/assets/products/cache-cou/0.png",
     "/assets/products/cache-cou/1.png",
@@ -13,19 +15,22 @@
   "categories": [
     "accessories"
   ],
+  "archived": false,
   "latest_drop": true,
-  "unique": false,
-  "in_stock": false,
-  "position": 25,
-  "created_at": "2025-11-30T14:17:42.000Z",
-  "stripe_payment_link": "",
-  "shipping_fr": 4,
-  "shipping_intl": 8,
   "quantity": 0,
+  "shipping_fr": 4,
+  "ships_intl": true,
+  "shipping_intl": 8,
   "weight_g": 48,
   "mode": "lettre",
   "alone": false,
-  "color_hex": "#f2f2f2",
+  "weight_estimated": false,
+  "stripe_payment_link": "",
+  "position": 25,
+  "created_at": "2025-11-30T15:17:00",
+  "unique": false,
+  "in_stock": false,
   "color_name": "blanc",
+  "color_hex": "#f2f2f2",
   "reel_url": "https://www.instagram.com/reel/DRr_YfqjIuF/"
 }
