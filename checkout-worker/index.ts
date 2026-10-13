@@ -443,8 +443,15 @@ function stripeKey(env: Env): { ok: true; value: string } | { ok: false; error: 
 // --- Catalogue -------------------------------------------------------------
 async function loadCatalog(env: Env): Promise<Product[]> {
   // Catalogue publié : celui de Cloudflare Pages (CATALOG_BASE), reconstruit à chaque modification dans l'admin.
-  const res = await fetch(`${env.CATALOG_BASE || env.SITE_BASE}/products.json`, { cf: { cacheTtl: 60, cacheEverything: true } } as any);
-  if (!res.ok) throw new Error('Catalogue indisponible');
+  // Deux essais : pendant une reconstruction du site, products.json peut manquer quelques secondes
+  // (le webhook Stripe renvoyait alors 500 et la livraison comptait comme échouée).
+  const url = `${env.CATALOG_BASE || env.SITE_BASE}/products.json`;
+  let res: Response | null = null;
+  for (let i = 0; i < 2 && !(res && res.ok); i++) {
+    if (i) await new Promise((r) => setTimeout(r, 800));
+    res = await fetch(url, i ? undefined : ({ cf: { cacheTtl: 60, cacheEverything: true } } as any)).catch(() => null);
+  }
+  if (!res || !res.ok) throw new Error('Catalogue indisponible');
   return res.json();
 }
 function catalogDefaults(catalog: Product[]): Record<string, number> {

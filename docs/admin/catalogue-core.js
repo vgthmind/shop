@@ -91,7 +91,7 @@
   }
 
   function setArchived(p, on) { var q = Object.assign({}, p); if (on) { q.archived = true; } else { delete q.archived; } return q; }
-  // « Bientôt disponible » : la pièce est visible et listée, mais le bouton d'achat est remplacé par un libellé (comme chez BigCartel).
+  // « Bientôt disponible » : la pièce est visible et listée, mais le bouton d'achat est remplacé par un libellé.
   function setComing(p, on) { var q = Object.assign({}, p); if (on) q.coming_soon = true; else delete q.coming_soon; return q; }
   function setHidden(p, on) { var q = Object.assign({}, p); if (on) q.hidden = true; else { delete q.hidden; delete q.publish_at; } return q; }
 

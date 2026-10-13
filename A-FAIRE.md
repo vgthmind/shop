@@ -4,6 +4,13 @@ Mise à jour de la nuit du 12 → 13 octobre 2026. **Rien de ce qui suit n'est e
 
 Dans Cloudflare, « ajouter un secret » = **dash.cloudflare.com → Workers & Pages → `vgthmind-shop-checkout` → Settings → Variables and Secrets → Add → Type : Secret → Nom + Valeur → Deploy**. Le secret n'apparaît ensuite plus jamais en clair (normal). Après chaque ajout, ouvre **Admin → État du système** : la ligne correspondante doit passer à `OK`.
 
+## 0. À valider en rentrant — favicons, restes BigCartel, webhook (13 oct., journée)
+Branche `favicons-audit-2026-10-13` (rien poussé, rien déployé, `bascule-prete` intact).
+- **Favicons** : fond transparent, SVG + ICO + PNG ; iPhone = fond noir #0b0b0b (le chrome blanc ressort). Admin : même logo + pastille dorée. À vérifier à l'œil après publication (onglet clair/sombre, icône écran d'accueil iPhone ; si ancien favicon : ferme/rouvre l'onglet, ou change ICON_V dans generator/build.js).
+- **Webhook Stripe (13 échecs, test)** : je n'ai pas pu lire les livraisons (tableau de bord Stripe figé dans mon navigateur). Côté Worker : le webhook renvoyait une erreur si products.json manquait quelques secondes (reconstruction du site) → corrigé (2 essais), à déployer avec le Worker. Si ça persiste : Stripe → Webhooks → ta destination → Livraisons → clique un échec : `400` = secret de signature à reposer (`npx.cmd wrangler secret put STRIPE_WEBHOOK_SECRET`, coller UNE fois) ; `500` = envoie-moi le texte de la réponse ; `503` = `STRIPE_SECRET_KEY` à reposer.
+- **Décisions BigCartel** : (1) dossier `assets/bigcartel/` du dépôt portfolio (reels, icônes) : garder le nom ou migrer ; (2) `data/catalog.bigcartel-import.json` + `generator/import-catalog.js` : archiver ; (3) raccourci `Raccourcis/Admin BigCartel.url` et dossier `Archives BigCartel` : à supprimer quand tu veux ; (4) dossier `assets/theme/bc/` : simple nom, renommable.
+- **Pré-audit robot** (PC+iPhone, FR+EN, fiches produit, pages légales, admin) : aucune image cassée, aucun défilement horizontal, titres et langue OK. Reste à ton œil : rendu visuel, animations, photos, textes.
+
 ## 1. Dire OK pour la mise en ligne de la nuit (10 secondes)
 Écris-moi **« déploie la branche de la nuit »** : je fusionne la branche dans `main` (Cloudflare reconstruit le site en 1–2 min) puis je déploie le Worker. Contenu : voir RAPPORT-NUIT.md. Retour arrière : « annule le déploiement de la nuit ». Ensuite regarde le numéro **Admin v2026-10-13-d** en bas à gauche de n'importe quelle page de l'admin (sur iPhone : ferme et rouvre l'admin si tu vois un autre numéro).
 

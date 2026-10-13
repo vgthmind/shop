@@ -210,11 +210,15 @@ function localizeBigCartelImages(text) {
 // Pièces masquées : config (couleur, reel) injectée dans leur seule fiche, jamais dans le fichier public.
 const HIDDEN_CONFIG = {};
 
+// ICON_V : a changer pour forcer les navigateurs a recharger les icones (le cache d'onglet est tetu).
+const ICON_V = 2;
 const FAVICON_LINKS = [
-  '<link rel="icon" href="/assets/theme/favicon-32.png" type="image/png" sizes="32x32">',
-  '<link rel="icon" href="/assets/theme/favicon-16.png" type="image/png" sizes="16x16">',
-  '<link rel="shortcut icon" href="/favicon.ico">',
-  '<link rel="apple-touch-icon" href="/assets/theme/apple-touch-icon.png">',
+  `<link rel="icon" href="${BASE_PATH}/assets/theme/favicon.svg?v=${ICON_V}" type="image/svg+xml">`,
+  `<link rel="icon" href="${BASE_PATH}/assets/theme/favicon-32.png?v=${ICON_V}" type="image/png" sizes="32x32">`,
+  `<link rel="icon" href="${BASE_PATH}/assets/theme/favicon-16.png?v=${ICON_V}" type="image/png" sizes="16x16">`,
+  `<link rel="shortcut icon" href="${BASE_PATH}/favicon.ico?v=${ICON_V}">`,
+  `<link rel="apple-touch-icon" sizes="180x180" href="${BASE_PATH}/assets/theme/apple-touch-icon.png?v=${ICON_V}">`,
+  `<link rel="manifest" href="${BASE_PATH}/site.webmanifest?v=${ICON_V}">`,
 ].join('\n');
 
 // Custom pages of the draft, in its order (they make the header nav:
@@ -703,6 +707,16 @@ async function main() {
   fs.copyFileSync(rel(ROOT, 'generator', '_headers'), rel(OUT_DIR, '_headers'));
   // /favicon.ico a la racine du site (certains navigateurs le demandent d'office).
   fs.copyFileSync(rel(ROOT, 'assets', 'theme', 'favicon.ico'), rel(OUT_DIR, 'favicon.ico'));
+  // Manifest du site (icones 192/512 + maskable) : lie depuis FAVICON_LINKS.
+  fs.writeFileSync(rel(OUT_DIR, 'site.webmanifest'), JSON.stringify({
+    name: 'vgthmind', short_name: 'vgthmind', start_url: `${BASE_PATH}/`, scope: `${BASE_PATH}/`, display: 'browser',
+    background_color: '#0b0b0b', theme_color: '#0b0b0b',
+    icons: [
+      { src: `${BASE_PATH}/assets/theme/icon-192.png`, sizes: '192x192', type: 'image/png', purpose: 'any' },
+      { src: `${BASE_PATH}/assets/theme/icon-512.png`, sizes: '512x512', type: 'image/png', purpose: 'any' },
+      { src: `${BASE_PATH}/assets/theme/icon-maskable-512.png`, sizes: '512x512', type: 'image/png', purpose: 'maskable' },
+    ],
+  }, null, 2) + '\n');
   // robots.txt: the prototype's "Disallow: /" until launch; then only the
   // admin is blocked, plus the sitemap. (Only effective once the shop is at
   // the root of its own domain - under /shop/, the noindex tag does the job.)
