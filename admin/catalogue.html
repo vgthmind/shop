@@ -2,36 +2,94 @@
 <html lang="fr">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="robots" content="noindex, nofollow">
   <link rel="manifest" href="manifest.webmanifest">
-  <title>vgthmind — catalogue</title>
+  <title>vgthmind — pièces</title>
   <style>
-    :root { --bg: #f4f2ec; --ink: #171717; --muted: #6b6860; --line: rgba(0,0,0,.12); --card: rgba(255,255,255,.6); --ok: #2f7d4a; --warn: #a86400; }
     * { box-sizing: border-box; }
     [hidden] { display: none !important; }
-    body { margin: 0; background: var(--bg); color: var(--ink); font: 15px/1.45 system-ui, -apple-system, "Segoe UI", sans-serif; }
-    main { max-width: 900px; margin: 0 auto; padding: 24px 16px 96px; }
-    h1 { font-size: 22px; letter-spacing: .04em; text-transform: uppercase; margin: 0 0 4px; }
-    nav a { color: var(--muted); font-size: 13px; margin-right: 12px; }
+    body { margin: 0; background: #f4f2ec; color: #171717; font: 16px/1.45 system-ui, -apple-system, "Segoe UI", sans-serif; -webkit-text-size-adjust: 100%; }
+    .vg-page { padding-bottom: 110px; }
     .muted { color: var(--muted); font-size: 13px; }
-    .bar { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin: 16px 0; }
-    button, a.btn { min-height: 40px; padding: 8px 14px; border-radius: 999px; border: 1px solid var(--line); background: #fff; color: var(--ink); font: inherit; cursor: pointer; text-decoration: none; display: inline-flex; align-items: center; }
-    button.primary { background: var(--ink); color: #fff; border-color: var(--ink); }
-    button:disabled { opacity: .5; cursor: default; }
-    input[type=search], input[type=text] { flex: 1 1 200px; padding: 9px 12px; border: 1px solid var(--line); border-radius: 999px; background: #fff; font: inherit; }
-    .piece { display: flex; gap: 12px; align-items: center; background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 10px 12px; margin: 8px 0; flex-wrap: wrap; }
-    .piece.changed { background: rgba(255,226,122,.3); }
-    .piece img { width: 56px; height: 64px; object-fit: contain; border-radius: 6px; background: var(--bg); flex: none; }
-    .piece .nm { flex: 1 1 180px; min-width: 0; }
-    .piece .acts { display: flex; gap: 6px; flex-wrap: wrap; }
-    .tag { font-size: 12px; padding: 2px 8px; border-radius: 999px; border: 1px solid var(--line); }
-    .tag.live { color: var(--ok); border-color: var(--ok); }
-    .tag.preview, .tag.scheduled, .tag.coming { color: var(--warn); border-color: var(--warn); }
-    .tag.archived { color: var(--muted); }
-    #savebar { position: fixed; left: 0; right: 0; bottom: 0; background: var(--ink); color: #fff; padding: 12px 16px; display: flex; gap: 12px; align-items: center; justify-content: center; flex-wrap: wrap; }
-    #savebar button { background: #fff; }
-    #msg { min-height: 1.4em; }
+    input[type=text], input[type=search], input[type=number], input[type=datetime-local], select, textarea { width: 100%; padding: 11px 14px; border: 1px solid var(--line); border-radius: 12px; background: #fff; font: inherit; color: inherit; min-height: 44px; }
+    textarea { resize: vertical; }
+    .head-acts { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+    .alert { display: flex; gap: 10px; align-items: center; justify-content: space-between; flex-wrap: wrap; background: rgba(201,116,26,.12); border: 1px solid rgba(201,116,26,.45); border-radius: 14px; padding: 10px 14px; margin-bottom: 12px; font-size: 14px; }
+    .alert a, .alert button { color: var(--ink); font-weight: 600; background: none; border: 0; text-decoration: underline; cursor: pointer; font: inherit; }
+    .tools { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-bottom: 12px; }
+    .tools .search { flex: 1 1 200px; }
+    .chips { display: flex; gap: 6px; flex-wrap: wrap; }
+    .chip { min-height: 38px; padding: 6px 14px; border-radius: 999px; border: 1px solid var(--line); background: #fff; color: var(--ink); font: 500 12px/1 var(--f-mono); letter-spacing: .04em; cursor: pointer; }
+    .chip[aria-pressed="true"] { background: var(--ink); color: #fff; border-color: var(--ink); }
+    .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 14px; }
+    .card { position: relative; background: #fff; border: 1px solid var(--line); border-radius: 18px; overflow: hidden; display: flex; flex-direction: column; }
+    .card.changed { box-shadow: 0 0 0 2px #ffe27a; }
+    .card .ph { position: relative; display: block; aspect-ratio: 4 / 5; background: #ebe8e0; border: 0; padding: 0; width: 100%; cursor: pointer; }
+    .card .ph img { width: 100%; height: 100%; object-fit: contain; display: block; }
+    .card.off .ph img { opacity: .55; }
+    .badges { position: absolute; left: 8px; top: 8px; display: flex; flex-direction: column; align-items: flex-start; gap: 4px; pointer-events: none; }
+    .badges .vg-pill { font-size: 10px; padding: 3px 8px; }
+    .vg-pill.uni { background: #171717; }
+    .card .meta { padding: 10px 12px 6px; display: flex; flex-direction: column; gap: 2px; }
+    .card .meta b { font: 700 14px/1.2 var(--f-title); letter-spacing: .03em; text-transform: uppercase; overflow-wrap: anywhere; }
+    .card .meta span { font-size: 13px; color: var(--muted); }
+    .card .row { display: flex; align-items: center; justify-content: space-between; gap: 6px; padding: 0 8px 10px 12px; }
+    .step { display: inline-flex; align-items: center; gap: 2px; }
+    .step button, .mini { min-width: 40px; min-height: 40px; border-radius: 999px; border: 1px solid var(--line); background: #fff; font: 500 15px/1 var(--f-mono); cursor: pointer; color: var(--ink); }
+    .step output { min-width: 26px; text-align: center; font: 500 13px/1 var(--f-mono); }
+    .acts { display: none; flex-direction: column; gap: 6px; padding: 0 12px 12px; }
+    .card.open .acts { display: flex; }
+    .acts .vg-btn { min-height: 40px; width: 100%; }
+    .reorder { display: flex; gap: 6px; padding: 0 12px 12px; }
+    .reorder .mini { flex: 1; }
+    .empty { text-align: center; padding: 40px 10px; }
+    /* fiche */
+    .fhead { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 12px; }
+    .fhead h1 { margin: 0; font-size: 24px; flex: 1 1 200px; overflow-wrap: anywhere; }
+    .sect { margin-bottom: 12px; }
+    .sect h2 { margin: 0 0 10px; }
+    .fl { display: block; font-size: 13px; color: var(--muted); margin: 10px 0 4px; }
+    .fl:first-of-type { margin-top: 0; }
+    .two { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .photos { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 10px; }
+    .ph1 { position: relative; border: 1px solid var(--line); border-radius: 14px; background: #ebe8e0; overflow: hidden; }
+    .ph1 img { width: 100%; aspect-ratio: 4 / 5; object-fit: contain; display: block; }
+    .ph1 .tag1 { position: absolute; left: 6px; top: 6px; }
+    .ph1 .ctl { display: flex; justify-content: space-between; gap: 2px; padding: 4px; background: #fff; }
+    .ph1 .ctl button { flex: 1; min-height: 40px; border: 1px solid var(--line); border-radius: 10px; background: #fff; cursor: pointer; font-size: 15px; }
+    .ph1 .ctl button.del { color: var(--st-bad); }
+    .ph1 .ctl button:disabled { opacity: .35; cursor: default; }
+    .cats { display: flex; gap: 8px; flex-wrap: wrap; }
+    .cats label, .colors label { display: inline-flex; gap: 8px; align-items: center; min-height: 44px; padding: 8px 14px; border: 1px solid var(--line); border-radius: 999px; background: #fff; cursor: pointer; font-size: 14px; }
+    .cats input, .colors input { width: 18px; height: 18px; accent-color: #171717; }
+    .colors { display: flex; gap: 8px; flex-wrap: wrap; }
+    .dot { width: 14px; height: 14px; border-radius: 50%; box-shadow: inset 0 0 0 1px rgba(0,0,0,.25); display: inline-block; }
+    .chk { display: flex; gap: 10px; align-items: center; min-height: 44px; font-size: 15px; }
+    .chk input { width: 20px; height: 20px; accent-color: #171717; flex: none; }
+    table.ports { border-collapse: collapse; width: 100%; font-size: 14px; margin-top: 8px; }
+    table.ports td { padding: 6px 8px 6px 0; border-bottom: 1px solid var(--line); }
+    td.num { text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; }
+    .gain { color: var(--st-done); } .perte { color: var(--st-bad); }
+    .note { padding: 10px 14px; border-radius: 12px; background: rgba(255,226,122,.35); border: 1px solid rgba(0,0,0,.1); font-size: 14px; margin-top: 10px; }
+    .note.err { background: rgba(162,59,42,.12); }
+    details.adv summary { cursor: pointer; font: 500 12px/1 var(--f-mono); letter-spacing: .08em; text-transform: uppercase; color: var(--muted); min-height: 44px; display: flex; align-items: center; }
+    .bar2 { position: fixed; left: 0; right: 0; bottom: 0; z-index: 40; background: #171717; color: #fff; padding: 10px 16px calc(10px + env(safe-area-inset-bottom)); display: flex; gap: 10px; align-items: center; justify-content: center; flex-wrap: wrap; }
+    .bar2 .vg-btn { background: #fff; color: #171717; border-color: #fff; min-width: 140px; }
+    .bar2 .vg-btn.ghost { background: transparent; color: #fff; border-color: rgba(255,255,255,.5); min-width: 0; }
+    .bar2 .vg-btn:disabled { opacity: .5; }
+    .bar2 span { font-size: 14px; }
+    #msg { min-height: 1.4em; margin: 12px 2px; }
+    @media (max-width: 759px) {
+      .bar2 { bottom: calc(62px + env(safe-area-inset-bottom)); padding-bottom: 10px; }
+      .bar2 .vg-btn { flex: 1; }
+      .bar2 .vg-btn.ghost { flex: 0 0 auto; min-width: 100px; }
+      .bar2 span { flex: 1 1 100%; text-align: center; font-size: 13px; }
+      .vg-page { padding-bottom: 200px; }
+      .grid { grid-template-columns: repeat(2, 1fr); gap: 10px; }
+      .two { grid-template-columns: 1fr; }
+      .head-acts .vg-btn.big { flex: 1; }
+    }
   </style>
 <link rel="icon" href="../assets/theme/admin/favicon.svg?v=3" type="image/svg+xml">
 <link rel="icon" href="../assets/theme/admin/favicon-32.png?v=3" type="image/png" sizes="32x32">
@@ -40,27 +98,51 @@
 <link rel="apple-touch-icon" sizes="180x180" href="../assets/theme/admin/apple-touch-icon.png?v=3">
 </head>
 <body>
-<main>
-  <nav><a href="menu.html">← Tableau de bord</a><a href="studio-photo.html">Nouvelle pièce</a><a href="pieces.html">Poids &amp; ports</a></nav>
-  <h1>Catalogue</h1>
-  <p class="muted">Ordre d'affichage, copie d'une pièce (séries), aperçu avant mise en ligne, archivage. Rien n'est publié tant que tu n'as pas cliqué « Enregistrer ».</p>
-
-  <div class="bar" id="login"><button type="button" class="primary" id="login-btn">Se connecter avec GitHub</button></div>
+<main class="vg-page">
+  <div class="vg-card" id="login">
+    <p>Connecte-toi avec GitHub pour voir et modifier tes pièces.</p>
+    <button type="button" class="vg-btn" id="login-btn">Se connecter avec GitHub</button>
+  </div>
 
   <div id="app" hidden>
-    <div class="bar">
-      <input type="search" id="filter" placeholder="Chercher une pièce…" aria-label="Chercher une pièce">
-      <button type="button" id="refresh">Actualiser</button>
-      <span class="muted" id="count"></span>
-    </div>
-    <div id="list"></div>
+    <!-- LISTE -->
+    <section id="v-list">
+      <div class="vg-head">
+        <div><h1>Pièces</h1><p class="vg-sub" id="count"></p></div>
+        <div class="head-acts">
+          <button type="button" class="vg-btn ghost" id="reorder">Réordonner</button>
+          <button type="button" class="vg-btn ghost" id="refresh">Actualiser</button>
+          <a class="vg-btn big" href="#/new">+ Nouvelle pièce</a>
+        </div>
+      </div>
+      <div class="alert" id="alert-w" hidden><span id="alert-w-t"></span><button type="button" id="alert-w-b">Voir ces pièces</button></div>
+      <div class="tools">
+        <input type="search" class="search" id="filter" placeholder="Chercher une pièce…" aria-label="Chercher une pièce">
+        <div class="chips" id="chips"></div>
+      </div>
+      <div class="grid" id="grid"></div>
+      <p class="muted" style="margin-top:16px">Autres outils : <a href="studio-photo.html">Studio photo (détourage, assistant « Nouvelle pièce »)</a> · <a href="pieces.html">Poids et ports, tableau de toutes les pièces</a> · <a href="stock.html">Stock en tableau et sauvegardes</a> · <a href="index.html">Éditeur technique (Sveltia)</a></p>
+    </section>
+
+    <!-- FICHE -->
+    <section id="v-fiche" hidden></section>
   </div>
   <p id="msg" role="status" aria-live="polite"></p>
 </main>
-<div id="savebar" hidden><span id="savecount"></span><button type="button" id="save">Enregistrer</button><button type="button" id="cancel">Annuler les changements</button></div>
+
+<div class="bar2" id="bar-list" hidden><span id="bar-list-t"></span><button type="button" class="vg-btn ghost" id="list-cancel">Annuler</button><button type="button" class="vg-btn" id="list-save">Enregistrer</button></div>
+<div class="bar2" id="bar-fiche" hidden><span id="bar-fiche-t"></span><button type="button" class="vg-btn ghost" id="fiche-cancel">Annuler</button><button type="button" class="vg-btn" id="fiche-save">Enregistrer</button></div>
 
 <script src="catalogue-core.js"></script>
+<script src="pieces-view.js"></script>
+<script src="piece-form.js"></script>
+<script src="shipping-calc.js"></script>
+<script src="fiche-core.js"></script>
+<script src="fiche-save.js"></script>
 <script src="pieces-save.js"></script>
+<script src="studio-webp.js"></script>
+<script src="video-convert.js"></script>
+<script src="photo-encode.js"></script>
 <script src="studio-publish.js"></script>
 <script src="vg-admin-auth.js"></script>
 <script src="vg-admin-ui.js"></script>
@@ -68,102 +150,129 @@
 (function () {
   'use strict';
   var $ = function (id) { return document.getElementById(id); };
-  var pieces = [], changes = {}; // changes : slug -> fiche modifiée / créée
-  var LABEL = { live: 'En ligne', preview: 'Aperçu (non listée)', scheduled: 'Programmée', archived: 'Archivée', coming: 'Bientôt disponible (visible, non achetable)' };
-  function fmtParis(iso) { try { return new Date(iso).toLocaleString('fr-FR', { timeZone: 'Europe/Paris', dateStyle: 'short', timeStyle: 'short' }); } catch (e) { return iso; } }
+  var C = window.VGCatalogue, F = window.VGFiche, FS = window.VGFicheSave, PV = window.VGPieces, PF = window.VGPieceForm;
+  var pieces = [], stock = null, categories = [], config = null, listChanges = {}, stockEdits = {}, products = null;
+  var filter = 'all', reorder = false, cur = null, dirty = false, openCard = null, uniqueTouched = false;
+  var FILTERS = [['all', 'Toutes'], ['live', 'En ligne'], ['preview', 'Masquées'], ['scheduled', 'Programmées'], ['soldout', 'Épuisées'], ['noweight', 'Sans poids'], ['archived', 'Archivées']];
 
   function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
-  function say(t) { $('msg').textContent = t || ''; }
-  function merged() { // fiches enregistrées + changements en attente
-    var m = {}; pieces.forEach(function (p) { m[p.slug] = p; });
-    Object.keys(changes).forEach(function (s) { m[s] = changes[s]; });
-    return Object.keys(m).map(function (s) { return m[s]; });
+  function say(t, err) { $('msg').textContent = t || ''; $('msg').style.color = err ? '#a23b2a' : ''; }
+  function eur(n) { return (Math.round(n * 100) / 100).toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' €'; }
+  function fmtParis(iso) { try { return new Date(iso).toLocaleString('fr-FR', { timeZone: 'Europe/Paris', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }); } catch (e) { return iso; } }
+  function parisInput(iso) { // ISO UTC -> « AAAA-MM-JJTHH:MM » à l'heure de Paris
+    if (!iso) return '';
+    var o = {}; new Intl.DateTimeFormat('en-GB', { timeZone: 'Europe/Paris', hour12: false, year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' }).formatToParts(new Date(iso)).forEach(function (x) { o[x.type] = x.value; });
+    return o.year + '-' + o.month + '-' + o.day + 'T' + (o.hour === '24' ? '00' : o.hour) + ':' + o.minute;
   }
-  function thumb(p) {
-    var u = (p.images && p.images[0]) || '';
-    if (!u) return '<span class="ph"></span>';
-    var sized = '../assets/products-sized/320/' + u.replace(/^\/?assets\/products\//, '').replace(/\.\w+$/, '.webp');
+  function gh() { return window.VGStudioPublish.api; }
+  function merged() { var m = {}; pieces.forEach(function (p) { m[p.slug] = p; }); Object.keys(listChanges).forEach(function (s) { m[s] = listChanges[s]; }); return Object.keys(m).map(function (s) { return m[s]; }); }
+  function byslug(s) { return merged().filter(function (p) { return p.slug === s; })[0]; }
+  function thumb(u, size) {
+    if (!u) return '';
+    var sized = '../assets/products-sized/' + (size || 320) + '/' + u.replace(/^\/?assets\/products\//, '').replace(/\.\w+$/, '.webp');
     return '<img alt="" loading="lazy" src="' + esc(sized) + '" onerror="this.onerror=null;this.src=\'..' + esc(u) + '\'">';
   }
-  function apply(map) { Object.keys(map).forEach(function (s) { changes[s] = map[s]; }); draw(); }
+  function stockOf(p) { // stock réel (Worker) si connu, sinon quantité de départ de la fiche
+    if (p.slug in stockEdits) return stockEdits[p.slug];
+    if (stock && stock[p.slug]) return stock[p.slug].stock;
+    var q = Number(p.quantity); return isFinite(q) ? q : (p.in_stock === false ? 0 : 1);
+  }
+  function workerReady() { return window.vgAdminToken() ? Promise.resolve() : window.vgAdminLogin(); }
 
-  function draw() {
-    var q = $('filter').value.trim().toLowerCase();
-    var all = VGCatalogue.sorted(merged());
-    var list = all.filter(function (p) { return !q || p.slug.toLowerCase().indexOf(q) !== -1 || String(p.name || '').toLowerCase().indexOf(q) !== -1; });
-    $('list').innerHTML = list.map(function (p) {
-      var st = VGCatalogue.state(p), isNew = changes[p.slug] && !pieces.some(function (x) { return x.slug === p.slug; });
-      return '<div class="piece' + (changes[p.slug] ? ' changed' : '') + '" data-slug="' + esc(p.slug) + '">' + thumb(p)
-        + '<div class="nm"><strong>' + esc(p.name || p.slug) + '</strong> <span class="tag ' + st + '">' + LABEL[st] + (st === 'scheduled' ? ' le ' + fmtParis(p.publish_at) : '') + (isNew ? ' · nouvelle copie' : '') + '</span>'
-        + '<div class="muted">' + esc(p.slug) + ' · ' + esc(p.price) + ' €' + (p.position != null ? ' · n° ' + esc(p.position) : '') + '</div></div>'
-        + '<div class="acts">'
-        + (st === 'archived' ? '' : '<button type="button" data-act="up" aria-label="Monter ' + esc(p.name) + '">▲</button><button type="button" data-act="down" aria-label="Descendre ' + esc(p.name) + '">▼</button>')
-        + '<button type="button" data-act="dup">Dupliquer</button>'
-        + (st === 'preview' || st === 'scheduled' ? '<button type="button" data-act="publish" class="primary">Publier maintenant</button><button type="button" data-act="schedule">' + (st === 'scheduled' ? 'Changer l\'heure' : 'Programmer') + '</button>' : '')
-        + (st === 'scheduled' ? '<button type="button" data-act="unschedule">Annuler la programmation</button>' : '')
-        + (st === 'live' ? '<button type="button" data-act="coming">Marquer « bientôt disponible »</button>' : '')
-        + (st === 'coming' ? '<button type="button" data-act="open" class="primary">Ouvrir à la vente</button>' : '')
-        + (st === 'live' || st === 'coming' ? '<button type="button" data-act="hide">Passer en aperçu</button>' : '')
-        + (st === 'archived' ? '<button type="button" data-act="restore">Remettre en ligne</button>' : '<button type="button" data-act="archive">Archiver</button>')
-        + (isNew ? '' : '<a class="btn" target="_blank" rel="noopener" href="../product/' + encodeURIComponent(p.slug) + '">Voir la page</a>')
-        + '</div></div>';
-    }).join('') || '<p class="muted">Aucune pièce.</p>';
-    var n = Object.keys(changes).length;
-    $('count').textContent = all.length + ' pièces';
-    $('savebar').hidden = !n; $('savecount').textContent = n + ' pièce' + (n > 1 ? 's' : '') + ' modifiée' + (n > 1 ? 's' : '');
+  // ---------- LISTE ----------
+  function chips() {
+    $('chips').innerHTML = FILTERS.map(function (f) { return '<button type="button" class="chip" data-f="' + f[0] + '" aria-pressed="' + (filter === f[0]) + '">' + f[1] + '</button>'; }).join('');
+  }
+  function matchFilter(p, st) {
+    if (filter === 'all') return true;
+    if (filter === 'live') return st === 'live' || st === 'coming';
+    if (filter === 'soldout') return st !== 'archived' && stockOf(p) <= 0;
+    if (filter === 'noweight') return st !== 'archived' && !PV.weightOf(p);
+    return st === filter;
+  }
+  function badges(p, st) {
+    var b = [];
+    if (st !== 'archived' && stockOf(p) <= 0) b.push('<span class="vg-pill bad">Épuisée</span>');
+    if (st === 'preview') b.push('<span class="vg-pill">Masquée</span>');
+    if (st === 'scheduled') b.push('<span class="vg-pill plan">Programmée · ' + esc(fmtParis(p.publish_at)) + '</span>');
+    if (st === 'coming') b.push('<span class="vg-pill todo">Bientôt disponible</span>');
+    if (st === 'archived') b.push('<span class="vg-pill">Archivée</span>');
+    if (st !== 'archived' && !PV.weightOf(p)) b.push('<span class="vg-pill todo">Sans poids</span>');
+    if (p.unique !== false && st !== 'archived') b.push('<span class="vg-pill uni">Unique pièce</span>');
+    return b.join('');
+  }
+  function drawList() {
+    var q = $('filter').value.trim().toLowerCase(), all = C.sorted(merged());
+    var list = all.filter(function (p) {
+      return matchFilter(p, C.state(p)) && (!q || p.slug.toLowerCase().indexOf(q) !== -1 || String(p.name || '').toLowerCase().indexOf(q) !== -1);
+    });
+    $('count').textContent = all.filter(function (p) { return !p.archived; }).length + ' pièces' + (all.some(function (p) { return p.archived; }) ? ' · ' + all.filter(function (p) { return p.archived; }).length + ' archivée(s)' : '');
+    var nw = all.filter(function (p) { return !p.archived && !PV.weightOf(p); }).length;
+    $('alert-w').hidden = !nw; $('alert-w-t').textContent = nw + ' pièce' + (nw > 1 ? 's' : '') + ' sans poids : les frais de port ne peuvent pas être calculés.';
+    $('reorder').textContent = reorder ? 'Terminer' : 'Réordonner';
+    chips();
+    $('grid').innerHTML = list.map(function (p) {
+      var st = C.state(p), isNew = listChanges[p.slug] && !pieces.some(function (x) { return x.slug === p.slug; }), ch = listChanges[p.slug] || (p.slug in stockEdits);
+      var nm = esc(p.name || p.slug), s = stockOf(p);
+      return '<article class="card' + (ch ? ' changed' : '') + (st === 'archived' || st === 'preview' ? ' off' : '') + (openCard === p.slug ? ' open' : '') + '" data-slug="' + esc(p.slug) + '">'
+        + (reorder || isNew ? '<div class="ph" style="cursor:default">' : '<button type="button" class="ph" data-act="edit" aria-label="Ouvrir la fiche ' + nm + '">') + thumb((p.images || [])[0]) + '<span class="badges">' + badges(p, st) + (isNew ? '<span class="vg-pill todo">Copie à enregistrer</span>' : '') + '</span>' + (reorder || isNew ? '</div>' : '</button>')
+        + '<div class="meta"><b>' + nm + '</b><span>' + eur(p.price) + ' · Stock ' + s + '</span></div>'
+        + (reorder
+          ? (st === 'archived' ? '' : '<div class="reorder"><button type="button" class="mini" data-act="up" aria-label="Avancer ' + nm + '">◀</button><button type="button" class="mini" data-act="down" aria-label="Reculer ' + nm + '">▶</button></div>')
+          : '<div class="row"><span class="step"><button type="button" data-act="minus" aria-label="Stock moins un">−</button><output>' + s + '</output><button type="button" data-act="plus" aria-label="Stock plus un">+</button></span><button type="button" class="mini" data-act="menu" aria-label="Actions pour ' + nm + '" aria-expanded="' + (openCard === p.slug) + '">⋯</button></div>'
+            + '<div class="acts">'
+            + (isNew ? '' : '<button type="button" class="vg-btn ghost" data-act="edit">Ouvrir la fiche</button><a class="vg-btn ghost" target="_blank" rel="noopener" href="../product/' + encodeURIComponent(p.slug) + '">Voir sur le site ↗</a>')
+            + '<button type="button" class="vg-btn ghost" data-act="dup">Dupliquer</button>'
+            + (st === 'preview' || st === 'scheduled' ? '<button type="button" class="vg-btn ghost" data-act="publish">Publier maintenant</button>' : '')
+            + (st === 'scheduled' ? '<button type="button" class="vg-btn ghost" data-act="unschedule">Annuler la programmation</button>' : '')
+            + (st === 'live' ? '<button type="button" class="vg-btn ghost" data-act="coming">Marquer « bientôt disponible »</button>' : '')
+            + (st === 'coming' ? '<button type="button" class="vg-btn ghost" data-act="open">Ouvrir à la vente</button>' : '')
+            + (st === 'live' || st === 'coming' ? '<button type="button" class="vg-btn ghost" data-act="hide">Passer en aperçu (masquer)</button>' : '')
+            + (st === 'archived' ? '<button type="button" class="vg-btn ghost" data-act="restore">Remettre en ligne</button>' : '<button type="button" class="vg-btn ghost" data-act="archive">Archiver (retirer du site)</button>')
+            + '</div>')
+        + '</article>';
+    }).join('') || '<div class="empty vg-muted">Aucune pièce ici.</div>';
+    var n = Object.keys(listChanges).length + Object.keys(stockEdits).length;
+    $('bar-list').hidden = !n || !!cur; $('bar-list-t').textContent = n + ' changement' + (n > 1 ? 's' : '') + ' à enregistrer';
   }
 
-  $('list').addEventListener('click', function (e) {
-    var act = e.target.getAttribute('data-act'), row = e.target.closest('.piece');
-    if (!act || !row) return;
-    var slug = row.getAttribute('data-slug'), all = merged(), p = all.filter(function (x) { return x.slug === slug; })[0], one = {};
-    if (act === 'up' || act === 'down') return apply(VGCatalogue.move(all, slug, act === 'up' ? -1 : 1));
+  $('chips').addEventListener('click', function (e) { var f = e.target.getAttribute('data-f'); if (f) { filter = f; drawList(); } });
+  $('alert-w-b').addEventListener('click', function () { filter = 'noweight'; drawList(); window.scrollTo(0, 0); });
+  $('filter').addEventListener('input', drawList);
+  $('reorder').addEventListener('click', function () { reorder = !reorder; openCard = null; drawList(); });
+  $('refresh').addEventListener('click', function () { if ((!Object.keys(listChanges).length && !Object.keys(stockEdits).length) || confirm('Abandonner les changements non enregistrés ?')) load(); });
+
+  function applyChanges(map) { Object.keys(map).forEach(function (s) { listChanges[s] = map[s]; }); drawList(); }
+  $('grid').addEventListener('click', function (e) {
+    var el = e.target.closest('[data-act]'); if (!el) return;
+    var card = el.closest('.card'), act = el.getAttribute('data-act'), slug = card.getAttribute('data-slug');
+    var all = merged(), p = byslug(slug), one = {};
+    if (act === 'edit') { location.hash = '#/p/' + encodeURIComponent(slug); return; }
+    if (act === 'menu') { openCard = openCard === slug ? null : slug; return drawList(); }
+    if (act === 'minus' || act === 'plus') {
+      var n = Math.max(0, stockOf(p) + (act === 'plus' ? 1 : -1)), orig = stock && stock[slug] ? stock[slug].stock : (isFinite(Number(p.quantity)) ? Number(p.quantity) : 1);
+      if (n === orig) delete stockEdits[slug]; else stockEdits[slug] = n;
+      return drawList();
+    }
+    if (act === 'up' || act === 'down') return applyChanges(C.move(all, slug, act === 'up' ? -1 : 1));
     if (act === 'dup') {
       var name = window.prompt('Nom de la copie (ex. ' + (p.name || slug) + ' bleu) :', '');
       if (name === null) return;
-      var r = VGCatalogue.duplicate(all, slug, name);
-      if (r.error) return say(r.error);
-      one[r.slug] = r.product; apply(one);
-      return say('Copie « ' + r.product.name + ' » créée en aperçu. Enregistre, attends 1 à 2 min, vérifie la page, puis « Publier ». Les photos sont celles de l\'original : change-les dans « Nouvelle pièce » ou l\'admin Pièces.');
-    }
-    if (act === 'schedule') {
-      var def = p.publish_at ? fmtParis(p.publish_at) : '';
-      var txt = window.prompt('Mise en ligne à quelle date et heure (heure de Paris) ?\nFormat : AAAA-MM-JJ HH:MM, par exemple 2026-11-06 18:00', '');
-      if (txt === null) return;
-      var iso = VGCatalogue.parisToIso(txt);
-      if (!iso) return say('Date non comprise. Écris par exemple : 2026-11-06 18:00');
-      if (Date.parse(iso) < Date.now() + 5 * 60 * 1000) return say('Choisis une heure au moins 5 minutes dans le futur.');
-      if (!(p.categories || []).length) return say('Cette pièce n\'a aucune catégorie : ajoute-en une avant de la programmer.');
-      one[slug] = VGCatalogue.schedule(p, iso);
-      say('Programmée pour le ' + fmtParis(iso) + ' (heure de Paris). Clique sur « Enregistrer » pour valider.');
+      var r = C.duplicate(all, slug, name);
+      if (r.error) return say(r.error, true);
+      one[r.slug] = r.product; openCard = null; applyChanges(one);
+      return say('Copie « ' + r.product.name + ' » créée en aperçu. Enregistre, puis ouvre sa fiche pour changer ses photos.');
     }
     if (act === 'unschedule') { var u = Object.assign({}, p); delete u.publish_at; one[slug] = u; }
-    if (act === 'publish') one[slug] = VGCatalogue.setHidden(p, false);
-    if (act === 'hide') one[slug] = VGCatalogue.setComing(VGCatalogue.setHidden(p, true), false);
-    if (act === 'coming') one[slug] = VGCatalogue.setComing(p, true);
-    if (act === 'open') one[slug] = VGCatalogue.setComing(p, false);
-    if (act === 'archive') one[slug] = VGCatalogue.setArchived(p, true);
-    if (act === 'restore') one[slug] = VGCatalogue.setArchived(p, false);
-    apply(one);
+    if (act === 'publish') { if (!(p.categories || []).length) return say('Cette pièce n\'a aucune catégorie : ouvre sa fiche et ajoutes-en une.', true); one[slug] = C.setHidden(p, false); }
+    if (act === 'hide') one[slug] = C.setComing(C.setHidden(p, true), false);
+    if (act === 'coming') one[slug] = C.setComing(p, true);
+    if (act === 'open') one[slug] = C.setComing(p, false);
+    if (act === 'archive') one[slug] = C.setArchived(p, true);
+    if (act === 'restore') one[slug] = C.setArchived(p, false);
+    openCard = null; applyChanges(one);
   });
 
-  function load() {
-    say('Chargement des pièces…');
-    return VGPiecesSave.loadPieces(VGStudioPublish.api).then(function (res) {
-      pieces = res; changes = {}; $('login').hidden = true; $('app').hidden = false; draw(); say('');
-    }).catch(function (e) { say('Erreur : ' + e.message); });
-  }
-
-  $('save').addEventListener('click', function () {
-    var n = Object.keys(changes).length;
-    $('save').disabled = true;
-    var toSync = changes;
-    VGPiecesSave.saveFiles(VGStudioPublish.api, changes, 'Catalogue (ordre, copie, archivage, aperçu)', say).then(function () {
-      return syncSchedule(toSync);
-    }).then(function () {
-      return load().then(function () { say('Enregistré (' + n + '). Le site se reconstruit tout seul (1 à 2 min).'); });
-    }).catch(function (e) { say('Erreur : ' + e.message); }).then(function () { $('save').disabled = false; });
-  });
   // Programmation : le Worker déclenche la reconstruction du site à l'heure (voir checkout-worker, publishCron).
   function syncSchedule(map) {
     var jobs = [];
@@ -173,17 +282,275 @@
       else if (before && before.publish_at) jobs.push({ path: '/admin/schedule/cancel', body: { slug: slug } });
     });
     if (!jobs.length) return Promise.resolve();
-    var ready = window.vgAdminToken() ? Promise.resolve() : window.vgAdminLogin();
-    return ready.then(function () {
+    return workerReady().then(function () {
       return jobs.reduce(function (p, j) { return p.then(function () { return window.vgAdminApi(j.path, { method: 'POST', body: JSON.stringify(j.body) }); }); }, Promise.resolve());
     }).then(function () {
-      return window.vgAdminApi('/admin/schedule').then(function (d) { if (!d.hook) say('Attention : le « Deploy Hook » n\'est pas encore posé dans le Worker : la mise en ligne programmée ne se déclenchera pas (voir A-FAIRE).'); });
+      return window.vgAdminApi('/admin/schedule').then(function (d) { if (!d.hook) say('Attention : le « Deploy Hook » n\'est pas encore posé dans le Worker : la mise en ligne programmée ne se déclenchera pas (voir A-FAIRE).', true); });
     });
   }
-  $('cancel').addEventListener('click', function () { changes = {}; draw(); say('Changements annulés.'); });
-  $('filter').addEventListener('input', draw);
-  $('refresh').addEventListener('click', function () { if (!Object.keys(changes).length || confirm('Abandonner les changements non enregistrés ?')) load(); });
-  $('login-btn').addEventListener('click', function () { VGStudioPublish.login().then(load).catch(function (e) { say(e.message); }); });
+  function saveStock(map) {
+    if (!Object.keys(map).length) return Promise.resolve();
+    return workerReady().then(function () { return window.vgAdminApi('/admin/stock', { method: 'POST', body: JSON.stringify({ stock: map }) }); }).then(function (d) { if (d && d.stock) stock = d.stock; });
+  }
+
+  $('list-save').addEventListener('click', function () {
+    var n = Object.keys(listChanges).length + Object.keys(stockEdits).length, toSync = listChanges, se = stockEdits;
+    $('list-save').disabled = true; say('Enregistrement…');
+    (Object.keys(toSync).length ? VGPiecesSave.saveFiles(gh(), toSync, 'Pièces (ordre, copie, archivage, aperçu)', say) : Promise.resolve())
+      .then(function () { return syncSchedule(toSync); })
+      .then(function () { return saveStock(se); })
+      .then(function () { stockEdits = {}; return load().then(function () { say('Enregistré (' + n + '). Le site se reconstruit tout seul (1 à 2 min).'); }); })
+      .catch(function (e) { say('Erreur : ' + e.message, true); }).then(function () { $('list-save').disabled = false; });
+  });
+  $('list-cancel').addEventListener('click', function () { listChanges = {}; stockEdits = {}; drawList(); say('Changements annulés.'); });
+
+  // ---------- FICHE ----------
+  var STAT_HELP = {
+    live: 'La pièce est en vente sur le site.',
+    preview: 'La page existe (adresse directe) mais la pièce n\'est ni listée ni dans une catégorie : pour vérifier avant de publier.',
+    scheduled: 'Elle se met en ligne toute seule à la date et l\'heure choisies (heure de Paris).',
+    coming: 'Visible dans la boutique, mais le bouton d\'achat est remplacé par « bientôt disponible ».',
+    archived: 'Retirée du site partout (pages, recherche, paiement). La fiche et l\'historique restent.'
+  };
+  function photoHtml(it, i, n) {
+    var img = it.preview ? '<img alt="" src="' + esc(it.preview) + '">' : thumb(it.url, 320);
+    return '<div class="ph1" data-i="' + i + '">' + img + (i === 0 ? '<span class="vg-pill tag1">Principale</span>' : '') + (it.preview ? '<span class="vg-pill todo tag1" style="top:auto;bottom:52px">Nouvelle</span>' : '')
+      + '<div class="ctl"><button type="button" data-ph="left" aria-label="Avancer la photo"' + (i === 0 ? ' disabled' : '') + '>◀</button><button type="button" data-ph="right" aria-label="Reculer la photo"' + (i === n - 1 ? ' disabled' : '') + '>▶</button><button type="button" class="del" data-ph="del" aria-label="Supprimer la photo">✕</button></div></div>';
+  }
+  function drawPhotos() {
+    var n = cur.images.length;
+    $('photos').innerHTML = cur.images.map(function (it, i) { return photoHtml(it, i, n); }).join('') || '<p class="muted" style="grid-column:1/-1">Aucune photo pour l\'instant.</p>';
+  }
+  function ficheHtml() {
+    var f = cur.form, isNew = cur.isNew;
+    var sel = F.STATUSES.map(function (s) { return '<option value="' + s.id + '"' + (f.status === s.id ? ' selected' : '') + '>' + esc(s.label) + '</option>'; }).join('');
+    var cats = categories.filter(function (c) { return c.permalink !== 'all' && c.permalink !== 'latest-drop'; }).map(function (c) {
+      return '<label><input type="checkbox" name="cat" value="' + esc(c.permalink) + '"' + (f.categories.indexOf(c.permalink) !== -1 ? ' checked' : '') + '>' + esc(c.name) + '</label>';
+    }).join('');
+    var colors = PF.COLORS.map(function (c) { return '<label><input type="radio" name="color" value="' + c.id + '"' + (f.color === c.id ? ' checked' : '') + '><span class="dot" style="background:' + c.hex + '"></span>' + esc(c.label) + '</label>'; }).join('')
+      + '<label><input type="radio" name="color" value="autre"' + (f.color === 'autre' ? ' checked' : '') + '>Autre…</label><label><input type="radio" name="color" value=""' + (!f.color ? ' checked' : '') + '>Aucune</label>';
+    var p = cur.base;
+    return '<div class="fhead"><a class="vg-btn ghost" href="#" id="back">← Pièces</a><h1 id="ftitle">' + esc(isNew ? 'Nouvelle pièce' : (p.name || p.slug)) + '</h1>'
+      + (isNew ? '' : '<a class="vg-btn ghost" target="_blank" rel="noopener" href="../product/' + encodeURIComponent(p.slug) + '">Voir sur le site ↗</a>')
+      + (isNew ? '' : '<button type="button" class="vg-btn ghost" id="f-dup">Dupliquer</button>') + '</div>'
+
+      + '<section class="vg-card sect"><h2>Photos</h2><div class="photos" id="photos"></div>'
+      + '<div class="head-acts" style="margin-top:12px"><label class="vg-btn ghost" style="cursor:pointer">+ Ajouter des photos<input type="file" id="f-addph" accept="image/*" multiple hidden></label><a class="vg-btn ghost" href="studio-photo.html">✂ Détourer / retoucher avec le studio</a></div>'
+      + '<p class="muted" id="phmsg" style="margin:8px 0 0">La 1re photo est la photo principale. Les photos ajoutées ici sont publiées telles quelles : pour un fond détouré, passe par le studio photo.</p></section>'
+
+      + '<section class="vg-card sect"><h2>Pièce</h2>'
+      + '<label class="fl" for="f-name">Nom</label><input type="text" id="f-name" autocomplete="off" value="' + esc(f.name) + '">'
+      + '<label class="fl" for="f-name-en">Nom anglais (facultatif : vide = le nom ci-dessus)</label><input type="text" id="f-name-en" autocomplete="off" value="' + esc(f.name_en) + '">'
+      + '<label class="fl" for="f-desc-fr">Description en français</label><textarea id="f-desc-fr" rows="5">' + esc(f.desc_fr) + '</textarea>'
+      + '<label class="fl" for="f-desc-en">Description en anglais</label><textarea id="f-desc-en" rows="5">' + esc(f.desc_en) + '</textarea>'
+      + '<p class="muted" style="margin:6px 0 0">Les deux textes sont enregistrés ensemble (anglais, ligne vide, français), comme sur le site.</p></section>'
+
+      + '<section class="vg-card sect"><h2>Catégories</h2><div class="cats" id="f-cats">' + cats + '</div>'
+      + '<label class="chk" style="margin-top:8px"><input type="checkbox" id="f-drop"' + (f.latest_drop ? ' checked' : '') + '>Mettre en avant (catégorie « Latest Drop »)</label></section>'
+
+      + '<section class="vg-card sect"><h2>Statut</h2>'
+      + '<select id="f-status" aria-label="Statut">' + sel + '</select><p class="muted" id="f-status-help" style="margin:6px 0 0"></p>'
+      + '<div id="f-when-wrap" hidden><label class="fl" for="f-when">Mise en ligne le (heure de Paris)</label><input type="datetime-local" id="f-when" value="' + esc(parisInput(f.publish_at)) + '"></div></section>'
+
+      + '<section class="vg-card sect"><h2>Prix et stock</h2><div class="two"><div><label class="fl" for="f-price">Prix (€)</label><input type="text" id="f-price" inputmode="decimal" value="' + esc(f.price) + '"></div>'
+      + '<div><label class="fl" for="f-stock">Stock</label><input type="number" id="f-stock" min="0" max="9999" step="1" inputmode="numeric" value="' + esc(cur.stock) + '"></div></div>'
+      + '<label class="chk" style="margin-top:8px"><input type="checkbox" id="f-unique"' + (f.unique ? ' checked' : '') + '>Badge « UNIQUE PIECE » sur la fiche</label>'
+      + '<p class="muted" style="margin:6px 0 0">Stock à 0 : « Épuisée » sur le site. Une vente payée baisse le stock toute seule. Pour une promotion, utilise un <a href="promos.html">code promo</a> (remise sur les pièces, pas sur la livraison).</p></section>'
+
+      + '<section class="vg-card sect"><h2>Couleur et vidéo</h2><div class="colors" id="f-colors">' + colors + '</div>'
+      + '<input type="text" id="f-color-other" placeholder="Autre couleur (texte libre)" value="' + esc(f.color_other) + '" style="margin-top:8px"' + (f.color === 'autre' ? '' : ' hidden') + '>'
+      + '<label class="fl" for="f-reel">Lien Instagram ou YouTube du reel (facultatif)</label><input type="text" id="f-reel" inputmode="url" placeholder="https://www.instagram.com/reel/…" value="' + esc(f.reel_url) + '">'
+      + '<label class="fl" for="f-reelv">Vidéo du reel (MP4, facultatif) : jouée toute seule sur la page' + (p.reel_video ? ' — une vidéo est déjà en place, en choisir une autre la remplace' : '') + '</label><input type="file" id="f-reelv" accept="video/mp4,video/*"><p class="muted" id="rvmsg" style="margin:6px 0 0"></p></section>'
+
+      + '<section class="vg-card sect"><h2>Livraison</h2><div class="two"><div><label class="fl" for="f-weight">Poids sans emballage (g)</label><input type="number" id="f-weight" min="1" step="1" inputmode="numeric" value="' + esc(f.weight_g) + '"></div>'
+      + '<div><label class="fl" for="f-mode">Mode d\'envoi</label><select id="f-mode"><option value="colis"' + (f.mode === 'colis' ? ' selected' : '') + '>Colis</option><option value="lettre"' + (f.mode === 'lettre' ? ' selected' : '') + '>Lettre suivie (petite pièce plate, France)</option></select></div></div>'
+      + '<label class="chk" style="margin-top:8px"><input type="checkbox" id="f-alone"' + (f.alone ? ' checked' : '') + '>Part seule (trop volumineuse pour partager un colis)</label>'
+      + '<div id="f-ports"></div></section>'
+
+      + '<section class="vg-card sect"><h2>Recherche</h2><label class="fl" for="f-kw">Mots pour la recherche du site (facultatif, séparés par des virgules)</label><input type="text" id="f-kw" autocomplete="off" placeholder="hoodie, aérographe, custom" value="' + esc(f.keywords) + '"></section>'
+
+      + '<details class="vg-card sect adv"><summary>Avancé</summary>'
+      + '<label class="fl" for="f-slug">Adresse de la page (slug)</label><input type="text" id="f-slug" autocapitalize="off" spellcheck="false" value="' + esc(isNew ? '' : p.slug) + '"' + (isNew ? ' placeholder="fabriquée à partir du nom"' : ' readonly') + '>'
+      + '<p class="muted" style="margin:6px 0 0">' + (isNew ? 'Elle ne changera plus jamais après la création.' : 'Elle ne change jamais, même si tu renommes la pièce : les anciens liens restent valables.') + '</p>'
+      + '<label class="chk" style="margin-top:8px"><input type="checkbox" id="f-intl"' + (f.ships_intl ? ' checked' : '') + '>Livrable hors de France</label>'
+      + '<label class="fl" for="f-stripe">Lien de paiement Stripe (ancien système, facultatif)</label><input type="text" id="f-stripe" inputmode="url" value="' + esc(f.stripe_payment_link) + '">'
+      + (isNew ? '' : '<p class="muted" style="margin-top:10px">Position dans la boutique : ' + esc(p.position == null ? 0 : p.position) + ' (change-la avec « Réordonner » dans la liste) · créée le ' + esc(p.created_at ? new Date(p.created_at).toLocaleDateString('fr-FR') : '—') + '</p>')
+      + '<div class="head-acts" style="margin-top:10px">' + (isNew ? '' : '<button type="button" class="vg-btn ghost" id="f-archive">' + (cur.form.status === 'archived' ? 'Remettre en ligne' : 'Archiver (retirer du site)') + '</button>') + '<a class="vg-btn ghost" href="index.html">Éditeur technique (Sveltia)</a></div></details>'
+      + '<div class="note err" id="f-err" hidden></div>';
+  }
+
+  function readForm() {
+    if (!cur) return;
+    var f = cur.form, g = function (id) { return $(id); };
+    if (!g('f-name')) return;
+    f.name = g('f-name').value; f.name_en = g('f-name-en').value; f.desc_fr = g('f-desc-fr').value; f.desc_en = g('f-desc-en').value;
+    f.categories = Array.prototype.map.call(document.querySelectorAll('#f-cats input:checked'), function (i) { return i.value; });
+    f.latest_drop = g('f-drop').checked; f.status = g('f-status').value; f.publish_at = g('f-when').value.replace('T', ' ');
+    f.price = g('f-price').value; f.unique = g('f-unique').checked;
+    var col = document.querySelector('#f-colors input:checked'); f.color = col ? col.value : ''; f.color_other = g('f-color-other').value;
+    f.reel_url = g('f-reel').value; f.weight_g = g('f-weight').value === '' ? '' : Number(g('f-weight').value); f.mode = g('f-mode').value; f.alone = g('f-alone').checked;
+    f.keywords = g('f-kw').value; f.slug = g('f-slug').value; f.ships_intl = g('f-intl').checked; f.stripe_payment_link = g('f-stripe').value;
+    cur.stock = g('f-stock').value === '' ? '' : Number(g('f-stock').value);
+  }
+  function refreshDerived() {
+    var f = cur.form;
+    $('f-status-help').textContent = STAT_HELP[f.status] || '';
+    $('f-when-wrap').hidden = f.status !== 'scheduled';
+    $('f-color-other').hidden = f.color !== 'autre';
+    drawPorts();
+  }
+  function drawPorts() {
+    var out = $('f-ports'), f = cur.form;
+    if (!config) { out.innerHTML = '<p class="muted">Grille de ports indisponible.</p>'; return; }
+    if (!(f.weight_g > 0)) { out.innerHTML = '<div class="note">' + (cur.isNew ? 'Saisis le poids pour voir les ports.' : 'Pas de poids : aucun port calculé, le site garde l\'ancien port de la fiche.') + '</div>'; return; }
+    var d = PV.describe(window.VGShipping, config, { slug: cur.base.slug || 'nouvelle', weight_g: f.weight_g, mode: f.mode, alone: f.alone });
+    var rows = d.zones.map(function (z) {
+      if (!z.ok) return '<tr><td>' + esc(z.label) + '</td><td colspan="3" class="perte">' + esc(z.message) + '</td></tr>';
+      var cls = z.gap >= 0 ? 'gain' : 'perte';
+      return '<tr><td>' + esc(z.label) + ' <span class="muted">(' + esc(z.country) + ', ' + (z.kind === 'lettre' ? 'lettre' : 'colis') + ')</span></td><td class="num">' + eur(z.cost) + '</td><td class="num">' + (z.total === 0 ? 'offert' : eur(z.total)) + '</td><td class="num ' + cls + '">' + (z.gap >= 0 ? '+' : '−') + eur(Math.abs(z.gap)) + '</td></tr>';
+    }).join('');
+    var a = d.advice ? '<div class="note">' + (d.advice.better === 'colis' ? 'Le colis revient moins cher que la lettre : colis ' + eur(d.advice.colis_cost) + ' · lettre ' + eur(d.advice.lettre_cost) + ' (France).' : 'La lettre revient moins cher que le colis : lettre ' + eur(d.advice.lettre_cost) + ' · colis ' + eur(d.advice.colis_cost) + ' (France).') + '</div>' : '';
+    out.innerHTML = '<table class="ports"><tr class="muted"><td>Zone</td><td class="num">Coût réel</td><td class="num">Payé</td><td class="num">Écart</td></tr>' + rows + '</table>' + a
+      + (cur.base.shipping_fr != null || cur.base.shipping_intl != null ? '<p class="muted">Cette pièce garde d\'anciens ports fixes (France ' + esc(cur.base.shipping_fr) + ' €, international ' + esc(cur.base.shipping_intl) + ' €) : ils passent avant le calcul.</p>' : '');
+  }
+
+  function openFiche(slug, isNew) {
+    var base, form;
+    if (isNew) {
+      base = {}; form = F.toForm({ status: 'preview', hidden: true, categories: [], unique: true, mode: 'colis' }, Date.now());
+      form.name = ''; form.price = ''; form.slug = '';
+      cur = { isNew: true, base: base, form: form, images: [], reel: null, stock: 1, stockOrig: 1 };
+    } else {
+      base = byslug(slug);
+      if (!base) { say('Pièce introuvable : « ' + slug + ' ».', true); location.hash = ''; return; }
+      form = F.toForm(base, Date.now());
+      var s = stockOf(base);
+      cur = { isNew: false, base: base, form: form, images: form.images.map(function (u) { return { url: u }; }), reel: null, stock: s, stockOrig: s };
+    }
+    dirty = false; uniqueTouched = false;
+    $('v-list').hidden = true; $('v-fiche').hidden = false; $('bar-list').hidden = true; $('bar-fiche').hidden = false;
+    $('v-fiche').innerHTML = ficheHtml(); drawPhotos(); refreshDerived(); setDirty(false);
+    window.scrollTo(0, 0);
+  }
+  function setDirty(on) {
+    dirty = on; $('bar-fiche-t').textContent = on ? 'Modifications non enregistrées' : (cur && cur.isNew ? 'Nouvelle pièce' : 'Aucune modification');
+  }
+  function closeFiche() { cur = null; dirty = false; $('v-fiche').hidden = true; $('v-list').hidden = false; $('bar-fiche').hidden = true; drawList(); window.scrollTo(0, 0); }
+
+  function route() {
+    var h = decodeURIComponent(location.hash || '');
+    if (!$('app') || $('app').hidden) return;
+    if (/^#\/new/.test(h)) return openFiche(null, true);
+    var m = /^#\/p\/(.+)$/.exec(h);
+    if (m) return openFiche(m[1], false);
+    if (h === '#/noweight') filter = 'noweight';
+    if (cur) closeFiche(); else { $('v-list').hidden = false; $('v-fiche').hidden = true; drawList(); }
+  }
+  var lastHash = location.hash;
+  window.addEventListener('hashchange', function () {
+    if (dirty && !confirm('Quitter sans enregistrer les modifications ?')) { history.replaceState(null, '', lastHash || location.pathname); return; }
+    dirty = false; lastHash = location.hash; route();
+  });
+  window.addEventListener('beforeunload', function (e) { if (dirty) { e.preventDefault(); e.returnValue = ''; } });
+
+  $('v-fiche').addEventListener('input', function (e) {
+    if (e.target.id === 'f-addph' || e.target.id === 'f-reelv') return;
+    if (e.target.id === 'f-unique') uniqueTouched = true;
+    if (e.target.id === 'f-stock' && cur.isNew && !uniqueTouched) $('f-unique').checked = Number(e.target.value) === 1; // comme l'assistant : pièce unique si stock 1
+    readForm(); refreshDerived(); setDirty(true); $('f-err').hidden = true;
+    if (e.target.id === 'f-name' && cur.isNew) $('ftitle').textContent = cur.form.name || 'Nouvelle pièce';
+  });
+  $('v-fiche').addEventListener('change', function (e) {
+    if (e.target.id === 'f-addph') { addPhotos(e.target.files); e.target.value = ''; return; }
+    if (e.target.id === 'f-reelv') { setReel(e.target.files[0]); return; }
+    readForm(); refreshDerived(); setDirty(true);
+  });
+  $('v-fiche').addEventListener('click', function (e) {
+    var t = e.target.closest('button,a'); if (!t) return;
+    if (t.id === 'back') { e.preventDefault(); location.hash = ''; return; }
+    if (t.id === 'f-dup') {
+      var name = window.prompt('Nom de la copie (ex. ' + (cur.base.name || cur.base.slug) + ' bleu) :', ''); if (name === null) return;
+      if (dirty && !confirm('Les modifications non enregistrées de cette fiche seront perdues. Continuer ?')) return;
+      var r = C.duplicate(merged(), cur.base.slug, name); if (r.error) return say(r.error, true);
+      var one = {}; one[r.slug] = r.product; dirty = false; listChanges[r.slug] = r.product; location.hash = ''; drawList();
+      return say('Copie « ' + r.product.name + ' » créée en aperçu. Enregistre dans la liste, puis ouvre sa fiche pour changer ses photos.');
+    }
+    if (t.id === 'f-archive') { var st = $('f-status'); st.value = cur.form.status === 'archived' ? 'live' : 'archived'; readForm(); refreshDerived(); setDirty(true); t.textContent = st.value === 'archived' ? 'Remettre en ligne' : 'Archiver (retirer du site)'; say('Statut changé : clique sur « Enregistrer » pour valider.'); return; }
+    var ph = t.getAttribute('data-ph');
+    if (ph) {
+      var i = Number(t.closest('.ph1').getAttribute('data-i'));
+      if (ph === 'del') { if (!confirm('Retirer cette photo de la fiche ?')) return; cur.images = F.removeItem(cur.images, i); }
+      else cur.images = F.moveItem(cur.images, i, ph === 'left' ? -1 : 1);
+      drawPhotos(); setDirty(true);
+    }
+  });
+
+  async function addPhotos(list) {
+    var files = Array.prototype.slice.call(list), n = 0;
+    $('phmsg').textContent = 'Préparation des photos…';
+    for (var i = 0; i < files.length; i++) {
+      try {
+        var r = await window.VGPhotoEncode.fromFile(files[i], { maxSide: 1600, maxKB: 350 });
+        cur.images.push({ data: r.data, ext: r.ext, preview: URL.createObjectURL(r.blob) }); n++;
+      } catch (e) { $('phmsg').textContent = 'Photo illisible : ' + files[i].name + ' (les HEIC se lisent sur iPhone/Safari ; sinon exporte en JPEG).'; }
+    }
+    if (n) { drawPhotos(); setDirty(true); $('phmsg').textContent = n + ' photo(s) ajoutée(s) : elles seront envoyées à l\'enregistrement.'; }
+  }
+  function setReel(f) {
+    cur.reel = null; if (!f) { $('rvmsg').textContent = ''; return; }
+    $('rvmsg').textContent = 'Lecture…';
+    window.VGPhotoEncode.prepareVideo(f, function (t) { $('rvmsg').textContent = t; }).then(function (file) {
+      cur.reel = file; setDirty(true); $('rvmsg').textContent = 'Vidéo prête (' + Math.round(file.size / 1048576 * 10) / 10 + ' Mo).';
+    }).catch(function (e) { $('rvmsg').textContent = e.message; $('rvmsg').style.color = '#a23b2a'; });
+  }
+
+  $('fiche-cancel').addEventListener('click', function () { if (dirty && !confirm('Abandonner les modifications ?')) return; dirty = false; location.hash = ''; });
+  $('fiche-save').addEventListener('click', async function () {
+    readForm();
+    var all = merged(), isNew = cur.isNew, err = $('f-err'), btn = $('fiche-save');
+    var maxPos = all.reduce(function (m, p) { return Math.max(m, p.position || 0); }, 0);
+    var built = F.buildPiece(cur.base, Object.assign({}, cur.form, { stock: cur.stock }), {
+      isNew: isNew, categoryPermalinks: categories.map(function (c) { return c.permalink; }), existingSlugs: all.map(function (p) { return p.slug; }),
+      photoCount: cur.images.length, position: maxPos + 1
+    });
+    if (built.error) { err.textContent = built.error; err.hidden = false; err.scrollIntoView({ block: 'center', behavior: 'smooth' }); return; }
+    err.hidden = true; btn.disabled = true;
+    try {
+      var rv = cur.reel ? { data: new Uint8Array(await cur.reel.arrayBuffer()) } : null;
+      var product = built.product, slug = isNew ? product.slug : cur.base.slug;
+      var res = await FS.saveFiche(gh(), { slug: slug, product: product, isNew: isNew, reelVideo: rv, images: cur.images.map(function (it) { return it.url || { data: it.data, ext: it.ext }; }) }, say);
+      var saved = Object.assign({}, res.product, { slug: slug }), note = '';
+      var one = {}; one[slug] = saved;
+      try {
+        await syncSchedule(one);
+        if (!isNew && cur.stock !== cur.stockOrig && isFinite(cur.stock)) { var m = {}; m[slug] = cur.stock; await saveStock(m); }
+      } catch (e2) { note = ' Attention : ' + e2.message + ' (la fiche est bien enregistrée ; réessaie le stock ou la programmation).'; }
+      pieces = pieces.filter(function (p) { return p.slug !== slug; }).concat([saved]); delete listChanges[slug];
+      if (stock && isFinite(cur.stock)) { stock[slug] = Object.assign({}, stock[slug] || { held: 0 }, { stock: cur.stock }); }
+      dirty = false; lastHash = '#/p/' + encodeURIComponent(slug);
+      say('Enregistré. Le site se reconstruit tout seul (1 à 2 min).' + note, !!note);
+      if (isNew) location.hash = '#/p/' + encodeURIComponent(slug); else openFiche(slug, false);
+    } catch (e) { say('Erreur : ' + e.message, true); err.textContent = e.message; err.hidden = false; }
+    btn.disabled = false;
+  });
+
+  // ---------- chargement ----------
+  function load() {
+    say('Chargement des pièces…');
+    return Promise.all([
+      VGPiecesSave.loadPieces(gh()),
+      fetch('categories.json', { cache: 'no-store' }).then(function (r) { return r.ok ? r.json() : []; }).catch(function () { return []; }),
+      fetch('shipping-config.json').then(function (r) { return r.json(); }).catch(function () { return null; }),
+      window.vgAdminToken() ? window.vgAdminApi('/admin/stock').then(function (d) { return d.stock || {}; }).catch(function () { return null; }) : Promise.resolve(null)
+    ]).then(function (res) {
+      pieces = res[0]; categories = res[1]; config = res[2]; stock = res[3]; listChanges = {}; stockEdits = {};
+      $('login').hidden = true; $('app').hidden = false; say('');
+      if (!stock) say('Stock en direct indisponible (session expirée ?) : le stock affiché est la quantité de départ de chaque fiche.', true);
+      route();
+    }).catch(function (e) { say('Erreur : ' + e.message, true); });
+  }
+  $('login-btn').addEventListener('click', function () { VGStudioPublish.login().then(load).catch(function (e) { say(e.message, true); }); });
+  if (location.hash.indexOf('#/') === 0) say('Connecte-toi avec GitHub pour ouvrir la fiche.');
 })();
 </script>
 </body>

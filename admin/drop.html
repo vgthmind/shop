@@ -1,0 +1,172 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="robots" content="noindex, nofollow">
+  <link rel="manifest" href="manifest.webmanifest">
+  <title>vgthmind — préparer un drop</title>
+  <style>
+    * { box-sizing: border-box; }
+    [hidden] { display: none !important; }
+    body { margin: 0; background: #f4f2ec; color: #171717; font: 16px/1.45 system-ui, -apple-system, "Segoe UI", sans-serif; -webkit-text-size-adjust: 100%; }
+    .vg-page { padding-bottom: 150px; }
+    .muted { color: var(--muted); font-size: 13px; }
+    input[type=datetime-local], textarea { width: 100%; padding: 11px 14px; border: 1px solid var(--line); border-radius: 12px; background: #fff; font: inherit; color: inherit; min-height: 44px; }
+    h2 { margin: 0 0 10px; }
+    .sect { margin-bottom: 12px; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px; }
+    .pick { position: relative; display: block; background: #fff; border: 2px solid var(--line); border-radius: 16px; overflow: hidden; cursor: pointer; padding: 0; text-align: left; font: inherit; color: inherit; }
+    .pick[aria-pressed="true"] { border-color: #171717; box-shadow: 0 0 0 1px #171717; }
+    .pick img { width: 100%; aspect-ratio: 4 / 5; object-fit: contain; background: #ebe8e0; display: block; }
+    .pick .t { padding: 8px 10px; display: block; }
+    .pick .t b { display: block; font: 700 13px/1.2 var(--f-title); letter-spacing: .03em; text-transform: uppercase; overflow-wrap: anywhere; }
+    .pick .t span { font-size: 12px; color: var(--muted); }
+    .pick .ck { position: absolute; right: 8px; top: 8px; width: 28px; height: 28px; border-radius: 50%; background: #fff; border: 2px solid #171717; display: flex; align-items: center; justify-content: center; font-size: 16px; }
+    .pick[aria-pressed="true"] .ck { background: #171717; color: #fff; }
+    .pick .vg-pill { position: absolute; left: 8px; top: 8px; font-size: 10px; }
+    .quick { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 10px; }
+    .quick .vg-btn { min-height: 44px; }
+    .quick .vg-btn[aria-pressed="true"] { background: var(--ink); color: #fff; }
+    .bar2 { position: fixed; left: 0; right: 0; bottom: 0; z-index: 40; background: #171717; color: #fff; padding: 10px 16px calc(10px + env(safe-area-inset-bottom)); display: flex; gap: 10px; align-items: center; justify-content: center; flex-wrap: wrap; }
+    .bar2 .vg-btn { background: #fff; color: #171717; border-color: #fff; min-width: 180px; }
+    .bar2 .vg-btn:disabled { opacity: .5; }
+    .bar2 span { font-size: 14px; }
+    #msg { min-height: 1.4em; margin: 12px 2px; }
+    @media (max-width: 759px) { .bar2 { bottom: calc(62px + env(safe-area-inset-bottom)); } .bar2 .vg-btn { flex: 1; } .vg-page { padding-bottom: 190px; } .grid { grid-template-columns: repeat(2, 1fr); } }
+  </style>
+<link rel="icon" href="../assets/theme/admin/favicon.svg?v=3" type="image/svg+xml">
+<link rel="icon" href="../assets/theme/admin/favicon-32.png?v=3" type="image/png" sizes="32x32">
+<link rel="icon" href="../assets/theme/admin/favicon-16.png?v=3" type="image/png" sizes="16x16">
+<link rel="shortcut icon" href="../assets/theme/admin/favicon.ico?v=3">
+<link rel="apple-touch-icon" sizes="180x180" href="../assets/theme/admin/apple-touch-icon.png?v=3">
+</head>
+<body>
+<main class="vg-page">
+  <div class="vg-head"><div><h1>Préparer un drop</h1><p class="vg-sub">Coche les pièces, choisis l'heure : elles passent toutes en « Programmée » à la même minute.</p></div></div>
+
+  <div class="vg-card" id="login">
+    <p>Connecte-toi avec GitHub pour voir tes pièces.</p>
+    <button type="button" class="vg-btn" id="login-btn">Se connecter avec GitHub</button>
+  </div>
+
+  <div id="app" hidden>
+    <section class="vg-card sect">
+      <h2>1 · Les pièces du drop</h2>
+      <p class="muted" style="margin-top:0">Pièces masquées (aperçu) ou déjà programmées. Chacune doit avoir au moins une photo et une catégorie. <a href="catalogue.html#/new">+ Nouvelle pièce</a></p>
+      <div class="grid" id="grid"></div>
+    </section>
+
+    <section class="vg-card sect">
+      <h2>2 · Date et heure (heure de Paris)</h2>
+      <div class="quick" id="quick"></div>
+      <input type="datetime-local" id="when" aria-label="Date et heure de mise en ligne">
+      <p class="muted" id="when-help" style="margin:8px 0 0">Le site se met à jour tout seul à l'heure choisie.</p>
+    </section>
+
+    <section class="vg-card sect">
+      <h2>3 · Texte pour Instagram</h2>
+      <textarea id="txt" rows="9" aria-label="Texte Instagram"></textarea>
+      <div style="margin-top:10px"><button type="button" class="vg-btn ghost" id="copy">Copier le texte</button></div>
+    </section>
+  </div>
+  <p id="msg" role="status" aria-live="polite"></p>
+</main>
+<div class="bar2" id="bar" hidden><span id="bar-t"></span><button type="button" class="vg-btn" id="go" disabled>Programmer le drop</button></div>
+
+<script src="catalogue-core.js"></script>
+<script src="pieces-view.js"></script>
+<script src="piece-form.js"></script>
+<script src="fiche-core.js"></script>
+<script src="pieces-save.js"></script>
+<script src="studio-publish.js"></script>
+<script src="vg-admin-auth.js"></script>
+<script src="vg-admin-ui.js"></script>
+<script>
+(function () {
+  'use strict';
+  var $ = function (id) { return document.getElementById(id); };
+  var C = window.VGCatalogue, F = window.VGFiche;
+  var pieces = [], picked = {}, touchedTxt = false;
+
+  function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+  function say(t, err) { $('msg').textContent = t || ''; $('msg').style.color = err ? '#a23b2a' : ''; }
+  function eur(n) { return (Math.round(n * 100) / 100).toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' €'; }
+  function fmt(iso, o) { try { return new Date(iso).toLocaleString('fr-FR', Object.assign({ timeZone: 'Europe/Paris' }, o)); } catch (e) { return iso; } }
+  function thumb(u) {
+    if (!u) return '<img alt="">';
+    var sized = '../assets/products-sized/320/' + u.replace(/^\/?assets\/products\//, '').replace(/\.\w+$/, '.webp');
+    return '<img alt="" loading="lazy" src="' + esc(sized) + '" onerror="this.onerror=null;this.src=\'..' + esc(u) + '\'">';
+  }
+  function candidates() { return C.sorted(pieces).filter(function (p) { var s = C.state(p); return s === 'preview' || s === 'scheduled'; }); }
+  function whenIso() { var v = $('when').value; return v ? C.parisToIso(v.replace('T', ' ')) : null; }
+  function whenLabel(iso) {
+    var d = fmt(iso, { weekday: 'long', day: 'numeric', month: 'long' }), h = fmt(iso, { hour: 'numeric', minute: '2-digit', hour12: false }).replace(':00', '').replace(':', ' h ');
+    return d + ' à ' + (/h/.test(h) ? h : h + ' h');
+  }
+  function chosen() { return candidates().filter(function (p) { return picked[p.slug]; }); }
+
+  function drawGrid() {
+    var list = candidates();
+    $('grid').innerHTML = list.map(function (p) {
+      var st = C.state(p);
+      return '<button type="button" class="pick" data-slug="' + esc(p.slug) + '" aria-pressed="' + !!picked[p.slug] + '">' + thumb((p.images || [])[0])
+        + '<span class="ck">' + (picked[p.slug] ? '✓' : '') + '</span>' + (st === 'scheduled' ? '<span class="vg-pill plan">' + esc(fmt(p.publish_at, { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })) + '</span>' : '')
+        + '<span class="t"><b>' + esc(p.name || p.slug) + '</b><span>' + eur(p.price) + (p.images && p.images.length ? '' : ' · sans photo') + ((p.categories || []).length ? '' : ' · sans catégorie') + '</span></span></button>';
+    }).join('') || '<p class="muted">Aucune pièce masquée ou programmée. Crée une pièce (elle démarre masquée), puis reviens ici.</p>';
+    refresh();
+  }
+  function refresh() {
+    var list = chosen(), iso = whenIso();
+    $('bar').hidden = false;
+    $('bar-t').textContent = list.length + ' pièce' + (list.length > 1 ? 's' : '') + (iso ? ' · ' + whenLabel(iso) : ' · choisis l\'heure');
+    $('go').disabled = !list.length || !iso;
+    if (!touchedTxt) $('txt').value = list.length && iso ? F.dropText(list, location.origin, whenLabel(iso)) : '';
+    Array.prototype.forEach.call($('quick').children, function (b) { b.setAttribute('aria-pressed', String(b.getAttribute('data-t') === $('when').value.replace('T', ' '))); });
+  }
+
+  function quick() {
+    var q = F.quickDates(Date.now());
+    $('quick').innerHTML = q.map(function (x) { return '<button type="button" class="vg-btn ghost" data-t="' + x.text + '" aria-pressed="false">' + x.label + '</button>'; }).join('');
+  }
+  $('quick').addEventListener('click', function (e) { var t = e.target.getAttribute('data-t'); if (t) { $('when').value = t.replace(' ', 'T'); touchedTxt = false; refresh(); } });
+  $('when').addEventListener('input', function () { touchedTxt = false; refresh(); });
+  $('txt').addEventListener('input', function () { touchedTxt = true; });
+  $('grid').addEventListener('click', function (e) { var b = e.target.closest('.pick'); if (!b) return; var s = b.getAttribute('data-slug'); if (picked[s]) delete picked[s]; else picked[s] = true; touchedTxt = false; drawGrid(); });
+  $('copy').addEventListener('click', function () {
+    var t = $('txt').value;
+    (navigator.clipboard && navigator.clipboard.writeText ? navigator.clipboard.writeText(t) : Promise.reject()).then(function () { say('Texte copié.'); }, function () { $('txt').select(); say('Sélectionné : copie-le (Ctrl+C / Copier).'); });
+  });
+
+  function syncSchedule(map) {
+    var jobs = Object.keys(map).map(function (slug) { return { path: '/admin/schedule', body: { slug: slug, at: map[slug].publish_at } }; });
+    return (window.vgAdminToken() ? Promise.resolve() : window.vgAdminLogin()).then(function () {
+      return jobs.reduce(function (p, j) { return p.then(function () { return window.vgAdminApi(j.path, { method: 'POST', body: JSON.stringify(j.body) }); }); }, Promise.resolve());
+    }).then(function () { return window.vgAdminApi('/admin/schedule'); }).then(function (d) { return !!d.hook; });
+  }
+  $('go').addEventListener('click', function () {
+    var iso = whenIso(), r = F.planDrop(pieces, chosen().map(function (p) { return p.slug; }), iso, Date.now());
+    if (r.error) return say(r.error, true);
+    var n = Object.keys(r.changes).length;
+    if (!confirm('Programmer ' + n + ' pièce' + (n > 1 ? 's' : '') + ' pour le ' + whenLabel(iso) + ' (heure de Paris) ?')) return;
+    $('go').disabled = true; say('Enregistrement…');
+    VGPiecesSave.saveFiles(VGStudioPublish.api, r.changes, 'Drop programmé le ' + iso, say)
+      .then(function () { return syncSchedule(r.changes); })
+      .then(function (hook) {
+        pieces = pieces.map(function (p) { return r.changes[p.slug] || p; }); picked = {}; drawGrid();
+        say('Drop programmé : ' + n + ' pièce' + (n > 1 ? 's' : '') + ' le ' + whenLabel(iso) + '.' + (hook ? ' Le site se reconstruit tout seul (1 à 2 min), puis se remet à jour à l\'heure dite.' : ' Attention : le « Deploy Hook » n\'est pas posé dans le Worker, la mise en ligne ne se déclenchera pas toute seule.'), !hook);
+      })
+      .catch(function (e) { say('Erreur : ' + e.message, true); $('go').disabled = false; });
+  });
+
+  function load() {
+    say('Chargement des pièces…');
+    return VGPiecesSave.loadPieces(VGStudioPublish.api).then(function (res) {
+      pieces = res; $('login').hidden = true; $('app').hidden = false; quick(); drawGrid(); say('');
+    }).catch(function (e) { say('Erreur : ' + e.message, true); });
+  }
+  $('login-btn').addEventListener('click', function () { VGStudioPublish.login().then(load).catch(function (e) { say(e.message, true); }); });
+})();
+</script>
+</body>
+</html>

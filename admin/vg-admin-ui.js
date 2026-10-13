@@ -17,7 +17,7 @@
   // Page de l'admin -> entrée du menu qui la contient.
   var OWNER = {
     'menu.html': 'dash', 'trafic.html': 'dash', 'index.html': 'pieces',
-    'catalogue.html': 'pieces', 'stock.html': 'pieces', 'pieces.html': 'pieces', 'studio-photo.html': 'pieces',
+    'catalogue.html': 'pieces', 'drop.html': 'pieces', 'rapide.html': 'pieces', 'stock.html': 'pieces', 'pieces.html': 'pieces', 'studio-photo.html': 'pieces',
     'commandes.html': 'orders', 'demandes.html': 'requests', 'promos.html': 'promos',
     'plus.html': 'more', 'expedition.html': 'more', 'export.html': 'more', 'ouverture.html': 'more', 'etat.html': 'more', 'aide.html': 'more'
   };

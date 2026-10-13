@@ -71,9 +71,9 @@
       <p class="sec" id="t-today">Aujourd'hui</p>
       <ul class="today" id="today"><li class="ok">Chargement…</li></ul>
       <div class="big">
-        <a class="vg-btn" href="studio-photo.html">+ Nouvelle pièce</a>
-        <a class="vg-btn ghost" href="#" aria-disabled="true" title="Arrive avec l'étape « Pièces »">Préparer un drop<small>bientôt</small></a>
-        <a class="vg-btn ghost" href="#" aria-disabled="true" title="Arrive avec l'étape « Pièces »">Pièce rapide (iPhone)<small>bientôt</small></a>
+        <a class="vg-btn" href="catalogue.html#/new">+ Nouvelle pièce</a>
+        <a class="vg-btn ghost" href="drop.html">Préparer un drop<small>même heure</small></a>
+        <a class="vg-btn ghost" href="rapide.html">Pièce rapide (iPhone)<small>brouillon</small></a>
       </div>
     </section>
 
@@ -123,13 +123,14 @@
   window.addEventListener('beforeinstallprompt', function (e) { e.preventDefault(); deferred = e; $('install-btn').hidden = false; });
   $('install-btn').addEventListener('click', function () { if (deferred) { deferred.prompt(); deferred = null; $('install-btn').hidden = true; } });
 
-  var todo = { orders: null, requests: null, schedule: null, soldout: null };
+  var todo = { orders: null, requests: null, schedule: null, soldout: null, noweight: null };
   function drawToday() {
     var rows = [];
     if (todo.orders) rows.push(['todo', todo.orders, 'commande' + (todo.orders > 1 ? 's' : '') + ' à expédier', 'commandes.html']);
     if (todo.requests) rows.push(['todo', todo.requests, 'demande' + (todo.requests > 1 ? 's' : '') + ' à traiter', 'demandes.html']);
     var d = S.nextDrop(todo.schedule, Date.now());
     if (d) rows.push(['plan', d.count, 'pièce' + (d.count > 1 ? 's' : '') + ' programmée' + (d.count > 1 ? 's' : '') + ' ' + S.inWords(d.at, Date.now()), 'catalogue.html']);
+    if (todo.noweight) rows.push(['todo', todo.noweight, 'pièce' + (todo.noweight > 1 ? 's' : '') + ' sans poids : ports impossibles à calculer', 'catalogue.html#/noweight']);
     if (todo.soldout) rows.push(['bad', todo.soldout, 'pièce' + (todo.soldout > 1 ? 's' : '') + ' épuisée' + (todo.soldout > 1 ? 's' : ''), 'stock.html']);
     $('today').innerHTML = rows.length ? rows.map(function (r) {
       return '<li><a href="' + r[3] + '"><span class="vg-pill n ' + r[0] + '">' + r[1] + '</span><b>' + esc(r[2]) + '</b></a></li>';
@@ -162,6 +163,7 @@
     }).catch(function (e) { if (e.status !== 401) { $('k-note').textContent = 'Commandes : ' + e.message; } else { $('login').hidden = false; $('app').hidden = true; } });
     api('/admin/requests').then(function (d) { todo.requests = S.requestsTodo(d.requests || []); drawToday(); }).catch(function () {});
     api('/admin/schedule').then(function (d) { todo.schedule = d.schedule || []; drawToday(); }).catch(function () {});
+    fetch('../products.json', { cache: 'no-store' }).then(function (r) { return r.ok ? r.json() : []; }).then(function (l) { todo.noweight = S.noWeight(Array.isArray(l) ? l : []).length; drawToday(); }).catch(function () {});
     api('/admin/stock').then(function (d) { todo.soldout = Object.keys(d.stock || {}).filter(function (s) { return d.names && d.names[s] && d.stock[s].stock <= 0; }).length; drawToday(); }).catch(function () {});
     api('/admin/traffic?days=30').then(function (r) {
       drawChart(r.series || []);
