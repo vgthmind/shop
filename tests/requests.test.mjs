@@ -95,7 +95,7 @@ const pay = (id, extra = {}) => {
     line_items: { data: [{ description: s.params.get('line_items[0][price_data][product_data][name]'), quantity: 1, amount_total: amount, price: { product: { metadata: {}, images: [] } } }] }, ...extra });
   return s;
 };
-const FORM = { type: 'custom', lang: 'fr', name: 'Alex', email: 'Alex@Example.com', country: 'FR', piece: 'hoodie', mode: 'know', idea: 'Un hoodie peint à l’aéro, thème océan', colors: 'bleu', size: 'M', t: 9000, photosConsent: true };
+const FORM = { type: 'custom', lang: 'fr', firstName: 'Alex', lastName: 'Martin', email: 'Alex@Example.com', country: 'FR', piece: 'hoodie', mode: 'know', idea: 'Un hoodie peint à l’aéro, thème océan', colors: 'bleu', size: 'M', t: 9000, photosConsent: true };
 const submit = async (f = FORM) => J(await call('/requests', f));
 const view = async (id, k) => (await J(await call('/requests/view', { id, k }))).request;
 const getReq = async (id) => (await admin('/admin/requests', null, 'GET')).requests.find((r) => r.id === id);
@@ -111,6 +111,27 @@ async function untilDeposit() {
   await webhook('checkout.session.completed', pay(sid));
   return { id, k, sid };
 }
+
+const isoIn = (days) => new Date(Date.now() + days * 86400000).toISOString().slice(0, 10);
+test('formulaire : prénom ET nom obligatoires, date souhaitée selon le délai minimum du type', async () => {
+  const noLast = await submit({ ...FORM, lastName: '' });
+  assert.deepEqual(noLast.fields, ['lastName']);
+  const tooSoon = await submit({ ...FORM, deadline: isoIn(5) });
+  assert.deepEqual(tooSoon.fields, ['deadline']);
+  const smSoon = await submit({ ...FORM, type: 'surmesure', piece: 'pantalon', measures: '90 cm', deadline: isoIn(17) });
+  assert.deepEqual(smSoon.fields, ['deadline'], 'sur-mesure : 3 semaines minimum');
+  assert.equal((await submit({ ...FORM, type: 'surmesure', piece: 'pantalon', measures: '90 cm', deadline: isoIn(22) })).ok, true);
+  const ok = await submit({ ...FORM, deadline: isoIn(15) });
+  assert.equal(ok.ok, true);
+  const rec = await getReq(ok.id) || (await call('/requests/confirm', { id: ok.id, k: ok.k }), await getReq(ok.id));
+  assert.equal(rec.client.name, 'Alex Martin');
+  const loc = await submit({ ...FORM, type: 'production', prodKind: 'location', projectType: 'Clip', dates: 'nov', deadline: isoIn(5) });
+  assert.deepEqual(loc.fields, ['deadline'], 'location : 2 semaines minimum');
+  const crea = await submit({ ...FORM, type: 'production', prodKind: 'creation', projectType: 'Clip', dates: 'nov', deadline: isoIn(1) });
+  assert.equal(crea.ok, true, 'création : pas de date minimum, champ ignoré');
+  const pub = await J(await call('/requests/settings', null, 'GET'));
+  assert.deepEqual(pub.leadWeeks, { location: { min: 2, max: 2 }, custom: { min: 2, max: 3 }, surmesure: { min: 3, max: 4 } });
+});
 
 test('formulaire : robots ignorés, champs obligatoires par branche, champs d’une autre branche jetés', async () => {
   const bot = await submit({ ...FORM, website: 'spam' });

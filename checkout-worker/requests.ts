@@ -351,7 +351,7 @@ export async function requestRoutes(request: Request, env: ReqEnv, deps: ReqDeps
     const s = await S.settings();
     const cards: Record<string, string> = {};
     for (const [k, v] of Object.entries(s.cards || {})) if (v) cards[k] = cardUrl(env, wb, v);
-    return new Response(JSON.stringify({ prices: s.prices, depositPct: s.depositPct, retouchesIncluded: s.retouchesIncluded, forfeitDays: s.forfeitDays, cards, uploads: !!env.FILES, limits: FILE_LIMITS }), {
+    return new Response(JSON.stringify({ prices: s.prices, depositPct: s.depositPct, retouchesIncluded: s.retouchesIncluded, forfeitDays: s.forfeitDays, leadWeeks: s.leadWeeks, cards, uploads: !!env.FILES, limits: FILE_LIMITS }), {
       headers: { 'Content-Type': 'application/json', 'Cache-Control': 'public, max-age=60', 'Access-Control-Allow-Origin': '*' },
     });
   }
@@ -366,7 +366,7 @@ export async function requestRoutes(request: Request, env: ReqEnv, deps: ReqDeps
     const b = await body();
     // Robots : champ piège rempli ou formulaire rempli en moins de 3 s -> « ok » sans rien enregistrer.
     if (String(b.website || '').trim() || (Number.isFinite(Number(b.t)) && Number(b.t) < 3000)) return json({ ok: true, id: 'D-000000', k: '0'.repeat(32), uploads: false });
-    const v = parseSubmission(b);
+    const v = parseSubmission(b, (await S.settings()).leadWeeks);
     if (!v.ok) return json({ error: 'invalid', fields: v.fields }, 400);
     const hour = Math.floor(Date.now() / 3600000), day = Math.floor(Date.now() / 86400000);
     if (!(await allow(env, `rl:req:${ip}:${hour}`, 3, 3700)) || !(await allow(env, `rl:req:day:${day}`, 30, 90000))) return json({ error: 'rate_limited' }, 429);

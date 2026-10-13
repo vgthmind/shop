@@ -1831,7 +1831,7 @@ window.vgAutoplay = function (v, box) {
       box.appendChild(still);
       window.vgAutoplay(v, box);
       var start = function () {
-        if (!v.src) v.src = BASE + 'studio-atelier.mp4';
+        if (!v.src) v.src = BASE + 'studio-atelier-v2.mp4';
         v.vgTryPlay();
       };
       if ('IntersectionObserver' in window) {

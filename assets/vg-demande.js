@@ -17,7 +17,7 @@
 
   // Réglages (prix « à partir de », photos changées dans l'admin) : valeurs par défaut, remplacées par celles du Worker.
   var cfg = { prices: { custom: { tshirt: 75, hoodie: 140, veste: 160, autre: 75 }, surmesure: { short: 150, pantalon: 220, haut: 200, veste: 320 }, paintFrom: 10 },
-    depositPct: 30, retouchesIncluded: 1, forfeitDays: 30, cards: {}, uploads: true, limits: { photos: 8, photoBytes: 10485760, videos: 1, videoBytes: 52428800 } };
+    depositPct: 30, retouchesIncluded: 1, forfeitDays: 30, cards: {}, leadWeeks: { location: { min: 2, max: 2 }, custom: { min: 2, max: 3 }, surmesure: { min: 3, max: 4 } }, uploads: true, limits: { photos: 8, photoBytes: 10485760, videos: 1, videoBytes: 52428800 } };
   var PIECES = {
     custom: [['tshirt', 'T-shirt', 'T-shirt'], ['hoodie', 'Sweatshirt / hoodie', 'Sweat / hoodie'], ['veste', 'Jacket / jeans / joggers', 'Veste / jean / jogging'], ['autre', 'Another piece', 'Autre pièce']],
     surmesure: [['short', 'Shorts', 'Short'], ['pantalon', 'Trousers', 'Pantalon'], ['haut', 'Top', 'Haut'], ['veste', 'Jacket', 'Veste']],
@@ -29,7 +29,7 @@
 
   var KEY = 'vg-demande-draft';
   var st = { what: '', kind: '', piece: '', paint: false, mode: '', idea: '', mood: '', colors: '', refs: '', size: '', measures: '', budget: '', deadline: '',
-    prodKind: '', projectType: '', dates: '', place: '', count: '', artist: '', collabType: '', links: '', link: '', name: '', email: '', country: '', photosConsent: false, website: '' };
+    prodKind: '', projectType: '', dates: '', place: '', count: '', artist: '', collabType: '', links: '', link: '', firstName: '', lastName: '', email: '', country: '', photosConsent: false, website: '' };
   try { var saved = JSON.parse(sessionStorage.getItem(KEY) || 'null'); if (saved && typeof saved === 'object') for (var k in st) if (k in saved && k !== 'website') st[k] = saved[k]; } catch (e) {}
   function save() { try { sessionStorage.setItem(KEY, JSON.stringify(st)); } catch (e) {} }
   var files = []; // File choisis (gardés en mémoire seulement)
@@ -39,6 +39,13 @@
   function type() { return st.what === 'piece' ? st.kind : st.what; }
   function minPrice(kind) { var p = cfg.prices[kind] || {}, m = Infinity; for (var k in p) if (p[k] < m) m = p[k]; return m === Infinity ? 0 : m; }
   function eur(n) { return L('€' + n, n + ' €'); }
+  // Délais (réglables dans l'admin) : indicatif « min à max semaines » ; la date souhaitée ne peut pas être avant le minimum.
+  function leadKey() { return st.what === 'production' ? (st.prodKind === 'location' ? 'location' : '') : type() === 'custom' || type() === 'surmesure' ? type() : ''; }
+  function weeksText(k) { var l = cfg.leadWeeks[k]; if (!l) return ''; return l.min === l.max ? L(l.min + (l.min > 1 ? ' weeks' : ' week'), l.min + (l.min > 1 ? ' semaines' : ' semaine')) : L(l.min + ' to ' + l.max + ' weeks', l.min + ' à ' + l.max + ' semaines'); }
+  function pad(n) { return (n < 10 ? '0' : '') + n; }
+  function minDate(k) { var l = cfg.leadWeeks[k], d = new Date(); d.setDate(d.getDate() + (l ? l.min : 0) * 7); return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()); }
+  function fmtDate(iso) { var m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(iso || ''); return m ? L(m[1] + '-' + m[2] + '-' + m[3], m[3] + '/' + m[2] + '/' + m[1]) : iso; }
+  function lateDate(k) { return st.deadline && leadKey() === k && st.deadline < minDate(k); }
   function from(n) { return L('from ' + eur(n), 'à partir de ' + eur(n)); }
 
   // --- Étapes --------------------------------------------------------------------------------
@@ -65,7 +72,7 @@
   function row(id, label, html, hint) { return '<div class="vgd-row"><label for="vgd-' + id + '">' + esc(label) + '</label>' + (hint ? '<small id="vgd-' + id + '-h">' + esc(hint) + '</small>' : '') + html + '</div>'; }
   function input(id, label, opts) {
     opts = opts || {};
-    var attrs = ' id="vgd-' + id + '" name="' + id + '" data-f="' + id + '" maxlength="' + (opts.max || 200) + '"' + (opts.hint ? ' aria-describedby="vgd-' + id + '-h"' : '') + (opts.ph ? ' placeholder="' + esc(opts.ph) + '"' : '') + (opts.auto ? ' autocomplete="' + opts.auto + '"' : '');
+    var attrs = ' id="vgd-' + id + '" name="' + id + '" data-f="' + id + '" maxlength="' + (opts.max || 200) + '"' + (opts.hint ? ' aria-describedby="vgd-' + id + '-h"' : '') + (opts.ph ? ' placeholder="' + esc(opts.ph) + '"' : '') + (opts.min ? ' min="' + esc(opts.min) + '"' : '') + (opts.auto ? ' autocomplete="' + opts.auto + '"' : '');
     var el = opts.area ? '<textarea' + attrs + ' rows="' + (opts.rows || 4) + '">' + esc(st[id]) + '</textarea>' : '<input type="' + (opts.type || 'text') + '"' + attrs + (opts.mode ? ' inputmode="' + opts.mode + '"' : '') + ' value="' + esc(st[id]) + '">';
     return row(id, label + (opts.req ? ' *' : ''), el, opts.hint);
   }
@@ -89,7 +96,7 @@
     kind: {
       title: function () { return L('Custom or made to measure', 'Custom ou sur-mesure'); }, cards: true,
       html: function () {
-        return head(L('Custom or made to measure?', 'Custom ou sur-mesure ?')) + '<div class="vgd-cards big">'
+        return head(L('Custom or made to measure?', 'Custom ou sur-mesure ?'), L('Indicative time: custom ', 'Délai indicatif : custom ') + weeksText('custom') + L(', made to measure ', ', sur-mesure ') + weeksText('surmesure') + '.') + '<div class="vgd-cards big">'
           + card('kind', 'custom', 'custom', 'Custom', L('A second-hand piece painted on your theme (airbrush, spray)', 'Une pièce de seconde main peinte sur ton thème (aérographe, spray)'), from(minPrice('custom')), 0)
           + card('kind', 'surmesure', 'surmesure', L('Made to measure', 'Sur-mesure'), L('A piece sewn from A to Z to your measurements, painted if you like', 'Une pièce cousue de A à Z à tes mesures, peinte si tu veux'), from(minPrice('surmesure')), 1) + '</div>';
       },
@@ -143,9 +150,9 @@
           + (sm ? input('measures', L('Your measurements', 'Tes mesures'), { area: true, req: true, rows: 5, max: 1500, hint: L('In cm: chest, waist, hips, inside leg, height… or the measurements of a piece that fits you well.', 'En cm : poitrine, taille, hanches, entrejambe, hauteur… ou les mesures d’une pièce qui te va bien.') })
             : input('size', L('Your size', 'Ta taille'), { max: 100, ph: L('e.g. M, or a fit you like', 'ex. M, ou une coupe que tu aimes'), hint: L('Custom = a second-hand piece: tell me your size, I find the base.', 'Custom = une pièce de seconde main : donne ta taille, je trouve la base.') }))
           + input('budget', L('Budget (rough)', 'Budget indicatif'), { max: 100, ph: L('e.g. €150–200', 'ex. 150 à 200 €') })
-          + input('deadline', L('Wanted by', 'Délai souhaité'), { max: 100, ph: L('e.g. before 20 December', 'ex. avant le 20 décembre') }) + '</div>';
+          + input('deadline', L('Wanted by (optional)', 'Date souhaitée (facultatif)'), { type: 'date', min: minDate(st.kind), hint: L('Indicative time: ', 'Délai indicatif : ') + weeksText(st.kind) + L('. Earliest date: ', '. Date la plus proche : ') + fmtDate(minDate(st.kind)) + '.' }) + '</div>';
       },
-      ok: function () { return st.kind === 'surmesure' && st.measures.trim().length < 3 ? 'measures' : null; },
+      ok: function () { return st.kind === 'surmesure' && st.measures.trim().length < 3 ? 'measures' : lateDate(st.kind) ? 'deadline' : null; },
     },
     prodKind: {
       title: function () { return L('Your need', 'Ton besoin'); }, cards: true,
@@ -162,12 +169,13 @@
         return head(L('Tell me about the project', 'Parle-moi du projet')) + '<div class="vgd-fields">'
           + '<div class="vgd-row"><span class="vgd-lbl">' + esc(L('Type of project *', 'Type de projet *')) + '</span>' + chips('projectType', PROJECTS) + '</div>'
           + input('dates', L('Dates', 'Dates'), { req: true, max: 200, ph: L('e.g. 12–14 Nov', 'ex. 12 au 14 novembre') })
+          + (st.prodKind === 'location' ? input('deadline', L('First date you need the piece (optional)', 'Première date où tu as besoin de la pièce (facultatif)'), { type: 'date', min: minDate('location'), hint: L('Indicative time for a rental: ', 'Délai indicatif pour une location : ') + weeksText('location') + L('. Earliest date: ', '. Date la plus proche : ') + fmtDate(minDate('location')) + '.' }) : '')
           + input('place', L('Location', 'Lieu'), { max: 200, ph: L('City, venue', 'Ville, salle') })
           + input('count', L('Number of pieces', 'Nombre de pièces'), { max: 30, mode: 'numeric' })
           + input('artist', L('Artist (name or link)', 'Artiste (nom ou lien)'), { max: 300 })
           + input('budget', L('Budget (rough)', 'Budget indicatif'), { max: 100 }) + '</div>';
       },
-      ok: function () { return !st.projectType ? 'projectType' : !st.dates.trim() ? 'dates' : null; },
+      ok: function () { return !st.projectType ? 'projectType' : !st.dates.trim() ? 'dates' : lateDate('location') ? 'deadline' : null; },
     },
     prodIdea: {
       title: function () { return L('References', 'Références'); },
@@ -212,14 +220,16 @@
         var sel = '<select id="vgd-country" data-f="country" autocomplete="country"><option value="">' + esc(L('Choose…', 'Choisir…')) + '</option>'
           + first.concat(rest).map(function (c) { return '<option value="' + c[0] + '"' + (st.country === c[0] ? ' selected' : '') + '>' + esc(c[1]) + '</option>'; }).join('') + '</select>';
         return head(L('How can I reach you?', 'Comment te répondre ?')) + '<div class="vgd-fields">'
-          + input('name', L('Name', 'Nom'), { req: true, max: 100, auto: 'name' })
+          + input('firstName', L('First name', 'Prénom'), { req: true, max: 60, auto: 'given-name' })
+          + input('lastName', L('Last name', 'Nom'), { req: true, max: 60, auto: 'family-name' })
           + input('email', 'E-mail', { req: true, type: 'email', max: 200, auto: 'email', mode: 'email' })
           + row('country', L('Country *', 'Pays *'), sel)
           + (st.what === 'piece' ? '<label class="vgd-check"><input type="checkbox" data-f="photosConsent"' + (st.photosConsent ? ' checked' : '') + '><span>' + esc(L('Optional: I agree that photos of the finished piece may be shown on the vgthmind website and social media.', 'Facultatif : j’accepte que les photos de la pièce finie soient montrées sur le site et les réseaux de vgthmind.')) + '</span></label>' : '')
           + '<div class="vgd-trap" aria-hidden="true"><label for="vgd-website">Do not fill in</label><input id="vgd-website" data-f="website" tabindex="-1" autocomplete="off"></div></div>';
       },
       ok: function () {
-        if (!st.name.trim()) return 'name';
+        if (!st.firstName.trim()) return 'firstName';
+        if (!st.lastName.trim()) return 'lastName';
         if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(st.email.trim())) return 'email';
         return st.country ? null : 'country';
       },
@@ -254,13 +264,13 @@
     if (s === 'piece') { add(L('Piece', 'Pièce'), pieceName() + (st.piece ? ' · ' + from((cfg.prices[st.kind] || {})[st.piece]) : '')); if (st.kind === 'surmesure') add(L('Add painting', 'Peinture en plus'), st.paint); }
     if (s === 'mode') add(L('Approach', 'Démarche'), st.mode === 'guide' ? L('I have an idea, guide me', 'J’ai une envie, guide-moi') : st.mode ? L('I know what I want', 'Je sais ce que je veux') : '');
     if (s === 'idea') { add(L('Mood', 'Ambiance'), st.mode === 'guide' ? st.mood : ''); add(L('Idea', 'Idée'), st.idea); add(L('Colours', 'Couleurs'), st.colors); add(L('References', 'Références'), st.refs); }
-    if (s === 'details') { add(L('Size', 'Taille'), st.kind === 'custom' ? st.size : ''); add(L('Measurements', 'Mesures'), st.kind === 'surmesure' ? st.measures : ''); add(L('Budget', 'Budget'), st.budget); add(L('Wanted by', 'Délai'), st.deadline); }
+    if (s === 'details') { add(L('Size', 'Taille'), st.kind === 'custom' ? st.size : ''); add(L('Measurements', 'Mesures'), st.kind === 'surmesure' ? st.measures : ''); add(L('Budget', 'Budget'), st.budget); add(L('Wanted by', 'Date souhaitée'), fmtDate(st.deadline)); }
     if (s === 'prodKind') add(L('Need', 'Besoin'), st.prodKind === 'creation' ? L('A piece made for the project', 'Création pour le projet') : st.prodKind ? L('Rent an existing piece', 'Location d’une pièce existante') : '');
-    if (s === 'project') { add(L('Project', 'Projet'), st.projectType); add('Dates', st.dates); add(L('Location', 'Lieu'), st.place); add(L('Pieces', 'Pièces'), st.count); add(L('Artist', 'Artiste'), st.artist); add('Budget', st.budget); }
+    if (s === 'project') { add(L('Project', 'Projet'), st.projectType); add('Dates', st.dates); add(L('Wanted by', 'Date souhaitée'), st.prodKind === 'location' ? fmtDate(st.deadline) : ''); add(L('Location', 'Lieu'), st.place); add(L('Pieces', 'Pièces'), st.count); add(L('Artist', 'Artiste'), st.artist); add('Budget', st.budget); }
     if (s === 'prodIdea') { add(L('Project', 'Projet'), st.idea); add(L('References', 'Références'), st.refs); }
     if (s === 'collab') { add(L('Collab', 'Collab'), st.collabType); add(L('Links', 'Liens'), st.links); add(L('Idea', 'Idée'), st.idea); }
     if (s === 'files') { if (st.what === 'collab') add(L('References', 'Références'), st.refs); add(L('Files', 'Fichiers'), files.map(function (f) { return f.name; }).join(', ')); add(L('Link', 'Lien'), st.link); }
-    if (s === 'contact') { add(L('Name', 'Nom'), st.name); add('E-mail', st.email); var n = st.country; try { n = new Intl.DisplayNames([lang()], { type: 'region' }).of(st.country) || n; } catch (e) {} add(L('Country', 'Pays'), n); if (st.what === 'piece') add(L('Photos of the piece', 'Photos de la pièce'), st.photosConsent ? L('OK to show', 'OK pour les montrer') : L('Not shown', 'Pas montrées')); }
+    if (s === 'contact') { add(L('Name', 'Nom'), (st.firstName + ' ' + st.lastName).trim()); add('E-mail', st.email); var n = st.country; try { n = new Intl.DisplayNames([lang()], { type: 'region' }).of(st.country) || n; } catch (e) {} add(L('Country', 'Pays'), n); if (st.what === 'piece') add(L('Photos of the piece', 'Photos de la pièce'), st.photosConsent ? L('OK to show', 'OK pour les montrer') : L('Not shown', 'Pas montrées')); }
     return o;
   }
 
@@ -294,7 +304,7 @@
   }
   function invalid(f) {
     var el = stage.querySelector('[data-f="' + f + '"]') || stage.querySelector('[data-chip="' + f + '"]') || stage.querySelector('[data-set="' + f + '"]');
-    var msg = { email: L('Please enter a valid email address.', 'Merci d’indiquer une adresse e-mail valide.'), link: L('The link must start with https://', 'Le lien doit commencer par https://'),
+    var msg = { deadline: L('Choose a date from ' + fmtDate(minDate(leadKey())) + ' (minimum time).', 'Choisis une date à partir du ' + fmtDate(minDate(leadKey())) + ' (délai minimum).'), firstName: L('Please enter your first name.', 'Merci d’indiquer ton prénom.'), lastName: L('Please enter your last name.', 'Merci d’indiquer ton nom.'), email: L('Please enter a valid email address.', 'Merci d’indiquer une adresse e-mail valide.'), link: L('The link must start with https://', 'Le lien doit commencer par https://'),
       measures: L('Please give your measurements.', 'Merci d’indiquer tes mesures.'), idea: L('Tell me a bit more (10 characters minimum).', 'Dis-m’en un peu plus (10 caractères minimum).'),
       mood: L('Tell me a bit more (10 characters minimum).', 'Dis-m’en un peu plus (10 caractères minimum).') }[f] || L('Please answer this question.', 'Merci de répondre à cette question.');
     var err = document.getElementById('vgd-err'); if (err) err.textContent = msg;
@@ -380,6 +390,7 @@
     var err = document.getElementById('vgd-err');
     var body = { type: type(), lang: lang(), t: Date.now() - t0 };
     for (var k in st) if (k !== 'what' && k !== 'kind') body[k] = typeof st[k] === 'string' ? st[k].trim() : st[k];
+    body.name = (st.firstName + ' ' + st.lastName).trim(); // ancien Worker (avant le déploiement) : champ unique
     fetch(EP + '/requests', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
       .then(function (r) { return r.json().catch(function () { return {}; }).then(function (j) { return { s: r.status, j: j }; }); })
       .then(function (x) {
@@ -418,7 +429,9 @@
   // Réglages publics (prix, photos des cartes), sans bloquer l'affichage.
   fetch(EP + '/requests/settings').then(function (r) { return r.ok ? r.json() : null; }).then(function (d) {
     if (!d) return;
-    if (d.prices) ['custom', 'surmesure'].forEach(function (t) { cfg.prices[t] = Object.assign({}, cfg.prices[t], d.prices[t] || {}); }), cfg.prices.paintFrom = d.prices.paintFrom != null ? d.prices.paintFrom : cfg.prices.paintFrom; // jamais de prix vide cfg.depositPct = d.depositPct || cfg.depositPct; cfg.cards = d.cards || {}; cfg.uploads = d.uploads !== false; cfg.limits = d.limits || cfg.limits;
+    if (d.prices) ['custom', 'surmesure'].forEach(function (t) { cfg.prices[t] = Object.assign({}, cfg.prices[t], d.prices[t] || {}); }), cfg.prices.paintFrom = d.prices.paintFrom != null ? d.prices.paintFrom : cfg.prices.paintFrom; // jamais de prix vide
+    cfg.depositPct = d.depositPct || cfg.depositPct; cfg.cards = d.cards || {}; cfg.uploads = d.uploads !== false; cfg.limits = d.limits || cfg.limits;
+    if (d.leadWeeks) cfg.leadWeeks = Object.assign({}, cfg.leadWeeks, d.leadWeeks);
     if (!sending && STEPS[path()[cur]].cards) render(); // jamais pendant une saisie (le curseur serait perdu)
   }).catch(function () {});
 
