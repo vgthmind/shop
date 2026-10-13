@@ -6,8 +6,9 @@ import { execFileSync } from 'node:child_process';
 import { existsSync, readFileSync, mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 
-const ROOT = path.resolve(new URL('..', import.meta.url).pathname);
+const ROOT = path.resolve(fileURLToPath(new URL('..', import.meta.url)));
 const out = mkdtempSync(path.join(tmpdir(), 'vg-root-'));
 execFileSync('node', ['generator/build.js'], {
   cwd: ROOT, stdio: 'pipe',
