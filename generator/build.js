@@ -318,7 +318,7 @@ function baseTheme() {
   // downloaded once into assets/theme/.
   return Object.assign({}, STORE_SETTINGS, {
     images: { logo_image: { url: '/assets/theme/logo.png', width: 1600, height: 1200 } },
-    image_sets: { slideshow: [{ url: '/assets/theme/cover.png', width: 1600, height: 1600 }] },
+    image_sets: { slideshow: [{ url: '/assets/theme/cover.png', width: 2000, height: 1273 }] },
   });
 }
 
