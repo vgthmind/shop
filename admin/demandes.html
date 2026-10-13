@@ -21,7 +21,9 @@
     button:hover, .btn:hover { border-color: var(--ink); }
     button.main { background: var(--ink); color: #fff; border-color: var(--ink); }
     button[disabled] { opacity: .45; cursor: default; }
-    .chips button[aria-pressed=true], .tabs button[aria-pressed=true] { background: var(--ink); color: #fff; }
+    .chips button, .tabs button { font-family: var(--f-mono, ui-monospace, monospace); font-size: 12px; letter-spacing: .03em; min-height: 40px; }
+    .chips button[aria-pressed=true], .tabs button[aria-pressed=true] { background: var(--chrome, #e4e4e8); color: var(--ink); border-color: rgba(0,0,0,.28); box-shadow: 0 1px 0 #fff inset, 0 1px 3px rgba(0,0,0,.18); }
+    .req { border-radius: 18px; box-shadow: 0 1px 2px rgba(0,0,0,.04), 0 6px 18px rgba(0,0,0,.04); }
     .req { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 12px 14px; margin: 10px 0; }
     .req > header { display: flex; justify-content: space-between; gap: 8px; flex-wrap: wrap; align-items: baseline; cursor: pointer; }
     .muted { color: var(--muted); font-size: 13px; }
@@ -63,10 +65,9 @@
 <link rel="apple-touch-icon" sizes="180x180" href="../assets/theme/admin/apple-touch-icon.png?v=3">
 </head>
 <body>
-<main>
-  <nav><a href="menu.html">← Tableau de bord</a> <a href="commandes.html">Commandes</a> <a href="aide.html#demandes">Aide</a></nav>
-  <h1>Demandes</h1>
-  <p class="muted">Pièces sur demande (custom, sur-mesure), productions visuelles et collabs envoyées depuis la page « Proposer un projet ».</p>
+<main class="vg-page">
+  <nav class="vg-legacy-nav"><a href="menu.html">← Tableau de bord</a> <a href="commandes.html">Commandes</a> <a href="aide.html#demandes">Aide</a></nav>
+  <div class="vg-head"><div><h1>Demandes</h1><p class="vg-sub">Pièces sur demande (custom, sur-mesure), productions visuelles et collabs envoyées depuis la page « Proposer un projet ».</p></div></div>
 
   <div class="bar" id="login" hidden><button type="button" id="login-btn">Se connecter avec GitHub</button></div>
 
