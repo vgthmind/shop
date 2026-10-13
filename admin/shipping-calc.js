@@ -152,7 +152,7 @@
   // Ce que paie le client, colis par colis (centimes). Le 1er colis = le plus lourd.
   // Options d'un palier (customer_pricing.tiers[]) :
   //   colis_free   livraison offerte ; lettre_flat forfait d'une lettre ;
-  //   real         vrai tarif La Poste, colis par colis (outre-mer) ;
+  //   real         vrai tarif La Poste, colis par colis (outre-mer) ; round_eur : arrondi à l'euro supérieur ;
   //   first_flat   forfait du 1er colis ; extra_piece = supplément par pièce en plus dans CE colis ;
   //   floor_real   le client ne paie jamais moins que le vrai tarif La Poste du colis (jamais à perte) ;
   //   floor_round_eur  ce plancher est arrondi à l'euro supérieur (53,99 -> 54 €) ;
@@ -164,7 +164,8 @@
     parcels.forEach(function (p, i) { // parcels est deja trie du plus lourd au plus leger
       if (p.kind === 'lettre') { paid[i] = tier.lettre_flat === undefined || tier.lettre_flat === null ? p.priceCents : cents(tier.lettre_flat); return; } // palier sans forfait lettre : vrai tarif, jamais 0 par oubli
       if (tier.colis_free) { paid[i] = 0; return; }
-      if (tier.real || !(basis === 'per_parcel' || i === 0)) { paid[i] = p.priceCents; return; }
+      if (tier.real) { paid[i] = tier.round_eur ? Math.ceil(p.priceCents / 100) * 100 : p.priceCents; return; }
+      if (!(basis === 'per_parcel' || i === 0)) { paid[i] = p.priceCents; return; }
       var flat = cents(tier.first_flat) + cents(tier.extra_piece) * Math.max(0, (p.pieces || 1) - 1);
       var floor = tier.floor_real ? (tier.floor_round_eur ? Math.ceil(p.priceCents / 100) * 100 : p.priceCents) : 0;
       paid[i] = Math.max(flat, floor);

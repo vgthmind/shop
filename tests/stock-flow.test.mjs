@@ -303,9 +303,13 @@ test('admin : « Se déconnecter » révoque la session côté Worker (même cop
   assert.equal((await api('/admin/stock', old)).status, 200);
   assert.equal((await api('/admin/stock', '')).status, 401);
   assert.equal((await api('/admin/stock', 'vgs.9999999999.' + 'a'.repeat(43))).status, 401);
+  const otherDevice = mk(3); // connexion simultanée sur un autre appareil (iPhone / PC)
+  assert.equal((await api('/admin/stock', otherDevice)).status, 200);
   assert.equal((await api('/admin/logout', old, 'POST')).status, 200);
   assert.equal((await api('/admin/stock', old)).status, 401, 'la session copiée est refusée');
+  assert.equal((await api('/admin/stock', otherDevice)).status, 200, 'se déconnecter ici ne coupe pas l’autre appareil');
   assert.equal((await api('/admin/stock', mk(5))).status, 200, 'une nouvelle connexion (émise après) fonctionne');
+  assert.equal((await api('/admin/stock', mk(1))).status, 200, 'une connexion une seconde plus tard fonctionne (plus de révocation globale par date)');
 });
 
 test('grille des ports lue sur le site : le jeton interne du Worker reste accepté après une déconnexion de l’admin', async () => {

@@ -26,10 +26,13 @@ export async function onRequest(context) {
   }
   if (!ok) {
     const wantsPage = (request.headers.get('Accept') || '').includes('text/html');
-    if (!wantsPage) return new Response('Connexion requise.', { status: 401, headers: { 'Cache-Control': 'no-store' } });
+    // Cookie présent mais session refusée : on l'efface (sinon il repartirait à chaque visite).
+    const headers = { 'Cache-Control': 'no-store' };
+    if (token) headers['Set-Cookie'] = 'vg-admin=; Max-Age=0; Path=/; Secure; SameSite=Strict';
+    if (!wantsPage) return new Response('Connexion requise.', { status: 401, headers });
     const to = new URL('/admin/connexion', url);
     to.searchParams.set('next', url.pathname + url.search);
-    return new Response(null, { status: 302, headers: { Location: to.toString(), 'Cache-Control': 'no-store' } });
+    return new Response(null, { status: 302, headers: { ...headers, Location: to.toString() } });
   }
   const res = await next();
   const out = new Response(res.body, res);

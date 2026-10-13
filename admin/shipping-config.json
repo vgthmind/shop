@@ -1,5 +1,5 @@
 {
-  "version": 5,
+  "version": 6,
   "currency": "EUR",
   "_sources": {
     "verifie_le": "2026-10-07",
@@ -71,7 +71,7 @@
       },
       {
         "id": "OM",
-        "name": "Outre-mer : vrai tarif Colissimo au poids, sans livraison offerte",
+        "name": "Outre-mer : vrai tarif Colissimo au poids arrondi a l'euro superieur, sans livraison offerte",
         "countries": [
           "GP",
           "MQ",
@@ -86,7 +86,8 @@
           "WF",
           "TF"
         ],
-        "real": true
+        "real": true,
+        "round_eur": true
       },
       {
         "id": "UK",

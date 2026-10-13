@@ -153,8 +153,9 @@ test('pays bloqués : Russie, Biélorussie, destinations suspendues', () => {
 });
 test('Outre-mer : vrai tarif La Poste au poids (OM1 / OM2), sans livraison offerte ; désactivable sans retomber en zone C', () => {
   const r = q([w('a', 100)], 'RE'); // 238 g -> 500 g
-  assert.equal(r.ok, true); assert.equal(r.zone, 'OM1'); assert.equal(r.tier, 'OM'); assert.equal(r.costCents, 1202); assert.equal(r.totalCents, 1202);
-  assert.equal(q([w('a', 100)], 'NC').costCents, 1221);
+  assert.equal(r.ok, true); assert.equal(r.zone, 'OM1'); assert.equal(r.tier, 'OM'); assert.equal(r.costCents, 1202); assert.equal(r.totalCents, 1300); // vrai tarif 12,02 arrondi à 13 €
+  assert.equal(q([w('a', 100)], 'NC').costCents, 1221); assert.equal(q([w('a', 100)], 'NC').totalCents, 1300);
+  assert.deepEqual([q([w('a', 570), w('b', 420)], 'RE').totalCents, q([w('a', 570), w('b', 420), w('c', 550), w('d', 550)], 'RE').totalCents], [2600, 3900]); // 25,89 -> 26 € ; 38,90 -> 39 €
   const heavy = q([w('a', 100), w('b', 700)], 'GP'); // 800 + 138 = 938 g -> 1 kg
   assert.equal(heavy.parcels.length, 1); assert.equal(heavy.totalCents, 1900);
   const off = cfg((x) => { x.zones.find((z) => z.id === 'OM1').enabled = false; });
@@ -171,8 +172,8 @@ test('quoteByZone : une pièce seule, une ligne par zone livrée, coût / client
   const z = quoteByZone(base, { slug: 'a', weight_g: 400 }); // 538 g
   assert.deepEqual(z.map((x) => x.zone), ['FR', 'A', 'UK', 'B', 'C', 'OM1', 'OM2']);
   assert.deepEqual(z.map((x) => x.cost), [9.29, 19.39, 23.39, 28.39, 39.19, 19, 18.95]);
-  assert.deepEqual(z.map((x) => x.total), [0, 20, 24, 39, 40, 19, 18.95]);
-  assert.deepEqual(z.map((x) => x.gap), [-9.29, 0.61, 0.61, 10.61, 0.81, 0, 0]);
+  assert.deepEqual(z.map((x) => x.total), [0, 20, 24, 39, 40, 19, 19]);
+  assert.deepEqual(z.map((x) => x.gap), [-9.29, 0.61, 0.61, 10.61, 0.81, 0, 0.05]);
   assert.equal(quoteByZone(base, { slug: 'a', weight_g: 48, mode: 'lettre' })[0].kind, 'lettre');
 });
 

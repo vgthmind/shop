@@ -28,15 +28,34 @@
 <script>
 (function () {
   'use strict';
+  var msg = document.getElementById('msg');
+  // Garde-fou : jamais plus de 3 allers-retours connexion <-> page admin en 30 s (session refusée mais gardée ici = boucle).
+  function tooMany() {
+    try {
+      var h = JSON.parse(sessionStorage.getItem('vg-go') || '[]').filter(function (t) { return Date.now() - t < 30000; });
+      h.push(Date.now()); sessionStorage.setItem('vg-go', JSON.stringify(h));
+      return h.length > 3;
+    } catch (e) { return false; }
+  }
   function go() {
+    if (tooMany()) { window.vgAdminLogout(); msg.textContent = 'La session est refusée par le serveur : clique sur « Se connecter avec GitHub » pour en ouvrir une nouvelle.'; return; }
     var next = (location.search.match(/[?&]next=([^&]+)/) || [])[1];
     next = next ? decodeURIComponent(next) : '/admin/menu';
     if (next.charAt(0) !== '/' || next.indexOf('//') === 0 || !/^\/admin\//.test(next)) next = '/admin/menu';
     location.replace(next);
   }
-  if (window.vgAdminToken()) go();
+  // Une session gardée dans ce navigateur n'est suivie qu'une fois VÉRIFIÉE par le serveur : si elle a été fermée ailleurs
+  // (déconnexion, expiration), on l'oublie et on propose de se reconnecter au lieu de repartir vers la page admin.
+  var tok = window.vgAdminToken();
+  if (tok) {
+    msg.textContent = 'Vérification de ta session…';
+    fetch(window.VG_ENDPOINT + '/admin/renew', { method: 'POST', headers: { Authorization: 'Bearer ' + tok } })
+      .then(function (r) { if (!r.ok) throw new Error(String(r.status)); msg.textContent = ''; go(); })
+      .catch(function () { window.vgAdminLogout(); msg.textContent = 'Ta session est terminée : reconnecte-toi avec GitHub.'; });
+  }
   document.getElementById('login').addEventListener('click', function () {
-    window.vgAdminLogin().then(go).catch(function (e) { document.getElementById('msg').textContent = e.message; });
+    msg.textContent = '';
+    window.vgAdminLogin().then(function () { try { sessionStorage.removeItem('vg-go'); } catch (e) {} go(); }).catch(function (e) { msg.textContent = e.message; });
   });
 })();
 </script>

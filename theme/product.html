@@ -41,7 +41,6 @@
 
       {% if product.on_sale %}<div class="product-status {{ status_class }}">{{ t['products.on_sale'] }}</div>{% endif %}
     </div>
-    {% for s in product.shipping %}{% if s.country.code == 'FR' and s.amount_alone == 0 %}<p class="vg-free-fr"><span data-l="en">Free shipping in France</span><span data-l="fr">Livraison offerte en France</span></p>{% endif %}{% endfor %}
   {% endcase %}
   {% capture status_class %}{% if product.status == 'active' and product.on_sale %}status-primary{% else %}status-secondary{% endif %}{% endcapture %}
 
@@ -183,6 +182,7 @@
           {% endif %}
         {% endif %}
         <button id="add-to-cart-button" class="button add-to-cart-button" type="submit" data-add-title="{{ t['products.add_to_cart'] }}" data-sold-title="{{ t['products.sold_out'] }}">{{ t['products.add_to_cart'] }}</button>
+        {% for s in product.shipping %}{% if s.country.code == 'FR' and s.amount_alone == 0 %}<p class="vg-free-fr"><span data-l="en">Free shipping in France</span><span data-l="fr">Livraison offerte en France</span></p>{% endif %}{% endfor %}
         {{ store | instant_checkout_button: 'dark', '44px' }}
         <div class="inventory-status-message" data-inventory-message></div>
         {% if product.has_option_groups %}

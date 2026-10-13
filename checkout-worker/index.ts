@@ -307,7 +307,9 @@ export default {
         if (!(await isAdmin(request, env))) return json({ error: 'Non autorisé.' }, 401);
         if (path === '/admin/renew' && request.method === 'POST') return json({ session: await makeSession(env) });
         if (path === '/admin/logout' && request.method === 'POST') {
-          await env.HOLDS.put('admin:revoked', String(Math.floor(Date.now() / 1000)));
+          // Seule la session de cet appareil est révoquée (se déconnecter sur l'iPhone ne coupe pas le PC).
+          const sig = /^Bearer vgs\.\d{1,12}\.([A-Za-z0-9_-]{43})$/.exec(request.headers.get('authorization') || '');
+          if (sig) await env.HOLDS.put('rv:' + sig[1], '1', { expirationTtl: SESSION_TTL + 3600 });
           return json({ ok: true });
         }
         if (path === '/admin/stock' && request.method === 'GET') return json(await adminStock(env));
@@ -427,6 +429,7 @@ export default {
     env = await withSiteBase(env);
     // Chaque minute : mises en ligne programmées (rien d'autre).
     if (event && event.cron === '* * * * *') {
+      ctx.waitUntil(oneOffs(env).catch(() => {}));
       ctx.waitUntil(publishCron(env).catch((e) => alertAdmin(env, 'publish-cron', 'Mise en ligne programmée en erreur', String(e && e.stack ? e.stack : e))));
       return;
     }
@@ -580,6 +583,15 @@ async function restoreOrders(env: Env, data: any) {
     await env.HOLDS.put('sref:' + id, String(ref)); await env.HOLDS.put('ref:' + ref, id); n++;
   }
   return n;
+}
+
+// Opérations uniques, lancées par le cron de la minute et marquées « faites » dans KV (une seule exécution).
+// 2026-10-13 : achats de test de CH_0002 et CH_0004 -> stock remis à la quantité de la fiche (voir aussi la page admin « Stock »).
+async function oneOffs(env: Env) {
+  const flag = 'oneoff:restock-ch_0002-ch_0004-2026-10-13';
+  if (await env.HOLDS.get(flag)) return;
+  await stockStub(env).deleteStock(['ch_0002', 'ch_0004']);
+  await env.HOLDS.put(flag, new Date().toISOString());
 }
 
 // --- Frais de livraison (affichage du panier) ---
@@ -1128,8 +1140,10 @@ async function isAdmin(request: Request, env: Env): Promise<boolean> {
   const exp = Number(m[1]);
   if (exp < Date.now() / 1000) return false;
   if (!timingSafeEqual(m[2], await sessionSig(env, exp))) return false;
-  // « Se déconnecter » révoque toutes les sessions émises avant ce moment (émission = expiration - durée).
+  // « Se déconnecter » révoque CETTE session (rv:<signature>) ; l'ancienne révocation globale (admin:revoked : toutes les
+  // sessions émises avant ce moment) ne sert plus que pour les sessions d'avant le 13/10/2026 soir.
   try {
+    if (await env.HOLDS.get('rv:' + m[2])) return false;
     const revoked = Number(await env.HOLDS.get('admin:revoked')) || 0;
     if (revoked && exp - SESSION_TTL <= revoked) return false;
   } catch (e) { /* KV indisponible : la signature suffit */ }

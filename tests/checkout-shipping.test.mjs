@@ -64,7 +64,7 @@ test('panier de plusieurs pièces : poids total, UN seul colis (plus de « envoi
   const a = piece('a', { weight_g: 570 }), b = piece('b', { weight_g: 420 }), c = piece('c', { weight_g: 550 });
   const all = w('a', 'b', 'c');
   const together = (country) => grid([{ slug: 'a', qty: 1, weight_g: 570 }, { slug: 'b', qty: 1, weight_g: 420 }, { slug: 'c', qty: 1, weight_g: 550 }], country);
-  for (const [cc, expected] of [['DE', 2300], ['RE', 2589], ['CA', 5500]]) {
+  for (const [cc, expected] of [['DE', 2300], ['RE', 2600], ['CA', 5500]]) {
     const r = await checkoutShipping(env(), [a, b, c], all, 'intl', cc);
     assert.deepEqual([r.ok, r.cents], [true, together(cc)], cc);
     assert.equal(r.cents, expected, cc); // 1540 g + carton 138 g = 1678 g -> tranche 2 kg

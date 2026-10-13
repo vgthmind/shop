@@ -39,7 +39,7 @@ test('ports par zone : France, zone A, reste du monde, outre-mer (coût réel, p
   const [fr, ue, monde, om1, om2] = d.zones;
   assert.deepEqual([fr.cost, fr.total, fr.gap], [9.29, 0, -9.29]);
   assert.deepEqual([ue.cost, ue.total], [19.39, 20]); assert.deepEqual([monde.cost, monde.total], [39.19, 40]); // plancher arrondi à l'euro
-  assert.deepEqual([om1.cost, om1.total, om2.cost, om2.total], [19, 19, 18.95, 18.95]); // vrai tarif La Poste, rien de plus
+  assert.deepEqual([om1.cost, om1.total, om2.cost, om2.total], [19, 19, 18.95, 19]); // vrai tarif La Poste arrondi à l’euro supérieur
 });
 test('modeAdvice : signal seulement si l\'autre mode est moins cher, avec les deux montants', () => {
   const colisCher = structuredClone(config); colisCher.zones.find((z) => z.id === 'FR').brackets[0].price = 2;
