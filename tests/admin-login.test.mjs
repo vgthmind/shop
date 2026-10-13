@@ -45,7 +45,7 @@ test('connexion réussie : la session est déposée sous le code (jamais le jeto
   const back = PAGES + '/admin/connexion';
   const st = await start('&lc=' + LC + '&return=' + encodeURIComponent(back));
   const html = await (await call('/callback?state=' + st + '&code=abc')).text();
-  assert.match(html, /var RET = "https:\/\/vgthmind-shop\.pages\.dev\/admin\/connexion"/);
+  assert.match(html, /var RET = "https:\/\/vgthmind-shop\.pages\.dev\/admin\/connexion\?done=1"/);
   const dep = kv.m.get('lc:' + LC);
   assert.match(dep, /^vgs\.\d{1,12}\.[A-Za-z0-9_-]{43}$/);
   assert.equal([...kv.m.values()].some((v) => v.includes('gho_secret_token')), false, 'le jeton GitHub n’est jamais gardé');

@@ -189,6 +189,7 @@
         + '<button type="button" data-print>Bon de commande (imprimer)</button>'
         + '<button type="button" data-invoice>Facture' + (o.invoice_no ? ' ' + esc(o.invoice_no) : '') + '</button>'
         + (o.refunded ? '<button type="button" data-credit>Avoir</button>' : '')
+        + (o.refunded && o.refunded.full ? '' : '<button type="button" data-refund>Rembourser…</button>')
         + '<a class="btn" target="_blank" rel="noopener" href="https://dashboard.stripe.com/' + (o.livemode ? '' : 'test/') + 'checkout/sessions/' + esc(o.id) + '">Voir dans Stripe</a>'
         + '</div></article>';
     }).join('') : '<p class="muted">Aucune commande ici.</p>';
@@ -205,6 +206,18 @@
           o.preparing = undoPrep ? null : d.preparing;
           draw();
           $('msg').textContent = undoPrep ? '« En préparation » annulé.' : 'Marquée en préparation : le client la voit sur la page de suivi.';
+        })
+        .catch(function (err) { $('msg').textContent = 'Erreur : ' + err.message; });
+    }
+    if (e.target.hasAttribute('data-refund')) {
+      var amt = window.prompt('Rembourser « ' + (o.ref || o.name || o.email) + ' » (' + money(o.total) + ')\n\nMontant en € à rembourser (laisse vide pour rembourser tout ce qui reste) :', '');
+      if (amt === null) return;
+      amt = amt.trim();
+      if (!window.confirm('Confirmer le remboursement ' + (amt ? amt + ' €' : 'total') + (o.livemode ? ' (VRAIE commande : l\'argent repart chez le client)' : ' (commande de test)') + ' ?')) return;
+      $('msg').textContent = 'Remboursement en cours…';
+      api('/orders/refund', { method: 'POST', body: JSON.stringify({ id: o.id, amount: amt }) })
+        .then(function (d) {
+          $('msg').textContent = 'Remboursé : ' + String(d.amount).replace('.', ',') + ' €. La commande passera à « remboursée » dans quelques secondes (recharge la page), puis le bouton Avoir apparaîtra.';
         })
         .catch(function (err) { $('msg').textContent = 'Erreur : ' + err.message; });
     }
@@ -228,9 +241,16 @@
     }
     if (e.target.hasAttribute('data-mail')) {
       var again = !!o.shipped.notified;
-      if (!window.confirm((again ? 'Renvoyer' : 'Envoyer') + ' le mail « expédiée » à ' + o.email + ' ?')) return;
+      var trk = (o.shipped.tracking || '').trim();
+      if (!trk) {
+        // Sans numéro, le mail n'a pas de ligne « Numéro de suivi » : on propose de le saisir maintenant.
+        trk = window.prompt('Cette commande n\'a pas de numéro de suivi : le mail partirait sans. Saisis-le ici (vide = envoyer sans suivi) :', '');
+        if (trk === null) return;
+        trk = trk.trim();
+      }
+      if (!window.confirm((again ? 'Renvoyer' : 'Envoyer') + ' le mail « expédiée » à ' + o.email + (trk ? ' avec le suivi ' + trk : ' sans numéro de suivi') + ' ?')) return;
       $('msg').textContent = 'Envoi…';
-      api('/orders/shipped-mail', { method: 'POST', body: JSON.stringify({ id: o.id }) })
+      api('/orders/shipped-mail', { method: 'POST', body: JSON.stringify({ id: o.id, tracking: trk }) })
         .then(function (d) { o.shipped = d.shipped; draw(); $('msg').textContent = 'Mail envoyé à ' + o.email + '.'; })
         .catch(function (err) { $('msg').textContent = 'Erreur : ' + err.message; });
     }

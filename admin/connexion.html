@@ -48,6 +48,15 @@
   // (déconnexion, expiration), on l'oublie et on propose de se reconnecter au lieu de repartir vers la page admin.
   // Connexion GitHub déjà lancée (page rechargée ou recréée pendant la connexion, iPhone) : on reprend l'attente de la session.
   var resumed = window.vgAdminResumeLogin();
+  // Page ouverte par la fenêtre GitHub une fois connecté (iPhone, appli installée : fenêtre séparée de l'appli, sans session ici).
+  // Rien à faire ici : surtout pas de bouton « Se connecter » (c'était la boucle) ; l'appli récupère la session toute seule.
+  if (!resumed && /[?&]done=1/.test(location.search) && !window.vgAdminToken()) {
+    document.getElementById('login').style.display = 'none';
+    document.querySelector('main p').textContent = 'Connecté ✓';
+    msg.textContent = 'Tu peux fermer cette fenêtre et revenir dans l\'appli : elle se connecte toute seule.';
+    try { window.close(); } catch (e) {}
+    return;
+  }
   if (resumed) {
     msg.textContent = 'Connexion en cours…';
     resumed.then(function () { try { sessionStorage.removeItem('vg-go'); } catch (e) {} go(); }).catch(function (e) { msg.textContent = e.message; });

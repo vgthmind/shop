@@ -33,8 +33,8 @@
     Array.prototype.forEach.call(document.querySelectorAll('[data-step]'), function (s) { s.hidden = Number(s.getAttribute('data-step')) !== step; });
     Array.prototype.forEach.call($('steps').children, function (b, i) { b.classList.toggle('on', i + 1 === step); });
     $('bPrev').disabled = step === 1; $('bNext').hidden = step === 5;
-    var has = window.VGStudio.count() > 0;
-    $('noPhoto').hidden = has;
+    $('noPhoto').hidden = window.VGStudio.total() > 0; // des photos en attente de validation = l'éditeur s'affiche, pas ce message
+    if (step === 2) window.VGStudio.relayout();
     if (step === 3) suggestColor();
     if (step === 4) ports();
     if (step === 5) recap();
