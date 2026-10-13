@@ -29,7 +29,9 @@ const KEY = 'shipping:config';
 // le Worker se présente avec une session d'admin qu'il signe lui-même (même format que isAdmin() dans index.ts).
 async function adminCookie(env: ShipEnv): Promise<string> {
   if (!env.SESSION_SECRET) return '';
-  const exp = Math.floor(Date.now() / 1000) + 300;
+  // Même durée que les sessions admin (index.ts, SESSION_TTL = 12 h) : la date d'émission déduite (exp - 12 h) est
+  // « maintenant », donc une déconnexion de l'admin (révocation des sessions émises avant elle) ne bloque pas ce jeton interne.
+  const exp = Math.floor(Date.now() / 1000) + 60 * 60 * 12;
   const key = await crypto.subtle.importKey('raw', new TextEncoder().encode(env.SESSION_SECRET), { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']);
   const sig = new Uint8Array(await crypto.subtle.sign('HMAC', key, new TextEncoder().encode(`vgs.${exp}.${String(env.ADMIN_GITHUB_LOGIN).toLowerCase()}`)));
   let b = '';
@@ -42,7 +44,7 @@ export async function loadShippingConfig(env: ShipEnv): Promise<any> {
   if (saved) { try { return JSON.parse(saved); } catch (e) { /* grille abimee : on retombe sur le fichier du depot */ } }
   const tok = await adminCookie(env);
   const res = await fetch(`${env.CATALOG_BASE || env.SITE_BASE}/admin/shipping-config.json`, { headers: tok ? { Cookie: 'vg-admin=' + encodeURIComponent(tok) } : {}, cf: { cacheTtl: 60 } } as any);
-  if (!res.ok) throw new Error('Grille des frais d’envoi introuvable.');
+  if (!res.ok) throw new Error('Grille des frais d’envoi introuvable (HTTP ' + res.status + ').');
   return res.json();
 }
 
@@ -131,7 +133,7 @@ export async function checkoutShipping(
   if (cc) region = cc === 'FR' ? 'fr' : 'intl';
   if (region === 'intl' && !cc) return { ok: false, error: 'country_required', message: 'Choisis ton pays de livraison.' };
   let config: any = null;
-  try { config = await loadShippingConfig(env); } catch (e) { config = null; }
+  try { config = await loadShippingConfig(env); } catch (e) { config = null; console.error('grille des ports illisible :', e && (e as any).message); }
   if (!config) return { ok: false, error: 'config_unavailable', message: 'Grille des frais d’envoi indisponible.' };
   const items = products.map((p) => ({ slug: p.permalink, qty: wanted.get(p.permalink) || 1, weight_g: p.weight_g, mode: p.mode, alone: p.alone === true }));
   const subtotal = products.reduce((s, p) => s + p.price * (wanted.get(p.permalink) || 1), 0);

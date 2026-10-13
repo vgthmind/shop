@@ -307,3 +307,21 @@ test('admin : « Se déconnecter » révoque la session côté Worker (même cop
   assert.equal((await api('/admin/stock', old)).status, 401, 'la session copiée est refusée');
   assert.equal((await api('/admin/stock', mk(5))).status, 200, 'une nouvelle connexion (émise après) fonctionne');
 });
+
+test('grille des ports lue sur le site : le jeton interne du Worker reste accepté après une déconnexion de l’admin', async () => {
+  env.SESSION_SECRET = 'secret-de-test';
+  const mem = new Map([['admin:revoked', String(Math.floor(Date.now() / 1000) - 5)]]); // quelqu'un s'est déconnecté il y a 5 s
+  const kv = { get: async (k) => (mem.has(k) ? mem.get(k) : null), put: async (k, v) => { mem.set(k, v); }, delete: async () => {}, list: async () => ({ keys: [] }) };
+  const real = globalThis.fetch; let token = '';
+  globalThis.fetch = async (url, opt = {}) => {
+    if (String(url).endsWith('/admin/shipping-config.json')) { token = decodeURIComponent(/vg-admin=([^;]+)/.exec((opt.headers || {}).Cookie || '')[1]); return new Response(JSON.stringify(config)); }
+    return real(url, opt);
+  };
+  try {
+    const env2 = { ...env, HOLDS: kv };
+    const r = await worker.fetch(new Request('http://w.invalid/shipping/quote', { method: 'POST', body: JSON.stringify({ items: [{ slug: 'uniq', qty: 1 }], country: 'FR' }) }), env2, { waitUntil: () => {} });
+    assert.equal((await r.json()).ok, true);
+    const renew = await worker.fetch(new Request('http://w.invalid/admin/renew', { method: 'POST', headers: { Authorization: 'Bearer ' + token } }), env2, { waitUntil: () => {} });
+    assert.equal(renew.status, 200, 'le garde des pages /admin accepte le jeton interne');
+  } finally { globalThis.fetch = real; }
+});
