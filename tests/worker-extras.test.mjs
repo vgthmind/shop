@@ -92,12 +92,19 @@ test('alerte : la même alerte n’est pas renvoyée avant 10 min', async () => 
   assert.equal(mails.length, 1);
 });
 
-test('connexion admin : limite de tentatives par IP (12 puis 429)', async () => {
+test('connexion admin : seuls les ÉCHECS comptent (12 par IP, puis 429) ; les connexions réussies ne bloquent jamais', async () => {
   reset();
-  const call = () => worker.fetch(new Request('http://w.invalid/auth', { headers: { 'CF-Connecting-IP': '9.9.9.9' } }), env(), {});
+  const h = { 'CF-Connecting-IP': '9.9.9.9' };
+  const start = () => worker.fetch(new Request('http://w.invalid/auth', { headers: h }), env(), {});
   let last;
-  for (let i = 0; i < 13; i++) last = await call();
-  assert.equal(last.status, 429);
+  for (let i = 0; i < 40; i++) last = await start(); // 40 départs de connexion (réussies ou non encore jugées) : jamais 429
+  assert.notEqual(last.status, 429);
+  const fail = () => worker.fetch(new Request('http://w.invalid/callback?state=inconnu&code=x', { headers: h }), env(), {}); // session expirée = échec
+  for (let i = 0; i < 12; i++) assert.notEqual((await fail()).status, 429);
+  assert.equal((await start()).status, 429);
+  assert.equal((await fail()).status, 429);
+  const other = await worker.fetch(new Request('http://w.invalid/auth', { headers: { 'CF-Connecting-IP': '8.8.8.8' } }), env(), {});
+  assert.notEqual(other.status, 429); // une autre IP n'est pas touchée
 });
 
 test('sauvegarde nocturne des commandes : états expédiée / préparation / numéros', async () => {

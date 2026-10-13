@@ -29,7 +29,7 @@
   } catch (e) {}
   // Numéro de version de l'admin, affiché en petit en bas à gauche de chaque page : permet de vérifier qu'on a bien la dernière version.
   // À changer à chaque mise à jour de l'admin (aaaa-mm-jj + lettre).
-  window.VG_ADMIN_VERSION = '2026-10-14-d';
+  window.VG_ADMIN_VERSION = '2026-10-14-f';
   function showVersion() {
     try {
       var d = document.createElement('div'); d.id = 'vg-admin-version'; d.textContent = 'Admin v' + window.VG_ADMIN_VERSION;
@@ -188,6 +188,7 @@
     var s = '';
     try { s = localStorage.getItem(KEY) || ''; localStorage.removeItem(KEY); localStorage.removeItem('vg-admin-token'); localStorage.removeItem(LAST); localStorage.removeItem(LC); } catch (e) {}
     setCookie('');
+    try { sessionStorage.removeItem('vg-gh-token'); } catch (e) {} // jeton GitHub des pages Pièces / Studio
     try { if (window.caches) caches.keys().then(function (ks) { ks.forEach(function (k) { caches.delete(k); }); }); } catch (e) {}
     if (!s || remote !== true) return Promise.resolve();
     return fetch(ENDPOINT + '/admin/logout', { method: 'POST', headers: { Authorization: 'Bearer ' + s }, keepalive: true }).catch(function () {});

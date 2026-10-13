@@ -9,7 +9,16 @@
   'use strict';
   var ENDPOINT = root.VG_ENDPOINT || 'https://vgthmind-shop-checkout.vgthm66.workers.dev';
   var REPO = 'vgthmind/shop', BRANCH = 'main', API = 'https://api.github.com';
-  var token = '';
+  // Jeton gardé dans sessionStorage : propre à l'onglet (jamais partagé), vidé à la fermeture de l'onglet, à la déconnexion
+  // (vg-admin-auth.js) et après 4 h sans activité. Il survit au changement de page dans le même onglet.
+  var SK = 'vg-gh-token', IDLE = 4 * 60 * 60 * 1000, token = '';
+  function keep() { try { if (token) root.sessionStorage.setItem(SK, JSON.stringify({ t: token, at: Date.now() })); else root.sessionStorage.removeItem(SK); } catch (e) {} }
+  (function restore() {
+    try {
+      var s = JSON.parse(root.sessionStorage.getItem(SK) || 'null');
+      if (s && s.t && Date.now() - s.at < IDLE) { token = s.t; keep(); } else root.sessionStorage.removeItem(SK);
+    } catch (e) {}
+  })();
 
   // Même poignée de main que Sveltia / vgAdminLogin, mais on garde `token` (en mémoire seulement).
   function login() {
@@ -25,7 +34,7 @@
         root.removeEventListener('message', onMessage);
         var payload = {};
         try { payload = JSON.parse(m[2]); } catch (err) { /* vide */ }
-        if (m[1] === 'success' && payload.token) { token = payload.token; resolve(true); }
+        if (m[1] === 'success' && payload.token) { token = payload.token; keep(); resolve(true); }
         else reject(new Error(payload.message || 'Connexion refusée.'));
       }
       root.addEventListener('message', onMessage);
@@ -56,7 +65,8 @@
       }
       if ((r.status === 502 || r.status === 503 || r.status === 504) && attempt < 3) { await wait(RETRY_MS * (attempt + 1)); continue; }
       var d = await r.json().catch(function () { return {}; });
-      if (!r.ok) { var e = new Error((d && d.message) || ('GitHub ' + r.status)); e.status = r.status; throw e; }
+      if (r.status === 401) { token = ''; keep(); } else if (token) keep(); // activité : repousse l'échéance des 4 h
+      if (!r.ok) { var e = new Error(r.status === 401 ? 'Connexion GitHub expirée : reconnecte-toi.' : (d && d.message) || ('GitHub ' + r.status)); e.status = r.status; throw e; }
       return d;
     }
   }
@@ -150,5 +160,5 @@
     catch (e) { if (e.status === 404) return false; throw e; }
   }
 
-  root.VGStudioPublish = { login: login, publish: publish, api: gh, readJson: readJson, exists: exists, connected: function () { return !!token; }, logout: function () { token = ''; } };
+  root.VGStudioPublish = { login: login, publish: publish, api: gh, readJson: readJson, exists: exists, connected: function () { return !!token; }, logout: function () { token = ''; keep(); } };
 })(window);

@@ -143,6 +143,7 @@
 <script src="studio-webp.js"></script>
 <script src="video-convert.js"></script>
 <script src="photo-encode.js"></script>
+<script src="img-retry.js"></script>
 <script src="studio-publish.js"></script>
 <script src="vg-admin-auth.js"></script>
 <script src="vg-admin-ui.js"></script>
@@ -152,6 +153,7 @@
   var $ = function (id) { return document.getElementById(id); };
   var C = window.VGCatalogue, F = window.VGFiche, FS = window.VGFicheSave, PV = window.VGPieces, PF = window.VGPieceForm;
   var pieces = [], stock = null, categories = [], config = null, listChanges = {}, stockEdits = {}, products = null;
+  var localImg = {}; // adresse d'une photo enregistrée dans cette session -> aperçu local (la photo n'est en ligne qu'après la reconstruction)
   var filter = 'all', reorder = false, cur = null, dirty = false, openCard = null, uniqueTouched = false;
   var FILTERS = [['all', 'Toutes'], ['live', 'En ligne'], ['preview', 'Masquées'], ['scheduled', 'Programmées'], ['soldout', 'Épuisées'], ['noweight', 'Sans poids'], ['archived', 'Archivées']];
 
@@ -170,7 +172,8 @@
   function thumb(u, size) {
     if (!u) return '';
     var sized = '../assets/products-sized/' + (size || 320) + '/' + u.replace(/^\/?assets\/products\//, '').replace(/\.\w+$/, '.webp');
-    return '<img alt="" loading="lazy" src="' + esc(sized) + '" onerror="this.onerror=null;this.src=\'..' + esc(u) + '\'">';
+    if (localImg[u]) return '<img alt="" src="' + esc(localImg[u]) + '">'; // photo tout juste enregistrée : pas encore en ligne, on garde l'aperçu local
+    return '<img alt="" loading="lazy" src="' + esc(sized) + '" data-sized="' + esc(sized) + '" data-full="' + esc('..' + u) + '" onerror="vgImgRetry(this)">';
   }
   function stockOf(p) { // stock réel (Worker) si connu, sinon quantité de départ de la fiche
     if (p.slug in stockEdits) return stockEdits[p.slug];
@@ -198,7 +201,7 @@
     if (st === 'coming') b.push('<span class="vg-pill todo">Bientôt disponible</span>');
     if (st === 'archived') b.push('<span class="vg-pill">Archivée</span>');
     if (st !== 'archived' && !PV.weightOf(p)) b.push('<span class="vg-pill todo">Sans poids</span>');
-    if (p.unique !== false && st !== 'archived') b.push('<span class="vg-pill uni">Unique pièce</span>');
+    if (p.unique !== false && st !== 'archived') b.push('<span class="vg-pill uni">Pièce unique</span>');
     return b.join('');
   }
   function drawList() {
@@ -520,6 +523,7 @@
       var product = built.product, slug = isNew ? product.slug : cur.base.slug;
       var res = await FS.saveFiche(gh(), { slug: slug, product: product, isNew: isNew, reelVideo: rv, images: cur.images.map(function (it) { return it.url || { data: it.data, ext: it.ext }; }) }, say);
       var saved = Object.assign({}, res.product, { slug: slug }), note = '';
+      cur.images.forEach(function (it, i) { if (it.preview && saved.images[i]) localImg[saved.images[i]] = it.preview; });
       var one = {}; one[slug] = saved;
       try {
         await syncSchedule(one);
@@ -550,6 +554,7 @@
     }).catch(function (e) { say('Erreur : ' + e.message, true); });
   }
   $('login-btn').addEventListener('click', function () { VGStudioPublish.login().then(load).catch(function (e) { say(e.message, true); }); });
+  if (VGStudioPublish.connected()) load(); // jeton gardé dans l'onglet (sessionStorage) : pas de reconnexion à chaque page
   if (location.hash.indexOf('#/') === 0) say('Connecte-toi avec GitHub pour ouvrir la fiche.');
 })();
 </script>
