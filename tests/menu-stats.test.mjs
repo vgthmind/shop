@@ -46,3 +46,10 @@ test('menu : 6 entrées, chaque page de l\'admin appartient à une entrée', () 
   assert.equal(UI.activeFor('/admin/expedition.html'), 'more');
   assert.equal(UI.activeFor('/admin/'), 'dash');
 });
+
+import { readFileSync } from 'node:fs';
+test('Plus : le bouton Se déconnecter n\'a pas l\'id « logout » (vg-admin-auth.js masque #logout)', () => {
+  const html = readFileSync(new URL('../admin/plus.html', import.meta.url), 'utf8');
+  assert.ok(!/id="logout"/.test(html));
+  assert.match(html, /id="plus-logout"[^>]*>Se déconnecter/);
+});

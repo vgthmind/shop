@@ -69,7 +69,7 @@
   </div>
 
   <div class="foot">
-    <button type="button" class="vg-btn ghost" id="logout">Se déconnecter</button>
+    <button type="button" class="vg-btn" id="plus-logout" style="min-width:220px">Se déconnecter</button>
     <span class="vg-muted" id="ver" style="font-size:13px"></span>
   </div>
 </main>
@@ -80,10 +80,10 @@
   'use strict';
   var $ = function (id) { return document.getElementById(id); };
   $('ver').textContent = 'Admin v' + window.VG_ADMIN_VERSION;
-  $('logout').addEventListener('click', function () {
-    var b = $('logout'); b.disabled = true; b.textContent = 'Déconnexion…';
+  $('plus-logout').addEventListener('click', function () {
+    var b = $('plus-logout'); b.disabled = true; b.textContent = 'Déconnexion…';
     var done = false;
-    function leave() { if (!done) { done = true; location.replace('connexion.html'); } }
+    function leave() { if (!done) { done = true; location.replace('/admin/connexion'); } }
     window.vgAdminLogout(true).then(leave); setTimeout(leave, 2500);
   });
   var standalone = window.matchMedia('(display-mode: standalone)').matches || navigator.standalone;
