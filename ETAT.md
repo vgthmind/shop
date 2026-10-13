@@ -1,5 +1,5 @@
-﻿# ETAT (2026-10-13)
-- Fait (branche favicons-audit-2026-10-13, poussée, non fusionnée) : favicons transparents site+admin (make-favicons.js, ?v=2, site.webmanifest), liens admin, restes BigCartel textuels retirés ; Worker : loadCatalog 2 essais (webhook). Tests 219 OK, docs/ rebuild.
-- Webhook Stripe : les 13 échecs étaient anciens (vgthmind), correctif loadCatalog gardé. import-catalog + export BigCartel archivés dans archives/ (garde-fou).
-- Pré-audit robot : RAS (images, débordements, titres, langues).
-- Reste : OK de vgthmind pour fusionner/publier + déployer le Worker ; vérif iPhone.
+# ETAT (2026-10-13)
+- En ligne : main 73a92fc (favicons ?v=3 : logo seul sans halo, SVG noir/blanc selon le thème) ; site Pages reconstruit, favicons v=3 servis (site + pages de connexion admin) ; paiement test OK (session Stripe créée, catalogue lu).
+- Worker déployé : 1190c9d0-55dd-4af0-bea3-fcd18c1e233f. Version de secours : c359e55f-de69-4bb2-afc0-bc2aa743cf47 (`npx.cmd wrangler rollback c359e55f-de69-4bb2-afc0-bc2aa743cf47`).
+- Admin : v2026-10-13-d (inchangée, servie en ligne).
+- Reste : vgthmind vérifie l'onglet Brave + icône iPhone ; bascule-prete et domaine non touchés.
