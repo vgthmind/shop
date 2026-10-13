@@ -33,9 +33,9 @@ test('démarrage : le code (lc) et la page de retour sont gardés ; page de reto
   kv = mkKv(); githubUser = 'x';
   const back = PAGES + '/admin/connexion?next=%2Fadmin%2Fmenu';
   const st = await start('&lc=' + LC + '&return=' + encodeURIComponent(back));
-  assert.deepEqual(JSON.parse(kv.m.get('oauthx:' + st)), { lc: LC, ret: back });
+  assert.deepEqual(JSON.parse(kv.m.get('oauthx:' + st)), { lc: LC, ret: back, page: false });
   const evil = await start('&lc=' + LC + '&return=' + encodeURIComponent('https://evil.example/admin/connexion'));
-  assert.deepEqual(JSON.parse(kv.m.get('oauthx:' + evil)), { lc: LC, ret: '' });
+  assert.deepEqual(JSON.parse(kv.m.get('oauthx:' + evil)), { lc: LC, ret: '', page: false });
   const bad = await start('&lc=pas-un-code&return=' + encodeURIComponent(PAGES + '/autre'));
   assert.equal(kv.m.get('oauthx:' + bad), undefined);
 });
@@ -71,4 +71,18 @@ test('un autre compte GitHub : rien n’est déposé', async () => {
   await call('/callback?state=' + st + '&code=abc');
   assert.equal(kv.m.get('lc:' + LC), undefined);
   assert.deepEqual(await (await call('/auth/claim?code=' + LC)).json(), { pending: true });
+});
+
+test('appli installée (mode=page) : retour direct par redirection vers la page de connexion, session déposée sous le code', async () => {
+  kv = mkKv(); githubUser = 'x';
+  const back = PAGES + '/admin/connexion';
+  const st = await start('&lc=' + LC + '&mode=page&return=' + encodeURIComponent(back));
+  const r = await call('/callback?state=' + st + '&code=abc');
+  assert.equal(r.status, 302);
+  assert.equal(r.headers.get('Location'), back + '?done=1');
+  assert.match(kv.m.get('lc:' + LC), /^vgs\./);
+  // sans page de retour, mode=page est ignoré (page normale)
+  kv = mkKv();
+  const st2 = await start('&lc=' + LC + '&mode=page');
+  assert.equal((await call('/callback?state=' + st2 + '&code=abc')).status, 200);
 });

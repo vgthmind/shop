@@ -1036,7 +1036,9 @@ async function oauthStart(request: Request, env: Env): Promise<Response> {
   const lc = /^[a-f0-9]{32}$/.test(q.get('lc') || '') ? String(q.get('lc')) : '';
   let ret = '';
   try { const u = new URL(q.get('return') || ''); if (allowedOrigins(env).includes(u.origin) && u.pathname.startsWith('/admin/')) ret = u.origin + u.pathname + u.search; } catch (e) { /* pas de page de retour */ }
-  if (lc || ret) await env.HOLDS.put('oauthx:' + state, JSON.stringify({ lc, ret }), { expirationTtl: 600 });
+  // mode=page : appli installée sur l'écran d'accueil, connexion dans la même page (retour direct par redirection, sans fenêtre à part).
+  const pageMode = q.get('mode') === 'page' && !!ret;
+  if (lc || ret) await env.HOLDS.put('oauthx:' + state, JSON.stringify({ lc, ret, page: pageMode }), { expirationTtl: 600 });
   const redirect = new URL('/callback', request.url).toString();
   const url = 'https://github.com/login/oauth/authorize?' + new URLSearchParams({
     client_id: env.GITHUB_CLIENT_ID,
@@ -1056,13 +1058,13 @@ async function oauthCallback(request: Request, env: Env): Promise<Response> {
   const stored = state ? await env.HOLDS.get('oauth:' + state) : null;
   // Anciennes connexions commencées avant ce changement : valeur '1' = premier site de la liste.
   const opener = stored && stored !== '1' && allowedOrigins(env).includes(stored) ? stored : allowedOrigins(env)[0] || '';
-  let x: { lc?: string; ret?: string } = {};
+  let x: { lc?: string; ret?: string; page?: boolean } = {};
   try { x = JSON.parse((state && (await env.HOLDS.get('oauthx:' + state))) || '{}') || {}; } catch (e) { x = {}; }
   if (state) await env.HOLDS.delete('oauthx:' + state);
   const page = (status: 'success' | 'error', content: object) => {
     const msg = `authorization:github:${status}:${JSON.stringify(content)}`;
     const origin = JSON.stringify(opener);
-    const html = `<!doctype html><meta charset="utf-8"><title>Connexion</title><p>${status === 'success' ? 'Connecté ✓ Cette fenêtre va se fermer ; sinon, reviens simplement dans l’appli.' : 'Connexion refusée.'}</p><script>
+    const html = `<!doctype html><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Connexion</title><style>body{margin:0;min-height:100vh;display:grid;place-items:center;background:#f4f2ec;color:#171717;font:20px/1.5 system-ui,-apple-system,sans-serif;text-align:center}main{padding:24px;max-width:340px}b{display:block;font-size:44px;margin-bottom:8px}a{display:inline-block;margin-top:18px;padding:16px 26px;border-radius:14px;background:#171717;color:#fff;text-decoration:none;font-weight:600}</style><main><b>${status === 'success' ? '✓' : '✕'}</b><p>${status === 'success' ? 'Tu es connecté.<br>Touche « OK » ou « Terminé » en haut pour revenir à l’admin.' : 'Connexion refusée. Ferme cette fenêtre et réessaie.'}</p>${status === 'success' && x.ret ? '<a id="back">Revenir à l’admin</a>' : ''}</main><script>
 (function () {
   var msg = ${JSON.stringify(msg)};
   var RET = ${JSON.stringify(x.ret ? x.ret + (status === 'success' ? (x.ret.indexOf('?') < 0 ? '?' : '&') + 'done=1' : '') : '')};
@@ -1076,7 +1078,8 @@ async function oauthCallback(request: Request, env: Env): Promise<Response> {
   if (window.opener) window.opener.postMessage('authorizing:github', ${origin});
   // Pas de fenêtre d'origine (iPhone, appli installée) : on tente de fermer, sinon retour à la page de connexion,
   // qui retrouve la session par son code.
-  setTimeout(function () { try { window.close(); } catch (e) {} setTimeout(function () { if (RET) location.replace(RET); }, 700); }, 2500);
+  setTimeout(function () { try { window.close(); } catch (e) {} }, 1500);
+  var back = document.getElementById('back'); if (back && RET) back.setAttribute('href', RET);
 })();
 </script>`;
     return new Response(html, { headers: { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store' } });
@@ -1101,6 +1104,7 @@ async function oauthCallback(request: Request, env: Env): Promise<Response> {
   // pages Stock/Commandes n'utilisent que `session`.
   const session = await makeSession(env);
   if (x.lc) await env.HOLDS.put('lc:' + x.lc, session, { expirationTtl: 600 }); // seulement la session, jamais le jeton GitHub
+  if (x.page && x.ret) return new Response(null, { status: 302, headers: { Location: x.ret + (x.ret.indexOf('?') < 0 ? '?' : '&') + 'done=1', 'Cache-Control': 'no-store' } });
   return page('success', { token: data.access_token, provider: 'github', session });
 }
 
@@ -1221,8 +1225,8 @@ async function listOrders(request: Request, env: Env, key: string, json: JsonFn)
   const sessions: any[] = [];
   let after = '';
   for (let page = 0; page < 3; page++) {
-    const r = await stripeCall(key, 'GET', '/v1/checkout/sessions?status=complete&limit=100&expand[]=data.line_items' + (after ? '&starting_after=' + after : ''));
-    if (!r.ok) return json({ error: r.data.error?.message || 'Erreur Stripe' }, 502);
+    const r = await stripeCall(key, 'GET', '/v1/checkout/sessions?status=complete&limit=100&expand[]=data.line_items&expand[]=data.payment_intent.latest_charge' + (after ? '&starting_after=' + after : ''));
+    if (!r.ok) return json({ error: frStripeError(r.data.error, 'Impossible de lire les commandes chez Stripe.') }, 502);
     sessions.push(...(r.data.data || []));
     if (!r.data.has_more) break;
     after = r.data.data[r.data.data.length - 1].id;
@@ -1233,6 +1237,23 @@ async function listOrders(request: Request, env: Env, key: string, json: JsonFn)
     const l = await env.HOLDS.list({ prefix: 'refunded:' });
     for (const k of l.keys) { const v = await env.HOLDS.get(k.name); if (v) refunds.set(k.name.slice(9), JSON.parse(v)); }
   } catch (e) {}
+  // Rattrapage : l'état « remboursée » vient aussi de Stripe lui-même (si le webhook a tardé ou raté, la commande est mise à jour ici).
+  for (const x of sessions) {
+    const pi = x.payment_intent;
+    if (pi && typeof pi === 'object') {
+      const ch = pi.latest_charge && typeof pi.latest_charge === 'object' ? pi.latest_charge : null;
+      if (ch && ch.amount_refunded > 0) {
+        const cur = refunds.get(x.id);
+        const eur = ch.amount_refunded / 100;
+        if (!cur || Math.round(cur.amount * 100) !== ch.amount_refunded) {
+          const v = { at: Math.floor(Date.now() / 1000), amount: eur, full: ch.amount_refunded >= ch.amount };
+          refunds.set(x.id, v);
+          try { await env.HOLDS.put('refunded:' + x.id, JSON.stringify(v)); } catch (e) {}
+        }
+      }
+      x.payment_intent = pi.id;
+    }
+  }
   let invNums: Record<string, string> = {};
   try { invNums = await stockStub(env).invoiceNumbers(sessions.filter((x) => x.livemode).map((x) => x.id)); } catch (e) {}
   const orders = [];
@@ -1284,6 +1305,18 @@ async function markShipped(request: Request, env: Env, json: JsonFn): Promise<Re
 // « En preparation » : pose a la main depuis l'admin (bouton a cote de « expediee »).
 // Remboursement depuis Commandes (admin). Sans montant : tout ce qui reste à rembourser. Le webhook charge.refunded
 // marque ensuite la commande « remboursée » (avoir, alerte), exactement comme pour un remboursement fait dans Stripe.
+// Messages d'erreur Stripe en français, compréhensibles (jamais le texte anglais brut).
+function frStripeError(err: any, fallback: string): string {
+  const code = (err && err.code) || '';
+  const msg = String((err && err.message) || '');
+  if (code === 'charge_already_refunded' || /already been refunded/i.test(msg)) return 'Cette commande est déjà remboursée en totalité chez Stripe.';
+  if (/greater than|more than|exceeds|remaining/i.test(msg) && /refund/i.test(msg)) return 'Le montant dépasse ce qu’il reste à rembourser sur cette commande.';
+  if (/No such (payment_intent|charge|checkout)/i.test(msg)) return 'Stripe ne retrouve pas ce paiement (commande d’un autre mode, test ou réel ?).';
+  if (/insufficient/i.test(msg)) return 'Le solde Stripe ne permet pas ce remboursement pour l’instant.';
+  if (/permission|restricted/i.test(msg)) return 'La clé Stripe n’a pas le droit de rembourser : à régler dans Stripe.';
+  return fallback + (msg ? ' (détail Stripe : ' + msg + ')' : '');
+}
+
 async function refundOrder(request: Request, env: Env, key: string, json: JsonFn): Promise<Response> {
   if (!(await isAdmin(request, env))) return json({ error: 'Non autorisé.' }, 401);
   let body: any = {};
@@ -1293,7 +1326,7 @@ async function refundOrder(request: Request, env: Env, key: string, json: JsonFn
   const prev = JSON.parse((await env.HOLDS.get('refunded:' + id)) || 'null');
   if (prev && prev.full) return json({ error: 'Cette commande est déjà remboursée en totalité.' }, 409);
   const s = await stripeCall(key, 'GET', '/v1/checkout/sessions/' + id);
-  if (!s.ok) return json({ error: (s.data.error && s.data.error.message) || 'Commande introuvable chez Stripe.' }, 502);
+  if (!s.ok) return json({ error: frStripeError(s.data.error, 'Commande introuvable chez Stripe.') }, 502);
   const pi = typeof s.data.payment_intent === 'string' ? s.data.payment_intent : s.data.payment_intent && s.data.payment_intent.id;
   if (!pi) return json({ error: 'Aucun paiement à rembourser sur cette commande.' }, 400);
   const p = new URLSearchParams({ payment_intent: pi });
@@ -1307,8 +1340,19 @@ async function refundOrder(request: Request, env: Env, key: string, json: JsonFn
   p.set('metadata[reason]', 'admin_commandes');
   p.set('metadata[session]', id);
   const r = await stripeCall(key, 'POST', '/v1/refunds', p, { 'Idempotency-Key': 'vg-adminrefund-' + id + '-' + cents + '-' + Math.floor(Date.now() / 60000) });
-  if (!r.ok) return json({ error: (r.data.error && r.data.error.message) || 'Remboursement refusé par Stripe.' }, 502);
-  return json({ ok: true, refund: r.data.id, amount: (r.data.amount || 0) / 100, status: r.data.status });
+  const totalEur = (s.data.amount_total || 0) / 100;
+  if (!r.ok) {
+    // Déjà remboursée chez Stripe (clic en double, remboursement fait dans Stripe) : on met simplement la commande à jour.
+    if (r.data.error && r.data.error.code === 'charge_already_refunded') {
+      await env.HOLDS.put('refunded:' + id, JSON.stringify({ at: Math.floor(Date.now() / 1000), amount: prev ? Math.max(prev.amount, totalEur) : totalEur, full: true }));
+      return json({ ok: true, already: true, amount: totalEur, full: true });
+    }
+    return json({ error: frStripeError(r.data.error, 'Remboursement refusé par Stripe.') }, 502);
+  }
+  // État écrit tout de suite (le webhook charge.refunded le confirmera avec les chiffres exacts de Stripe).
+  const done = Math.round(((prev ? prev.amount : 0) + (r.data.amount || 0) / 100) * 100) / 100;
+  await env.HOLDS.put('refunded:' + id, JSON.stringify({ at: Math.floor(Date.now() / 1000), amount: done, full: done >= totalEur }));
+  return json({ ok: true, refund: r.data.id, amount: (r.data.amount || 0) / 100, total: done, full: done >= totalEur, status: r.data.status });
 }
 
 async function markPreparing(request: Request, env: Env, json: JsonFn): Promise<Response> {
