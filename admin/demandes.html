@@ -95,6 +95,16 @@
       <label>Acompte conservé après (jours, CGV)<input type="number" id="s-forfeitDays" min="1"></label>
       <label>Retouches incluses après les photos<input type="number" id="s-retouchesIncluded" min="0" max="10"></label>
     </div>
+    <h3>Délais affichés sur la page « Proposer un projet »</h3>
+    <p class="muted">En semaines. Le minimum est aussi la date la plus proche que le client peut choisir ; le maximum sert au délai indicatif affiché (identique au minimum = « 2 semaines »).</p>
+    <div class="form">
+      <label>Location · minimum<input type="number" id="s-lead-location-min" min="1" max="52"></label>
+      <label>Location · maximum<input type="number" id="s-lead-location-max" min="1" max="52"></label>
+      <label>Custom · minimum<input type="number" id="s-lead-custom-min" min="1" max="52"></label>
+      <label>Custom · maximum<input type="number" id="s-lead-custom-max" min="1" max="52"></label>
+      <label>Sur-mesure · minimum<input type="number" id="s-lead-surmesure-min" min="1" max="52"></label>
+      <label>Sur-mesure · maximum<input type="number" id="s-lead-surmesure-max" min="1" max="52"></label>
+    </div>
     <p class="muted">Si tu changes « acompte conservé » ou « retouches incluses », mets aussi à jour les CGV.</p>
     <h3>Photos des cartes du parcours</h3>
     <p class="muted">Chaque choix de la page « Proposer un projet » montre une photo. Change-la avec un fichier (JPEG / PNG / WebP, 3 Mo max, format portrait 4:5 conseillé) ou une photo de la boutique.</p>
@@ -289,6 +299,7 @@
       h += '<label>Peinture en plus (sur-mesure, €)<input type="number" step="1" data-price="paintFrom" value="' + settings.prices.paintFrom + '"><small>« à partir de », prix final dans le devis</small></label>';
       $('prices').innerHTML = h;
       ['depositPct', 'remindDays', 'alertDays', 'forfeitDays', 'retouchesIncluded'].forEach(function (k) { $('s-' + k).value = settings[k]; });
+      ['location', 'custom', 'surmesure'].forEach(function (t) { var l = (settings.leadWeeks || {})[t] || { min: 2, max: 2 }; $('s-lead-' + t + '-min').value = l.min; $('s-lead-' + t + '-max').value = l.max; });
       drawCards(); $('smsg').textContent = '';
     }).catch(function (e) { $('smsg').textContent = 'Erreur : ' + e.message; });
   }
@@ -340,6 +351,7 @@
     var s = JSON.parse(JSON.stringify(settings));
     document.querySelectorAll('[data-price]').forEach(function (i) { var k = i.getAttribute('data-price'); if (k === 'paintFrom') s.prices.paintFrom = Number(i.value); else { var p = k.split('.'); s.prices[p[0]][p[1]] = Number(i.value); } });
     ['depositPct', 'remindDays', 'alertDays', 'forfeitDays', 'retouchesIncluded'].forEach(function (k) { s[k] = Number($('s-' + k).value); });
+    s.leadWeeks = {}; ['location', 'custom', 'surmesure'].forEach(function (t) { s.leadWeeks[t] = { min: Number($('s-lead-' + t + '-min').value), max: Number($('s-lead-' + t + '-max').value) }; });
     s.cards = cards;
     $('smsg').textContent = 'Enregistrement…';
     api('/admin/requests/settings', { method: 'POST', body: JSON.stringify({ settings: s }) }).then(function (d) { settings = d.settings; $('smsg').textContent = 'Réglages enregistrés (la page publique se met à jour en 1 minute environ).'; })

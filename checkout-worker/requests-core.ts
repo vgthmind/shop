@@ -15,7 +15,7 @@ export const FIELD_LABELS: Record<string, [string, string]> = {
   piece: ['Type de pièce', 'Piece'], mode: ['Démarche', 'Approach'], idea: ['Idée / description', 'Idea / description'],
   mood: ['Ambiance', 'Mood'], colors: ['Couleurs', 'Colours'], refs: ['Références', 'References'], size: ['Taille', 'Size'],
   measures: ['Mesures', 'Measurements'], paint: ['Peinture en plus', 'Add painting'], budget: ['Budget indicatif', 'Budget'],
-  deadline: ['Délai souhaité', 'Wanted by'], prodKind: ['Besoin', 'Need'], projectType: ['Type de projet', 'Project type'],
+  deadline: ['Date souhaitée', 'Wanted by'], prodKind: ['Besoin', 'Need'], projectType: ['Type de projet', 'Project type'],
   dates: ['Dates', 'Dates'], place: ['Lieu', 'Location'], count: ['Nombre de pièces', 'Number of pieces'], artist: ['Artiste (nom ou lien)', 'Artist (name or link)'],
   collabType: ['Type de collab', 'Collab type'], links: ['Liens (chaîne, réseaux)', 'Links (channel, socials)'], link: ['Lien vers des fichiers', 'Link to files'],
 };
@@ -27,7 +27,7 @@ export const CHOICE_LABELS: Record<string, [string, string]> = {
 export const FIELDS_BY_TYPE: Record<string, string[]> = {
   custom: ['piece', 'mode', 'idea', 'mood', 'colors', 'refs', 'size', 'budget', 'deadline', 'link'],
   surmesure: ['piece', 'paint', 'mode', 'idea', 'mood', 'colors', 'refs', 'measures', 'budget', 'deadline', 'link'],
-  production: ['prodKind', 'projectType', 'dates', 'place', 'count', 'artist', 'budget', 'idea', 'refs', 'link'],
+  production: ['prodKind', 'projectType', 'dates', 'deadline', 'place', 'count', 'artist', 'budget', 'idea', 'refs', 'link'],
   collab: ['collabType', 'links', 'idea', 'refs', 'link'],
 };
 
@@ -55,6 +55,8 @@ export const PIECES: Record<string, { key: string; fr: string; en: string; weigh
   ],
 };
 
+export type LeadKey = 'location' | 'custom' | 'surmesure';
+export const LEAD_KEYS: LeadKey[] = ['location', 'custom', 'surmesure'];
 export interface Settings {
   prices: { custom: Record<string, number>; surmesure: Record<string, number>; paintFrom: number };
   depositPct: number; // % du prix total
@@ -62,6 +64,7 @@ export interface Settings {
   alertDays: number; // alerte pour vgthmind
   forfeitDays: number; // acompte conservé (CGV)
   retouchesIncluded: number;
+  leadWeeks: Record<LeadKey, { min: number; max: number }>; // délai indicatif (min à max semaines) ; min = date la plus proche acceptée
   cards: Record<string, string>; // photo de chaque carte du parcours ('' = photo livrée avec le site)
 }
 // Cartes avec photo du parcours (page « Sur demande »). Photo changeable dans l'admin (Réglages).
@@ -70,6 +73,7 @@ export const CARD_KEYS = ['piece', 'production', 'collab', 'custom', 'surmesure'
 export const DEFAULT_SETTINGS: Settings = {
   prices: { custom: { tshirt: 75, hoodie: 140, veste: 160, autre: 75 }, surmesure: { short: 150, pantalon: 220, haut: 200, veste: 320 }, paintFrom: 10 },
   depositPct: 30, remindDays: 7, alertDays: 14, forfeitDays: 30, retouchesIncluded: 1, cards: {},
+  leadWeeks: { location: { min: 2, max: 2 }, custom: { min: 2, max: 3 }, surmesure: { min: 3, max: 4 } },
 };
 
 // Limites des fichiers joints (stockage R2).
@@ -93,12 +97,12 @@ const block = (v: unknown, n: number) => String(v == null ? '' : v).replace(/\r\
 export const EMAIL_RE = /^[^\s@<>"]+@[^\s@<>"]+\.[^\s@<>"]{2,}$/;
 
 // --- Formulaire public --------------------------------------------------------------------------
-export function parseSubmission(body: any): { ok: true; value: any } | { ok: false; fields: string[] } {
+export function parseSubmission(body: any, lead: Settings['leadWeeks'] = DEFAULT_SETTINGS.leadWeeks, nowMs: number = Date.now()): { ok: true; value: any } | { ok: false; fields: string[] } {
   const type = String(body && body.type) as ReqType;
   const v: any = {
     type: TYPES.includes(type) ? type : '',
     lang: body && body.lang === 'fr' ? 'fr' : 'en',
-    client: { name: clean(body?.name, 100), email: clean(body?.email, 200).toLowerCase(), country: /^[A-Za-z]{2}$/.test(String(body?.country || '')) ? String(body.country).toUpperCase() : '' },
+    client: { first: clean(body?.firstName, 60) || (body?.lastName ? '' : clean(body?.name, 100).split(' ')[0]), last: clean(body?.lastName, 60) || (body?.firstName ? '' : clean(body?.name, 100).split(' ').slice(1).join(' ')), name: '', email: clean(body?.email, 200).toLowerCase(), country: /^[A-Za-z]{2}$/.test(String(body?.country || '')) ? String(body.country).toUpperCase() : '' },
     fields: {
       piece: clean(body?.piece, 30),
       mode: body?.mode === 'guide' ? 'guide' : body?.mode === 'know' ? 'know' : '',
@@ -126,7 +130,10 @@ export function parseSubmission(body: any): { ok: true; value: any } | { ok: fal
   const f: string[] = [];
   const x = v.fields;
   if (!v.type) f.push('type');
-  if (!v.client.name) f.push('name');
+  if (!v.client.first) f.push('firstName');
+  if (!v.client.last) f.push('lastName');
+  v.client.name = `${v.client.first} ${v.client.last}`.trim();
+  delete v.client.first; delete v.client.last;
   if (!EMAIL_RE.test(v.client.email)) f.push('email');
   if (!v.client.country) f.push('country');
   if (PAID_TYPES.includes(v.type)) {
@@ -143,6 +150,13 @@ export function parseSubmission(body: any): { ok: true; value: any } | { ok: fal
     if (x.idea.length < 10) f.push('idea');
   }
   if (x.link && !/^https?:\/\/\S+$/i.test(x.link)) f.push('link');
+  // Date souhaitée : AAAA-MM-JJ, pas avant le délai minimum du type de demande (location, custom, sur-mesure) ; 1 jour de marge (fuseaux).
+  const leadKey: LeadKey | '' = v.type === 'custom' || v.type === 'surmesure' ? v.type : v.type === 'production' && x.prodKind === 'location' ? 'location' : '';
+  if (!leadKey) delete x.deadline;
+  else if (x.deadline) {
+    const t = /^\d{4}-\d{2}-\d{2}$/.test(x.deadline) ? Date.parse(x.deadline + 'T12:00:00Z') : NaN;
+    if (!Number.isFinite(t) || t < nowMs + (lead[leadKey].min * 7 - 1) * 86400000 || t > nowMs + 1100 * 86400000) f.push('deadline');
+  }
   if (v.type !== 'surmesure') x.paint = false;
   // Seuls les champs du parcours choisi sont gardés (rien d'une autre branche restée dans le navigateur).
   if (v.type) for (const k of Object.keys(x)) if (!FIELDS_BY_TYPE[v.type].includes(k)) delete x[k];
@@ -212,8 +226,13 @@ export function checkSettings(s: any, floors: Record<string, { price: number; na
   out.alertDays = num(s?.alertDays, 1, 120, 'Alerte (jours)', true);
   out.forfeitDays = num(s?.forfeitDays, 1, 365, 'Acompte conservé (jours)', true);
   out.retouchesIncluded = num(s?.retouchesIncluded, 0, 10, 'Retouches incluses', true);
+  for (const k of LEAD_KEYS) {
+    const mn = num(s?.leadWeeks?.[k]?.min, 1, 52, `Délai minimum (${k}, semaines)`, true), mx = num(s?.leadWeeks?.[k]?.max, 1, 52, `Délai maximum (${k}, semaines)`, true);
+    if (mx < mn) errors.push(`Délai (${k}) : le maximum doit être au moins égal au minimum`);
+    out.leadWeeks[k] = { min: mn, max: Math.max(mn, mx) };
+  }
   for (const k of CARD_KEYS) {
-    const u = String(s?.cards?.[k] || '').trim();
+    const u =String(s?.cards?.[k] || '').trim();
     if (!u) continue;
     if (u.length > 500 || !/^(https:\/\/[^\s"'<>]+|\/[^\s"'<>]*|card:[a-z.]+:[a-f0-9]{8,32})$/i.test(u)) errors.push(`Photo de la carte ${k} : adresse invalide`);
     else out.cards[k] = u;
@@ -230,6 +249,7 @@ export function mergeSettings(saved: any): Settings {
   Object.assign(s.prices.surmesure, saved.prices?.surmesure || {});
   if (saved.prices && saved.prices.paintFrom != null) s.prices.paintFrom = saved.prices.paintFrom;
   for (const k of ['depositPct', 'remindDays', 'alertDays', 'forfeitDays', 'retouchesIncluded']) if (saved[k] != null) s[k] = saved[k];
+  for (const k of LEAD_KEYS) { const l = saved.leadWeeks?.[k]; if (l && l.min >= 1 && l.max >= l.min) s.leadWeeks[k] = { min: l.min, max: l.max }; }
   if (saved.cards && typeof saved.cards === 'object') s.cards = { ...saved.cards };
   return s;
 }
@@ -401,6 +421,7 @@ export function answerLines(rec: any, lang: string): [string, string][] {
     if (v === '' || v == null || v === false) continue;
     if (k === 'piece') { const p = (PIECES[rec.type] || []).find((x) => x.key === v); v = p ? (lang === 'fr' ? p.fr : p.en) : v; }
     else if (k === 'paint') v = lang === 'fr' ? 'Oui' : 'Yes';
+    else if (k === 'deadline' && /^\d{4}-\d{2}-\d{2}$/.test(String(v))) { const [y, m, d] = String(v).split('-'); v = lang === 'fr' ? `${d}/${m}/${y}` : `${y}-${m}-${d}`; }
     else if (CHOICE_LABELS[v]) v = CHOICE_LABELS[v][i];
     out.push([FIELD_LABELS[k] ? FIELD_LABELS[k][i] : k, String(v)]);
   }
