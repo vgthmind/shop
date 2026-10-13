@@ -47,8 +47,8 @@
   var front = function () { return img('front', 43, 3.2, 114, 348); };
   var back = function () { return img('back', 47.2, 3.2, 105, 348); };
   var profile = function () { return img('side', 64, 3.2, 69, 348); };
-  var closeFront = function () { return img('headf', 28.7, 10, 142.6, 204.6); };
-  var closeSide = function () { return img('heads', 10, 10, 179.8, 204.6); };
+  var closeFront = function () { return img('headf', 28.7, 10, 142.6, 207.7); };
+  var closeSide = function () { return img('heads', 10, 10, 179.8, 207.7); };
   function bd(n, x, y) { return '<g class="bd"><circle class="hz hzf" cx="' + x + '" cy="' + y + '" r="14"/><circle class="b" cx="' + x + '" cy="' + y + '" r="9"/><text x="' + x + '" y="' + (y + 4) + '">' + n + '</text></g>'; }
   // Mesure : halo (visible quand « on ») + trait + badge ; leader quand le badge est décalé.
   function ring(n, cx, cy, rx, ry, bx, by) {
@@ -69,20 +69,20 @@
     var hgt = N.height ? g('height', arrow(14, 8, 14, 344) + bd(N.height, 14, 176)) : '';
     var ARM = 'M141,76 L146,128 L147,184';
     if (cat === 'haut') {
-      v = view(0, T.f, front() + hgt + g('chest', ring(N.chest, 100, 99, 34, 5)) + g('waist', ring(N.waist, 100, 136, 29, 4.5)) + g('hips', ring(N.hips, 100, 183, 37, 5))
+      v = view(0, T.f, front() + hgt + g('chest', ring(N.chest, 100, 99, 32, 5)) + g('waist', ring(N.waist, 100, 136, 29, 4.5)) + g('hips', ring(N.hips, 100, 183, 32, 5))
         + g('arm', parrow(ARM) + bd(N.arm, 152, 130)) + g('wrist', ring(N.wrist, 139, 183, 5, 2, 170, 183)))
         + view(230, T.b, back() + g('shoulders', arrow(77, 99, 123, 99) + bd(N.shoulders, 100, 99)) + g('shl', arrow(94, 63, 60, 78) + bd(N.shl, 70, 58)) + g('back', arrow(100, 66, 100, 138) + bd(N.back, 100, 120)));
     } else if (cat === 'bas') {
-      v = view(0, T.f, front() + hgt + g('waist', ring(N.waist, 100, 136, 29, 4.5)) + g('hips', ring(N.hips, 100, 183, 37, 5)) + g('thigh', ring(N.thigh, 87, 219, 12, 3.5, 44, 226))
+      v = view(0, T.f, front() + hgt + g('waist', ring(N.waist, 100, 136, 29, 4.5)) + g('hips', ring(N.hips, 100, 183, 32, 5)) + g('thigh', ring(N.thigh, 87, 219, 12, 3.5, 44, 226))
         + g('calf', ring(N.calf, 87, 285, 10, 3, 44, 285)) + g('hem', arrow(76, 322, 98, 322) + bd(N.hem, 44, 322)))
         + view(230, T.p, profile() + ext(108, 138, 192, 138) + ext(108, 183, 192, 183) + ext(108, 249, 192, 249) + ext(120, 344, 156, 344)
           + g('floor', arrow(132, 138, 132, 344) + bd(N.floor, 132, 241)) + g('inseam', arrow(150, 183, 150, 344) + bd(N.inseam, 150, 263))
           + g('rise', arrow(168, 138, 168, 183) + bd(N.rise, 168, 160)) + g('knee', arrow(186, 138, 186, 249) + bd(N.knee, 186, 194)));
     } else if (cat === 'cou') {
       vb = '0 0 430 252';
-      v = view(0, T.f, closeFront() + g('head', ring(N.head, 100, 66, 52, 9)) + g('neck', ring(N.neck, 100, 199, 34, 6)), 246)
-        + view(230, T.p, closeSide() + g('head', ring(N.head, 109, 63, 69, 8)) + g('neck', ring(N.neck, 129, 201, 20, 5))
-          + ext(100, 13, 192, 13) + ext(84, 187, 192, 187) + g('hh', arrow(188, 13, 188, 187) + bd(N.hh, 188, 100))
+      v = view(0, T.f, closeFront() + g('head', ring(N.head, 100, 97, 54, 9)) + g('neck', ring(N.neck, 100, 202, 34, 6)), 246)
+        + view(230, T.p, closeSide() + g('head', ring(N.head, 106, 97, 73, 8)) + g('neck', ring(N.neck, 129, 201, 20, 5))
+          + ext(100, 19, 192, 19) + ext(84, 187, 192, 187) + g('hh', arrow(188, 19, 188, 187) + bd(N.hh, 188, 103))
           + g('nh', ext(106, 215, 166, 215) + arrow(160, 215, 160, 187) + bd(N.nh, 182, 204)), 246);
     } else if (cat === 'acc') {
       vb = '0 0 430 200';
