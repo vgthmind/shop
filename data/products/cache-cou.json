@@ -2,7 +2,7 @@
   "name": "Cache-cou",
   "name_en": "",
   "slug": "cache-cou",
-  "price": 30,
+  "price": 35,
   "description": "*SOLDOUT*\nWhite fleece neck warmer\nOne size\nOne-of-a-kind airbrushed design\nSurprise design at time of order!\n\nCache-cou en molleton blanc\nTaille Unique\nDesign unique fait à l'aérographe\nDesign surprise lors de la commande !",
   "keywords": [],
   "images": [
@@ -18,7 +18,9 @@
   "archived": false,
   "latest_drop": true,
   "quantity": 0,
+  "shipping_fr": 5,
   "ships_intl": true,
+  "shipping_intl": 15,
   "weight_g": 48,
   "mode": "lettre",
   "alone": false,
