@@ -194,6 +194,7 @@
     }).catch(function (e) { say('Erreur : ' + e.message, true); });
   }
   $('login-btn').addEventListener('click', function () { window.VGStudioPublish.login().then(load).catch(function (e) { say(e.message, true); }); });
+  if (window.VGStudioPublish.connected()) load(); // jeton gardé dans l'onglet (sessionStorage) : pas de reconnexion à chaque page
   window.addEventListener('beforeunload', function (e) { if (photos.length) { e.preventDefault(); e.returnValue = ''; } });
 })();
 </script>

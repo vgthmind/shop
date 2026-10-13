@@ -523,6 +523,7 @@
 
   // ---------- publication (voir studio-publish.js) ----------
   function pubSay(t) { $('pubMsg').textContent = t; }
+  if (window.VGStudioPublish.connected()) { $('bPublish').disabled = false; $('bLogin').textContent = 'Connecté ✓'; } // jeton gardé dans l'onglet
   $('bLogin').onclick = async function () {
     try { await window.VGStudioPublish.login(); pubSay('Connecté à GitHub.'); $('bPublish').disabled = false; $('bLogin').textContent = 'Connecté ✓'; }
     catch (e) { pubSay(e.message || String(e)); }

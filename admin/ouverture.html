@@ -178,6 +178,7 @@
 
   $('login').addEventListener('click', function () { VGStudioPublish.login().then(load).catch(function (e) { say(e.message, true); }); });
   $('login-box').hidden = false;
+  if (VGStudioPublish.connected()) load(); // jeton gardé dans l'onglet : pas de reconnexion
 })();
 </script>
 </body>

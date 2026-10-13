@@ -79,6 +79,7 @@
 <script src="piece-form.js"></script>
 <script src="fiche-core.js"></script>
 <script src="pieces-save.js"></script>
+<script src="img-retry.js"></script>
 <script src="studio-publish.js"></script>
 <script src="vg-admin-auth.js"></script>
 <script src="vg-admin-ui.js"></script>
@@ -96,7 +97,7 @@
   function thumb(u) {
     if (!u) return '<img alt="">';
     var sized = '../assets/products-sized/320/' + u.replace(/^\/?assets\/products\//, '').replace(/\.\w+$/, '.webp');
-    return '<img alt="" loading="lazy" src="' + esc(sized) + '" onerror="this.onerror=null;this.src=\'..' + esc(u) + '\'">';
+    return '<img alt="" loading="lazy" src="' + esc(sized) + '" data-sized="' + esc(sized) + '" data-full="' + esc('..' + u) + '" onerror="vgImgRetry(this)">';
   }
   function candidates() { return C.sorted(pieces).filter(function (p) { var s = C.state(p); return s === 'preview' || s === 'scheduled'; }); }
   function whenIso() { var v = $('when').value; return v ? C.parisToIso(v.replace('T', ' ')) : null; }
@@ -166,6 +167,7 @@
     }).catch(function (e) { say('Erreur : ' + e.message, true); });
   }
   $('login-btn').addEventListener('click', function () { VGStudioPublish.login().then(load).catch(function (e) { say(e.message, true); }); });
+  if (VGStudioPublish.connected()) load(); // jeton gardé dans l'onglet (sessionStorage) : pas de reconnexion à chaque page
 })();
 </script>
 </body>

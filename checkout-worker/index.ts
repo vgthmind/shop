@@ -306,7 +306,8 @@ export default {
       }
       if (path === '/stock' && request.method === 'GET') return await publicStock(env, cors);
       if (path === '/t') { const r = await trafficRoutes(request, env, path, json); if (r) return r; }
-      if ((path === '/auth' || path === '/callback') && !(await allow(env, 'rl:login:' + (request.headers.get('CF-Connecting-IP') || 'x'), 12, 900))) return json({ error: 'Trop de tentatives de connexion, réessaie dans 15 minutes.' }, 429);
+      // Connexions : seules les ÉCHECS comptent (compte refusé, code refusé, session expirée), 12 par IP et 15 min ; une connexion réussie ne compte jamais.
+      if ((path === '/auth' || path === '/callback') && (Number(await env.HOLDS.get('rl:loginfail:' + (request.headers.get('CF-Connecting-IP') || 'x'))) || 0) >= 12) return json({ error: 'Trop de tentatives de connexion, réessaie dans 15 minutes.' }, 429);
       if (path === '/auth/claim' && request.method === 'GET') return await oauthClaim(request, env, json);
       if (path === '/auth') return await oauthStart(request, env);
       if (path === '/callback') return await oauthCallback(request, env);
@@ -1084,7 +1085,13 @@ async function oauthCallback(request: Request, env: Env): Promise<Response> {
 </script>`;
     return new Response(html, { headers: { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store' } });
   };
-  if (!state || !stored) return page('error', { message: 'Session de connexion expirée, réessaie.' });
+  const failKey = 'rl:loginfail:' + (request.headers.get('CF-Connecting-IP') || 'x');
+  const fail = async (message: string) => { // un échec de connexion seulement : compté pour la limite
+    const n = Number(await env.HOLDS.get(failKey)) || 0;
+    await env.HOLDS.put(failKey, String(n + 1), { expirationTtl: 900 });
+    return page('error', { message });
+  };
+  if (!state || !stored) return fail('Session de connexion expirée, réessaie.');
   await env.HOLDS.delete('oauth:' + state);
   const res = await fetch('https://github.com/login/oauth/access_token', {
     method: 'POST',
@@ -1092,13 +1099,13 @@ async function oauthCallback(request: Request, env: Env): Promise<Response> {
     body: JSON.stringify({ client_id: env.GITHUB_CLIENT_ID, client_secret: env.GITHUB_CLIENT_SECRET, code }),
   });
   const data: any = await res.json().catch(() => ({}));
-  if (!data.access_token) return page('error', { message: data.error_description || 'GitHub a refusé la connexion.' });
+  if (!data.access_token) return fail(data.error_description || 'GitHub a refusé la connexion.');
   // Seul le compte admin peut se connecter.
   const user: any = await fetch('https://api.github.com/user', {
     headers: { Authorization: `Bearer ${data.access_token}`, Accept: 'application/vnd.github+json', 'User-Agent': 'vgthmind-shop-checkout' },
   }).then((r) => r.json()).catch(() => ({}));
   if (String(user.login || '').toLowerCase() !== String(env.ADMIN_GITHUB_LOGIN).toLowerCase()) {
-    return page('error', { message: 'Ce compte GitHub n\'a pas accès à cet admin.' });
+    return fail('Ce compte GitHub n\'a pas accès à cet admin.');
   }
   // `token` reste pour Sveltia (il en a besoin pour publier sur GitHub) ; les
   // pages Stock/Commandes n'utilisent que `session`.
