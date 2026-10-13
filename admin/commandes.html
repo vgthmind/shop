@@ -39,6 +39,24 @@
     .items .nm { flex: 1; min-width: 0; }
     .items .nm small { display: block; color: var(--muted); }
     .items .pr { white-space: nowrap; }
+    .filters button { font-family: var(--f-mono, ui-monospace, monospace); font-size: 12px; letter-spacing: .03em; min-height: 40px; }
+    .filters button[aria-pressed=true] { background: var(--chrome, #e4e4e8); color: var(--ink); border-color: rgba(0,0,0,.28); box-shadow: 0 1px 0 #fff inset, 0 1px 3px rgba(0,0,0,.18); }
+    .order.ord { padding: 0; overflow: hidden; border-left: 5px solid var(--st-todo, #c9741a); }
+    .order.ord.sent { border-left-color: var(--st-done, #2f7d4a); }
+    .order.ord.ref { border-left-color: #b3261e; }
+    .order.ord.prep { border-left-color: var(--st-plan, #2c5f9e); }
+    .sum { display: grid; grid-template-columns: 64px 1fr auto; gap: 12px; align-items: center; padding: 12px 14px; cursor: pointer; }
+    .sum:focus-visible { outline: 2px solid var(--ink); outline-offset: -2px; }
+    .sum .th { width: 64px; height: 70px; object-fit: contain; border-radius: 8px; background: var(--bg); }
+    .sum .who small { display: block; color: var(--muted); font-size: 13px; }
+    .sum .amt { text-align: right; white-space: nowrap; }
+    .pill { display: inline-block; padding: 3px 9px; border-radius: 999px; font: 500 11px/1.2 var(--f-mono, ui-monospace, monospace); letter-spacing: .05em; text-transform: uppercase; color: #fff; background: var(--st-todo, #c9741a); margin-top: 4px; }
+    .pill.sent { background: var(--st-done, #2f7d4a); } .pill.ref { background: #b3261e; } .pill.prep { background: var(--st-plan, #2c5f9e); }
+    .pill.ref0 { background: transparent; color: var(--ink); border: 1px solid var(--ink); margin: 0 4px 0 0; }
+    .drawer { padding: 4px 16px 14px; border-top: 1px solid var(--line); background: rgba(255,255,255,.55); }
+    .actions button[data-ship] { background: var(--ink); color: #fff; border-color: var(--ink); }
+    .actions button[data-refund] { color: #b3261e; border-color: rgba(179,38,30,.4); }
+    @media (max-width: 520px) { .sum { grid-template-columns: 52px 1fr auto; gap: 10px; } .sum .th { width: 52px; height: 58px; } }
   </style>
 <link rel="icon" href="../assets/theme/admin/favicon.svg?v=3" type="image/svg+xml">
 <link rel="icon" href="../assets/theme/admin/favicon-32.png?v=3" type="image/png" sizes="32x32">
@@ -48,9 +66,8 @@
 </head>
 <body>
 <main>
-  <nav><a href="menu.html">← Tableau de bord</a> <a href="stock.html">Stock</a> <a href="export.html">Export compta</a> <a href="demandes.html">Demandes</a></nav>
-  <h1>Commandes</h1>
-  <p class="muted">Paiements reçus via Stripe (100 derniers).</p>
+  <nav class="vg-legacy-nav"><a href="menu.html">← Tableau de bord</a> <a href="stock.html">Stock</a> <a href="export.html">Export compta</a> <a href="demandes.html">Demandes</a></nav>
+  <div class="vg-head"><div><h1>Commandes</h1><p class="vg-sub">Paiements reçus via Stripe (100 derniers).</p></div><button type="button" class="vg-btn ghost" id="more" aria-expanded="false">⋯ Sauvegardes</button></div>
 
   <div class="bar" id="login" hidden>
     <button type="button" id="login-btn">Se connecter avec GitHub</button>
@@ -84,6 +101,7 @@
   'use strict';
   var orders = [];
   var filter = 'todo';
+  var openId = null;
   var $ = function (id) { return document.getElementById(id); };
   var token = window.vgAdminToken;
 
@@ -112,7 +130,6 @@
       orders = d.orders || [];
       $('login').hidden = true;
       $('filters').hidden = false;
-      $('backups').hidden = false;
       $('msg').textContent = '';
       draw();
     }).catch(function (e) {
@@ -158,7 +175,14 @@
       + '<p class="muted">Sur les 100 derniers paiements. Détail complet : tableau de bord Stripe (Paiements, Rapports). Visites : Cloudflare Web Analytics.</p>';
   }
 
+  function counts() {
+    var real = orders.filter(function (o) { return o.kind !== 'deposit'; });
+    var todo = real.filter(function (o) { return !o.shipped && !(o.refunded && o.refunded.full); }).length, ref = real.filter(function (o) { return !!o.refunded; }).length;
+    document.querySelector('[data-f="todo"]').textContent = 'À expédier' + (todo ? ' (' + todo + ')' : '');
+    document.querySelector('[data-f="refunded"]').textContent = 'Remboursées' + (ref ? ' (' + ref + ')' : '');
+  }
   function draw() {
+    counts();
     if (filter === 'stats') { drawStats(); return; }
     var needle = (($('q') && $('q').value) || '').trim().toLowerCase().replace(/^vg[\s-]*/, '');
     var list = orders.filter(function (o) {
@@ -170,7 +194,13 @@
       return filter === 'todo' ? (!o.shipped && !rfd) : !!o.shipped;
     });
     $('orders').innerHTML = list.length ? list.map(function (o) {
-      return '<article class="order' + (o.refunded ? ' is-refunded' : '') + '" data-id="' + esc(o.id) + '">'
+      var rfd = !!(o.refunded && o.refunded.full), st = rfd ? ['ref', 'Remboursée'] : o.refunded ? ['ref', 'Remboursée en partie'] : o.shipped ? ['sent', 'Expédiée'] : o.preparing ? ['prep', 'En préparation'] : ['', 'À expédier'];
+      var first = o.items[0] || {}, isOpen = openId === o.id;
+      return '<article class="order ord ' + st[0] + (o.refunded ? ' is-refunded' : '') + (isOpen ? ' open' : '') + '" data-id="' + esc(o.id) + '">'
+        + '<div class="sum" role="button" tabindex="0" aria-expanded="' + isOpen + '">' + (first.image ? '<img class="th" src="' + esc(first.image) + '" alt="" loading="lazy">' : '<span class="th"></span>')
+        + '<div class="who"><b>' + esc(o.name || o.email) + '</b> <span class="pill ref0">' + esc(o.ref || '') + '</span>' + (o.livemode ? '' : '<span class="pill ref0">test</span>') + '<small>' + esc(first.name || '') + (o.items.length > 1 ? ' +' + (o.items.length - 1) : '') + ' · ' + esc(date(o.created)) + ' · ' + esc(countryName(o.address && o.address.country)) + '</small></div>'
+        + '<div class="amt"><b>' + money(o.total) + '</b><br><span class="pill ' + st[0] + '">' + st[1] + '</span></div></div>'
+        + '<div class="drawer"' + (isOpen ? '' : ' hidden') + '>'
         + '<header><div><span class="tag ref">' + esc(o.ref || '') + '</span> <strong>' + esc(o.name || o.email) + '</strong> '
         + (o.livemode ? '' : '<span class="tag test">test</span> ')
         + (o.invoice_no ? '<span class="tag">facturée ' + esc(o.invoice_no) + '</span> ' : '')
@@ -198,7 +228,7 @@
         + (o.refunded ? '<button type="button" data-credit>Voir l’avoir</button>' : '')
         + (o.refunded && o.refunded.full ? '' : '<button type="button" data-refund>Rembourser…</button>')
         + '<a class="btn" target="_blank" rel="noopener" href="https://dashboard.stripe.com/' + (o.livemode ? '' : 'test/') + 'checkout/sessions/' + esc(o.id) + '">Voir dans Stripe</a>'
-        + '</div></article>';
+        + '</div></div></article>';
     }).join('') : '<p class="muted">Aucune commande ici.</p>';
   }
 
@@ -206,6 +236,7 @@
     var card = e.target.closest('.order');
     if (!card) return;
     var o = orders.filter(function (x) { return x.id === card.getAttribute('data-id'); })[0];
+    if (e.target.closest('.sum')) { openId = openId === o.id ? null : o.id; draw(); return; }
     if (e.target.hasAttribute('data-prep') || e.target.hasAttribute('data-unprep')) {
       var undoPrep = e.target.hasAttribute('data-unprep');
       api('/orders/preparing', { method: 'POST', body: JSON.stringify(undoPrep ? { id: o.id, undo: true } : { id: o.id }) })
@@ -311,6 +342,14 @@
     this.value = '';
   });
 
+  $('orders').addEventListener('keydown', function (e) {
+    if ((e.key === 'Enter' || e.key === ' ') && e.target.classList && e.target.classList.contains('sum')) { e.preventDefault(); e.target.click(); }
+  });
+  $('more').addEventListener('click', function () {
+    var h = $('backups').hidden = !$('backups').hidden;
+    this.setAttribute('aria-expanded', String(!h));
+    if (!h) $('backups').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  });
   $('q').addEventListener('input', draw);
 
   $('filters').addEventListener('click', function (e) {
