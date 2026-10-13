@@ -19,7 +19,7 @@ const catalog = [
 ];
 const WH = 'whsec_test123';
 
-let worker, StockDO, env, sessions, mails, stripeCreated;
+let worker, StockDO, env, sessions, mails, stripeCreated, refunds;
 const fakeStorage = () => {
   const m = new Map();
   return {
@@ -38,6 +38,7 @@ before(async () => {
   globalThis.fetch = async (url, opt = {}) => {
     url = String(url);
     if (url.endsWith('/products.json')) return new Response(JSON.stringify(catalog));
+    if (url === 'https://api.stripe.com/v1/refunds') { const b = new URLSearchParams(opt.body); refunds.push(b); return new Response(JSON.stringify({ id: 're_' + refunds.length })); }
     if (url === 'https://api.resend.com/emails') { mails.push(JSON.parse(opt.body)); return new Response('{}'); }
     const m = /^https:\/\/api\.stripe\.com\/v1\/checkout\/sessions(?:\/([^/?]+))?(\/expire)?/.exec(url);
     if (m && opt.method === 'POST' && !m[1]) {
@@ -57,7 +58,7 @@ before(async () => {
 });
 
 beforeEach(() => {
-  sessions = new Map(); mails = []; stripeCreated = [];
+  sessions = new Map(); mails = []; stripeCreated = []; refunds = [];
   const raw = new StockDO(); raw.ctx = { storage: fakeStorage() };
   // Un Durable Object traite les appels l'un après l'autre (« input gates » de Cloudflare) : on le simule avec une file.
   let queue = Promise.resolve();
@@ -95,12 +96,41 @@ const pay = (id, { country = 'BE', ship = 1500, total = 2500 } = {}) => {
   return s.full;
 };
 
-test('pièce unique : deux clients en même temps, un seul passe', async () => {
-  const [a, b] = await Promise.all([checkout('cart-aaaaaaaa'), checkout('cart-bbbbbbbb', 'uniq', 'FR')]);
-  const ok = [a, b].filter((x) => x.url), ko = [a, b].filter((x) => !x.url);
-  assert.equal(ok.length, 1); assert.equal(ko.length, 1);
-  assert.equal(ko[0].status, 409); assert.equal(ko[0].problems[0].reason, 'reservee');
-  assert.equal(stripeCreated.length, 1, 'une seule session Stripe créée');
+test('pièce unique : mettre au panier / ouvrir le paiement ne bloque personne, le premier à PAYER gagne et l’autre session est expirée', async () => {
+  const a = await checkout('cart-aaaaaaaa');
+  const b = await checkout('cart-bbbbbbbb', 'uniq', 'FR');
+  assert.ok(a.url && b.url, 'les deux peuvent ouvrir le paiement');
+  assert.equal(stripeCreated.length, 2);
+  await webhook('checkout.session.completed', pay(b.id, { country: 'FR', ship: 0, total: 1000 }));
+  assert.equal((await stock()).uniq, 0);
+  assert.equal(sessions.get(a.id).status, 'expired', 'la session de l’autre client est expirée');
+  assert.equal(refunds.length, 0);
+  const c = await checkout('cart-cccccccc', 'uniq', 'FR');
+  assert.equal(c.status, 409); assert.equal(c.problems[0].reason, 'vendue');
+});
+
+test('deux paiements à la même seconde : le second est remboursé automatiquement, mail d’excuse, pas de commande', async () => {
+  const a = await checkout('cart-aaaaaaaa');
+  const b = await checkout('cart-bbbbbbbb', 'uniq', 'FR');
+  const fa = pay(a.id), fb = pay(b.id, { country: 'FR', ship: 0, total: 1000 });
+  fb.payment_intent = 'pi_second';
+  const [ra, rb] = await Promise.all([webhook('checkout.session.completed', fa), webhook('checkout.session.completed', fb)]);
+  assert.equal(ra.status, 200); assert.equal(rb.status, 200);
+  assert.equal((await stock()).uniq, 0);
+  assert.equal(refunds.length, 1, 'un seul remboursement');
+  const ref = refunds[0];
+  assert.ok(['pi_test', 'pi_second'].includes(ref.get('payment_intent')));
+  const sorry = mails.filter((m) => m.to[0] === 'client@example.com' && /rembours|refund/i.test(m.subject));
+  assert.equal(sorry.length, 1, 'mail d’excuse au client remboursé');
+  assert.match(sorry[0].text, /rembours|refunded/i);
+  const orderMails = mails.filter((m) => /Nouvelle commande|Order|Commande/i.test(m.subject) && !/rembours|refund/i.test(m.subject));
+  assert.equal(orderMails.length, 2, 'mails de commande (vendeur + client) pour le seul premier paiement');
+  assert.ok(mails.some((m) => m.to[0] === 'alex-vendeur@example.com' && /deux fois/i.test(m.subject)), 'alerte vendeur');
+  // webhook rejoué : pas de 2e remboursement ni de 2e mail
+  const loser = ref.get('metadata[session]');
+  await webhook('checkout.session.completed', sessions.get(loser).full);
+  assert.equal(refunds.length, 1);
+  assert.equal(mails.filter((m) => /rembours|refund/i.test(m.subject) && m.to[0] === 'client@example.com').length, 1);
 });
 
 test('le stock ne baisse PAS à la création du paiement, seulement après confirmation', async () => {
@@ -121,43 +151,51 @@ test('à 0 la pièce est vendue : nouveau client refusé (vendue), webhook rejou
   assert.equal(c.status, 409); assert.equal(c.problems[0].reason, 'vendue');
 });
 
-test('série : 3 en stock, 2 clients (2 + 2) -> le second est refusé (réservé par l’autre)', async () => {
+test('série : 3 en stock, 2 clients (2 + 2) peuvent tous deux ouvrir le paiement ; quand l’un paie, la session de l’autre (plus assez de stock) est expirée', async () => {
   const a = await checkout('cart-aaaaaaaa', 'serie', 'FR', 2);
   const b = await checkout('cart-bbbbbbbb', 'serie', 'FR', 2);
-  assert.ok(a.url); assert.equal(b.status, 409); assert.equal(b.problems[0].reason, 'reservee');
+  assert.ok(a.url && b.url);
+  await webhook('checkout.session.completed', pay(a.id, { country: 'FR', ship: 0, total: 4000 }));
+  assert.equal((await stock()).serie, 1);
+  assert.equal(sessions.get(b.id).status, 'expired');
 });
 
-test('abandon : /release (page « annulé ») remet la pièce en vente', async () => {
+test('série : si le stock reste suffisant pour l’autre client, sa session n’est PAS expirée', async () => {
+  const a = await checkout('cart-aaaaaaaa', 'serie', 'FR', 1);
+  const b = await checkout('cart-bbbbbbbb', 'serie', 'FR', 1);
+  await webhook('checkout.session.completed', pay(a.id, { country: 'FR', ship: 0, total: 2000 }));
+  assert.equal((await stock()).serie, 2);
+  assert.equal(sessions.get(b.id).status, 'open');
+});
+
+test('abandon : /release (page « annulé ») expire la session ; la pièce reste en vente', async () => {
   const a = await checkout('cart-aaaaaaaa');
-  assert.equal((await checkout('cart-bbbbbbbb', 'uniq', 'FR')).status, 409);
-  await call('/release', { id: a.id });
-  assert.equal(sessions.get(a.id).status, 'expired');
+  const r = await (await call('/release', { id: a.id })).json();
+  assert.equal(sessions.get(a.id).status, 'expired'); assert.deepEqual(r.sold, []);
   assert.ok((await checkout('cart-bbbbbbbb', 'uniq', 'FR')).url);
   assert.equal((await stock()).uniq, 1);
 });
 
-test('abandon : session Stripe expirée (webhook) remet la pièce en vente, stock inchangé', async () => {
+test('/release après une vente à un autre : dit quelles pièces ont été vendues entre-temps', async () => {
+  const a = await checkout('cart-aaaaaaaa');
+  const b = await checkout('cart-bbbbbbbb', 'uniq', 'FR');
+  await webhook('checkout.session.completed', pay(b.id, { country: 'FR', ship: 0, total: 1000 }));
+  const r = await (await call('/release', { id: a.id })).json();
+  assert.deepEqual(r.sold, ['uniq']);
+});
+
+test('abandon : session Stripe expirée (webhook) ne change pas le stock', async () => {
   const a = await checkout('cart-aaaaaaaa');
   await webhook('checkout.session.expired', { id: a.id, metadata: sessions.get(a.id).metadata });
   assert.ok((await checkout('cart-bbbbbbbb', 'uniq', 'FR')).url);
   assert.equal((await stock()).uniq, 1);
 });
 
-test('abandon sans aucun signal : la réservation expire seule après 32 min', async () => {
-  const real = Date.now; let t = real();
-  Date.now = () => t;
-  try {
-    await checkout('cart-aaaaaaaa');
-    t += 31 * 60 * 1000; assert.equal((await checkout('cart-bbbbbbbb', 'uniq', 'FR')).status, 409);
-    t += 2 * 60 * 1000; assert.ok((await checkout('cart-bbbbbbbb', 'uniq', 'FR')).url);
-  } finally { Date.now = real; }
-});
-
-test('/release ne libère pas une session déjà payée', async () => {
+test('/release ne touche pas une session déjà payée', async () => {
   const a = await checkout('cart-aaaaaaaa');
   pay(a.id);
   await call('/release', { id: a.id });
-  assert.equal((await checkout('cart-bbbbbbbb', 'uniq', 'FR')).status, 409);
+  assert.equal(sessions.get(a.id).status, 'complete');
 });
 
 test('webhook : signature fausse refusée, rien décompté', async () => {
@@ -240,4 +278,32 @@ test('mails de commande : sans langue dans la session (ancienne commande) = selo
   const id = j.url.split('/').pop(); pay(id, { country: 'BE' });
   assert.equal((await webhook('checkout.session.completed', sessions.get(id).full)).status, 200);
   assert.match(mails.find((m) => m.to[0] === 'client@example.com').subject, /^Merci/);
+});
+
+test('moyens de paiement : carte + Bancontact seulement (ni Klarna ni EPS) ; phrase CGV dans une seule langue, lien au réglage central', async () => {
+  await call('/checkout', { items: [{ slug: 'uniq', qty: 1 }], country: 'BE', cart_id: 'cart-pm-fr', lang: 'fr' });
+  await call('/checkout', { items: [{ slug: 'nomen', qty: 1 }], country: 'BE', cart_id: 'cart-pm-en', lang: 'en' });
+  const [fr, en] = stripeCreated;
+  for (const b of [fr, en]) {
+    assert.equal(b.get('payment_method_types[0]'), 'card'); assert.equal(b.get('payment_method_types[1]'), 'bancontact'); assert.equal(b.get('payment_method_types[2]'), null);
+  }
+  assert.equal(fr.get('custom_text[submit][message]'), 'En payant, tu acceptes les [conditions de vente](http://site.invalid/infos-conditions-generales/).');
+  assert.equal(en.get('custom_text[submit][message]'), 'By paying, you accept the [terms of sale](http://site.invalid/infos-conditions-generales/).');
+});
+
+test('admin : « Se déconnecter » révoque la session côté Worker (même copiée ailleurs, elle ne marche plus) ; sans session = 401', async () => {
+  env.SESSION_SECRET = 'secret-de-test';
+  const mk = (iatOffset = 0) => {
+    const exp = Math.floor(Date.now() / 1000) + 12 * 3600 + iatOffset;
+    const sig = createHmac('sha256', env.SESSION_SECRET).update(`vgs.${exp}.x`).digest('base64url');
+    return `vgs.${exp}.${sig}`;
+  };
+  const api = (path, tok, method = 'GET') => worker.fetch(new Request('http://w.invalid' + path, { method, headers: tok ? { Authorization: 'Bearer ' + tok } : {} }), env, { waitUntil: () => {} });
+  const old = mk();
+  assert.equal((await api('/admin/stock', old)).status, 200);
+  assert.equal((await api('/admin/stock', '')).status, 401);
+  assert.equal((await api('/admin/stock', 'vgs.9999999999.' + 'a'.repeat(43))).status, 401);
+  assert.equal((await api('/admin/logout', old, 'POST')).status, 200);
+  assert.equal((await api('/admin/stock', old)).status, 401, 'la session copiée est refusée');
+  assert.equal((await api('/admin/stock', mk(5))).status, 200, 'une nouvelle connexion (émise après) fonctionne');
 });

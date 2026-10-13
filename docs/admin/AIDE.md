@@ -1,9 +1,9 @@
 # Aide de l'admin `/shop/`
 
 Adresses :
-- Pièces : https://vgthmind.github.io/shop/admin/ → « Se connecter avec GitHub » (compte vgthmind).
-- Stock : https://vgthmind.github.io/shop/admin/stock.html (bouton « Stock » en bas à droite de l'admin).
-- Commandes & stats : https://vgthmind.github.io/shop/admin/commandes.html.
+- Pièces : /admin/ (adresse du site + /admin/) → « Se connecter avec GitHub » (compte vgthmind).
+- Stock : /admin/stock.html (bouton « Stock » en bas à droite de l'admin).
+- Commandes & stats : /admin/commandes.html.
 - Paiements, remboursements, codes promo : tableau de bord Stripe.
 
 Après chaque enregistrement dans l'admin, le site se reconstruit tout seul (1 à 2 min).

@@ -9,7 +9,7 @@
   window.VG_ENDPOINT = ENDPOINT;
   // Numéro de version de l'admin, affiché en petit en bas à gauche de chaque page : permet de vérifier qu'on a bien la dernière version.
   // À changer à chaque mise à jour de l'admin (aaaa-mm-jj + lettre).
-  window.VG_ADMIN_VERSION = '2026-10-13-d';
+  window.VG_ADMIN_VERSION = '2026-10-13-e';
   function showVersion() {
     try {
       var d = document.createElement('div'); d.id = 'vg-admin-version'; d.textContent = 'Admin v' + window.VG_ADMIN_VERSION;
@@ -98,10 +98,37 @@
     });
   };
 
-  window.vgAdminLogout = function () {
-    try { localStorage.removeItem(KEY); localStorage.removeItem('vg-admin-token'); } catch (e) {}
+  // Déconnexion : oublie la session ici, vide les pages gardées hors ligne et fait révoquer la session par le Worker
+  // (elle ne sert alors plus nulle part, même si quelqu'un l'avait copiée). Renvoie une promesse (fin de la révocation).
+  // remote=true (bouton) : révocation par le Worker ; sinon (inactivité, session refusée) simple oubli local.
+  window.vgAdminLogout = function (remote) {
+    var s = '';
+    try { s = localStorage.getItem(KEY) || ''; localStorage.removeItem(KEY); localStorage.removeItem('vg-admin-token'); localStorage.removeItem(LAST); } catch (e) {}
     setCookie('');
+    try { if (window.caches) caches.keys().then(function (ks) { ks.forEach(function (k) { caches.delete(k); }); }); } catch (e) {}
+    if (!s || remote !== true) return Promise.resolve();
+    return fetch(ENDPOINT + '/admin/logout', { method: 'POST', headers: { Authorization: 'Bearer ' + s }, keepalive: true }).catch(function () {});
   };
+
+  // Bouton « Se déconnecter » visible sur toutes les pages de l'admin (sauf la page de connexion).
+  function logoutButton() {
+    try {
+      if (/\/admin\/connexion/.test(location.pathname) || document.getElementById('vg-logout-global')) return;
+      var st = document.createElement('style');
+      st.textContent = '#logout{display:none!important}#vg-logout-global{position:fixed;top:8px;right:8px;z-index:2147483646;font:600 13px/1 system-ui,sans-serif;padding:9px 14px;border-radius:999px;border:1px solid #171717;background:#171717;color:#fff;cursor:pointer}';
+      document.head.appendChild(st);
+      var b = document.createElement('button');
+      b.type = 'button'; b.id = 'vg-logout-global'; b.textContent = 'Se déconnecter';
+      b.addEventListener('click', function () {
+        b.disabled = true; b.textContent = 'Déconnexion…';
+        var done = false;
+        function leave() { if (!done) { done = true; location.replace('/admin/connexion'); } }
+        window.vgAdminLogout(true).then(leave); setTimeout(leave, 2500);
+      });
+      document.body.appendChild(b);
+    } catch (e) {}
+  }
+  if (document.body) logoutButton(); else document.addEventListener('DOMContentLoaded', logoutButton);
 
   // Appel au Worker avec le jeton ; 401 -> jeton oublié (à reconnecter).
   window.vgAdminApi = function (path, opts) {

@@ -40,7 +40,7 @@ import { buildInvoice, parisYear } from './invoice';
 export { TrafficDO } from './traffic';
 import { requestRoutes, requestsCron, onRequestPaid, onShipped, requestInvoiceParts, type ReqDeps } from './requests';
 export { RequestsDO } from './requests';
-import { customerEmail, sellerEmail, shippedEmail, REPLY_TO, langFor, countryName, type MailItem, type OrderData } from './emails';
+import { customerEmail, sellerEmail, shippedEmail, REPLY_TO, CONTACT_EMAIL, FONT, esc, langFor, countryName, type MailItem, type OrderData } from './emails';
 
 interface KV {
   get(key: string): Promise<string | null>;
@@ -89,7 +89,7 @@ interface Product {
   shipping: ShippingLine[];
 }
 interface Item { slug: string; qty: number }
-interface Hold { items: Item[]; expires: number }
+interface Hold { items: Item[]; expires: number; sid?: string } // sid = session Stripe ouverte pour ce panier
 
 const MAX_ITEMS = 20;
 const SESSION_MINUTES = 30; // minimum Stripe
@@ -151,40 +151,63 @@ export class StockDO extends DurableObject {
     return out;
   }
 
+  // Ouvrir le paiement ne bloque personne : on vérifie seulement qu'il reste assez de stock, et on note la session
+  // ouverte (h:<panier>) pour pouvoir l'expirer si quelqu'un d'autre paie la pièce en premier (voir confirm).
   async reserve(cartId: string, items: Item[], defaults: Record<string, number>) {
-    const { storage, stock, holds } = await this.state();
+    const { storage, stock } = await this.state();
     const problems: { slug: string; reason: string; available?: number }[] = [];
     for (const it of items) {
       const s = stock.has(it.slug) ? stock.get(it.slug)! : (defaults[it.slug] ?? 0);
-      let others = 0;
-      for (const [cart, h] of holds) if (cart !== cartId) for (const x of h.items) if (x.slug === it.slug) others += x.qty;
       if (s <= 0) problems.push({ slug: it.slug, reason: 'vendue' });
-      else if (it.qty > s - others) {
-        problems.push(others > 0 && it.qty <= s
-          ? { slug: it.slug, reason: 'reservee' }
-          : { slug: it.slug, reason: 'stock', available: Math.max(0, s - others) });
-      }
+      else if (it.qty > s) problems.push({ slug: it.slug, reason: 'stock', available: s });
     }
     if (problems.length) return { ok: false, problems };
     await storage.put('h:' + cartId, { items, expires: Date.now() + HOLD_MS });
     return { ok: true, problems };
   }
 
+  // Retient la session Stripe créée pour ce panier.
+  async attach(cartId: string, sid: string) {
+    const storage = (this as any).ctx.storage;
+    const h: Hold | undefined = await storage.get('h:' + cartId);
+    if (h) await storage.put('h:' + cartId, { ...h, sid });
+  }
+
   async release(cartId: string) {
     await (this as any).ctx.storage.delete('h:' + cartId);
   }
 
-  // Commande payee : stock decompte une seule fois par session Stripe.
+  // Commande payee : stock decompte une seule fois par session Stripe. Le premier paiement gagne :
+  // - si la pièce n'est plus disponible (deux paiements à la même seconde), rien n'est décompté et `oversold` liste
+  //   les pièces concernées (le Worker rembourse alors la commande et s'excuse par mail) ;
+  // - sinon les autres sessions encore ouvertes qui ne peuvent plus être servies sont rendues dans `rivals` (à expirer).
   async confirm(sessionId: string, cartId: string, items: Item[], defaults: Record<string, number>) {
-    const { storage, stock } = await this.state();
-    if (await storage.get('d:' + sessionId)) return { already: true };
-    for (const it of items) {
-      const s = stock.has(it.slug) ? stock.get(it.slug)! : (defaults[it.slug] ?? 0);
-      await storage.put('q:' + it.slug, Math.max(0, s - it.qty));
-    }
+    const { storage, stock, holds } = await this.state();
+    const none: { cartId: string; sid: string }[] = [];
+    const done: any = await storage.get('d:' + sessionId);
+    if (done) return { already: true, oversold: done.oversold ? (done.slugs as string[]) : [], rivals: none };
+    const left = (slug: string) => (stock.has(slug) ? stock.get(slug)! : (defaults[slug] ?? 0));
+    const oversold = items.filter((it) => left(it.slug) < it.qty).map((it) => it.slug);
     if (cartId) await storage.delete('h:' + cartId);
-    await storage.put('d:' + sessionId, Date.now());
-    return { already: false };
+    if (oversold.length) {
+      await storage.put('d:' + sessionId, { t: Date.now(), oversold: true, slugs: oversold });
+      return { already: false, oversold, rivals: none };
+    }
+    for (const it of items) {
+      const s = left(it.slug);
+      await storage.put('q:' + it.slug, Math.max(0, s - it.qty));
+      stock.set(it.slug, Math.max(0, s - it.qty));
+    }
+    await storage.put('d:' + sessionId, { t: Date.now() });
+    const rivals: { cartId: string; sid: string }[] = [];
+    for (const [cart, h] of holds) {
+      if (cart === cartId) continue;
+      if (h.items.some((x) => left(x.slug) < x.qty)) {
+        await storage.delete('h:' + cart);
+        if (h.sid) rivals.push({ cartId: cart, sid: h.sid });
+      }
+    }
+    return { already: false, oversold: [] as string[], rivals };
   }
 
   // Numéro de facture W-AAAA-NNN : attribué une fois par commande (même session = même numéro), compteur par année.
@@ -232,12 +255,30 @@ function siteBaseFor(request: Request, env: Env): string {
   return !o || o === new URL(env.SITE_BASE).origin ? env.SITE_BASE : o;
 }
 
+// Adresse publique du site = UN réglage : « site_url » dans data/shop-settings.json (le build le publie dans
+// /site-config.json). Le Worker le relit toutes les 5 min ; la valeur SITE_BASE de wrangler.toml ne sert que de secours.
+// Le jour de la bascule vers vgthmind.org : changer site_url, reconstruire le site, rien à redéployer ici.
+let siteCache: { v: string; t: number } | null = null;
+async function withSiteBase(env: Env): Promise<Env> {
+  try {
+    if (!siteCache || Date.now() - siteCache.t > 300000) {
+      const r = await fetch(`${(env.CATALOG_BASE || env.SITE_BASE).replace(/\/$/, '')}/site-config.json`, { cf: { cacheTtl: 300 } } as any);
+      if (r.ok) {
+        const j: any = await r.json();
+        if (j && typeof j.site_url === 'string' && /^https:\/\/[a-z0-9.-]+(\/[\w./-]*)?$/i.test(j.site_url)) siteCache = { v: j.site_url.replace(/\/$/, ''), t: Date.now() };
+      }
+    }
+  } catch (e) { /* secours : SITE_BASE de wrangler.toml */ }
+  return siteCache ? { ...env, SITE_BASE: siteCache.v } : env;
+}
+
 function stockStub(env: Env) {
   return env.STOCK.get(env.STOCK.idFromName('main'));
 }
 
 export default {
   async fetch(request: Request, env: Env, ctx: any): Promise<Response> {
+    env = await withSiteBase(env);
     const cors = {
       'Access-Control-Allow-Origin': pickOrigin(request, env),
       'Access-Control-Allow-Methods': 'GET, POST, PUT, OPTIONS',
@@ -265,6 +306,10 @@ export default {
       if (path.startsWith('/admin/')) {
         if (!(await isAdmin(request, env))) return json({ error: 'Non autorisé.' }, 401);
         if (path === '/admin/renew' && request.method === 'POST') return json({ session: await makeSession(env) });
+        if (path === '/admin/logout' && request.method === 'POST') {
+          await env.HOLDS.put('admin:revoked', String(Math.floor(Date.now() / 1000)));
+          return json({ ok: true });
+        }
         if (path === '/admin/stock' && request.method === 'GET') return json(await adminStock(env));
         if (path === '/admin/stock' && request.method === 'POST') {
           const body: any = await request.json().catch(() => ({}));
@@ -379,6 +424,7 @@ export default {
   // Sauvegarde quotidienne du stock (cron dans wrangler.toml).
   // Toutes les heures : relances et conservation des demandes ; la nuit (03:30 UTC) : sauvegardes.
   async scheduled(event: any, env: Env, ctx: any) {
+    env = await withSiteBase(env);
     // Chaque minute : mises en ligne programmées (rien d'autre).
     if (event && event.cron === '* * * * *') {
       ctx.waitUntil(publishCron(env).catch((e) => alertAdmin(env, 'publish-cron', 'Mise en ligne programmée en erreur', String(e && e.stack ? e.stack : e))));
@@ -630,8 +676,11 @@ async function checkout(request: Request, env: Env, key: string, json: JsonFn): 
   params.set('expires_at', String(Math.floor(Date.now() / 1000) + SESSION_MINUTES * 60 + 30));
   params.set('phone_number_collection[enabled]', 'true');
   params.set('allow_promotion_codes', 'true');
-  params.set('custom_text[submit][message]',
-    `En payant, tu acceptes les conditions de vente : ${env.SITE_BASE}/infos-conditions-generales — By paying you accept our terms.`);
+  // Une seule langue sur la page Stripe : celle du site (français si on ne la connaît pas). Adresse = réglage central.
+  const cgv = `${env.SITE_BASE}/infos-conditions-generales/`;
+  params.set('custom_text[submit][message]', siteLang === 'en'
+    ? `By paying, you accept the [terms of sale](${cgv}).`
+    : `En payant, tu acceptes les [conditions de vente](${cgv}).`);
   if (siteLang) params.set('metadata[lang]', siteLang);
   params.set('metadata[slugs]', slugList);
   params.set('metadata[items]', itemList);
@@ -664,6 +713,7 @@ async function checkout(request: Request, env: Env, key: string, json: JsonFn): 
     await stub.release(cartId);
     return json({ error: stripe.data.error?.message || 'Erreur Stripe' }, 502);
   }
+  try { await stub.attach(cartId, stripe.data.id); } catch (e) { /* sans elle, la session ne pourra pas être expirée si quelqu'un d'autre paie avant */ }
   return json({ url: stripe.data.url });
 }
 
@@ -695,7 +745,16 @@ async function release(request: Request, env: Env, key: string, json: JsonFn): P
   if (!got.ok) return json({ ok: false });
   if (got.data.status === 'open') await stripeCall(key, 'POST', `/v1/checkout/sessions/${id}/expire`, new URLSearchParams());
   if (got.data.payment_status !== 'paid' && got.data.metadata?.cart_id) await stockStub(env).release(got.data.metadata.cart_id);
-  return json({ ok: true });
+  // Pièces de cette session devenues indisponibles entre-temps (vendues à quelqu'un d'autre) : la page « Paiement annulé » le dit.
+  let sold: string[] = [];
+  try {
+    const items = String(got.data.metadata?.items || '').split(',').filter(Boolean).map((x: string) => { const [slug, q] = x.split(':'); return { slug, qty: Math.max(1, Number(q) || 1) }; });
+    if (items.length && got.data.payment_status !== 'paid') {
+      const snap = await stockStub(env).snapshot(catalogDefaults(await loadCatalog(env)));
+      sold = items.filter((it) => (snap[it.slug] ?? 0) < it.qty).map((it) => it.slug);
+    }
+  } catch (e) { /* le message est un plus */ }
+  return json({ ok: true, sold });
 }
 
 async function webhook(request: Request, env: Env, json: JsonFn): Promise<Response> {
@@ -746,13 +805,69 @@ async function processPaid(env: Env, s: any) {
     })
     : String(meta.slugs || '').split(',').filter(Boolean).map((slug: string) => ({ slug, qty: 1 }));
   const catalog = await loadCatalog(env);
-  await stockStub(env).confirm(s.id, meta.cart_id || '', items, catalogDefaults(catalog));
+  const conf = await stockStub(env).confirm(s.id, meta.cart_id || '', items, catalogDefaults(catalog));
+  // Pièce déjà vendue à quelqu'un d'autre une seconde plus tôt : remboursement automatique + mail d'excuse, rien d'autre.
+  if (conf.oversold.length) { await refundOversold(env, s, conf.oversold); return; }
+  // Premier paiement réussi : les autres sessions Stripe ouvertes pour cette pièce sont expirées.
+  for (const r of conf.rivals) {
+    try { await stripeCall(env.STRIPE_SECRET_KEY || '', 'POST', `/v1/checkout/sessions/${r.sid}/expire`, new URLSearchParams()); } catch (e) { /* si elle est en train d'être payée, le remboursement automatique prend le relais */ }
+  }
   await sendOrderEmails(env, s).catch((e) => alertAdmin(env, 'mail-' + s.id, "Un mail de commande n'est pas parti", `Commande ${s.id} : ${String(e && e.message ? e.message : e)}`)); // un échec d'email ne bloque jamais la commande
   if (s.livemode) await stockStub(env).invoiceNumber(s.id, parisYear(s.created || Math.floor(Date.now() / 1000))).catch(() => {});
   // Compta : une ligne par commande payée dans le Sheet (seulement si COMPTA_URL et COMPTA_SECRET sont posés ; commandes de test ignorées).
   if (accountingConfigured(env as any)) {
     await recordSale(env as any, s, await assignRef(env, String(s.id))).catch((e) => alertAdmin(env, 'compta-' + s.id, "Une vente n'est pas partie vers la compta", `Commande ${s.id} : ${String(e && e.message ? e.message : e)}`));
   }
+}
+
+// Deux clients ont payé la même pièce à la même seconde : le premier garde la pièce, le second est remboursé
+// automatiquement (Stripe ne rembourse qu'une fois grâce à la clé d'idempotence) et reçoit un mail d'excuse.
+// Une erreur ici remonte (500) pour que Stripe rejoue le webhook ; ce qui est déjà fait n'est pas refait.
+async function refundOversold(env: Env, s: any, slugs: string[]) {
+  const doneKey = 'oversold:' + s.id;
+  const st = JSON.parse((await env.HOLDS.get(doneKey)) || '{}');
+  if (st.refund && st.mail && st.alert) return;
+  const key = env.STRIPE_SECRET_KEY || '';
+  const save = () => env.HOLDS.put(doneKey, JSON.stringify(st), { expirationTtl: 60 * 60 * 24 * 365 });
+  if (!st.refund) {
+    const pi = typeof s.payment_intent === 'string' ? s.payment_intent : s.payment_intent && s.payment_intent.id;
+    if (!pi) {
+      await alertAdmin(env, 'oversold-nopi-' + s.id, 'Paiement double sans remboursement possible', `Session ${s.id} : pas de paiement à rembourser trouvé. À traiter à la main dans Stripe.`);
+      throw new Error('payment_intent introuvable pour ' + s.id);
+    }
+    const p = new URLSearchParams({ payment_intent: pi });
+    p.set('metadata[reason]', 'piece_vendue_entre_temps');
+    p.set('metadata[session]', s.id);
+    const r = await stripeCall(key, 'POST', '/v1/refunds', p, { 'Idempotency-Key': 'vg-oversold-' + s.id });
+    if (!r.ok) {
+      await alertAdmin(env, 'oversold-refund-' + s.id, 'Remboursement automatique en échec', `Session ${s.id} : ${r.data && r.data.error ? r.data.error.message : 'erreur Stripe'}. À rembourser à la main dans Stripe.`);
+      throw new Error('remboursement refusé pour ' + s.id);
+    }
+    st.refund = 1; await save();
+  }
+  const full = await stripeCall(key, 'GET', `/v1/checkout/sessions/${s.id}?expand[]=line_items`);
+  const o = full.ok ? full.data : s;
+  const email = (o.customer_details && o.customer_details.email) || '';
+  const lang: 'fr' | 'en' = o.metadata?.lang === 'fr' || o.metadata?.lang === 'en' ? o.metadata.lang : langFor((o.customer_details && o.customer_details.address && o.customer_details.address.country) || '');
+  const names = ((o.line_items && o.line_items.data) || []).map((li: any) => String(li.description)).filter(Boolean);
+  const amount = ((o.amount_total || 0) / 100).toFixed(2);
+  const from = (env.MAIL_FROM || '').trim();
+  if (!st.mail && from && email && env.RESEND_API_KEY) {
+    const list = names.length ? names.join(', ') : slugs.join(', ');
+    const fr = lang === 'fr';
+    const subject = fr ? 'Ta commande vgthmind : pièce vendue entre-temps, remboursement' : 'Your vgthmind order: piece sold in the meantime, refund';
+    const text = fr
+      ? `Bonjour,\n\nDésolé : « ${list} » a été payée par quelqu'un d'autre quelques secondes avant toi, et c'était une pièce unique.\nTon paiement de ${amount} € est remboursé intégralement, automatiquement (il apparaît sur ton relevé sous quelques jours, selon ta banque). Tu n'as rien à faire.\n\nSi tu veux une pièce similaire ou une création sur mesure, écris-moi : ${CONTACT_EMAIL}.\n\nvgthmind`
+      : `Hello,\n\nI'm sorry: "${list}" was paid for by someone else a few seconds before you, and it was a one-of-a-kind piece.\nYour payment of €${amount} is fully refunded, automatically (it shows on your statement within a few days, depending on your bank). You don't need to do anything.\n\nIf you'd like something similar or a made-to-measure piece, write to me: ${CONTACT_EMAIL}.\n\nvgthmind`;
+    const html = `<div style="font-family:${FONT};font-size:15px;line-height:1.6;color:#171717">` + text.split('\n\n').map((para) => `<p>${esc(para).replace(/\n/g, '<br>')}</p>`).join('') + '</div>';
+    if (await resendSend(env, from, email, subject, html, text, REPLY_TO)) { st.mail = 1; await save(); }
+    else await alertAdmin(env, 'oversold-mail-' + s.id, "Le mail d'excuse n'est pas parti", `Session ${s.id} : écris à ${email} pour t'excuser (remboursement fait).`);
+  } else if (!from || !email) st.mail = 1;
+  if (!st.alert) {
+    await alertAdmin(env, 'oversold-' + s.id, 'Pièce payée deux fois : le second client a été remboursé', `Pièce(s) : ${slugs.join(', ')}\nSession remboursée : ${s.id}\nMontant : ${amount} €\nClient : ${email || 'inconnu'}\nMode : ${s.livemode ? 'réel' : 'test'}`);
+    st.alert = 1;
+  }
+  await save();
 }
 
 // --- Emails de commande (Resend) ---------------------------------------------
@@ -1007,7 +1122,13 @@ async function isAdmin(request: Request, env: Env): Promise<boolean> {
   if (!m) return false;
   const exp = Number(m[1]);
   if (exp < Date.now() / 1000) return false;
-  return timingSafeEqual(m[2], await sessionSig(env, exp));
+  if (!timingSafeEqual(m[2], await sessionSig(env, exp))) return false;
+  // « Se déconnecter » révoque toutes les sessions émises avant ce moment (émission = expiration - durée).
+  try {
+    const revoked = Number(await env.HOLDS.get('admin:revoked')) || 0;
+    if (revoked && exp - SESSION_TTL <= revoked) return false;
+  } catch (e) { /* KV indisponible : la signature suffit */ }
+  return true;
 }
 
 async function listOrders(request: Request, env: Env, key: string, json: JsonFn): Promise<Response> {
@@ -1256,10 +1377,17 @@ async function alertAdmin(env: Env, kind: string, subject: string, detail: strin
   } catch (e) { /* une alerte ne doit jamais faire planter le reste */ }
 }
 
-async function stripeCall(key: string, method: string, path: string, params?: URLSearchParams) {
+// Moyens de paiement des pages Stripe (commandes, acomptes, soldes) : fixés ici et non par le tableau de bord Stripe.
+// Carte (Apple Pay et Google Pay sont proposés automatiquement sur la carte) et Bancontact ; ni Klarna ni EPS.
+export const PAYMENT_METHODS = ['card', 'bancontact'];
+
+async function stripeCall(key: string, method: string, path: string, params?: URLSearchParams, extraHeaders?: Record<string, string>) {
+  if (method === 'POST' && path === '/v1/checkout/sessions' && params && !params.has('payment_method_types[0]')) {
+    PAYMENT_METHODS.forEach((m, i) => params.set(`payment_method_types[${i}]`, m));
+  }
   const res = await fetch('https://api.stripe.com' + path, {
     method,
-    headers: { Authorization: `Bearer ${key}`, 'Content-Type': 'application/x-www-form-urlencoded' },
+    headers: { Authorization: `Bearer ${key}`, 'Content-Type': 'application/x-www-form-urlencoded', ...(extraHeaders || {}) },
     body: params ? params.toString() : undefined,
   });
   return { ok: res.ok, data: (await res.json()) as any };

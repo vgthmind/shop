@@ -37,10 +37,13 @@ const ON_CF_PAGES = !!process.env.CF_PAGES;
 const BASE_PATH = process.env.BASE_PATH !== undefined ? process.env.BASE_PATH : (ON_CF_PAGES ? '' : '/shop');
 // Launch switch (data/shop-settings.json): "public": true removes the noindex
 // tags and opens robots.txt; site_url = where the shop is served (sitemap).
-// SITE_URL (env) le remplace, ex. l'adresse .pages.dev pendant les essais.
+// « site_url » est LE réglage central de l'adresse du site (liens de l'admin, CGV envoyée à Stripe, aperçus de
+// partage, mails, sitemap) : le fichier fait foi, la variable SITE_URL de l'environnement n'est qu'un secours
+// quand le fichier ne le donne pas. Jour de la bascule : changer site_url ici (https://vgthmind.org), rien d'autre.
 const SHOP_SETTINGS = Object.assign({ public: false, site_url: 'https://vgthmind.github.io/shop' },
-  JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'data', 'shop-settings.json'), 'utf8')),
   process.env.SITE_URL ? { site_url: process.env.SITE_URL } : {},
+  JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'data', 'shop-settings.json'), 'utf8')),
+  process.env.SITE_URL_FORCE ? { site_url: process.env.SITE_URL_FORCE } : {}, // essais seulement (tests de bascule)
   process.env.SHOP_PUBLIC ? { public: process.env.SHOP_PUBLIC === '1' } : {});
 // Vidéos (reels, clips des transitions, studio) : copiées dans assets/media/ (le site ne dépend
 // plus du portfolio). Hors du dépôt docs/ (.gitignore) : seul le build Cloudflare les publie.
@@ -706,6 +709,31 @@ async function main() {
   if (fs.existsSync(ogSrc)) fs.cpSync(ogSrc, rel(OUT_DIR, 'assets', 'products-og'), { recursive: true });
   if (LOCAL_MEDIA) fs.cpSync(rel(ROOT, 'assets', 'media'), rel(OUT_DIR, 'assets', 'media'), { recursive: true });
   fs.copyFileSync(rel(ROOT, 'generator', '_headers'), rel(OUT_DIR, '_headers'));
+  // Anciennes adresses BigCartel : /product/<ancien nom> -> /product/<permalink> (301). Les 27 adresses de l'ancienne
+  // boutique existent à l'identique ; on ajoute les variantes que l'ancien site acceptait ou que d'anciens liens
+  // (Instagram, mails) peuvent contenir : nom de la pièce, sans accents, tirets/underscores échangés.
+  // Toute autre adresse /product/... inconnue est renvoyée vers /products par functions/product/[[path]].js.
+  if (BASE_PATH === '') {
+    const strip = (s) => String(s).normalize('NFD').replace(/[̀-ͯ]/g, '');
+    const slug = (s) => strip(s).toLowerCase().replace(/[^a-z0-9_]+/g, '-').replace(/^-+|-+$/g, '');
+    const real = new Set(catalog.products.map((p) => p.permalink));
+    const seen = new Set();
+    const lines = [];
+    for (const p of catalog.products) {
+      const names = [p.permalink, p.name, p.name_en].filter(Boolean);
+      const forms = new Set();
+      for (const n of names) {
+        const a = slug(n);
+        forms.add(a); forms.add(a.replace(/_/g, '-')); forms.add(a.replace(/-/g, '_'));
+      }
+      for (const f of forms) {
+        if (!f || real.has(f) || seen.has(f)) continue;
+        seen.add(f);
+        lines.push(`/product/${f} /product/${encodeURI(p.permalink)}/ 301`, `/product/${f}/ /product/${encodeURI(p.permalink)}/ 301`);
+      }
+    }
+    fs.writeFileSync(rel(OUT_DIR, '_redirects'), '# Généré par generator/build.js : anciennes adresses BigCartel.\n' + lines.join('\n') + '\n');
+  }
   // /favicon.ico a la racine du site (certains navigateurs le demandent d'office).
   fs.copyFileSync(rel(ROOT, 'assets', 'theme', 'favicon.ico'), rel(OUT_DIR, 'favicon.ico'));
   // Manifest du site (icones 192/512 + maskable) : lie depuis FAVICON_LINKS.
@@ -728,6 +756,13 @@ async function main() {
   // pages maison), jamais passé par le préfixe /shop (Sveltia lit
   // config.yml à côté de la page).
   fs.cpSync(rel(ROOT, 'admin'), rel(OUT_DIR, 'admin'), { recursive: true });
+  // Adresse du site pour le Worker (/site-config.json) et pour le lien « voir le site » de Sveltia.
+  write('site-config.json', JSON.stringify({ site_url: SHOP_SETTINGS.site_url.replace(/\/$/, '') }) + '\n');
+  {
+    const cfgPath = rel(OUT_DIR, 'admin', 'config.yml');
+    const su = SHOP_SETTINGS.site_url.replace(/\/$/, '');
+    fs.writeFileSync(cfgPath, fs.readFileSync(cfgPath, 'utf8').replace(/^(site_url|display_url):.*\r?\n/gm, '').replace(/\s*$/, '\n') + `site_url: ${su}\ndisplay_url: ${su}\n`);
+  }
   // Catégories pour l'assistant « nouvelle pièce » (le dépôt devient privé : plus de lecture directe sur GitHub).
   fs.copyFileSync(rel(DATA_DIR, 'categories.json'), rel(OUT_DIR, 'admin', 'categories.json'));
 

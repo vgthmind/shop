@@ -392,9 +392,6 @@
             // Pièces vendues entre-temps : retirées du panier, on le dit.
             var gone = res.data.problems.filter(function (p) { return p.reason === 'vendue' || p.reason === 'introuvable' || p.reason === 'bientot'; })
               .map(function (p) { return p.slug; });
-            var held = res.data.problems.filter(function (p) { return p.reason === 'reservee'; })
-              .map(function (p) { return p.slug; });
-            var heldNames = items.filter(function (it) { return held.indexOf(it.slug) !== -1; }).map(function (it) { return nameOf(it); });
             var names = items.filter(function (it) { return gone.indexOf(it.slug) !== -1; }).map(function (it) { return nameOf(it); });
             gone.forEach(function (slug) { items = removeItem(slug); });
             // Petite série : il en reste moins que demandé -> quantité ramenée au stock.
@@ -409,10 +406,8 @@
             message = soonSlugs.length && soonSlugs.length === gone.length
               ? L('Not on sale yet: ', 'Pas encore en vente : ') + names.join(', ') + L('. Removed from your cart.', '. Retiré du panier.')
               : names.length
-              ? L('Sorry, already sold: ', 'Désolé, déjà vendu : ') + names.join(', ') + L('. Removed from your cart.', '. Retiré du panier.')
-              : heldNames.length
-                ? L('Someone is paying for ' + heldNames.join(', ') + ' right now, try again in 30 min.', 'Quelqu’un est en train de payer ' + heldNames.join(', ') + ', réessaie dans 30 min.')
-                : short.length
+              ? L('Sold in the meantime: ', 'Pièce vendue entre-temps : ') + names.join(', ') + L('. Removed from your cart.', '. Retirée du panier.')
+              : short.length
                   ? L('Fewer left than requested, quantity updated.', 'Il en reste moins que demandé, quantité ajustée.')
                   : L('Some pieces ship to France only.', 'Livraison en France uniquement pour certaines pièces.');
             if (items.length === 0) { root.remove(); location.reload(); return; }
@@ -497,6 +492,19 @@
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ id: decodeURIComponent(id[1]) }),
+      }).then(function (r) { return r.json(); }).then(function (d) {
+        // Quelqu'un d'autre a payé la pièce pendant que tu étais sur la page de paiement : on le dit, et on la retire du panier.
+        var sold = (d && d.sold) || [];
+        if (!sold.length) return;
+        var cart = readCart();
+        var names = cart.filter(function (it) { return sold.indexOf(it.slug) !== -1; }).map(function (it) { return nameOf(it); });
+        writeCart(cart.filter(function (it) { return sold.indexOf(it.slug) === -1; }));
+        var box = document.querySelector('[data-vg-order="cancel"]');
+        var p = document.createElement('p');
+        p.className = 'vg-alert vg-alert-error';
+        p.setAttribute('role', 'alert');
+        p.textContent = '⚠ ' + L('Sold in the meantime', 'Pièce vendue entre-temps') + (names.length ? ' : ' + names.join(', ') : '') + L('. Someone paid for it just before you; nothing was charged.', '. Quelqu’un l’a payée juste avant toi ; rien n’a été débité.');
+        box.insertBefore(p, box.firstChild);
       }).catch(function () {});
       return;
     }

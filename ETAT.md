@@ -1,5 +1,5 @@
 # ETAT (2026-10-13)
-- Fait : image d'accueil = veste argentée N&B (ex cover du portfolio, Archives BigCartel/…/assets/cover/cover.jpg) dans assets/theme/cover.png (2000×1273) + variantes WebP ; build.js : dimensions 2000×1273. Cadrage/dégradé CSS inchangés. Tests 219 OK.
-- Worker : code inchangé, non redéployé (en ligne : 1190c9d0 ; secours c359e55f).
-- Fait : image de partage (og:image) = veste argentée 1200×630 (assets/theme/bc/cover-og.jpg), fiches produit gardent leur carré 1200.
-- Reste : vgthmind vérifie l'accueil en ligne (PC + iPhone).
+- Audit en cours par lots. Lot 1 prêt en local (admin 2026-10-13-e, Worker modifié, site : réglage central site_url dans data/shop-settings.json), non déployé : attend l'OK de vgthmind.
+- En ligne : Worker 1190c9d0 (secours c359e55f), admin 2026-10-13-d, site d613725.
+- Frais de port : calcul inchangé en attendant la validation du tableau par vgthmind (anciennes pièces = port fixe le plus élevé du panier ; grille poids/zones seulement pour les pièces du studio).
+- Détails et suites : ../SITE/ETAT.md, chantier/JOURNAL.md (dépôt vgthmind-chantier).

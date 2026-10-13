@@ -12,7 +12,7 @@ const ROOT = path.resolve(fileURLToPath(new URL('..', import.meta.url)));
 const out = mkdtempSync(path.join(tmpdir(), 'vg-root-'));
 execFileSync('node', ['generator/build.js'], {
   cwd: ROOT, stdio: 'pipe',
-  env: { ...process.env, OUT_DIR: out, BASE_PATH: '', SITE_URL: 'https://www.vgthmind.org', SHOP_PUBLIC: '1' },
+  env: { ...process.env, OUT_DIR: out, BASE_PATH: '', SITE_URL_FORCE: 'https://www.vgthmind.org', SHOP_PUBLIC: '1' },
 });
 const page = (p) => readFileSync(path.join(out, p, 'index.html'), 'utf8');
 test.after(() => rmSync(out, { recursive: true, force: true }));

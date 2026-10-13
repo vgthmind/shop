@@ -3,8 +3,9 @@
 // la dernière activité) contient la session signée par le Worker ; on la fait vérifier par le Worker
 // (/admin/renew, qui répond 401 si la session est fausse ou expirée). Aucun secret n'est stocké ici.
 const WORKER = 'https://vgthmind-shop-checkout.vgthm66.workers.dev';
-// Restent publics : la page de connexion, son script, l'éditeur Sveltia (sa propre connexion GitHub) et ce qu'il faut à l'installation de l'appli.
-const PUBLIC = /^\/admin\/?$|^\/admin\/(index|connexion)(\.html)?$|^\/admin\/(config\.yml|vg-admin-auth\.js|manifest\.webmanifest|sw\.js|icon-\d+\.png|vendor\/.*)$/;
+// Restent publics : la page de connexion, son script, la config de Sveltia et ce qu'il faut à l'installation de l'appli.
+// L'éditeur Sveltia lui-même (/admin/) demande la connexion comme le reste.
+const PUBLIC = /^\/admin\/connexion(\.html)?$|^\/admin\/(config\.yml|vg-admin-auth\.js|manifest\.webmanifest|sw\.js|icon-\d+\.png|vendor\/.*)$/;
 
 function cookie(request, name) {
   const m = new RegExp('(?:^|; )' + name + '=([^;]*)').exec(request.headers.get('Cookie') || '');
