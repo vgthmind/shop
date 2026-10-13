@@ -19,9 +19,17 @@
       return;
     }
   } catch (e) {}
+  // Lien « Détourage iPhone » (…/studio-photo.html#srv=<tunnel>&k=<mot de passe>) : retenu dès la première page ouverte, même si la
+  // connexion s'intercale (le « # » se perdait). Le studio lit ces valeurs ; rien n'est envoyé à un site.
+  try {
+    var hp = new URLSearchParams((location.hash || '').replace(/^#/, ''));
+    var hs = (hp.get('srv') || '').trim().replace(/[/]$/, ''), hk = (hp.get('k') || '').trim();
+    if (/^https:[/][/][a-z0-9-]+[.]trycloudflare[.]com$/i.test(hs)) localStorage.setItem('vg-detourage-url', hs);
+    if (/^[A-Za-z0-9_-]{16,128}$/.test(hk)) localStorage.setItem('vg-detourage-token', hk);
+  } catch (e) {}
   // Numéro de version de l'admin, affiché en petit en bas à gauche de chaque page : permet de vérifier qu'on a bien la dernière version.
   // À changer à chaque mise à jour de l'admin (aaaa-mm-jj + lettre).
-  window.VG_ADMIN_VERSION = '2026-10-13-l';
+  window.VG_ADMIN_VERSION = '2026-10-14-a';
   function showVersion() {
     try {
       var d = document.createElement('div'); d.id = 'vg-admin-version'; d.textContent = 'Admin v' + window.VG_ADMIN_VERSION;
@@ -33,13 +41,13 @@
 
   var KEY = 'vg-admin-session';
   var LAST = 'vg-admin-last'; // derniere activite (deconnexion automatique apres 30 min sans rien faire)
-  var IDLE_MS = 30 * 60 * 1000;
+  var IDLE_MS = 4 * 60 * 60 * 1000; // 4 h sans rien faire (chaque reconnexion = une autorisation GitHub : trop de demandes = « Reauthorization required »)
   function idle() { try { var t = Number(localStorage.getItem(LAST)) || 0; return t > 0 && Date.now() - t > IDLE_MS; } catch (e) { return false; } }
   // Cookie de session lu par le garde des pages /admin (functions/admin/_middleware.js) : même valeur que la session,
   // valable 30 min après la dernière activité (le garde refuse les pages admin sans lui).
   function setCookie(v) {
     try {
-      document.cookie = 'vg-admin=' + (v ? encodeURIComponent(v) : '') + '; path=/; max-age=' + (v ? 1800 : 0) + '; SameSite=Strict' + (location.protocol === 'https:' ? '; Secure' : '');
+      document.cookie = 'vg-admin=' + (v ? encodeURIComponent(v) : '') + '; path=/; max-age=' + (v ? 14400 : 0) + '; SameSite=Strict' + (location.protocol === 'https:' ? '; Secure' : '');
     } catch (e) {}
   }
   function touch() {
@@ -76,6 +84,8 @@
     var last = 0;
     window.addEventListener(ev, function () { if (Date.now() - last > 10000) { last = Date.now(); if (window.vgAdminToken()) touch(); } }, { passive: true });
   });
+  document.addEventListener('visibilitychange', function () { if (!document.hidden) { renew(); if (window.vgAdminToken()) touch(); } });
+  window.addEventListener('pageshow', function (e) { if (e.persisted) { renew(); if (window.vgAdminToken()) touch(); } });
   setInterval(function () { if (localStorage.getItem(KEY) && idle()) { window.vgAdminLogout(); location.reload(); } }, 60000);
 
   // Admin installable (PWA) : manifeste + service worker.
@@ -105,19 +115,24 @@
   function waitForSession(code) {
     return new Promise(function (resolve, reject) {
       var stop = Date.now() + LC_MS, busy = false, done = false, timer;
-      function finish(fn, v) { if (done) return; done = true; clearInterval(timer); document.removeEventListener('visibilitychange', check); window.removeEventListener('focus', check); window.removeEventListener('pageshow', check); fn(v); }
+      function finish(fn, v) { if (done) return; done = true; clearInterval(timer); document.removeEventListener('visibilitychange', wake); window.removeEventListener('focus', wake); window.removeEventListener('pageshow', wake); fn(v); }
+      var busySince = 0;
       function check() {
-        if (done || busy) return;
-        if (Date.now() > stop) { finish(reject, new Error('Connexion trop longue : réessaie.')); return; }
-        busy = true;
-        fetch(ENDPOINT + '/auth/claim?code=' + code, { cache: 'no-store' })
+        if (done) return;
+        if (Date.now() > stop) { finish(reject, new Error('Connexion trop longue : touche « Se connecter » pour réessayer.')); return; }
+        if (busy && Date.now() - busySince < 6000) return; // une demande est déjà en cours (sinon : elle est considérée comme perdue)
+        busy = true; busySince = Date.now();
+        var ctl = window.AbortController ? new AbortController() : null, to = setTimeout(function () { busy = false; if (ctl) ctl.abort(); }, 6000);
+        fetch(ENDPOINT + '/auth/claim?code=' + code, { cache: 'no-store', signal: ctl ? ctl.signal : undefined })
           .then(function (r) { return r.ok ? r.json() : null; })
-          .then(function (d) { busy = false; if (d && d.session) finish(resolve, d.session); })
-          .catch(function () { busy = false; });
+          .then(function (d) { clearTimeout(to); busy = false; if (d && d.session) finish(resolve, d.session); })
+          .catch(function () { clearTimeout(to); busy = false; });
       }
+      // Retour au premier plan (appli iPhone revenue de la fenêtre GitHub) : on repart de zéro, même si une demande était restée en suspens.
+      function wake() { if (!document.hidden) { busy = false; check(); } }
       timer = setInterval(check, 1500);
-      document.addEventListener('visibilitychange', check);
-      window.addEventListener('focus', check); window.addEventListener('pageshow', check);
+      document.addEventListener('visibilitychange', wake);
+      window.addEventListener('focus', wake); window.addEventListener('pageshow', wake);
       check();
     });
   }
@@ -127,12 +142,24 @@
     return code ? waitForSession(code).then(function (session) { acceptSession(session); return session; }) : null;
   };
 
+  function installed() {
+    try { return !!(navigator.standalone || (window.matchMedia && matchMedia('(display-mode: standalone)').matches)); } catch (e) { return false; }
+  }
+  window.vgAdminInstalled = installed;
   window.vgAdminLogin = function () {
     return new Promise(function (resolve, reject) {
+      // Une connexion a démarré il y a moins de 90 s : on la reprend au lieu de redemander une autorisation à GitHub.
+      try {
+        var cur = (localStorage.getItem(LC) || '').split(':');
+        if (cur[0] && Date.now() - Number(cur[1]) < 90000) { waitForSession(cur[0]).then(function (ss) { acceptSession(ss); resolve(ss); }, reject); return; }
+      } catch (e) {}
       var code = randomCode();
       try { localStorage.setItem(LC, code + ':' + Date.now()); } catch (e) {}
+      var inApp = installed();
       var url = ENDPOINT + '/auth?provider=github&site_id=' + encodeURIComponent(location.hostname) + '&lc=' + code
-        + '&return=' + encodeURIComponent(location.origin + '/admin/connexion' + location.search);
+        + '&return=' + encodeURIComponent(location.origin + '/admin/connexion' + location.search) + (inApp ? '&mode=page' : '');
+      // Appli installée : pas de fenêtre à part, la connexion se fait dans cette page et revient directement sur l'admin.
+      if (inApp) { location.href = url; return; }
       var popup = window.open(url, 'vg-github-login', 'width=600,height=720');
       var settled = false;
       function ok(session) { if (settled) return; settled = true; window.removeEventListener('message', onMessage); acceptSession(session); resolve(session); }
@@ -171,7 +198,7 @@
     try {
       if (/\/admin\/connexion/.test(location.pathname) || document.getElementById('vg-logout-global')) return;
       var st = document.createElement('style');
-      st.textContent = '#logout{display:none!important}body{padding-top:48px!important}#vg-logout-global{position:absolute;top:8px;right:8px;z-index:50;font:600 13px/1 system-ui,sans-serif;padding:9px 14px;border-radius:999px;border:1px solid #171717;background:#171717;color:#fff;cursor:pointer}';
+      st.textContent = '#logout{display:none!important}#vg-logout-global{font:600 13px/1 system-ui,sans-serif;padding:10px 14px;border-radius:999px;border:1px solid #6b6860;background:transparent;color:#171717;cursor:pointer;margin:6px 0}#vg-logout-bar{display:flex;justify-content:flex-end;padding:6px 12px 0}';
       document.head.appendChild(st);
       var b = document.createElement('button');
       b.type = 'button'; b.id = 'vg-logout-global'; b.textContent = 'Se déconnecter';
@@ -181,7 +208,10 @@
         function leave() { if (!done) { done = true; location.replace(SITE_URL + '/admin/connexion'); } }
         window.vgAdminLogout(true).then(leave); setTimeout(leave, 2500);
       });
-      document.body.appendChild(b);
+      // Placé tout en bas de la page, dans le flux (aucun chevauchement possible, sur PC comme sur iPhone).
+      var bar = document.createElement('div'); bar.id = 'vg-logout-bar'; bar.appendChild(b);
+      bar.style.cssText = 'display:flex;justify-content:center;padding:28px 12px 56px';
+      document.body.appendChild(bar);
     } catch (e) {}
   }
   if (document.body) logoutButton(); else document.addEventListener('DOMContentLoaded', logoutButton);
@@ -190,7 +220,7 @@
   window.vgAdminApi = function (path, opts) {
     opts = opts || {};
     opts.headers = Object.assign({ Authorization: 'Bearer ' + window.vgAdminToken(), 'Content-Type': 'application/json' }, opts.headers || {});
-    return fetch(ENDPOINT + path, opts).then(function (r) {
+    return fetch(ENDPOINT + path, opts).catch(function () { throw new Error('Pas de connexion au serveur : vérifie ton réseau et réessaie.'); }).then(function (r) {
       return r.json().then(function (d) {
         if (!r.ok) {
           if (r.status === 401) window.vgAdminLogout();
