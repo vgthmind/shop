@@ -10,7 +10,7 @@ workers_dev = true
 # Emails client : variable MAIL_FROM (domaine verifie dans Resend), vide = alerte seule.
 [vars]
 # Sites autorisés (séparés par des virgules) : ancien aperçu, Cloudflare Pages, domaine.
-ALLOWED_ORIGIN = "https://vgthmind.github.io,https://vgthmind-shop.pages.dev,https://www.vgthmind.org,https://vgthmind.org"
+ALLOWED_ORIGIN = "https://vgthmind-shop.pages.dev,https://vgthmind.org,https://www.vgthmind.org,https://vgthmind.github.io"
 SITE_BASE = "https://vgthmind-shop.pages.dev"
 # Où le Worker lit le catalogue (products.json) et la grille d'envoi : le site Cloudflare Pages (plus l'aperçu GitHub, arrêté).
 CATALOG_BASE = "https://vgthmind-shop.pages.dev"

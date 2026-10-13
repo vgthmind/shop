@@ -681,6 +681,11 @@ async function checkout(request: Request, env: Env, key: string, json: JsonFn): 
   params.set('custom_text[submit][message]', siteLang === 'en'
     ? `By paying, you accept the [terms of sale](${cgv}).`
     : `En payant, tu acceptes les [conditions de vente](${cgv}).`);
+  if (OUTRE_MER.includes(country)) {
+    params.set('custom_text[shipping_address][message]', siteLang === 'en'
+      ? 'Local taxes (octroi de mer) may be charged on delivery.'
+      : 'Des taxes locales (octroi de mer) peuvent être demandées à la réception du colis.');
+  }
   if (siteLang) params.set('metadata[lang]', siteLang);
   params.set('metadata[slugs]', slugList);
   params.set('metadata[items]', itemList);
@@ -1380,6 +1385,8 @@ async function alertAdmin(env: Env, kind: string, subject: string, detail: strin
 // Moyens de paiement des pages Stripe (commandes, acomptes, soldes) : fixés ici et non par le tableau de bord Stripe.
 // Carte (Apple Pay et Google Pay sont proposés automatiquement sur la carte) et Bancontact ; ni Klarna ni EPS.
 export const PAYMENT_METHODS = ['card', 'bancontact'];
+// Territoires d'outre-mer livrés au vrai tarif Colissimo Outre-mer : mention de l'octroi de mer sur la page de paiement.
+const OUTRE_MER = ['GP', 'MQ', 'GF', 'RE', 'YT', 'PM', 'MF', 'BL', 'NC', 'PF', 'WF', 'TF'];
 
 async function stripeCall(key: string, method: string, path: string, params?: URLSearchParams, extraHeaders?: Record<string, string>) {
   if (method === 'POST' && path === '/v1/checkout/sessions' && params && !params.has('payment_method_types[0]')) {

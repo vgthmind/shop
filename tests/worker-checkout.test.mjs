@@ -40,15 +40,15 @@ const post = (path, body) => worker.fetch(new Request('http://w.invalid' + path,
 const items = (...s) => s.map((slug) => ({ slug, qty: 1 }));
 const reset = () => { stripeBodies = []; released = 0; };
 
-test('quote : pays par pays pour une nouvelle pièce', async () => {
+test('quote : pays par pays pour une pièce (grille : zone A 18 €, reste du monde 39 €, relevés au vrai coût arrondi à l’euro)', async () => {
   const got = {};
   for (const c of ['FR', 'BE', 'DE', 'CA']) { const j = await (await post('/shipping/quote', { items: items('new1'), country: c })).json(); assert.equal(j.ok, true, c); got[c] = j.cents; }
-  assert.deepEqual(got, { FR: 0, BE: 1500, DE: 1500, CA: 2900 });
+  assert.deepEqual(got, { FR: 0, BE: 2000, DE: 2000, CA: 4000 }); // 500 g + carton 138 g = 638 g -> tranche 1 kg
 });
 
-test('quote : ancienne pièce seule = son port fixe (France 4, Canada 8)', async () => {
-  assert.equal((await (await post('/shipping/quote', { items: items('old1'), country: 'FR' })).json()).cents, 400);
-  assert.equal((await (await post('/shipping/quote', { items: items('old1'), country: 'CA' })).json()).cents, 800);
+test('quote : une ancienne pièce passe aussi par la grille (plus de port fixe : France offerte, Canada 39 €)', async () => {
+  assert.equal((await (await post('/shipping/quote', { items: items('old1'), country: 'FR' })).json()).cents, 0);
+  assert.equal((await (await post('/shipping/quote', { items: items('old1'), country: 'CA' })).json()).cents, 3900); // 238 g -> 500 g = 35,19 : forfait 39 €
 });
 
 test('quote : refus (pays bloqué, sans pays, pièce France seulement, pièce inconnue)', async () => {
@@ -65,37 +65,37 @@ test('checkout Belgique : port belge, adresse limitée à la Belgique', async ()
   reset();
   const r = await post('/checkout', { items: items('new1'), country: 'be', cart_id: 'cart-12345678' });
   assert.equal(r.status, 200); const s = stripeBodies[0];
-  assert.equal(s.get('shipping_options[0][shipping_rate_data][fixed_amount][amount]'), '1500');
+  assert.equal(s.get('shipping_options[0][shipping_rate_data][fixed_amount][amount]'), '2000');
   assert.deepEqual([...s.entries()].filter(([k]) => k.startsWith('shipping_address_collection')).map(([, v]) => v), ['BE']);
   assert.equal(s.get('metadata[country]'), 'BE');
 });
 
-test('checkout Canada : 29 €, adresse limitée au Canada', async () => {
+test('checkout Canada : 40 € (39,19 arrondi), adresse limitée au Canada', async () => {
   reset();
   await post('/checkout', { items: items('new1'), country: 'CA', cart_id: 'cart-12345678' });
   const s = stripeBodies[0];
-  assert.equal(s.get('shipping_options[0][shipping_rate_data][fixed_amount][amount]'), '2900');
+  assert.equal(s.get('shipping_options[0][shipping_rate_data][fixed_amount][amount]'), '4000');
   assert.deepEqual([...s.entries()].filter(([k]) => k.startsWith('shipping_address_collection')).map(([, v]) => v), ['CA']);
 });
 
-test('checkout France : port France, adresse limitée à la France', async () => {
+test('checkout France : livraison offerte, adresse limitée à la France', async () => {
   reset();
   await post('/checkout', { items: items('old1'), country: 'FR', cart_id: 'cart-12345678' });
   const s = stripeBodies[0];
-  assert.equal(s.get('shipping_options[0][shipping_rate_data][fixed_amount][amount]'), '400');
+  assert.equal(s.get('shipping_options[0][shipping_rate_data][fixed_amount][amount]'), '0');
   assert.deepEqual([...s.entries()].filter(([k]) => k.startsWith('shipping_address_collection')).map(([, v]) => v), ['FR']);
 });
 
-test('checkout ancienne pièce, Canada : port fixe d’avant (8 €)', async () => {
+test('checkout Réunion : vrai tarif La Poste au poids, sans livraison offerte', async () => {
   reset();
-  await post('/checkout', { items: items('old1'), country: 'CA', cart_id: 'cart-12345678' });
-  assert.equal(stripeBodies[0].get('shipping_options[0][shipping_rate_data][fixed_amount][amount]'), '800');
+  await post('/checkout', { items: items('new1'), country: 'RE', cart_id: 'cart-12345678' });
+  assert.equal(stripeBodies[0].get('shipping_options[0][shipping_rate_data][fixed_amount][amount]'), '1900'); // 638 g -> 1 kg OM1
 });
 
-test('checkout mixte : poids total, un seul colis', async () => {
+test('checkout plusieurs pièces : poids total, un seul colis', async () => {
   reset();
   await post('/checkout', { items: items('old1', 'new1'), country: 'DE', cart_id: 'cart-12345678' });
-  assert.equal(stripeBodies[0].get('shipping_options[0][shipping_rate_data][fixed_amount][amount]'), '1500');
+  assert.equal(stripeBodies[0].get('shipping_options[0][shipping_rate_data][fixed_amount][amount]'), '2000'); // 600 g + carton = 738 g -> 1 kg
 });
 
 test('checkout : pays refusé = pas de session Stripe, réservation relâchée', async () => {
@@ -107,14 +107,12 @@ test('checkout : pays refusé = pas de session Stripe, réservation relâchée',
   assert.equal(r2.status, 409); assert.equal(stripeBodies.length, 0);
 });
 
-test('checkout international sans pays : refusé pour une nouvelle pièce, ancien comportement pour une ancienne', async () => {
+test('checkout international sans pays : refusé (jamais un prix au hasard)', async () => {
   reset();
   const r = await post('/checkout', { items: items('new1'), region: 'intl', cart_id: 'cart-12345678' });
   assert.equal(r.status, 409); assert.equal((await r.json()).code, 'country_required'); assert.equal(stripeBodies.length, 0);
   const r2 = await post('/checkout', { items: items('old1'), region: 'intl', cart_id: 'cart-12345678' });
-  assert.equal(r2.status, 200);
-  assert.equal(stripeBodies[0].get('shipping_options[0][shipping_rate_data][fixed_amount][amount]'), '800');
-  assert.ok([...stripeBodies[0].entries()].filter(([k]) => k.startsWith('shipping_address_collection')).length > 100); // liste complète, comme avant
+  assert.equal(r2.status, 409); assert.equal((await r2.json()).code, 'country_required'); assert.equal(stripeBodies.length, 0);
 });
 
 test('checkout : pièce France seulement vers l’international refusée', async () => {

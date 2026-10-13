@@ -1,5 +1,5 @@
 {
-  "fetched_at": "2026-10-12T18:33:32.469Z",
+  "fetched_at": "2026-10-13T14:10:17.560Z",
   "source": "data/products/*.json (admin)",
   "store": {
     "name": "vgthmind",
@@ -71,7 +71,7 @@
       "option_groups": [],
       "shipping": [
         {
-          "amount_alone": 5,
+          "amount_alone": 0,
           "amount_with_others": 0,
           "country": {
             "id": 15,
@@ -80,13 +80,14 @@
           }
         },
         {
-          "amount_alone": 25,
+          "amount_alone": 40,
           "amount_with_others": 0
         }
       ],
       "weight_g": 550,
       "mode": "colis",
       "alone": false,
+      "shipping_derived": true,
       "stripe_payment_link": "",
       "quantity": 1,
       "unique": true,
@@ -171,7 +172,7 @@
       "option_groups": [],
       "shipping": [
         {
-          "amount_alone": 5,
+          "amount_alone": 0,
           "amount_with_others": 0,
           "country": {
             "id": 15,
@@ -180,13 +181,14 @@
           }
         },
         {
-          "amount_alone": 25,
+          "amount_alone": 40,
           "amount_with_others": 0
         }
       ],
       "weight_g": 550,
       "mode": "colis",
       "alone": false,
+      "shipping_derived": true,
       "stripe_payment_link": "",
       "quantity": 1,
       "unique": true,
@@ -271,7 +273,7 @@
       "option_groups": [],
       "shipping": [
         {
-          "amount_alone": 5,
+          "amount_alone": 0,
           "amount_with_others": 0,
           "country": {
             "id": 15,
@@ -280,13 +282,14 @@
           }
         },
         {
-          "amount_alone": 25,
+          "amount_alone": 40,
           "amount_with_others": 0
         }
       ],
       "weight_g": 550,
       "mode": "colis",
       "alone": false,
+      "shipping_derived": true,
       "stripe_payment_link": "",
       "quantity": 1,
       "unique": true,
@@ -371,7 +374,7 @@
       "option_groups": [],
       "shipping": [
         {
-          "amount_alone": 5,
+          "amount_alone": 0,
           "amount_with_others": 0,
           "country": {
             "id": 15,
@@ -380,13 +383,14 @@
           }
         },
         {
-          "amount_alone": 25,
+          "amount_alone": 40,
           "amount_with_others": 0
         }
       ],
       "weight_g": 550,
       "mode": "colis",
       "alone": false,
+      "shipping_derived": true,
       "stripe_payment_link": "",
       "quantity": 1,
       "unique": true,
@@ -471,7 +475,7 @@
       "option_groups": [],
       "shipping": [
         {
-          "amount_alone": 5,
+          "amount_alone": 0,
           "amount_with_others": 0,
           "country": {
             "id": 15,
@@ -480,13 +484,14 @@
           }
         },
         {
-          "amount_alone": 25,
+          "amount_alone": 40,
           "amount_with_others": 0
         }
       ],
       "weight_g": 550,
       "mode": "colis",
       "alone": false,
+      "shipping_derived": true,
       "stripe_payment_link": "",
       "quantity": 1,
       "unique": true,
@@ -565,7 +570,7 @@
       "option_groups": [],
       "shipping": [
         {
-          "amount_alone": 5,
+          "amount_alone": 0,
           "amount_with_others": 0,
           "country": {
             "id": 15,
@@ -574,13 +579,14 @@
           }
         },
         {
-          "amount_alone": 30,
+          "amount_alone": 40,
           "amount_with_others": 0
         }
       ],
       "weight_g": 420,
       "mode": "colis",
-      "alone": true,
+      "alone": false,
+      "shipping_derived": true,
       "stripe_payment_link": "",
       "quantity": 0,
       "unique": true,
@@ -659,7 +665,7 @@
       "option_groups": [],
       "shipping": [
         {
-          "amount_alone": 5,
+          "amount_alone": 0,
           "amount_with_others": 0,
           "country": {
             "id": 15,
@@ -668,13 +674,14 @@
           }
         },
         {
-          "amount_alone": 30,
+          "amount_alone": 40,
           "amount_with_others": 0
         }
       ],
       "weight_g": 420,
       "mode": "colis",
-      "alone": true,
+      "alone": false,
+      "shipping_derived": true,
       "stripe_payment_link": "",
       "quantity": 1,
       "unique": true,
@@ -753,7 +760,7 @@
       "option_groups": [],
       "shipping": [
         {
-          "amount_alone": 5,
+          "amount_alone": 0,
           "amount_with_others": 0,
           "country": {
             "id": 15,
@@ -762,13 +769,14 @@
           }
         },
         {
-          "amount_alone": 30,
+          "amount_alone": 40,
           "amount_with_others": 0
         }
       ],
       "weight_g": 420,
       "mode": "colis",
-      "alone": true,
+      "alone": false,
+      "shipping_derived": true,
       "stripe_payment_link": "",
       "quantity": 1,
       "unique": true,
@@ -862,7 +870,7 @@
       "option_groups": [],
       "shipping": [
         {
-          "amount_alone": 5,
+          "amount_alone": 0,
           "amount_with_others": 0,
           "country": {
             "id": 15,
@@ -871,13 +879,14 @@
           }
         },
         {
-          "amount_alone": 9,
+          "amount_alone": 40,
           "amount_with_others": 0
         }
       ],
       "weight_g": 550,
       "mode": "colis",
-      "alone": true,
+      "alone": false,
+      "shipping_derived": true,
       "stripe_payment_link": "",
       "quantity": 1,
       "unique": true,
@@ -967,7 +976,7 @@
       "option_groups": [],
       "shipping": [
         {
-          "amount_alone": 4,
+          "amount_alone": 0,
           "amount_with_others": 0,
           "country": {
             "id": 15,
@@ -976,13 +985,14 @@
           }
         },
         {
-          "amount_alone": 8.38,
+          "amount_alone": 39,
           "amount_with_others": 0
         }
       ],
       "weight_g": 180,
       "mode": "colis",
       "alone": false,
+      "shipping_derived": true,
       "stripe_payment_link": "",
       "quantity": 1,
       "unique": true,
@@ -1076,7 +1086,7 @@
       "option_groups": [],
       "shipping": [
         {
-          "amount_alone": 5,
+          "amount_alone": 0,
           "amount_with_others": 0,
           "country": {
             "id": 15,
@@ -1085,13 +1095,14 @@
           }
         },
         {
-          "amount_alone": 10,
+          "amount_alone": 40,
           "amount_with_others": 0
         }
       ],
       "weight_g": 550,
       "mode": "colis",
-      "alone": true,
+      "alone": false,
+      "shipping_derived": true,
       "stripe_payment_link": "",
       "quantity": 1,
       "unique": true,
@@ -1185,7 +1196,7 @@
       "option_groups": [],
       "shipping": [
         {
-          "amount_alone": 5.5,
+          "amount_alone": 0,
           "amount_with_others": 0,
           "country": {
             "id": 15,
@@ -1194,13 +1205,14 @@
           }
         },
         {
-          "amount_alone": 15,
+          "amount_alone": 40,
           "amount_with_others": 0
         }
       ],
       "weight_g": 570,
       "mode": "colis",
-      "alone": true,
+      "alone": false,
+      "shipping_derived": true,
       "stripe_payment_link": "",
       "quantity": 1,
       "unique": true,
@@ -1298,13 +1310,14 @@
           }
         },
         {
-          "amount_alone": 9.8,
+          "amount_alone": 39,
           "amount_with_others": 0
         }
       ],
       "weight_g": 300,
       "mode": "colis",
       "alone": false,
+      "shipping_derived": true,
       "stripe_payment_link": "",
       "quantity": 1,
       "unique": true,
@@ -1402,13 +1415,14 @@
           }
         },
         {
-          "amount_alone": 10.9,
+          "amount_alone": 40,
           "amount_with_others": 0
         }
       ],
       "weight_g": 550,
       "mode": "colis",
-      "alone": true,
+      "alone": false,
+      "shipping_derived": true,
       "stripe_payment_link": "",
       "quantity": 1,
       "unique": true,
@@ -1506,13 +1520,14 @@
           }
         },
         {
-          "amount_alone": 10.9,
+          "amount_alone": 40,
           "amount_with_others": 0
         }
       ],
       "weight_g": 550,
       "mode": "colis",
-      "alone": true,
+      "alone": false,
+      "shipping_derived": true,
       "stripe_payment_link": "",
       "quantity": 1,
       "unique": true,
@@ -1610,13 +1625,14 @@
           }
         },
         {
-          "amount_alone": 10.2,
+          "amount_alone": 40,
           "amount_with_others": 0
         }
       ],
       "weight_g": 550,
       "mode": "colis",
-      "alone": true,
+      "alone": false,
+      "shipping_derived": true,
       "stripe_payment_link": "",
       "quantity": 1,
       "unique": true,
@@ -1714,13 +1730,14 @@
           }
         },
         {
-          "amount_alone": 8.45,
+          "amount_alone": 40,
           "amount_with_others": 0
         }
       ],
       "weight_g": 400,
       "mode": "colis",
-      "alone": true,
+      "alone": false,
+      "shipping_derived": true,
       "stripe_payment_link": "",
       "quantity": 1,
       "unique": true,
@@ -1799,7 +1816,7 @@
       "option_groups": [],
       "shipping": [
         {
-          "amount_alone": 2.35,
+          "amount_alone": 0,
           "amount_with_others": 0,
           "country": {
             "id": 15,
@@ -1808,13 +1825,14 @@
           }
         },
         {
-          "amount_alone": 9.85,
+          "amount_alone": 40,
           "amount_with_others": 0
         }
       ],
       "weight_g": 420,
       "mode": "colis",
-      "alone": true,
+      "alone": false,
+      "shipping_derived": true,
       "stripe_payment_link": "",
       "quantity": 1,
       "unique": true,
@@ -1903,7 +1921,7 @@
       "option_groups": [],
       "shipping": [
         {
-          "amount_alone": 3.5,
+          "amount_alone": 4,
           "amount_with_others": 0,
           "country": {
             "id": 15,
@@ -1912,13 +1930,14 @@
           }
         },
         {
-          "amount_alone": 4.5,
+          "amount_alone": 39,
           "amount_with_others": 0
         }
       ],
       "weight_g": 50,
       "mode": "lettre",
       "alone": false,
+      "shipping_derived": true,
       "stripe_payment_link": "",
       "quantity": 5,
       "unique": false,
@@ -2006,7 +2025,7 @@
       "option_groups": [],
       "shipping": [
         {
-          "amount_alone": 1.9,
+          "amount_alone": 0,
           "amount_with_others": 0,
           "country": {
             "id": 15,
@@ -2018,6 +2037,7 @@
       "weight_g": 300,
       "mode": "colis",
       "alone": false,
+      "shipping_derived": true,
       "stripe_payment_link": "",
       "quantity": 1,
       "unique": true,
@@ -2109,13 +2129,14 @@
           }
         },
         {
-          "amount_alone": 8.45,
+          "amount_alone": 40,
           "amount_with_others": 0
         }
       ],
       "weight_g": 550,
       "mode": "colis",
-      "alone": true,
+      "alone": false,
+      "shipping_derived": true,
       "stripe_payment_link": "",
       "quantity": 1,
       "unique": true,
@@ -2209,7 +2230,7 @@
       "option_groups": [],
       "shipping": [
         {
-          "amount_alone": 4,
+          "amount_alone": 0,
           "amount_with_others": 0,
           "country": {
             "id": 15,
@@ -2218,13 +2239,14 @@
           }
         },
         {
-          "amount_alone": 8,
+          "amount_alone": 40,
           "amount_with_others": 0
         }
       ],
       "weight_g": 420,
       "mode": "colis",
-      "alone": true,
+      "alone": false,
+      "shipping_derived": true,
       "stripe_payment_link": "",
       "quantity": 0,
       "unique": true,
@@ -2309,7 +2331,7 @@
       "option_groups": [],
       "shipping": [
         {
-          "amount_alone": 5,
+          "amount_alone": 0,
           "amount_with_others": 0,
           "country": {
             "id": 15,
@@ -2318,13 +2340,14 @@
           }
         },
         {
-          "amount_alone": 9,
+          "amount_alone": 40,
           "amount_with_others": 0
         }
       ],
       "weight_g": 550,
       "mode": "colis",
       "alone": false,
+      "shipping_derived": true,
       "stripe_payment_link": "",
       "quantity": 0,
       "unique": true,
@@ -2418,7 +2441,7 @@
       "option_groups": [],
       "shipping": [
         {
-          "amount_alone": 5.35,
+          "amount_alone": 0,
           "amount_with_others": 0,
           "country": {
             "id": 15,
@@ -2427,13 +2450,14 @@
           }
         },
         {
-          "amount_alone": 15,
+          "amount_alone": 40,
           "amount_with_others": 0
         }
       ],
       "weight_g": 420,
       "mode": "colis",
-      "alone": true,
+      "alone": false,
+      "shipping_derived": true,
       "stripe_payment_link": "",
       "quantity": 0,
       "unique": true,
@@ -2456,7 +2480,7 @@
       "position": 25,
       "url": "/product/cache-cou",
       "status": "active",
-      "created_at": "2025-11-30T14:17:42.000Z",
+      "created_at": "2025-11-30T15:17:00",
       "has_password_protection": false,
       "images": [
         {
@@ -2489,7 +2513,7 @@
       "default_price": 30,
       "tax": 0,
       "on_sale": false,
-      "description": "White fleece neck warmer\r\nOne size\r\nOne-of-a-kind airbrushed design\r\nSurprise design at time of order!\r\n\r\nCache-cou en molleton blanc\r\nTaille Unique\r\nDesign unique fait à l'aérographe\r\nDesign surprise lors de la commande !",
+      "description": "*SOLDOUT*\nWhite fleece neck warmer\nOne size\nOne-of-a-kind airbrushed design\nSurprise design at time of order!\n\nCache-cou en molleton blanc\nTaille Unique\nDesign unique fait à l'aérographe\nDesign surprise lors de la commande !",
       "has_option_groups": false,
       "options": [
         {
@@ -2536,13 +2560,14 @@
           }
         },
         {
-          "amount_alone": 8,
+          "amount_alone": 39,
           "amount_with_others": 0
         }
       ],
       "weight_g": 48,
       "mode": "lettre",
       "alone": false,
+      "shipping_derived": true,
       "stripe_payment_link": "",
       "quantity": 0,
       "unique": false,
@@ -2621,7 +2646,7 @@
       "option_groups": [],
       "shipping": [
         {
-          "amount_alone": 5.7,
+          "amount_alone": 0,
           "amount_with_others": 0,
           "country": {
             "id": 15,
@@ -2630,13 +2655,14 @@
           }
         },
         {
-          "amount_alone": 15.9,
+          "amount_alone": 40,
           "amount_with_others": 0
         }
       ],
       "weight_g": 420,
       "mode": "colis",
-      "alone": true,
+      "alone": false,
+      "shipping_derived": true,
       "stripe_payment_link": "",
       "quantity": 0,
       "unique": true,
@@ -2724,7 +2750,7 @@
       "option_groups": [],
       "shipping": [
         {
-          "amount_alone": 1.9,
+          "amount_alone": 0,
           "amount_with_others": 0,
           "country": {
             "id": 15,
@@ -2736,6 +2762,7 @@
       "weight_g": 300,
       "mode": "colis",
       "alone": false,
+      "shipping_derived": true,
       "stripe_payment_link": "",
       "quantity": 0,
       "unique": true,

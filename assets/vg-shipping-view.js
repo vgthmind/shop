@@ -16,6 +16,8 @@
     + 'SG SH SI SJ SK SL SM SN SO SR SS ST SV SX SZ TC TD TF TG TH TJ TK TL TM TN TO TR TT TV TW TZ UA UG US UY UZ '
     + 'VA VC VE VG VN VU WF WS YE YT ZA ZM ZW').split(' ');
   var FIRST = ['FR', 'CA', 'BE', 'CH', 'LU', 'DE', 'GB', 'US'];
+  // Outre-mer (Colissimo Outre-mer au vrai tarif) : des taxes locales peuvent être demandées à la réception.
+  var OUTRE_MER = ['GP', 'MQ', 'GF', 'RE', 'YT', 'PM', 'MF', 'BL', 'NC', 'PF', 'WF', 'TF'];
 
   var TEXT = {
     fr: {
@@ -24,7 +26,8 @@
       notServed: function (n) { return 'Je ne livre pas encore en ' + n + '. Choisis un autre pays, ou écris-moi en DM Instagram : on trouvera une solution.'; },
       franceOnly: 'Une pièce de ton panier part uniquement en France. Retire-la pour livrer à l’étranger.',
       error: 'Frais de livraison indisponibles pour le moment, réessaie dans un instant.',
-      note: 'Le montant définitif est confirmé au paiement.'
+      note: 'Le montant définitif est confirmé au paiement.',
+      customs: 'Des taxes locales (octroi de mer) peuvent être demandées à la réception du colis.'
     },
     en: {
       country: 'Shipping country', shipping: 'Shipping', free: 'free', parcel: 'parcel', parcels: 'parcels',
@@ -32,9 +35,16 @@
       notServed: function (n) { return 'I don\'t ship to ' + n + ' yet. Pick another country, or DM me on Instagram and we\'ll work something out.'; },
       franceOnly: 'One piece in your cart ships to France only. Remove it to ship abroad.',
       error: 'Shipping cost unavailable right now, please try again in a moment.',
-      note: 'The final amount is confirmed at payment.'
+      note: 'The final amount is confirmed at payment.',
+      customs: 'Local taxes (octroi de mer) may be charged on delivery.'
     }
   };
+
+  // Phrase sous le prix de livraison ; pour l'outre-mer, la mention de l'octroi de mer s'y ajoute.
+  function noteFor(country, lang) {
+    var t = text(lang);
+    return OUTRE_MER.indexOf(String(country || '').toUpperCase()) !== -1 ? t.note + ' ' + t.customs : t.note;
+  }
 
   function langOf(l) { return /^fr/i.test(String(l || '')) ? 'fr' : 'en'; }
   function text(lang) { return TEXT[langOf(lang)]; }
@@ -77,7 +87,7 @@
     if (!q.ok) return Object.assign(base, { state: 'error', blocked: true, message: t.error });
     var n = q.parcels.length;
     var summary = t.shipping + ' : ' + (q.free || q.total === 0 ? t.free : money(q.total, lang)) + (n > 1 ? ' (' + n + ' ' + t.parcels + ')' : '');
-    return Object.assign(base, { state: 'ok', blocked: false, shipping: q.total, total: Math.round((subtotal + q.total) * 100) / 100, free: q.free, parcels: n, summary: summary, message: '' });
+    return Object.assign(base, { state: 'ok', blocked: false, shipping: q.total, total: Math.round((subtotal + q.total) * 100) / 100, free: q.free, parcels: n, summary: summary, message: '', note: noteFor(country, lang) });
   }
 
   // Même état d'affichage, à partir de la réponse du Worker (POST /shipping/quote) : le prix affiché est celui de Stripe.
@@ -88,7 +98,7 @@
     if (!quote) return Object.assign(base, { state: 'loading', blocked: true, message: t.loading });
     if (quote.ok) {
       var ship = Number(quote.total) || 0;
-      return Object.assign(base, { state: 'ok', blocked: false, shipping: ship, total: Math.round((subtotal + ship) * 100) / 100, free: ship === 0, summary: t.shipping + ' : ' + (ship === 0 ? t.free : money(ship, lang)) });
+      return Object.assign(base, { state: 'ok', blocked: false, shipping: ship, total: Math.round((subtotal + ship) * 100) / 100, free: ship === 0, summary: t.shipping + ' : ' + (ship === 0 ? t.free : money(ship, lang)), note: noteFor(country, lang) });
     }
     if (quote.error === 'country_not_served') return Object.assign(base, { state: 'not_served', blocked: true, message: t.notServed(countryName(country, lang) || country) });
     if (quote.error === 'france_uniquement') return Object.assign(base, { state: 'not_served', blocked: true, message: t.franceOnly });
@@ -96,5 +106,5 @@
     return Object.assign(base, { state: 'error', blocked: true, message: t.error });
   }
 
-  return { fromQuote: fromQuote, buildView: buildView, countryList: countryList, countryName: countryName, text: text, money: money, langOf: langOf, STRIPE: STRIPE };
+  return { noteFor: noteFor, OUTRE_MER: OUTRE_MER, fromQuote: fromQuote, buildView: buildView, countryList: countryList, countryName: countryName, text: text, money: money, langOf: langOf, STRIPE: STRIPE };
 }));

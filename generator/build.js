@@ -49,6 +49,8 @@ const SHOP_SETTINGS = Object.assign({ public: false, site_url: 'https://vgthmind
 // plus du portfolio). Hors du dépôt docs/ (.gitignore) : seul le build Cloudflare les publie.
 // L'ancien aperçu GitHub Pages (/shop) garde les adresses du portfolio jusqu'à son arrêt.
 const LOCAL_MEDIA = ON_CF_PAGES || process.env.LOCAL_MEDIA === '1';
+// Sortie par défaut (docs/, sans CF_PAGES ni OUT_DIR) = redirections vers site_url ; BUILD_FULL=1 force le site complet.
+const REDIRECT_STUB = process.env.REDIRECT_STUB === '1' || (!ON_CF_PAGES && !process.env.OUT_DIR && process.env.LOCAL_MEDIA !== '1' && process.env.BUILD_FULL !== '1');
 
 // Same file the BigCartel draft loads (Body <script src> + Layout preload).
 // A copy is served by this site, wrapped so it sees location.pathname without
@@ -527,6 +529,53 @@ function injectAround(html, parts, product, relPath) {
   return html.slice(0, i) + body + '\n' + cartScript + '\n' + html.slice(i);
 }
 
+// Pages de redirection de l'ancien aperçu GitHub Pages : index.html + 404.html (GitHub sert 404.html pour toute adresse
+// inconnue du dossier), qui renvoient /shop/<chemin>?<requête>#<ancre> vers <site_url>/<chemin>?<requête>#<ancre>.
+// Chemin inconnu (hors pages du site) = accueil. Désinscrit aussi le service worker et vide les caches de l'ancien admin.
+function writeRedirectStub(catalog) {
+  const site = SHOP_SETTINGS.site_url.replace(/\/$/, '');
+  const top = ['products', 'cart', 'contact', 'contact-914a3d', 'merci', 'paiement-annule', 'suivi', 'demande', 'studio', 'sur-demande',
+    'confidentialite', 'infos-conditions-generales', 'mentions-legales', 'admin', 'site.webmanifest', 'favicon.ico', 'products.xml', 'products.json', 'sitemap.xml'];
+  const cfg = {
+    site,
+    top,
+    product: catalog.products.map((x) => x.permalink),
+    category: catalog.categories.map((x) => x.permalink),
+  };
+  const html = `<!doctype html>
+<html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, follow"><title>vgthmind</title>
+<link rel="canonical" href="${site}/">
+<noscript><meta http-equiv="refresh" content="0; url=${site}/"></noscript>
+<style>body{margin:0;min-height:100vh;display:grid;place-items:center;background:#f4f2ec;color:#171717;font:16px/1.5 system-ui,-apple-system,sans-serif}a{color:inherit}</style></head>
+<body><p>Le site a déménagé : <a id="go" href="${site}/">${site.replace(/^https?:\/\//, '')}</a></p>
+<script>
+(function () {
+  var C = ${JSON.stringify(cfg)};
+  var path = location.pathname.replace(/^\\/shop(?=\\/|$)/, '') || '/';
+  var seg = path.split('/').filter(Boolean);
+  var ok = true;
+  if (!seg.length) ok = true;
+  else if (seg[0] === 'product') ok = seg.length === 1 || C.product.indexOf(decodeURIComponent(seg[1])) !== -1;
+  else if (seg[0] === 'category') ok = seg.length === 1 || C.category.indexOf(decodeURIComponent(seg[1])) !== -1;
+  else if (seg.length) ok = C.top.indexOf(seg[0]) !== -1;
+  var dest = ok ? C.site + path + location.search + location.hash : C.site + '/';
+  document.getElementById('go').href = dest;
+  var done = false;
+  function go() { if (!done) { done = true; location.replace(dest); } }
+  // Ancien admin installé sur cet appareil : service worker et pages gardées hors ligne supprimés.
+  var jobs = [];
+  try { if (navigator.serviceWorker) jobs.push(navigator.serviceWorker.getRegistrations().then(function (rs) { return Promise.all(rs.map(function (r) { return r.unregister(); })); })); } catch (e) {}
+  try { if (window.caches) jobs.push(caches.keys().then(function (ks) { return Promise.all(ks.map(function (k) { return caches.delete(k); })); })); } catch (e) {}
+  Promise.all(jobs).then(go, go); setTimeout(go, 700);
+})();
+</script></body></html>
+`;
+  fs.writeFileSync(rel(OUT_DIR, 'index.html'), html);
+  fs.writeFileSync(rel(OUT_DIR, '404.html'), html);
+  fs.writeFileSync(rel(OUT_DIR, '.nojekyll'), '');
+}
+
 async function main() {
   const catalog = loadCatalog();
   const imageMap = catalog.imageMap || {};
@@ -565,6 +614,15 @@ async function main() {
 
   fs.rmSync(OUT_DIR, { recursive: true, force: true });
   fs.mkdirSync(OUT_DIR, { recursive: true });
+
+  // Ancien aperçu GitHub Pages (vgthmind.github.io/shop/, dossier docs/ commité) : plus de copie du site ni de l'admin,
+  // seulement des pages qui renvoient chaque ancienne adresse vers la même page de site_url (sinon l'accueil).
+  // Le vrai site est construit par Cloudflare (CF_PAGES) ; OUT_DIR / LOCAL_MEDIA = essais et tests (site complet).
+  if (REDIRECT_STUB) {
+    writeRedirectStub(catalog);
+    console.log(`Redirections écrites dans ${OUT_DIR} (vers ${SHOP_SETTINGS.site_url}) : ${catalog.products.length} pièces connues`);
+    return;
+  }
 
   const base = baseContext(catalog);
   const write = (relPath, html) => {
@@ -756,6 +814,12 @@ async function main() {
   // pages maison), jamais passé par le préfixe /shop (Sveltia lit
   // config.yml à côté de la page).
   fs.cpSync(rel(ROOT, 'admin'), rel(OUT_DIR, 'admin'), { recursive: true });
+  {
+    // Adresse du site (réglage central) dans le script de connexion : page de connexion après « Se déconnecter », et renvoi
+    // vers le bon site si l'admin est ouvert depuis une autre adresse (ancien aperçu, favori…).
+    const authPath = rel(OUT_DIR, 'admin', 'vg-admin-auth.js');
+    fs.writeFileSync(authPath, fs.readFileSync(authPath, 'utf8').split('__VG_SITE_URL__').join(SHOP_SETTINGS.site_url.replace(/\/$/, '')));
+  }
   // Adresse du site pour le Worker (/site-config.json) et pour le lien « voir le site » de Sveltia.
   write('site-config.json', JSON.stringify({ site_url: SHOP_SETTINGS.site_url.replace(/\/$/, '') }) + '\n');
   {

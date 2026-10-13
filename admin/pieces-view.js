@@ -10,7 +10,7 @@
 }(typeof self !== 'undefined' ? self : this, function () {
   'use strict';
 
-  var ZONES = [{ id: 'FR', label: 'France' }, { id: 'A', label: 'UE' }, { id: 'C', label: 'Reste du monde' }];
+  var ZONES = [{ id: 'FR', label: 'France' }, { id: 'A', label: 'Zone A (UE, Suisse)' }, { id: 'C', label: 'Reste du monde' }, { id: 'OM1', label: 'Outre-mer 1' }, { id: 'OM2', label: 'Outre-mer 2' }];
 
   // Lien Instagram (reel, post photo ou carrousel) ou YouTube, en https. Vide = pas de lien.
   function reelError(url) {
@@ -31,7 +31,7 @@
     return { slug: p.slug, qty: 1, weight_g: weightOf(p) || undefined, mode: p.mode === 'lettre' ? 'lettre' : 'colis', alone: p.alone === true };
   }
 
-  // Ce que la page affiche pour une pièce : état du poids, ports par zone (FR / UE / reste du monde), conseil de mode.
+  // Ce que la page affiche pour une pièce : état du poids, ports par zone (France, zone A, reste du monde, outre-mer), conseil de mode.
   function describe(calc, config, p) {
     var state = weightState(p), out = { state: state, zones: [], advice: null };
     if (state === 'missing') return out;

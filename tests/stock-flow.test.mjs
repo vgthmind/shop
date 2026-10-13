@@ -204,27 +204,27 @@ test('webhook : signature fausse refusée, rien décompté', async () => {
   assert.equal(r.status, 400); assert.equal((await stock()).uniq, 1);
 });
 
-test('mail de commande Belgique : bon pays, port 15, total 25 ; expéditeur commande@, réponse contact@ ; vendeur et client', async () => {
+test('mail de commande Belgique : bon pays, port 20 € (vrai tarif zone A 19,39 arrondi, 938 g -> 1 kg), total 30 € ; expéditeur commande@, réponse contact@ ; vendeur et client', async () => {
   const a = await checkout('cart-aaaaaaaa', 'uniq', 'BE');
-  assert.equal(stripeCreated[0].get('shipping_options[0][shipping_rate_data][fixed_amount][amount]'), '1500');
+  assert.equal(stripeCreated[0].get('shipping_options[0][shipping_rate_data][fixed_amount][amount]'), '2000');
   assert.equal(stripeCreated[0].get('shipping_address_collection[allowed_countries][0]'), 'BE');
-  await webhook('checkout.session.completed', pay(a.id, { country: 'BE', ship: 1500, total: 2500 }));
+  await webhook('checkout.session.completed', pay(a.id, { country: 'BE', ship: 2000, total: 3000 }));
   assert.equal(mails.length, 2);
   const client = mails.find((m) => m.to[0] === 'client@example.com'), seller = mails.find((m) => m.to[0] === 'alex-vendeur@example.com');
-  for (const m of mails) { assert.match(m.from, /commande@vgthmind\.org/); assert.equal(m.reply_to, 'contact@vgthmind.org'); }
-  assert.match(seller.subject, /\[TEST\] Nouvelle commande 25,00 EUR — Belgique/);
-  assert.match(seller.text, /15,00 EUR/); assert.match(seller.text, /25,00 EUR/);
-  assert.match(client.text, /15,00 €/); assert.match(client.text, /25,00 €/); assert.match(client.text, /Bruxelles/);
+  for (const m of mails) { assert.match(m.from, /commande@vgthmind.org/); assert.equal(m.reply_to, 'contact@vgthmind.org'); }
+  assert.match(seller.subject, /\[TEST\] Nouvelle commande 30,00 EUR — Belgique/);
+  assert.match(seller.text, /20,00 EUR/); assert.match(seller.text, /30,00 EUR/);
+  assert.match(client.text, /20,00\s€/); assert.match(client.text, /30,00\s€/); assert.match(client.text, /Bruxelles/);
   await webhook('checkout.session.completed', sessions.get(a.id).full); // webhook rejoué : pas de 2e envoi
   assert.equal(mails.length, 2);
 });
 
-test('mail de commande Canada : port 29, total 39', async () => {
+test('mail de commande Canada : port 40, total 50', async () => {
   const a = await checkout('cart-aaaaaaaa', 'uniq', 'CA');
-  assert.equal(stripeCreated[0].get('shipping_options[0][shipping_rate_data][fixed_amount][amount]'), '2900');
-  await webhook('checkout.session.completed', pay(a.id, { country: 'CA', ship: 2900, total: 3900 }));
+  assert.equal(stripeCreated[0].get('shipping_options[0][shipping_rate_data][fixed_amount][amount]'), '4000');
+  await webhook('checkout.session.completed', pay(a.id, { country: 'CA', ship: 4000, total: 5000 }));
   const client = mails.find((m) => m.to[0] === 'client@example.com'), seller = mails.find((m) => m.to[0] === 'alex-vendeur@example.com');
-  assert.match(seller.subject, /39,00 EUR — Canada/); assert.match(client.text, /€29.00/); assert.match(client.text, /€39.00/);
+  assert.match(seller.subject, /50,00 EUR — Canada/); assert.match(client.text, /€40.00/); assert.match(client.text, /€50.00/);
 });
 
 // --- Langue choisie sur le site : page Stripe, nom de la pièce, mails ---

@@ -33,12 +33,13 @@ test('pièce sans poids : état « missing », aucun port affiché, badge SANS P
   const html = readFileSync(new URL('../admin/pieces.html', import.meta.url), 'utf8');
   assert.match(html, /SANS POIDS/); assert.match(html, /tr\.nowt/);
 });
-test('ports par zone : France, UE, reste du monde (coût réel, payé, écart)', () => {
+test('ports par zone : France, zone A, reste du monde, outre-mer (coût réel, payé, écart)', () => {
   const d = V.describe(calc, config, { slug: 'x', weight_g: 420, mode: 'colis' });
-  assert.deepEqual(d.zones.map((z) => z.label), ['France', 'UE', 'Reste du monde']);
-  const [fr, ue, monde] = d.zones;
+  assert.deepEqual(d.zones.map((z) => z.label), ['France', 'Zone A (UE, Suisse)', 'Reste du monde', 'Outre-mer 1', 'Outre-mer 2']);
+  const [fr, ue, monde, om1, om2] = d.zones;
   assert.deepEqual([fr.cost, fr.total, fr.gap], [9.29, 0, -9.29]);
-  assert.deepEqual([ue.cost, ue.total], [19.39, 15]); assert.deepEqual([monde.cost, monde.total], [39.19, 29]);
+  assert.deepEqual([ue.cost, ue.total], [19.39, 20]); assert.deepEqual([monde.cost, monde.total], [39.19, 40]); // plancher arrondi à l'euro
+  assert.deepEqual([om1.cost, om1.total, om2.cost, om2.total], [19, 19, 18.95, 18.95]); // vrai tarif La Poste, rien de plus
 });
 test('modeAdvice : signal seulement si l\'autre mode est moins cher, avec les deux montants', () => {
   const colisCher = structuredClone(config); colisCher.zones.find((z) => z.id === 'FR').brackets[0].price = 2;
@@ -101,7 +102,9 @@ test('fiches du dépôt : poids, mode et part seule valides ; cache-cou en lettr
     if (p.weight_g === undefined) continue;
     assert.ok(Number.isInteger(p.weight_g) && p.weight_g > 0, f);
     assert.ok(['colis', 'lettre'].includes(p.mode), f); assert.equal(typeof p.alone, 'boolean', f);
+    assert.equal(p.shipping_fr, undefined, f + ' : plus de port fixe hérité de BigCartel'); assert.equal(p.shipping_intl, undefined, f);
+    assert.equal(p.alone, false, f + ' : plus de « envoi seul »');
   }
   const cc = JSON.parse(readFileSync(new URL('cache-cou.json', dir), 'utf8'));
-  assert.equal(cc.weight_g, 48); assert.equal(cc.mode, 'lettre'); assert.equal(cc.weight_estimated, undefined);
+  assert.equal(cc.weight_g, 48); assert.equal(cc.mode, 'lettre'); assert.ok(!cc.weight_estimated);
 });

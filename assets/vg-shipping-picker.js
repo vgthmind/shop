@@ -111,6 +111,7 @@
     var sel = box.querySelector('select'); if (sel.value !== country) sel.value = country;
     box.classList.toggle('vg-ship-need', !country); // pays pas encore choisi : cadre bien visible
     setText(box.querySelector('.vg-ship-summary'), v.state === 'ok' ? v.summary : '');
+    setText(box.querySelector('.vg-ship-note'), v.note || V.text(lang).note); // outre-mer : + mention de l'octroi de mer
     var err = box.querySelector('.vg-ship-error');
     setText(err, v.state === 'ok' ? '' : v.message); err.hidden = v.state === 'ok';
     var lines = footer.querySelectorAll('.vg-cart-line .cart-subtotal__amount'); // sous-total, port, total

@@ -106,80 +106,36 @@ export async function shippingRoutes(
 // ---------------------------------------------------------------------------
 // Port du paiement. Appele par POST /checkout et POST /shipping/quote (index.ts) : MEME calcul, donc le prix
 // affiche dans le panier est celui de Stripe.
-//   - Le client choisit son pays AVANT de payer ; on calcule le port exact pour ce pays sur la grille.
-//   - Pieces « anciennes » (port fixe sur la fiche : shipping_fr / shipping_intl) SEULES : regle d'avant, le port
-//     fixe le plus eleve du panier, quel que soit le pays (France ou « international »).
-//   - Des qu'une piece du studio (sans port fixe) est dans le panier : grille sur le POIDS TOTAL (colis partages),
-//     anciennes pieces avec poids comprises. Une ancienne piece SANS poids garde son port fixe : le resultat est
-//     alors le plus eleve entre la grille et ces ports fixes.
-//   - Jamais 0 € par erreur : sans poids ni port, refus. Pays non livre (grille: zones, pays bloques) : refus.
-//   - Sans pays : France si region « fr » ; « intl » sans pays = ancien comportement, seulement pour des
-//     anciennes pieces seules ; sinon erreur « country_required ».
-const { findZone } = calc as { findZone: (cfg: any, country: string) => any };
-
+//   - Le client choisit son pays AVANT de payer ; on calcule le port exact pour ce pays sur la grille
+//     (zones La Poste, poids TOTAL du panier, un seul colis quand c'est possible, forfaits par palier de pays).
+//   - Toutes les pieces passent par la grille : plus aucun port fixe herite de BigCartel (shipping_fr / shipping_intl).
+//   - Jamais 0 € par erreur : une piece sans poids est refusee (missing_weight). Pays non livre : refus.
+//   - Sans pays : France si region « fr » ; « intl » sans pays = erreur « country_required ».
 export interface CheckoutProduct {
   permalink: string;
   price: number;
   weight_g?: number;
   mode?: string;
   alone?: boolean;
-  shipping_derived?: boolean; // port affiche calcule par le build : le Worker ne s'y fie pas
+  shipping_derived?: boolean; // port affiche calcule par le build (informatif)
   shipping: { amount_alone: number; country?: { code: string } }[];
 }
 export type CheckoutShipping =
-  | { ok: true; cents: number; source: 'legacy' | 'grid' | 'mixed'; country: string | null; free: boolean }
+  | { ok: true; cents: number; source: 'grid'; country: string | null; free: boolean }
   | { ok: false; error: string; message: string; slugs?: string[] };
-
-function fixedPort(p: CheckoutProduct, region: 'fr' | 'intl'): number | null {
-  if (p.shipping_derived) return null;
-  const line = (p.shipping || []).find((s) => (region === 'fr' ? s.country && s.country.code === 'FR' : !s.country));
-  const v = line ? Number(line.amount_alone) : 0;
-  return v > 0 ? v : null;
-}
-
-function served(config: any, country: string): boolean {
-  const blocked = (config.blocked_countries || []).map((c: string) => String(c).toUpperCase());
-  if (blocked.includes(country)) return false;
-  const z = findZone(config, country);
-  return !!z && z.enabled !== false;
-}
 
 export async function checkoutShipping(
   env: ShipEnv, products: CheckoutProduct[], wanted: Map<string, number>, region: 'fr' | 'intl', country?: string,
 ): Promise<CheckoutShipping> {
   const cc = country && /^[A-Za-z]{2}$/.test(country) ? country.toUpperCase() : '';
   if (cc) region = cc === 'FR' ? 'fr' : 'intl';
-  const fixed: { p: CheckoutProduct; cents: number }[] = [];
-  const fresh: CheckoutProduct[] = [];
-  for (const p of products) {
-    const v = fixedPort(p, region);
-    if (v === null) fresh.push(p); else fixed.push({ p, cents: Math.round(v * 100) });
-  }
-  const loadGrid = async () => { try { return await loadShippingConfig(env); } catch (e) { return null; } };
-
-  if (fresh.length === 0) { // anciennes pieces seules : port fixe d'avant
-    const legacy = fixed.length ? Math.max(...fixed.map((f) => f.cents)) : 0;
-    if (cc && cc !== 'FR') { // meme ici, un pays refuse reste refuse (quand la grille est lisible)
-      const config = await loadGrid();
-      if (config && !served(config, cc)) return { ok: false, error: 'country_not_served', message: 'Pays non livré : ' + cc };
-    }
-    return { ok: true, cents: legacy, source: 'legacy', country: cc || null, free: false };
-  }
-
   if (region === 'intl' && !cc) return { ok: false, error: 'country_required', message: 'Choisis ton pays de livraison.' };
-  const config = await loadGrid();
+  let config: any = null;
+  try { config = await loadShippingConfig(env); } catch (e) { config = null; }
   if (!config) return { ok: false, error: 'config_unavailable', message: 'Grille des frais d’envoi indisponible.' };
-
-  const weightless = fixed.filter((f) => !(Number(f.p.weight_g) > 0));
-  const inGrid = [...fresh, ...fixed.filter((f) => Number(f.p.weight_g) > 0).map((f) => f.p)];
-  const gridItems = inGrid.map((p) => ({ slug: p.permalink, qty: wanted.get(p.permalink) || 1, weight_g: p.weight_g, mode: p.mode, alone: p.alone === true }));
+  const items = products.map((p) => ({ slug: p.permalink, qty: wanted.get(p.permalink) || 1, weight_g: p.weight_g, mode: p.mode, alone: p.alone === true }));
   const subtotal = products.reduce((s, p) => s + p.price * (wanted.get(p.permalink) || 1), 0);
-  const cart = { items: gridItems, subtotal };
-  const legacyCents = weightless.length ? Math.max(...weightless.map((f) => f.cents)) : 0;
-
-  const countries = cc ? [cc] : ['FR'];
-  let r: any = null;
-  for (const c of countries) r = quoteShipping(config, cart, c);
+  const r: any = quoteShipping(config, { items, subtotal }, cc || 'FR');
   if (!r.ok) return { ok: false, error: r.error, message: r.message, slugs: r.slugs };
-  return { ok: true, cents: Math.max(r.totalCents, legacyCents), source: weightless.length ? 'mixed' : 'grid', country: cc || 'FR', free: !!r.free };
+  return { ok: true, cents: r.totalCents, source: 'grid', country: cc || 'FR', free: !!r.free };
 }

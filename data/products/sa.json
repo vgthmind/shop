@@ -16,12 +16,10 @@
   "position": 6,
   "created_at": "2026-07-12T14:29:14.000Z",
   "stripe_payment_link": "",
-  "shipping_fr": 5,
-  "shipping_intl": 30,
   "quantity": 0,
   "weight_g": 420,
   "mode": "colis",
-  "alone": true,
+  "alone": false,
   "color_hex": "#1a1a1a",
   "color_name": "noir",
   "reel_url": "https://www.instagram.com/reel/Daf1SYrspSJ/"

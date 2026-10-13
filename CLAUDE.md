@@ -8,4 +8,4 @@
 - Ne jamais lire node_modules, dist, build, .git, lockfiles, vidéos.
 - En fin de tâche : mettre à jour ETAT.md (racine) en 5 lignes max, puis me dire de faire /clear.
 
-Après toute modification de admin/ ou theme/, lancer node generator/build.js avant de commiter, sinon docs/ (le site publié) n'est pas à jour.
+Le site en ligne est construit par Cloudflare (npm run build avec CF_PAGES) ; docs/ ne contient plus que les pages qui redirigent l'ancien aperçu GitHub Pages (vgthmind.github.io/shop/) vers site_url : un npm run build local les régénère, rien d'autre à faire. Adresse du site = site_url dans data/shop-settings.json (réglage central).

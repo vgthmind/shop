@@ -14,7 +14,7 @@ test('pays choisi : prix de livraison et total', () => {
   assert.equal(v.state, 'ok'); assert.equal(v.blocked, false);
   assert.equal(v.shipping, 0); assert.equal(v.total, 20);
   assert.equal(v.summary, 'Livraison : offerte');
-  assert.equal(V.buildView(calc, config, cart, 'CA', 'en').summary, 'Shipping : €29.00');
+  assert.equal(V.buildView(calc, config, cart, 'CA', 'en').summary, 'Shipping : €39.00'); // 288 g -> 500 g = 35,19 : forfait 39 €
 });
 test('plusieurs colis annoncés', () => {
   const big = structuredClone(config); big.items = { a: { weight_g: 570, alone: true } };

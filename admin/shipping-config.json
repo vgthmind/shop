@@ -1,13 +1,13 @@
 {
-  "version": 3,
+  "version": 5,
   "currency": "EUR",
   "_sources": {
     "verifie_le": "2026-10-07",
     "colissimo": "https://www.laposte.fr/professionnel/tarif-colissimo  (France, zones A, B, C, Royaume-Uni = zone A + 4 EUR). Listes de pays par zone : https://www.tarif-lettre.com/tarif-colissimo-international (source tierce : La Poste ne publie pas la liste sur la page tarifs).",
-    "colissimo_outre_mer": "https://tarifs-postaux.fr/tarif-colissimo.htm  (SOURCE TIERCE, a recouper avec le catalogue officiel de La Poste avant de les activer)",
+    "colissimo_outre_mer": "https://www.laposte.fr/professionnel/tarif-colissimo  (tarifs Colissimo Outre-mer au 1er janvier 2026, releves a l'identique le 2026-10-13 : OM 1 = Guadeloupe, Martinique, Guyane, Reunion, Mayotte, Saint-Pierre-et-Miquelon, Saint-Martin, Saint-Barthelemy ; OM 2 = Nouvelle-Caledonie, Polynesie, Wallis-et-Futuna, TAAF). Des taxes locales (octroi de mer) peuvent etre demandees a la reception.",
     "lettre_verte_suivie": "https://www.laposte.fr/tarif-lettre-suivie  (France, affranchissement en ligne ; version timbre physique dans lettre.brackets_timbre)",
     "pays_suspendus": "https://aide.laposte.fr/contenu/quelles-sont-les-destinations-internationales-suspendues-et-pourquoi  (+ Russie et Bielorussie : choix du vendeur)",
-    "prix_client": "Forfaits et regles : decisions du vendeur (outil de prix interne), 2026-10-07. Pays hors UE (Suisse, Royaume-Uni, Norvege…) = palier « reste du monde »."
+    "prix_client": "Forfaits et regles : decisions du vendeur, 2026-10-13 (France offerte ; zone A et Royaume-Uni 18 EUR par colis ; reste du monde 39 EUR + 8 EUR par piece en plus ; outre-mer au vrai tarif La Poste). « floor_real » : jamais moins que le vrai tarif La Poste du colis, « floor_round_eur » : ce plancher est arrondi a l'euro superieur."
   },
   "packaging": {
     "carton_g": 138,
@@ -20,7 +20,7 @@
     "tiers": [
       {
         "id": "FR",
-        "name": "France (Colissimo offert, port integre au prix des pieces)",
+        "name": "France metropolitaine (Colissimo offert, port integre au prix des pieces)",
         "countries": [
           "FR",
           "MC",
@@ -30,8 +30,8 @@
         "lettre_flat": 4
       },
       {
-        "id": "UE",
-        "name": "Union europeenne",
+        "id": "A",
+        "name": "Zone A (Union europeenne, Suisse…) : forfait par colis",
         "countries": [
           "AT",
           "BE",
@@ -58,17 +58,57 @@
           "SK",
           "SI",
           "ES",
-          "SE"
+          "SE",
+          "CH",
+          "LI",
+          "SM",
+          "VA"
         ],
-        "first_flat": 15
+        "first_flat": 18,
+        "basis": "per_parcel",
+        "floor_real": true,
+        "floor_round_eur": true
+      },
+      {
+        "id": "OM",
+        "name": "Outre-mer : vrai tarif Colissimo au poids, sans livraison offerte",
+        "countries": [
+          "GP",
+          "MQ",
+          "GF",
+          "RE",
+          "YT",
+          "PM",
+          "MF",
+          "BL",
+          "NC",
+          "PF",
+          "WF",
+          "TF"
+        ],
+        "real": true
+      },
+      {
+        "id": "UK",
+        "name": "Royaume-Uni : comme la zone A (forfait par colis)",
+        "countries": [
+          "GB"
+        ],
+        "first_flat": 18,
+        "basis": "per_parcel",
+        "floor_real": true,
+        "floor_round_eur": true
       },
       {
         "id": "MONDE",
-        "name": "Reste du monde (Canada, Etats-Unis, Royaume-Uni, Suisse…)",
+        "name": "Reste du monde (zone B, Canada, Etats-Unis…) : 1re piece + supplement par piece en plus",
         "countries": [
           "*"
         ],
-        "first_flat": 29
+        "first_flat": 39,
+        "extra_piece": 8,
+        "floor_real": true,
+        "floor_round_eur": true
       }
     ]
   },
@@ -399,8 +439,8 @@
     },
     {
       "id": "OM1",
-      "name": "Outre-mer 1 (DESACTIVE)",
-      "enabled": false,
+      "name": "Outre-mer 1",
+      "enabled": true,
       "max_weight_g": 30000,
       "countries": [
         "GP",
@@ -445,8 +485,8 @@
     },
     {
       "id": "OM2",
-      "name": "Outre-mer 2 (DESACTIVE)",
-      "enabled": false,
+      "name": "Outre-mer 2",
+      "enabled": true,
       "max_weight_g": 30000,
       "countries": [
         "NC",

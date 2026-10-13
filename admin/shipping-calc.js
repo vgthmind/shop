@@ -29,7 +29,8 @@
      - colis_free : livraison offerte (port integre au prix des pieces) ;
      - lettre_flat : forfait pour une lettre ;
      - first_flat : forfait pour le 1er colis (le plus lourd) ; basis « per_order » : les colis en plus coutent
-       leur vrai tarif ; basis « per_parcel » : chaque colis paye le forfait.
+       leur vrai tarif ; basis « per_parcel » : chaque colis paye le forfait ; extra_piece : supplément par pièce en plus
+       dans le colis ; floor_real : jamais moins que le vrai tarif La Poste (floor_round_eur : arrondi à l'euro supérieur) ; real : vrai tarif (outre-mer).
    Sortie  : { ok:true, zone, tier, basis, cost (euros, vrai tarif La Poste), costCents, total (euros, paye
                par le client), totalCents, gap (euros, total - cost : > 0 gagne, < 0 perdu), gapCents, free,
                parcels:[{ kind:'colis'|'lettre', items:[{slug,weight_g}], pieces, goods_g, weight_g, priceCents,
@@ -149,15 +150,24 @@
   }
 
   // Ce que paie le client, colis par colis (centimes). Le 1er colis = le plus lourd.
+  // Options d'un palier (customer_pricing.tiers[]) :
+  //   colis_free   livraison offerte ; lettre_flat forfait d'une lettre ;
+  //   real         vrai tarif La Poste, colis par colis (outre-mer) ;
+  //   first_flat   forfait du 1er colis ; extra_piece = supplément par pièce en plus dans CE colis ;
+  //   floor_real   le client ne paie jamais moins que le vrai tarif La Poste du colis (jamais à perte) ;
+  //   floor_round_eur  ce plancher est arrondi à l'euro supérieur (53,99 -> 54 €) ;
+  //   basis        'per_parcel' : chaque colis paye le forfait ; 'per_order' (défaut) : seul le 1er, les suivants au vrai tarif.
   function customerCents(config, tier, parcels) {
     if (!tier) return parcels.map(function (p) { return p.priceCents; }); // pas de palier : tarif reel
-    var basis = (config.customer_pricing && config.customer_pricing.basis) === 'per_parcel' ? 'per_parcel' : 'per_order';
+    var basis = (tier.basis || (config.customer_pricing && config.customer_pricing.basis)) === 'per_parcel' ? 'per_parcel' : 'per_order';
     var paid = parcels.map(function () { return 0; });
     parcels.forEach(function (p, i) { // parcels est deja trie du plus lourd au plus leger
-      if (p.kind === 'lettre') paid[i] = tier.lettre_flat === undefined || tier.lettre_flat === null ? p.priceCents : cents(tier.lettre_flat); // palier sans forfait lettre : vrai tarif, jamais 0 par oubli
-      else if (tier.colis_free) paid[i] = 0;
-      else if (basis === 'per_parcel' || i === 0) paid[i] = cents(tier.first_flat);
-      else paid[i] = p.priceCents;
+      if (p.kind === 'lettre') { paid[i] = tier.lettre_flat === undefined || tier.lettre_flat === null ? p.priceCents : cents(tier.lettre_flat); return; } // palier sans forfait lettre : vrai tarif, jamais 0 par oubli
+      if (tier.colis_free) { paid[i] = 0; return; }
+      if (tier.real || !(basis === 'per_parcel' || i === 0)) { paid[i] = p.priceCents; return; }
+      var flat = cents(tier.first_flat) + cents(tier.extra_piece) * Math.max(0, (p.pieces || 1) - 1);
+      var floor = tier.floor_real ? (tier.floor_round_eur ? Math.ceil(p.priceCents / 100) * 100 : p.priceCents) : 0;
+      paid[i] = Math.max(flat, floor);
     });
     return paid;
   }

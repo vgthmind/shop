@@ -7,9 +7,21 @@
   'use strict';
   var ENDPOINT = 'https://vgthmind-shop-checkout.vgthm66.workers.dev';
   window.VG_ENDPOINT = ENDPOINT;
+  // Adresse du site = réglage central (site_url dans data/shop-settings.json), écrite ici par generator/build.js.
+  var SITE_URL = '__VG_SITE_URL__';
+  if (SITE_URL.indexOf('__') === 0) SITE_URL = location.origin; // source non construite (essais locaux)
+  // Admin ouvert depuis une autre adresse que le site (ancien aperçu github.io, favori d'avant…) : renvoi vers la bonne,
+  // où la connexion est exigée. Rien n'est affiché ni chargé ici.
+  try {
+    if (!/^(localhost|127\.0\.0\.1)$/.test(location.hostname) && location.origin !== new URL(SITE_URL).origin) {
+      var rest = /\/admin\/(.*)$/.exec(location.pathname);
+      location.replace(SITE_URL + '/admin/' + (rest ? rest[1] : '') + location.search + location.hash);
+      return;
+    }
+  } catch (e) {}
   // Numéro de version de l'admin, affiché en petit en bas à gauche de chaque page : permet de vérifier qu'on a bien la dernière version.
   // À changer à chaque mise à jour de l'admin (aaaa-mm-jj + lettre).
-  window.VG_ADMIN_VERSION = '2026-10-13-e';
+  window.VG_ADMIN_VERSION = '2026-10-13-f';
   function showVersion() {
     try {
       var d = document.createElement('div'); d.id = 'vg-admin-version'; d.textContent = 'Admin v' + window.VG_ADMIN_VERSION;
@@ -122,7 +134,7 @@
       b.addEventListener('click', function () {
         b.disabled = true; b.textContent = 'Déconnexion…';
         var done = false;
-        function leave() { if (!done) { done = true; location.replace('/admin/connexion'); } }
+        function leave() { if (!done) { done = true; location.replace(SITE_URL + '/admin/connexion'); } }
         window.vgAdminLogout(true).then(leave); setTimeout(leave, 2500);
       });
       document.body.appendChild(b);
