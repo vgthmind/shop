@@ -4,6 +4,7 @@
    (trait plein, badge chromé, halo argenté flou) quand le client touche le champ. Mêmes clés/libellés côté Worker (requests-core.ts). */
 (function () {
   'use strict';
+  var IMG = (document.currentScript && document.currentScript.src ? document.currentScript.src.replace(/[^/]*$/, '') : '/assets/') + 'mesures/';
   var CATS = [['haut', 'Hoodie / jacket / top', 'Hoodie / veste / haut'], ['bas', 'Trousers / shorts', 'Pantalon / short'], ['cou', 'Neck gaiter', 'Cache-cou'], ['acc', 'Accessory', 'Accessoire']];
   // clé : [en, fr, aide en, aide fr, type] ; type : cm (nombre) ou txt
   var DEFS = {
@@ -40,36 +41,14 @@
   function list(cat) { return ess(cat).concat(opt(cat)); }
   function catFor(kind, piece) { return piece === 'autre' ? '' : /^(short|pantalon)$/.test(piece) ? 'bas' : 'haut'; }
 
-  // --- Croquis : 8 têtes (tête = 42 u), épaules et hanches proches, bras légèrement écartés, sans visage -------------------------
-  // Demi-silhouette de face (côté droit, centre x = 100), reprise en miroir pour le côté gauche.
-  var HALF = 'M106.5,47 L106.5,62 C114,64 124,67 131,71 C136,80 140,98 141,118 L143,136 L152,190 L155,214 L149,215 L145,191 L131,136 C130,120 128,106 128,94 C127,108 124,122 124.5,134 C125,150 129,163 129.5,177 C131,200 128,235 123,262 C121,285 118,305 117,330 C118,338 121,342 126,344 L109,344 L109,331 C110,305 111,285 111,262 C110,235 106,205 100,176';
-  var LIGHT_HALF = 'M107,66 Q118,68 128,71 M111,259 q6,5 11,0 M113,265 q5,3 9,0 M131,134 q4,3 7,1 M112,96 q8,6 16,0 M113,287 C116,293 117,300 116,309 M100,64 L100,70';
-  var SHADE_HALF = 'M128,96 C127,108 124.5,122 125,134 C125.5,150 129.5,163 130,177 L125,177 C124.5,163 120.5,150 120,134 C119.5,122 122,108 123,96 Z M136,76 C139,86 141,100 141.5,118 L143.5,136 L152.5,190 L148,190 L139,137 C138,120 136,100 132,80 Z M129.5,178 C131.5,200 128.5,235 123.5,262 L119,262 C124,235 126,203 124.5,178 Z M123,262 C121,285 118,305 117,330 L113,330 C114,305 117,285 119,262 Z';
-  var HEAD = 'M100,8 C111,8 115,18 115,28 C115,40 109,50 100,51 C91,50 85,40 85,28 C85,18 89,8 100,8 Z';
-  var HEAD_SIDE = 'M99,8 C110,8 117,16 117,27 C117,40 111,50 103,51 C93,50 86,42 86,30 C86,16 91,8 99,8 Z';
-  function pen(d, extra) { return '<path class="ol" d="' + d + '"' + (extra || '') + '/><path class="ol2" d="' + d + '" transform="translate(.5,.35)"/>'; }
-  function mirrorG(inner) { return '<g>' + inner + '</g><g transform="translate(200,0) scale(-1,1)">' + inner + '</g>'; }
-  function front() { return '<g class="pencil">' + pen(HEAD) + mirrorG(pen(HALF) + '<path class="lt" d="' + LIGHT_HALF + '"/><path class="ht" d="' + SHADE_HALF + '"/>') + '</g>'; }
-  function back() { return '<g class="pencil">' + pen(HEAD) + mirrorG(pen(HALF) + '<path class="lt" d="M107,66 Q118,68 128,71 M111,259 q6,5 11,0 M131,134 q4,3 7,1 M106,84 q9,4 15,18 M113,287 C116,293 117,300 116,309"/><path class="ht" d="' + SHADE_HALF + '"/>')
-    + '<path class="lt" d="M100,62 L100,176 M93,64 q7,-3 14,0"/></g>'; }
-  var PROFILE = 'M90,62 C85,68 83,82 83,98 C83,116 86,128 86,140 C86,154 81,166 81,180 C81,196 86,208 87,226 C88,246 86,256 86,266 C85,284 84,300 88,330 L88,338 L84,343 L118,343 L113,335 L109,332 C107,310 109,290 111,266 C112,250 112,238 111,220 C111,205 114,196 113,180 C113,166 112,154 112,140 C112,128 116,114 116,98 C116,84 113,72 108,62';
-  var ARM_SIDE = 'M94,72 C97,100 99,120 99,136 L103,188 L106,214 L112,212 L110,186 L108,136 C108,120 107,98 106,74';
-  function profile() {
-    return '<g class="pencil">' + pen(HEAD_SIDE) + pen('M93,46 L90,62 M106,47 L108,62') + pen(PROFILE) + pen(ARM_SIDE)
-      + '<path class="lt" d="M85,262 q6,5 12,3 M96,263 q5,3 10,0 M87,288 C91,294 92,302 90,310 M100,150 L104,186"/>'
-      + '<path class="ht" d="M83,98 C83,116 86,128 86,140 L90,140 C90,128 87,116 87,98 Z M81,180 C81,196 86,208 87,226 L92,226 C91,208 86,196 86,180 Z M86,266 C85,284 84,300 88,330 L92,330 C89,300 89,284 90,266 Z M96,74 C99,100 100,120 100,136 L103,136 C103,120 102,100 99,74 Z"/></g>';
-  }
-  // Gros plan tête + cou + haut des épaules (figure agrandie ×2,4 ; traits de même épaisseur grâce à vector-effect).
-  var NECK_UP = 'M93.5,46 L93.5,62 C86,64 76,67 69,71 C64,76 61,85 60,96 M106.5,46 L106.5,62 C114,64 124,67 131,71 C136,76 139,85 140,96';
-  var NECK_UP_SIDE = 'M92.5,46 L90,62 C84,64 77,68 70,72 C65,77 62,85 61,96 M106,47 L108,62 C115,64 124,67 131,71 C136,76 139,85 140,96';
-  function closeFront() {
-    return '<g class="pencil s" transform="translate(-140,1) scale(2.4)">' + pen(HEAD, ' vector-effect="non-scaling-stroke"').replace('class="ol2"', 'class="ol2 s"') + pen(NECK_UP, ' vector-effect="non-scaling-stroke"').replace('class="ol2"', 'class="ol2 s"')
-      + '<path class="lt s" d="M93,66 Q82,68 72,71 M107,66 Q118,68 128,71 M100,62 L100,69"/><path class="ht" d="M93.5,50 L106.5,50 C103,56 97,56 93.5,50 Z M93.5,56 L93.5,62 L88,63 Z M106.5,56 L106.5,62 L112,63 Z"/></g>';
-  }
-  function closeSide() {
-    return '<g class="pencil s" transform="translate(-140,1) scale(2.4)">' + pen(HEAD_SIDE).replace('class="ol"', 'class="ol s"').replace('class="ol2"', 'class="ol2 s"') + pen(NECK_UP_SIDE).replace('class="ol"', 'class="ol s"').replace('class="ol2"', 'class="ol2 s"')
-      + '<path class="ht" d="M93,50 L104,52 C100,57 96,57 92,52 Z M92,54 L91,62 L86,63 Z"/></g>';
-  }
+  // --- Silhouettes : planche dessinée par vgthmind (assets/mesures/*.webp, recadrée par vue). Le blanc du papier est rendu transparent (multiply).
+  // Échelle 0,6 : figure de 8 têtes entre y = 8 (haut du crâne) et y = 344 (pieds), centrée sur x = 100.
+  function img(n, x, y, w, h) { return '<image class="pic" href="' + IMG + n + '.webp" x="' + x + '" y="' + y + '" width="' + w + '" height="' + h + '"/>'; }
+  var front = function () { return img('front', 43, 3.2, 114, 348); };
+  var back = function () { return img('back', 47.2, 3.2, 105, 348); };
+  var profile = function () { return img('side', 64, 3.2, 69, 348); };
+  var closeFront = function () { return img('headf', 28.7, 10, 142.6, 204.6); };
+  var closeSide = function () { return img('heads', 10, 10, 179.8, 204.6); };
   function bd(n, x, y) { return '<g class="bd"><circle class="hz hzf" cx="' + x + '" cy="' + y + '" r="14"/><circle class="b" cx="' + x + '" cy="' + y + '" r="9"/><text x="' + x + '" y="' + (y + 4) + '">' + n + '</text></g>'; }
   // Mesure : halo (visible quand « on ») + trait + badge ; leader quand le badge est décalé.
   function ring(n, cx, cy, rx, ry, bx, by) {
@@ -88,23 +67,23 @@
     var T = fr ? { f: 'Face', b: 'Dos', p: 'Profil' } : { f: 'Front', b: 'Back', p: 'Side' };
     var v = '', vb = '0 0 430 374';
     var hgt = N.height ? g('height', arrow(14, 8, 14, 344) + bd(N.height, 14, 176)) : '';
-    var ARM = 'M137,73 C143,82 146,100 147,118 L149,136 L158,190';
+    var ARM = 'M141,76 L146,128 L147,184';
     if (cat === 'haut') {
-      v = view(0, T.f, front() + hgt + g('chest', ring(N.chest, 100, 96, 29, 5)) + g('waist', ring(N.waist, 100, 134, 24.5, 4.5)) + g('hips', ring(N.hips, 100, 178, 30, 5))
-        + g('arm', parrow(ARM) + bd(N.arm, 153, 136)) + g('wrist', ring(N.wrist, 148.5, 188, 6, 2, 176, 188)))
-        + view(230, T.b, back() + g('shoulders', arrow(72, 90, 128, 90) + bd(N.shoulders, 100, 90)) + g('shl', arrow(93.5, 62, 69, 71) + bd(N.shl, 70, 56)) + g('back', arrow(100, 62, 100, 134) + bd(N.back, 100, 116)));
+      v = view(0, T.f, front() + hgt + g('chest', ring(N.chest, 100, 99, 34, 5)) + g('waist', ring(N.waist, 100, 136, 29, 4.5)) + g('hips', ring(N.hips, 100, 183, 37, 5))
+        + g('arm', parrow(ARM) + bd(N.arm, 152, 130)) + g('wrist', ring(N.wrist, 139, 183, 5, 2, 170, 183)))
+        + view(230, T.b, back() + g('shoulders', arrow(77, 99, 123, 99) + bd(N.shoulders, 100, 99)) + g('shl', arrow(94, 63, 60, 78) + bd(N.shl, 70, 58)) + g('back', arrow(100, 66, 100, 138) + bd(N.back, 100, 120)));
     } else if (cat === 'bas') {
-      v = view(0, T.f, front() + hgt + g('waist', ring(N.waist, 100, 134, 24.5, 4.5)) + g('hips', ring(N.hips, 100, 178, 30, 5)) + g('thigh', ring(N.thigh, 82, 228, 12.5, 3.5, 50, 228))
-        + g('calf', ring(N.calf, 85, 298, 7.5, 2.5, 50, 298)) + g('hem', arrow(76, 326, 94, 326) + bd(N.hem, 56, 326)))
-        + view(230, T.p, profile() + ext(113, 134, 192, 134) + ext(114, 178, 192, 178) + ext(111, 262, 192, 262) + ext(118, 343, 156, 343)
-          + g('floor', arrow(132, 134, 132, 343) + bd(N.floor, 132, 238)) + g('inseam', arrow(150, 178, 150, 343) + bd(N.inseam, 150, 262))
-          + g('rise', arrow(168, 134, 168, 178) + bd(N.rise, 168, 156)) + g('knee', arrow(186, 134, 186, 262) + bd(N.knee, 186, 198)));
+      v = view(0, T.f, front() + hgt + g('waist', ring(N.waist, 100, 136, 29, 4.5)) + g('hips', ring(N.hips, 100, 183, 37, 5)) + g('thigh', ring(N.thigh, 87, 219, 12, 3.5, 44, 226))
+        + g('calf', ring(N.calf, 87, 285, 10, 3, 44, 285)) + g('hem', arrow(76, 322, 98, 322) + bd(N.hem, 44, 322)))
+        + view(230, T.p, profile() + ext(108, 138, 192, 138) + ext(108, 183, 192, 183) + ext(108, 249, 192, 249) + ext(120, 344, 156, 344)
+          + g('floor', arrow(132, 138, 132, 344) + bd(N.floor, 132, 241)) + g('inseam', arrow(150, 183, 150, 344) + bd(N.inseam, 150, 263))
+          + g('rise', arrow(168, 138, 168, 183) + bd(N.rise, 168, 160)) + g('knee', arrow(186, 138, 186, 249) + bd(N.knee, 186, 194)));
     } else if (cat === 'cou') {
-      vb = '0 0 430 262';
-      v = view(0, T.f, closeFront() + g('head', ring(N.head, 100, 54, 36, 7)) + g('neck', ring(N.neck, 100, 139, 19, 5)), 252)
-        + view(230, T.p, closeSide() + g('head', ring(N.head, 98, 54, 35, 6)) + g('neck', ring(N.neck, 100, 139, 18, 4.5))
-          + ext(100, 21, 184, 21) + ext(112, 122, 184, 122) + g('hh', arrow(170, 21, 170, 122) + bd(N.hh, 170, 72))
-          + g('nh', ext(116, 153, 156, 153) + arrow(144, 153, 144, 124) + bd(N.nh, 144, 138)), 252);
+      vb = '0 0 430 252';
+      v = view(0, T.f, closeFront() + g('head', ring(N.head, 100, 66, 52, 9)) + g('neck', ring(N.neck, 100, 199, 34, 6)), 246)
+        + view(230, T.p, closeSide() + g('head', ring(N.head, 109, 63, 69, 8)) + g('neck', ring(N.neck, 129, 201, 20, 5))
+          + ext(100, 13, 192, 13) + ext(84, 187, 192, 187) + g('hh', arrow(188, 13, 188, 187) + bd(N.hh, 188, 100))
+          + g('nh', ext(106, 215, 166, 215) + arrow(160, 215, 160, 187) + bd(N.nh, 182, 204)), 246);
     } else if (cat === 'acc') {
       vb = '0 0 430 200';
       v = '<rect class="ol" x="110" y="36" width="200" height="110" rx="8"/><path class="lt" d="M110,62 L310,62"/>'
@@ -113,9 +92,7 @@
     return '<svg class="vgm-svg" viewBox="' + vb + '" role="img" aria-label="' + (fr ? 'Schéma : où mesurer' : 'Diagram: where to measure') + '"><defs>'
       + '<marker id="vgm-a" viewBox="0 0 8 8" refX="4" refY="4" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M1,1 L7,4 L1,7" fill="none" stroke="#171717" stroke-width="1.1"/></marker>'
       + '<linearGradient id="vgm-chrome" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fbfbfc"/><stop offset=".48" stop-color="#cfd1d6"/><stop offset="1" stop-color="#ececef"/></linearGradient>'
-      + '<filter id="vgm-halo" filterUnits="userSpaceOnUse" x="-100" y="-100" width="700" height="700"><feGaussianBlur stdDeviation="3.4"/></filter>'
-      + '<filter id="vgm-pencil" filterUnits="userSpaceOnUse" x="-50" y="-50" width="600" height="600"><feTurbulence type="fractalNoise" baseFrequency=".32" numOctaves="2" seed="7" result="n"/><feDisplacementMap in="SourceGraphic" in2="n" scale="1.4"/></filter>'
-      + '<filter id="vgm-pencil-s" filterUnits="userSpaceOnUse" x="-50" y="-50" width="600" height="600"><feTurbulence type="fractalNoise" baseFrequency=".32" numOctaves="2" seed="7" result="n"/><feDisplacementMap in="SourceGraphic" in2="n" scale=".55"/></filter>' + '<pattern id="vgm-hatch" width="2.6" height="2.6" patternUnits="userSpaceOnUse" patternTransform="rotate(40)"><line x1="0" y1="0" x2="0" y2="2.6" stroke="#171717" stroke-width=".55" stroke-opacity=".55"/></pattern></defs>' + v + '</svg>';
+      + '<filter id="vgm-halo" filterUnits="userSpaceOnUse" x="-100" y="-100" width="700" height="700"><feGaussianBlur stdDeviation="3.4"/></filter></defs>' + v + '</svg>';
   }
   // Met en évidence (ou non) la mesure `id` : sur le schéma et sur sa ligne.
   function hl(root, id, on) {
