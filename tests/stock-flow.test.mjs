@@ -41,6 +41,7 @@ before(async () => {
     if (url === 'https://api.stripe.com/v1/refunds') { const b = new URLSearchParams(opt.body); refunds.push(b); return new Response(JSON.stringify({ id: 're_' + refunds.length })); }
     if (url === 'https://api.resend.com/emails') { mails.push(JSON.parse(opt.body)); return new Response('{}'); }
     const m = /^https:\/\/api\.stripe\.com\/v1\/checkout\/sessions(?:\/([^/?]+))?(\/expire)?/.exec(url);
+    if (m && !m[1] && /payment_intent=/.test(url)) { const pi = decodeURIComponent(/payment_intent=([^&]+)/.exec(url)[1]); return new Response(JSON.stringify({ data: [...sessions.values()].filter((x) => (x.full || x).payment_intent === pi).map((x) => x.full || x) })); }
     if (m && opt.method === 'POST' && !m[1]) {
       const id = 'cs_test_' + (sessions.size + 1) + 'x'.repeat(10);
       const b = new URLSearchParams(opt.body);
@@ -287,8 +288,9 @@ test('moyens de paiement : carte + Bancontact seulement (ni Klarna ni EPS) ; phr
   for (const b of [fr, en]) {
     assert.equal(b.get('payment_method_types[0]'), 'card'); assert.equal(b.get('payment_method_types[1]'), 'bancontact'); assert.equal(b.get('payment_method_types[2]'), null);
   }
-  assert.equal(fr.get('custom_text[submit][message]'), 'En payant, tu acceptes les [conditions de vente](http://site.invalid/infos-conditions-generales/).');
-  assert.equal(en.get('custom_text[submit][message]'), 'By paying, you accept the [terms of sale](http://site.invalid/infos-conditions-generales/).');
+  assert.equal(fr.get('consent_collection[terms_of_service]'), 'required');
+  assert.equal(fr.get('custom_text[terms_of_service_acceptance][message]'), "J'accepte les [conditions de vente](http://site.invalid/infos-conditions-generales/).");
+  assert.equal(en.get('custom_text[terms_of_service_acceptance][message]'), 'I accept the [terms of sale](http://site.invalid/infos-conditions-generales/).');
 });
 
 test('admin : « Se déconnecter » révoque la session côté Worker (même copiée ailleurs, elle ne marche plus) ; sans session = 401', async () => {
@@ -328,4 +330,27 @@ test('grille des ports lue sur le site : le jeton interne du Worker reste accept
     const renew = await worker.fetch(new Request('http://w.invalid/admin/renew', { method: 'POST', headers: { Authorization: 'Bearer ' + token } }), env2, { waitUntil: () => {} });
     assert.equal(renew.status, 200, 'le garde des pages /admin accepte le jeton interne');
   } finally { globalThis.fetch = real; }
+});
+
+test('code promo : ligne « Remise » dans le mail client (FR et EN) quand Stripe a appliqué une remise', async () => {
+  const j = await checkoutLang('fr', 'uniq', 'BE');
+  const id = j.url.split('/').pop(); const full = pay(id, { country: 'BE' });
+  full.total_details = { amount_discount: 500 };
+  assert.equal((await webhook('checkout.session.completed', full)).status, 200);
+  const client = mails.find((m) => m.to[0] === 'client@example.com');
+  assert.match(client.html, /Remise/); assert.match(client.html, /- 5,00\s€/); assert.match(client.text, /Remise : - 5,00\s€/);
+});
+
+test('remboursement : charge.refunded marque la commande « remboursée » (KV) et prévient l’admin, sans remettre en stock', async () => {
+  const j = await checkoutLang('fr', 'uniq', 'BE');
+  const id = j.url.split('/').pop(); const full = pay(id, { country: 'BE' });
+  await webhook('checkout.session.completed', full);
+  const before = await stock();
+  mails = [];
+  const r = await webhook('charge.refunded', { id: 'ch_1', payment_intent: 'pi_test', amount: 2500, amount_refunded: 2500, currency: 'eur' });
+  assert.equal(r.status, 200);
+  const saved = JSON.parse(await env.HOLDS.get('refunded:' + id));
+  assert.equal(saved.full, true); assert.equal(saved.amount, 25);
+  assert.ok(mails.some((m) => /rembours/i.test(m.subject)));
+  assert.deepEqual(await stock(), before);
 });

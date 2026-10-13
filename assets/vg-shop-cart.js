@@ -523,6 +523,7 @@
           + (s.items || []).map(function (it) {
             return '<li class="vg-cart-line"><span>' + esc(nameOf(it)) + '</span><span>' + money(it.amount) + '</span></li>';
           }).join('')
+          + (s.discount ? '<li class="vg-cart-line"><span>' + L('Discount', 'Remise') + '</span><span>- ' + money(s.discount) + '</span></li>' : '')
           + '<li class="vg-cart-line"><span>' + L('Shipping', 'Livraison') + '</span><span>' + money(s.shipping) + '</span></li>'
           + '<li class="vg-cart-line vg-cart-total"><span>Total</span><span>' + money(s.total) + '</span></li>'
           + '</ul>'
@@ -544,7 +545,7 @@
       rate: 'Trop de tentatives. Réessaie dans quelques minutes.', error: 'Un problème est survenu. Réessaie dans un instant.',
       order: 'Commande', placed: 'passée le', steps: ['Reçue', 'En préparation', 'Expédiée'],
       s_received: 'Ta commande est bien reçue.', s_preparing: 'Ta commande est en cours de préparation.', s_shipped: 'Ta commande est partie.',
-      items: 'Articles', size: 'Taille', qty: 'Qté', each: 'l\'unité', shipping: 'Livraison', total: 'Total', address: 'Adresse de livraison',
+      items: 'Articles', size: 'Taille', qty: 'Qté', each: 'l\'unité', shipping: 'Livraison', discount: 'Remise', total: 'Total', address: 'Adresse de livraison',
       parcel: 'Numéro de suivi', invoice: 'Télécharger ma facture', trackBtn: 'Suivre mon colis', noTracking: 'Le numéro de suivi n\'est pas encore disponible.', again: 'Suivre une autre commande',
     },
     en: {
@@ -555,7 +556,7 @@
       rate: 'Too many attempts. Please try again in a few minutes.', error: 'Something went wrong. Please try again in a moment.',
       order: 'Order', placed: 'placed on', steps: ['Received', 'Being prepared', 'Shipped'],
       s_received: 'Your order has been received.', s_preparing: 'Your order is being prepared.', s_shipped: 'Your order is on its way.',
-      items: 'Items', size: 'Size', qty: 'Qty', each: 'each', shipping: 'Shipping', total: 'Total', address: 'Delivery address',
+      items: 'Items', size: 'Size', qty: 'Qty', each: 'each', shipping: 'Shipping', discount: 'Discount', total: 'Total', address: 'Delivery address',
       parcel: 'Tracking number', invoice: 'Download my invoice', trackBtn: 'Track my parcel', noTracking: 'The tracking number isn\'t available yet.', again: 'Track another order',
     },
   };
@@ -629,6 +630,7 @@
         + '<h2 class="vg-track-h">' + esc(t.items) + '</h2>'
         + '<ul class="cart-items">' + items + '</ul>'
         + '<div class="cart-footer">'
+        + (d.discount ? '<div class="cart-subtotal vg-cart-line"><span class="cart-subtotal__label">' + esc(t.discount) + ':</span><span class="cart-subtotal__amount">- ' + money(d.discount) + '</span></div>' : '')
         + '<div class="cart-subtotal vg-cart-line"><span class="cart-subtotal__label">' + esc(t.shipping) + ':</span><span class="cart-subtotal__amount">' + money(d.shipping) + '</span></div>'
         + '<div class="cart-subtotal vg-cart-line vg-cart-total"><span class="cart-subtotal__label">' + esc(t.total) + ':</span><span class="cart-subtotal__amount">' + money(d.total) + '</span></div></div>'
         + '<h2 class="vg-track-h">' + esc(t.address) + '</h2>'

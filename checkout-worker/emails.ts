@@ -28,6 +28,7 @@ export type OrderData = {
   address: string[]; // lignes d'adresse, sans HTML
   items: MailItem[];
   shipping: string;
+  discount?: string; // remise (code promo), deja formatee, vide si aucune
   total: string;
   test: boolean;
   stripeUrl: string;
@@ -65,6 +66,7 @@ const T = {
     qty: 'Qté',
     each: "l'unité",
     shipping: 'Livraison',
+    discount: 'Remise',
     total: 'Total',
     shipTo: 'Livraison à',
     next: 'La suite',
@@ -91,6 +93,7 @@ const T = {
     qty: 'Qty',
     each: 'each',
     shipping: 'Shipping',
+    discount: 'Discount',
     total: 'Total',
     shipTo: 'Shipping to',
     next: 'What happens next',
@@ -141,7 +144,8 @@ function itemRows(items: MailItem[], t: (typeof T)['fr']) {
 
 function itemsTable(o: OrderData, t: (typeof T)['fr'], withTotals: boolean) {
   const totals = withTotals
-    ? `<tr><td colspan="2" style="padding:10px 0 4px;font:14px ${FONT};color:${MUTED}">${t.shipping}</td><td align="right" style="padding:10px 0 4px;font:14px ${FONT};color:${MUTED};white-space:nowrap">${esc(o.shipping)}</td></tr>`
+    ? (o.discount ? `<tr><td colspan="2" style="padding:10px 0 0;font:14px ${FONT};color:${MUTED}">${t.discount}</td><td align="right" style="padding:10px 0 0;font:14px ${FONT};color:${MUTED};white-space:nowrap">- ${esc(o.discount)}</td></tr>` : '')
+      + `<tr><td colspan="2" style="padding:10px 0 4px;font:14px ${FONT};color:${MUTED}">${t.shipping}</td><td align="right" style="padding:10px 0 4px;font:14px ${FONT};color:${MUTED};white-space:nowrap">${esc(o.shipping)}</td></tr>`
       + `<tr><td colspan="2" style="padding:4px 0;font:bold 16px ${FONT};color:${INK}">${t.total}</td><td align="right" style="padding:4px 0;font:bold 16px ${FONT};color:${INK};white-space:nowrap">${esc(o.total)}</td></tr>`
     : '';
   return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse">${itemRows(o.items, t)}${totals}</table>`;
@@ -176,7 +180,7 @@ export function customerEmail(o: OrderData) {
   const text = [
     t.hi(first), '', t.thanks, '', `${t.ref} ${o.ref}`, '',
     t.order.toUpperCase(), ...itemLines(o, t),
-    `${t.shipping} : ${o.shipping}`, `${t.total} : ${o.total}`, '',
+    ...(o.discount ? [`${t.discount} : - ${o.discount}`] : []), `${t.shipping} : ${o.shipping}`, `${t.total} : ${o.total}`, '',
     t.shipTo.toUpperCase(), ...o.address, '',
     t.next.toUpperCase(), t.nextText, ...(t.duties ? [t.duties] : []), '',
     `${t.view} : ${o.orderUrl}`, '', t.help, '',
@@ -233,7 +237,7 @@ export function sellerEmail(o: OrderData) {
   const text = [
     `Nouvelle commande payée${o.test ? ' (mode TEST)' : ''} - ${o.total} - réf. ${o.ref}`, '',
     'Articles :', ...itemLines(o, t),
-    `Frais de port : ${o.shipping}`, `Total : ${o.total}`, '',
+    ...(o.discount ? [`Remise : - ${o.discount}`] : []), `Frais de port : ${o.shipping}`, `Total : ${o.total}`, '',
     `Client : ${o.name} / ${o.email}${o.phone ? ' / ' + o.phone : ''}`,
     'Livrer à :', ...o.address.map((x) => '  ' + x), `Pays : ${pays}`, '',
     `Stripe : ${o.stripeUrl}`,

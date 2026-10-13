@@ -96,16 +96,14 @@ const SESSION_MINUTES = 30; // minimum Stripe
 const HOLD_MS = (SESSION_MINUTES + 2) * 60 * 1000;
 const BACKUP_DAYS = 180;
 
-// Pays proposes pour « International » : tous ceux qu'accepte Stripe pour
-// une adresse de livraison, sauf la France (decision du 2026-10-06).
+// Pays livres (liste blanche, decision du 2026-10-13) : zones de la grille (UE, Royaume-Uni, Suisse, Norvege,
+// Canada, Etats-Unis, outre-mer) + Japon et Australie au tarif « reste du monde ». Pas de Russie ni de Bielorussie.
+// La France est geree a part (region « fr »).
 const STRIPE_COUNTRIES = (
-  'AC AD AE AF AG AI AL AM AO AQ AR AT AU AW AX AZ BA BB BD BE BF BG BH BI BJ BL BM BN BO BQ BR BS BT BV BW BY BZ '
-  + 'CA CD CF CG CH CI CK CL CM CN CO CR CV CW CY CZ DE DJ DK DM DO DZ EC EE EG EH ER ES ET FI FJ FK FO GA GB GD GE '
-  + 'GF GG GH GI GL GM GN GP GQ GR GS GT GU GW GY HK HN HR HT HU ID IE IL IM IN IO IQ IS IT JE JM JO JP KE KG KH KI '
-  + 'KM KN KR KW KY KZ LA LB LC LI LK LR LS LT LU LV LY MA MC MD ME MF MG MK ML MM MN MO MQ MR MS MT MU MV MW MX MY '
-  + 'MZ NA NC NE NG NI NL NO NP NR NU NZ OM PA PE PF PG PH PK PL PM PN PR PS PT PY QA RE RO RS RU RW SA SB SC SD SE '
-  + 'SG SH SI SJ SK SL SM SN SO SR SS ST SV SX SZ TA TC TD TF TG TH TJ TK TL TM TN TO TR TT TV TW TZ UA UG US UY UZ '
-  + 'VA VC VE VG VN VU WF WS XK YE YT ZA ZM ZW ZZ'
+  'AT BE BG HR CY CZ DK EE FI DE GR HU IE IT LV LT LU MT NL PL PT RO SK SI ES SE ' // Union europeenne (hors France)
+  + 'GB CH NO MC ' // Royaume-Uni, Suisse, Norvege, Monaco (zone France de la grille)
+  + 'CA US JP AU ' // Canada, Etats-Unis, Japon, Australie
+  + 'GP MQ GF RE YT PM MF BL NC PF WF' // outre-mer
 ).split(' ');
 
 // ---------------------------------------------------------------------------
@@ -613,6 +611,8 @@ async function shippingQuote(request: Request, env: Env, json: JsonFn): Promise<
 
 // --- Paiement --------------------------------------------------------------
 async function checkout(request: Request, env: Env, key: string, json: JsonFn): Promise<Response> {
+  // Un robot pourrait ouvrir des sessions en boucle et bloquer le stock : 12 sessions / 15 min / IP.
+  if (!(await allow(env, 'rl:co:' + (request.headers.get('CF-Connecting-IP') || 'x'), 12, 900))) return json({ error: 'Trop de tentatives, réessaie dans quelques minutes. / Too many attempts, try again in a few minutes.' }, 429);
   let body: { items?: unknown; region?: unknown; cart_id?: unknown; country?: unknown; lang?: unknown };
   try {
     body = await request.json();
@@ -681,9 +681,11 @@ async function checkout(request: Request, env: Env, key: string, json: JsonFn): 
   params.set('allow_promotion_codes', 'true');
   // Une seule langue sur la page Stripe : celle du site (français si on ne la connaît pas). Adresse = réglage central.
   const cgv = `${env.SITE_BASE}/infos-conditions-generales/`;
-  params.set('custom_text[submit][message]', siteLang === 'en'
-    ? `By paying, you accept the [terms of sale](${cgv}).`
-    : `En payant, tu acceptes les [conditions de vente](${cgv}).`);
+  // Case a cocher obligatoire (necessite l'adresse des CGV dans Stripe > Reglages > Informations publiques ; sinon repli ci-dessous).
+  params.set('consent_collection[terms_of_service]', 'required');
+  params.set('custom_text[terms_of_service_acceptance][message]', siteLang === 'en'
+    ? `I accept the [terms of sale](${cgv}).`
+    : `J'accepte les [conditions de vente](${cgv}).`);
   if (OUTRE_MER.includes(country)) {
     params.set('custom_text[shipping_address][message]', siteLang === 'en'
       ? 'Local taxes (octroi de mer) may be charged on delivery.'
@@ -716,7 +718,17 @@ async function checkout(request: Request, env: Env, key: string, json: JsonFn): 
   params.set('shipping_options[0][shipping_rate_data][fixed_amount][amount]', String(Math.round(shipping * 100)));
   params.set('shipping_options[0][shipping_rate_data][fixed_amount][currency]', 'eur');
 
-  const stripe = await stripeCall(key, 'POST', '/v1/checkout/sessions', params);
+  let stripe = await stripeCall(key, 'POST', '/v1/checkout/sessions', params);
+  if (!stripe.ok && /terms of service/i.test(String(stripe.data.error?.message || ''))) {
+    // Adresse des CGV pas encore renseignee dans Stripe : on garde la phrase d'acceptation, sans case a cocher (a corriger dans Stripe).
+    params.delete('consent_collection[terms_of_service]');
+    params.delete('custom_text[terms_of_service_acceptance][message]');
+    params.set('custom_text[submit][message]', siteLang === 'en'
+      ? `By paying, you accept the [terms of sale](${cgv}).`
+      : `En payant, tu acceptes les [conditions de vente](${cgv}).`);
+    stripe = await stripeCall(key, 'POST', '/v1/checkout/sessions', params);
+    await alertAdmin(env, 'cgv-url', 'Stripe : adresse des CGV manquante', "La case à cocher des CGV est désactivée tant que l'adresse des conditions de vente n'est pas renseignée dans Stripe (Réglages > Informations publiques).");
+  }
   if (!stripe.ok) {
     await stub.release(cartId);
     return json({ error: stripe.data.error?.message || 'Erreur Stripe' }, 502);
@@ -738,6 +750,7 @@ async function session(request: Request, env: Env, key: string, json: JsonFn, ct
     paid: s.payment_status === 'paid',
     total: s.amount_total / 100,
     shipping: (s.shipping_cost?.amount_total || 0) / 100,
+    discount: (s.total_details?.amount_discount || 0) / 100,
     email: s.customer_details?.email || '',
     items: (s.line_items?.data || []).map((li: any) => ({ name: li.description, amount: li.amount_total / 100 })),
     slugs: (s.metadata?.slugs || '').split(',').filter(Boolean),
@@ -784,6 +797,10 @@ async function webhook(request: Request, env: Env, json: JsonFn): Promise<Respon
     await alertAdmin(env, 'payment-failed:' + s.id, 'Un paiement Stripe a échoué', `Montant : ${amount} ${String(s.currency || 'eur').toUpperCase()}\nRaison : ${why}\nObjet Stripe : ${s.id}\nMode : ${event.livemode ? 'réel' : 'test'}`);
     return json({ received: true });
   }
+  if (event.type === 'charge.refunded') {
+    await processRefund(env, s); // s = la charge
+    return json({ received: true });
+  }
   if (event.type === 'checkout.session.expired') {
     if (s.metadata?.cart_id) await stockStub(env).release(s.metadata.cart_id);
     return json({ received: true });
@@ -794,6 +811,23 @@ async function webhook(request: Request, env: Env, json: JsonFn): Promise<Respon
   if (s.payment_status !== 'paid') return json({ received: true });
   await processPaid(env, s); // erreur -> 500 -> Stripe reessaie
   return json({ received: true });
+}
+
+// Remboursement : on retrouve la commande (session) par le paiement, on la marque « remboursee » (KV) et on previent
+// l'admin. La piece n'est PAS remise en stock automatiquement (elle n'est pas forcement revenue) : page Stock.
+async function processRefund(env: Env, charge: any) {
+  const pi = typeof charge.payment_intent === 'string' ? charge.payment_intent : '';
+  const k = stripeKey(env);
+  if (!pi || !k.ok) return;
+  const found = await stripeCall(k.value, 'GET', `/v1/checkout/sessions?payment_intent=${encodeURIComponent(pi)}&limit=1`);
+  const session = found.ok && found.data.data && found.data.data[0];
+  if (!session) return;
+  const full = charge.amount_refunded >= charge.amount;
+  const amount = (charge.amount_refunded || 0) / 100;
+  await env.HOLDS.put('refunded:' + session.id, JSON.stringify({ at: Math.floor(Date.now() / 1000), amount, full }));
+  await alertAdmin(env, 'refund:' + session.id + ':' + charge.amount_refunded, full ? 'Commande remboursée' : 'Commande remboursée en partie', `Montant remboursé : ${amount.toFixed(2)} ${String(charge.currency || 'eur').toUpperCase()}
+Objet Stripe : ${session.id}
+La pièce n'est pas remise en vente automatiquement : page Stock de l'admin.`);
 }
 
 // Commande payee -> stock decompte (une seule fois par session, que l'appel
@@ -938,6 +972,7 @@ async function buildOrder(env: Env, o: any, forSeller = false): Promise<OrderDat
     address: [ship.name || o.customer_details?.name, a.line1, a.line2, [a.postal_code, a.city].filter(Boolean).join(' '), a.state, countryName(a.country, mailLang)].filter(Boolean),
     items: await mailItems(env, o.line_items?.data || [], money),
     shipping: money(o.shipping_cost?.amount_total || 0),
+    discount: o.total_details?.amount_discount ? money(o.total_details.amount_discount) : '',
     total: money(o.amount_total),
     test: !o.livemode,
     stripeUrl: `https://dashboard.stripe.com/${o.livemode ? '' : 'test/'}payments/${typeof o.payment_intent === 'string' ? o.payment_intent : ''}`,
@@ -1173,12 +1208,26 @@ async function listOrders(request: Request, env: Env, key: string, json: JsonFn)
   if (!(await isAdmin(request, env))) return json({ error: 'Non autorisé.' }, 401);
   // Stripe refuse plus de 4 niveaux d'expansion (data.line_items.data.price.product = 5) : produit non déplié ici,
   // la pièce est retrouvée dans le catalogue par son nom (mailItems).
-  const stripe = await stripeCall(key, 'GET', '/v1/checkout/sessions?status=complete&limit=100&expand[]=data.line_items');
-  if (!stripe.ok) return json({ error: stripe.data.error?.message || 'Erreur Stripe' }, 502);
+  // Jusqu a 3 pages de 100 (300 commandes) : au-dela, trop de lectures KV pour une execution.
+  const sessions: any[] = [];
+  let after = '';
+  for (let page = 0; page < 3; page++) {
+    const r = await stripeCall(key, 'GET', '/v1/checkout/sessions?status=complete&limit=100&expand[]=data.line_items' + (after ? '&starting_after=' + after : ''));
+    if (!r.ok) return json({ error: r.data.error?.message || 'Erreur Stripe' }, 502);
+    sessions.push(...(r.data.data || []));
+    if (!r.data.has_more) break;
+    after = r.data.data[r.data.data.length - 1].id;
+  }
+  // Remboursements : une seule lecture KV (liste des cles refunded:<session>), pas une par commande.
+  const refunds = new Map<string, any>();
+  try {
+    const l = await env.HOLDS.list({ prefix: 'refunded:' });
+    for (const k of l.keys) { const v = await env.HOLDS.get(k.name); if (v) refunds.set(k.name.slice(9), JSON.parse(v)); }
+  } catch (e) {}
   const orders = [];
   let catalog: Product[] = [];
   try { catalog = await loadCatalog(env); } catch (e) {}
-  for (const s of stripe.data.data || []) {
+  for (const s of sessions) {
     if (s.payment_status !== 'paid') continue;
     const ship = (s.collected_information && s.collected_information.shipping_details) || s.shipping_details || {};
     const [shipped, preparing, ref] = await Promise.all([env.HOLDS.get('shipped:' + s.id), env.HOLDS.get('preparing:' + s.id), assignRef(env, s.id)]);
@@ -1199,6 +1248,7 @@ async function listOrders(request: Request, env: Env, key: string, json: JsonFn)
       items: (await mailItems(env, s.line_items?.data || [], (c) => String(c / 100), catalog)).map((i) => ({ ...i, amount: Number(i.amount), unit: i.unit ? Number(i.unit) : 0 })),
       shipped: shipped ? JSON.parse(shipped) : null,
       preparing: preparing ? JSON.parse(preparing) : null,
+      refunded: refunds.get(s.id) || null,
     });
   }
   return json({ orders });
@@ -1316,6 +1366,7 @@ async function trackOrder(request: Request, env: Env, key: string, json: JsonFn,
     address: [ship.name || s.customer_details?.name, a.line1, a.line2, [a.postal_code, a.city].filter(Boolean).join(' '), a.state].filter(Boolean),
     country: a.country || '',
     shipping: (s.shipping_cost?.amount_total || 0) / 100,
+    discount: (s.total_details?.amount_discount || 0) / 100,
     total: s.amount_total / 100,
     tracking,
     trackUrl: tracking ? 'https://www.laposte.fr/outils/suivre-vos-envois?code=' + encodeURIComponent(tracking) : '',

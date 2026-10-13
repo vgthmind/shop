@@ -19,7 +19,7 @@ const catalog = [
   { permalink: 'new2', name: 'Nouvelle 2', price: 40, url: '/p/new2', images: [], quantity: 1, shipping: line(0, 29), weight_g: 400, mode: 'colis', alone: false, shipping_derived: true },
 ];
 
-let worker, stripeBodies, released;
+let worker, stripeBodies, released, tosRefused = false;
 const env = {
   STRIPE_SECRET_KEY: 'sk_test_abc', SITE_BASE: 'http://site.invalid', ALLOWED_ORIGIN: 'http://site.invalid', ADMIN_GITHUB_LOGIN: 'x',
   HOLDS: { get: async (k) => (k === 'shipping:config' ? JSON.stringify(config) : null), put: async () => {}, delete: async () => {}, list: async () => ({ keys: [] }) },
@@ -31,14 +31,14 @@ before(async () => {
   globalThis.fetch = async (url, opt = {}) => {
     url = String(url);
     if (url.endsWith('/products.json')) return new Response(JSON.stringify(catalog));
-    if (url.startsWith('https://api.stripe.com/v1/checkout/sessions')) { stripeBodies.push(new URLSearchParams(opt.body)); return new Response(JSON.stringify({ url: 'https://stripe.test/pay' })); }
+    if (url.startsWith('https://api.stripe.com/v1/checkout/sessions')) { const b = new URLSearchParams(opt.body); stripeBodies.push(b); if (tosRefused && b.has('consent_collection[terms_of_service]')) return new Response(JSON.stringify({ error: { message: 'You cannot collect consent to your terms of service until a URL is set.' } }), { status: 400 }); return new Response(JSON.stringify({ url: 'https://stripe.test/pay' })); }
     throw new Error('fetch inattendu ' + url);
   };
 });
 
 const post = (path, body) => worker.fetch(new Request('http://w.invalid' + path, { method: 'POST', body: JSON.stringify(body) }), env, {});
 const items = (...s) => s.map((slug) => ({ slug, qty: 1 }));
-const reset = () => { stripeBodies = []; released = 0; };
+const reset = () => { stripeBodies = []; released = 0; tosRefused = false; };
 
 test('quote : pays par pays pour une pièce (grille : zone A 18 €, reste du monde 39 €, relevés au vrai coût arrondi à l’euro)', async () => {
   const got = {};
@@ -102,7 +102,7 @@ test('checkout : pays refusé = pas de session Stripe, réservation relâchée',
   reset();
   const r = await post('/checkout', { items: items('new1'), country: 'RU', cart_id: 'cart-12345678' });
   assert.equal(r.status, 409); assert.equal((await r.json()).code, 'country_not_served');
-  assert.equal(stripeBodies.length, 0); assert.equal(released, 1);
+  assert.equal(stripeBodies.length, 0); assert.equal(released, 0); // refusé avant toute réservation
   const r2 = await post('/checkout', { items: items('old1'), country: 'BY', cart_id: 'cart-12345678' });
   assert.equal(r2.status, 409); assert.equal(stripeBodies.length, 0);
 });
@@ -127,4 +127,29 @@ test('checkout : une pièce « bientôt disponible » est refusée (jamais de pa
   assert.equal(r.status, 409);
   assert.deepEqual((await r.json()).problems, [{ slug: 'soon1', reason: 'bientot' }]);
   assert.equal(stripeBodies.length, 0);
+});
+
+test('pays livrés : liste blanche (Japon, Australie, Suisse, Norvège, outre-mer acceptés ; Russie, Biélorussie, Chine refusées)', async () => {
+  for (const c of ['JP', 'AU', 'CH', 'NO', 'GB', 'US', 'CA', 'RE']) {
+    reset();
+    const r = await post('/checkout', { items: items('new1'), country: c, cart_id: 'cart-12345678' });
+    assert.equal(r.status, 200, c); assert.equal(stripeBodies.length, 1, c);
+  }
+  for (const c of ['RU', 'BY', 'CN', 'ZZ']) {
+    reset();
+    const r = await post('/checkout', { items: items('new1'), country: c, cart_id: 'cart-12345678' });
+    assert.equal(r.status, 409, c); assert.equal(stripeBodies.length, 0, c);
+  }
+});
+
+test('CGV : case à cocher obligatoire ; si Stripe refuse (adresse des CGV absente), repli sur la phrase sans case', async () => {
+  reset();
+  await post('/checkout', { items: items('new1'), country: 'BE', cart_id: 'cart-12345678', lang: 'fr' });
+  assert.equal(stripeBodies[0].get('consent_collection[terms_of_service]'), 'required');
+  assert.ok(stripeBodies[0].get("custom_text[terms_of_service_acceptance][message]").startsWith("J'accepte les [conditions de vente]"));
+  reset(); tosRefused = true;
+  const r = await post('/checkout', { items: items('new1'), country: 'BE', cart_id: 'cart-12345678', lang: 'en' });
+  assert.equal(r.status, 200); assert.equal(stripeBodies.length, 2);
+  assert.equal(stripeBodies[1].get('consent_collection[terms_of_service]'), null);
+  assert.match(stripeBodies[1].get('custom_text[submit][message]'), /^By paying, you accept/);
 });

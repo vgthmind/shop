@@ -166,6 +166,7 @@
       return '<article class="order" data-id="' + esc(o.id) + '">'
         + '<header><div><span class="tag ref">' + esc(o.ref || '') + '</span> <strong>' + esc(o.name || o.email) + '</strong> '
         + (o.livemode ? '' : '<span class="tag test">test</span> ')
+        + (o.refunded ? '<span class="tag">' + (o.refunded.full ? 'remboursée' : 'remboursée en partie') + ' (' + esc(String(o.refunded.amount).replace('.', ',')) + ' €)</span> ' : '')
         + (o.preparing && !o.shipped ? '<span class="tag prep">en préparation depuis le ' + esc(date(o.preparing.at)) + '</span> ' : '')
         + (o.shipped ? '<span class="tag ok">expédiée le ' + esc(date(o.shipped.at)) + (o.shipped.tracking ? ' · suivi ' + esc(o.shipped.tracking) : '') + (o.shipped.notified ? ' · client prévenu' : '') + '</span>' : '')
         + '<div class="muted">' + esc(date(o.created)) + ' · ' + esc(o.email) + (o.phone ? ' · ' + esc(o.phone) : '') + '</div></div>'
