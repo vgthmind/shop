@@ -12,7 +12,7 @@ const ort = require('onnxruntime-node');
 
 const PORT = Number(process.env.PORT) || 7860;
 const MODEL = process.env.MODEL_PATH || path.join(__dirname, 'models', 'model.onnx');
-const ALLOWED = (process.env.ALLOWED_ORIGINS || 'https://vgthmind.github.io').split(',').map(function (s) { return s.trim().replace(/\/$/, ''); }).filter(Boolean);
+const ALLOWED = (process.env.ALLOWED_ORIGINS || 'https://vgthmind-shop.pages.dev,https://vgthmind.github.io,https://vgthmind.org,https://www.vgthmind.org').split(',').map(function (s) { return s.trim().replace(/\/$/, ''); }).filter(Boolean);
 const MAX_PER_DAY = Number(process.env.MAX_PER_DAY) || 100; // garde-fou de coût : au-delà, 429 jusqu'au lendemain (UTC)
 const ALLOW_NO_ORIGIN = process.env.ALLOW_NO_ORIGIN === '1'; // tests locaux seulement
 let day = '', used = 0;
@@ -92,7 +92,7 @@ function cors(req, res) {
 }
 function send(res, code, body, type) { res.writeHead(code, { 'Content-Type': type || 'application/json' }); res.end(typeof body === 'string' || Buffer.isBuffer(body) ? body : JSON.stringify(body)); }
 
-http.createServer(function (req, res) {
+var server = http.createServer(function (req, res) {
   const ok = cors(req, res);
   if (req.method === 'OPTIONS') return send(res, ok ? 204 : 403, '');
   if (req.url.split('?')[0] === '/health') return send(res, 200, { ok: true, ready: !!session, error: loadError ? String(loadError.message || loadError) : null });
@@ -114,4 +114,22 @@ http.createServer(function (req, res) {
       .then(function (png) { send(res, 200, png, 'image/png'); })
       .catch(function (e) { console.error(e); send(res, 500, { error: String(e && e.message || e) }); });
   });
-}).listen(PORT, process.env.HOST || '0.0.0.0', function () { console.log('Détourage à l\'écoute sur le port', PORT, '- origines :', ALLOWED.join(', ')); });
+});
+// Port déjà pris = presque toujours une AUTRE fenêtre de détourage déjà ouverte : ce n'est pas une panne.
+server.on('error', function (e) {
+  if (e && e.code === 'EADDRINUSE') {
+    var done = false;
+    function fin(code, lines) { if (done) return; done = true; lines.forEach(function (l) { console.log(l); }); process.exit(code); }
+    var req = http.get({ host: '127.0.0.1', port: PORT, path: '/health', timeout: 3000 }, function (r) {
+      r.resume();
+      fin(0, ['', 'Le serveur de detourage tourne DEJA (une autre fenetre est ouverte). Rien a relancer :', 'garde l\'autre fenetre ouverte et utilise le studio photo normalement.']);
+    });
+    req.on('timeout', function () { req.destroy(); });
+    req.on('error', function () {
+      fin(1, ['', 'ERREUR : le port ' + PORT + ' est occupe par un programme qui ne repond pas (probablement un ancien serveur de detourage reste bloque).', 'Double-clique sur « Arreter-detourage.bat » (meme dossier), puis relance ce fichier.']);
+    });
+    return;
+  }
+  throw e;
+});
+server.listen(PORT, process.env.HOST || '0.0.0.0', function () { console.log('Détourage à l\'écoute sur le port', PORT, '- origines :', ALLOWED.join(', ')); });

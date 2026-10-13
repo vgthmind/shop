@@ -3,6 +3,12 @@
 Rôle : détourer les photos avec BiRefNet « lite » (licence MIT, usage commercial permis). Gratuit, sans compte ni carte, rien ne sort de ton PC.
 Ne touche ni au Worker de paiement ni à Stripe.
 
+## En cas de souci (fenêtres noires)
+- Les fenêtres noires **ne se ferment plus toutes seules** : le message d'erreur reste affiché, en français.
+- **`Arreter-detourage.bat`** : libère le port 7860 si un ancien serveur traîne (« EADDRINUSE » / « port occupé »), puis relance `Lancer-detourage.bat`.
+- Le serveur accepte maintenant le site `vgthmind-shop.pages.dev` (avant : seulement l'ancien `github.io`, d'où « serveur pas lancé » alors qu'il tournait).
+- Sur iPhone, `localhost` n'existe pas (c'est l'iPhone lui-même) et une page https ne peut pas appeler l'adresse wifi du PC (http) : l'iPhone passe par le tunnel de `Lancer-detourage-iphone.bat` (lien affiché dans `lien-iphone.html`).
+
 ## Utilisation (PC, Chrome)
 1. Dans le dossier `vgthmind-shopdetourage-server`, **double-clique sur `Lancer-detourage.bat`**.
    La 1re fois : installation (quelques minutes) et téléchargement du modèle (224 Mo). Ensuite, ça démarre en ~10 s.
