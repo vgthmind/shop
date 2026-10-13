@@ -68,6 +68,10 @@
     .ml:last-child { border-bottom: 0; }
     .ml.warn { background: #fff3cd; color: #7a4b00; font-weight: 600; border-radius: 6px; padding: 5px 8px; margin: 2px 0; border-bottom: 0; }
     @media (max-width: 560px) { .req > header > div:last-child { width: 100%; } .req .actions button, .req .actions .btn { min-height: 44px; } .form { grid-template-columns: 1fr; } }
+    .set { background: var(--card); border: 1px solid var(--line); border-radius: 18px; padding: 4px 18px 16px; margin: 12px 0; box-shadow: 0 1px 2px rgba(0,0,0,.04), 0 6px 18px rgba(0,0,0,.04); }
+    .set h3 { margin-top: 14px; }
+    .savebar { position: sticky; bottom: 12px; background: rgba(244,242,236,.94); border: 1px solid var(--line); border-radius: 999px; padding: 8px 12px; z-index: 5; }
+    @media (max-width: 759px) { .savebar { bottom: calc(var(--bar-h, 58px) + 14px + env(safe-area-inset-bottom, 0px)); } }
 </style>
 <link rel="icon" href="../assets/theme/admin/favicon.svg?v=3" type="image/svg+xml">
 <link rel="icon" href="../assets/theme/admin/favicon-32.png?v=3" type="image/png" sizes="32x32">
@@ -97,9 +101,12 @@
   </section>
 
   <section id="settings-view" hidden>
+    <div class="set">
     <h3>Prix « à partir de » (affichés sur la page)</h3>
     <p class="muted">Jamais en dessous du prix boutique équivalent (la pièce la moins chère de la même famille, indiquée à côté) : l'enregistrement est refusé sinon.</p>
     <div class="form" id="prices"></div>
+    </div>
+    <div class="set">
     <h3>Acompte, relances, retouches</h3>
     <div class="form">
       <label>Acompte (% du prix total)<input type="number" id="s-depositPct" min="1" max="100"></label>
@@ -108,6 +115,9 @@
       <label>Acompte conservé après (jours, CGV)<input type="number" id="s-forfeitDays" min="1"></label>
       <label>Retouches incluses après les photos<input type="number" id="s-retouchesIncluded" min="0" max="10"></label>
     </div>
+    <p class="muted">Si tu changes « acompte conservé » ou « retouches incluses », mets aussi à jour les CGV.</p>
+    </div>
+    <div class="set">
     <h3>Délais affichés sur la page « Proposer un projet »</h3>
     <p class="muted">En semaines. Le minimum est aussi la date la plus proche que le client peut choisir ; le maximum sert au délai indicatif affiché (identique au minimum = « 2 semaines »).</p>
     <div class="form">
@@ -118,11 +128,13 @@
       <label>Sur-mesure · minimum<input type="number" id="s-lead-surmesure-min" min="1" max="52"></label>
       <label>Sur-mesure · maximum<input type="number" id="s-lead-surmesure-max" min="1" max="52"></label>
     </div>
-    <p class="muted">Si tu changes « acompte conservé » ou « retouches incluses », mets aussi à jour les CGV.</p>
+    </div>
+    <div class="set">
     <h3>Photos des cartes du parcours</h3>
     <p class="muted">Chaque choix de la page « Proposer un projet » montre une photo. Change-la avec un fichier (JPEG / PNG / WebP, 3 Mo max, format portrait 4:5 conseillé) ou une photo de la boutique.</p>
     <div class="cards" id="cards"></div>
-    <div class="actions"><button type="button" class="main" id="save-settings">Enregistrer les réglages</button><span id="smsg" class="muted" role="status"></span></div>
+    </div>
+    <div class="actions savebar"><button type="button" class="main" id="save-settings">Enregistrer les réglages</button><span id="smsg" class="muted" role="status"></span></div>
   </section>
 </main>
 <input type="file" id="final-input" accept="image/jpeg,image/png,image/webp,image/heic" multiple hidden>
