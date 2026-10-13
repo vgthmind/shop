@@ -25,7 +25,7 @@ export const CHOICE_LABELS: Record<string, [string, string]> = {
 };
 // Champs affichés pour chaque type (ordre du récapitulatif et de l'admin).
 export const FIELDS_BY_TYPE: Record<string, string[]> = {
-  custom: ['piece', 'mode', 'idea', 'mood', 'colors', 'refs', 'size', 'budget', 'deadline', 'link'],
+  custom: ['piece', 'mode', 'idea', 'mood', 'colors', 'refs', 'size', 'measures', 'budget', 'deadline', 'link'],
   surmesure: ['piece', 'paint', 'mode', 'idea', 'mood', 'colors', 'refs', 'measures', 'budget', 'deadline', 'link'],
   production: ['prodKind', 'projectType', 'dates', 'deadline', 'place', 'count', 'artist', 'budget', 'idea', 'refs', 'link'],
   collab: ['collabType', 'links', 'idea', 'refs', 'link'],
@@ -96,6 +96,49 @@ const clean = (v: unknown, n: number) => String(v == null ? '' : v).replace(/[\r
 const block = (v: unknown, n: number) => String(v == null ? '' : v).replace(/\r\n/g, '\n').trim().slice(0, n);
 export const EMAIL_RE = /^[^\s@<>"]+@[^\s@<>"]+\.[^\s@<>"]{2,}$/;
 
+// --- Mesures (même liste que assets/vg-mesures.js) : clé -> [FR, EN, type]
+export const MEASURE_DEFS: Record<string, [string, string, 'cm' | 'txt']> = {
+  height: ['Taille', 'Height', 'cm'], usual: ['Taille portée d’habitude', 'Size usually worn', 'txt'],
+  chest: ['Tour de poitrine', 'Chest', 'cm'], waist: ['Tour de ceinture', 'Waist', 'cm'], hips: ['Tour de bassin', 'Hips', 'cm'], arm: ['Longueur de bras', 'Arm length', 'cm'],
+  shoulders: ['Carrure dos', 'Back width', 'cm'], shl: ['Longueur d’épaule', 'Shoulder length', 'cm'], back: ['Longueur taille dos', 'Back waist length', 'cm'], wrist: ['Tour de poignet', 'Wrist', 'cm'],
+  inseam: ['Longueur d’entrejambe', 'Inside leg', 'cm'], floor: ['Hauteur taille à terre', 'Waist to floor', 'cm'], rise: ['Hauteur de montant', 'Crotch depth', 'cm'], thigh: ['Tour de cuisse', 'Thigh', 'cm'],
+  calf: ['Tour de mollet', 'Calf', 'cm'], knee: ['Hauteur taille au genou', 'Waist to knee', 'cm'], hem: ['Largeur du bas souhaitée', 'Leg opening (wanted)', 'cm'],
+  head: ['Tour de tête', 'Head', 'cm'], neck: ['Tour d’encolure', 'Neck', 'cm'], hh: ['Hauteur de tête', 'Head height', 'cm'], nh: ['Hauteur souhaitée', 'Wanted height', 'cm'],
+  aw: ['Largeur', 'Width', 'cm'], ah: ['Hauteur', 'Height', 'cm'],
+};
+// ess = essentielles (obligatoires en sur-mesure, ou « je ne sais pas ») ; opt = « si tu peux » (toujours facultatives).
+export const MEASURE_CATS: Record<string, { fr: string; en: string; ess: string[]; opt: string[] }> = {
+  haut: { fr: 'Hoodie / veste / haut', en: 'Hoodie / jacket / top', ess: ['chest', 'waist', 'hips', 'arm'], opt: ['shoulders', 'shl', 'back', 'wrist'] },
+  bas: { fr: 'Pantalon / short', en: 'Trousers / shorts', ess: ['waist', 'hips', 'inseam', 'floor'], opt: ['rise', 'thigh', 'calf', 'knee', 'hem'] },
+  cou: { fr: 'Cache-cou', en: 'Neck gaiter', ess: ['head', 'neck'], opt: ['hh', 'nh'] },
+  acc: { fr: 'Accessoire', en: 'Accessory', ess: ['aw', 'ah'], opt: [] },
+};
+const MEASURE_UNIVERSAL = ['height', 'usual']; // haut et bas seulement
+// Texte des mesures pour l'admin et les mails. « ⚠ » en début de ligne = à redemander (approximatif, « je ne sais pas », à discuter).
+// Sur-mesure : les essentielles sont obligatoires, sauf celles marquées « je ne sais pas » ; « à discuter directement » laisse tout passer.
+export function parseMeasures(body: any, lang: string, strict: boolean): { used: boolean; ok: boolean; text: string } {
+  const fr = lang === 'fr', i = fr ? 0 : 1;
+  const talk = !!(body && body.mtalk);
+  const cat = MEASURE_CATS[String(body?.mcat)] ? String(body.mcat) : '';
+  if (!talk && !cat) return { used: false, ok: true, text: '' };
+  const other = block(body?.mother, 500);
+  if (talk) return { used: true, ok: true, text: fr ? '⚠ À discuter directement (mesures non saisies)' : '⚠ To be discussed directly (no measurements entered)' };
+  const vals = body?.mv && typeof body.mv === 'object' ? body.mv : {}, unk = body?.mu && typeof body.mu === 'object' ? body.mu : {};
+  const lines: string[] = [(fr ? 'Catégorie : ' : 'Category: ') + MEASURE_CATS[cat][fr ? 'fr' : 'en']];
+  if (body?.mapprox) lines.push(fr ? '⚠ Mesures approximatives' : '⚠ Approximate measurements');
+  const ess = (cat === 'haut' || cat === 'bas' ? MEASURE_UNIVERSAL : []).concat(MEASURE_CATS[cat].ess);
+  let ok = true;
+  for (const k of ess.concat(MEASURE_CATS[cat].opt)) {
+    const d = MEASURE_DEFS[k], v = clean(vals[k], 30).replace(',', '.'), essential = ess.includes(k), isUnk = strict && essential && !!unk[k];
+    if (isUnk) { lines.push('⚠ ' + d[i] + ' : ' + (fr ? 'je ne sais pas' : 'don’t know')); continue; }
+    if (!v) { if (strict && essential) ok = false; continue; }
+    if (d[2] === 'cm' && !/^\d{1,3}(\.\d{1,2})?$/.test(v)) { ok = false; continue; }
+    lines.push(d[i] + ' : ' + v + (d[2] === 'cm' ? ' cm' : ''));
+  }
+  if (other) lines.push((fr ? 'Autre précision : ' : 'Other details: ') + other);
+  return { used: true, ok, text: lines.join('\n') };
+}
+
 // --- Formulaire public --------------------------------------------------------------------------
 export function parseSubmission(body: any, lead: Settings['leadWeeks'] = DEFAULT_SETTINGS.leadWeeks, nowMs: number = Date.now()): { ok: true; value: any } | { ok: false; fields: string[] } {
   const type = String(body && body.type) as ReqType;
@@ -140,7 +183,9 @@ export function parseSubmission(body: any, lead: Settings['leadWeeks'] = DEFAULT
     if (!PIECES[v.type].some((p) => p.key === x.piece)) f.push('piece');
     if (!x.mode) f.push('mode');
     if (x.mode === 'guide' ? x.mood.length + x.idea.length < 10 : x.idea.length < 10) f.push('idea');
-    if (v.type === 'surmesure' && x.measures.length < 3) f.push('measures');
+    const pm = parseMeasures(body, v.lang, v.type === 'surmesure');
+    if (pm.used) { x.measures = pm.text; if (!pm.ok) f.push('measures'); }
+    else if (v.type === 'surmesure' && x.measures.length < 3) f.push('measures');
   } else if (v.type === 'production') {
     if (!x.prodKind) f.push('prodKind');
     if (!x.projectType) f.push('projectType');

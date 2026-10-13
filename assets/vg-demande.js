@@ -28,7 +28,7 @@
   var COUNTRIES = ('FR BE CH LU MC DE AT IT ES PT NL IE GB DK SE NO FI PL CZ SK HU RO BG GR HR SI EE LV LT CY MT IS US CA MX BR AR CL CO PE AU NZ JP KR CN HK TW SG TH VN MY ID PH IN AE SA QA IL TR MA DZ TN SN CI CM ZA EG GP MQ GF RE YT PM BL MF NC PF WF').split(' ');
 
   var KEY = 'vg-demande-draft';
-  var st = { what: '', kind: '', piece: '', paint: false, mode: '', idea: '', mood: '', colors: '', refs: '', size: '', measures: '', budget: '', deadline: '',
+  var st = { what: '', kind: '', piece: '', paint: false, mode: '', idea: '', mood: '', colors: '', refs: '', mcat: '', mv: {}, mu: {}, mapprox: false, mtalk: false, mother: '', budget: '', deadline: '',
     prodKind: '', projectType: '', dates: '', place: '', count: '', artist: '', collabType: '', links: '', link: '', firstName: '', lastName: '', email: '', country: '', photosConsent: false, website: '' };
   try { var saved = JSON.parse(sessionStorage.getItem(KEY) || 'null'); if (saved && typeof saved === 'object') for (var k in st) if (k in saved && k !== 'website') st[k] = saved[k]; } catch (e) {}
   function save() { try { sessionStorage.setItem(KEY, JSON.stringify(st)); } catch (e) {} }
@@ -145,14 +145,49 @@
     details: {
       title: function () { return L('Details', 'Détails'); },
       html: function () {
-        var sm = st.kind === 'surmesure';
-        return head(L('A few details', 'Quelques détails')) + '<div class="vgd-fields">'
-          + (sm ? input('measures', L('Your measurements', 'Tes mesures'), { area: true, req: true, rows: 5, max: 1500, hint: L('In cm: chest, waist, hips, inside leg, height… or the measurements of a piece that fits you well.', 'En cm : poitrine, taille, hanches, entrejambe, hauteur… ou les mesures d’une pièce qui te va bien.') })
-            : input('size', L('Your size', 'Ta taille'), { max: 100, ph: L('e.g. M, or a fit you like', 'ex. M, ou une coupe que tu aimes'), hint: L('Custom = a second-hand piece: tell me your size, I find the base.', 'Custom = une pièce de seconde main : donne ta taille, je trouve la base.') }))
-          + input('budget', L('Budget (rough)', 'Budget indicatif'), { max: 100, ph: L('e.g. €150–200', 'ex. 150 à 200 €') })
+        var M = window.VGMeasures, sm = st.kind === 'surmesure', fr = lang() === 'fr', h;
+        if (!st.mcat && st.piece && st.piece !== 'autre') st.mcat = M.catFor(st.kind, st.piece);
+        h = head(L('A few details', 'Quelques détails'), sm ? L('Measurements are needed to sew your piece.', 'Les mesures servent à coudre ta pièce.') : L('Optional, but it helps me find the right base.', 'Facultatif, mais ça m’aide à trouver la bonne base.')) + '<div class="vgd-fields">';
+        if (st.mtalk) {
+          h += '<p class="vgd-note">' + esc(L('You chose to talk about measurements directly: I’ll ask you in my reply.', 'Tu as choisi d’en parler directement : je te les demanderai dans ma réponse.')) + ' <button type="button" class="vgd-link" data-untalk>' + esc(L('Enter them now', 'Les saisir maintenant')) + '</button></p>';
+        } else {
+          h += '<div class="vgd-row"><span class="vgd-lbl">' + esc(L('Which kind of piece?', 'Quelle catégorie de pièce ?')) + (sm ? ' *' : '') + '</span><div class="vgd-chips" role="group">'
+            + M.CATS.map(function (c) { return '<button type="button" class="vgd-chip" data-mcat="' + c[0] + '" aria-pressed="' + (st.mcat === c[0]) + '">' + esc(L(c[1], c[2])) + '</button>'; }).join('') + '</div></div>';
+          var es = M.ess(st.mcat), op = M.opt(st.mcat), n = 0;
+          var row = function (k, essential) {
+            var d = M.DEFS[k], cm = d[4] === 'cm', unk = sm && essential && st.mu[k];
+            n++;
+            return '<div class="vgd-row vgm-row' + (unk ? ' unk' : '') + '" data-mrow="' + k + '"><label for="vgd-m-' + k + '"><span class="vgm-n">' + n + '</span>' + esc(d[fr ? 1 : 0]) + (sm && essential && !unk ? ' *' : '') + '</label>'
+              + '<small>' + esc(d[fr ? 3 : 2]) + '</small><div class="vgm-in"><input id="vgd-m-' + k + '" data-mv="' + k + '" maxlength="' + (cm ? 6 : 30) + '"' + (cm ? ' inputmode="decimal" placeholder="cm"' : '') + (unk ? ' disabled' : '') + ' value="' + esc(unk ? '' : st.mv[k] || '') + '">'
+              + (sm && essential ? '<button type="button" class="vgm-dk" data-mu="' + k + '" aria-pressed="' + !!unk + '">' + esc(L('I don’t know', 'Je ne sais pas')) + '</button>' : '') + '</div></div>';
+          };
+          if (es.length) {
+            h += (st.mcat === 'acc' ? '' : '<p class="vgd-note">' + esc(L('Measure yourself in a thin T-shirt, tape flat, and ask someone to help with your back and arms.', 'Mesure-toi en t-shirt fin, mètre bien à plat, et fais-toi aider pour le dos et les bras.')) + '</p>')
+              + '<div class="vgm-guide">' + M.svg(st.mcat, fr) + '</div>'
+              + (op.length ? '<p class="vgm-sub">' + esc(L('The essentials', 'L’essentiel')) + '</p>' : '') + '<div class="vgm-rows">' + es.map(function (k) { return row(k, true); }).join('') + '</div>'
+              + (op.length ? '<p class="vgm-sub">' + esc(L('If you can (optional)', 'Si tu peux (facultatif)')) + '</p><div class="vgm-rows">' + op.map(function (k) { return row(k, false); }).join('') + '</div>' : '')
+              + '<label class="vgd-check"><input type="checkbox" data-f="mapprox"' + (st.mapprox ? ' checked' : '') + '><span>' + esc(L('My measurements are approximate', 'Mes mesures sont approximatives')) + '</span></label>'
+              + input('mother', L('Anything else about the fit?', 'Autre précision'), { area: true, rows: 2, max: 500 });
+          }
+          h += '<p style="margin:0"><button type="button" class="vgd-link" data-talk>' + esc(L('I’d rather talk about it directly', 'Je préfère en parler directement')) + '</button></p>';
+        }
+        return h + input('budget', L('Budget (rough)', 'Budget indicatif'), { max: 100, ph: L('e.g. €150–200', 'ex. 150 à 200 €') })
           + input('deadline', L('Wanted by (optional)', 'Date souhaitée (facultatif)'), { type: 'date', min: minDate(st.kind), hint: L('Indicative time: ', 'Délai indicatif : ') + weeksText(st.kind) + L('. Earliest date: ', '. Date la plus proche : ') + fmtDate(minDate(st.kind)) + '.' }) + '</div>';
       },
-      ok: function () { return st.kind === 'surmesure' && st.measures.trim().length < 3 ? 'measures' : lateDate(st.kind) ? 'deadline' : null; },
+      ok: function () {
+        var M = window.VGMeasures, sm = st.kind === 'surmesure';
+        if (!st.mtalk) {
+          if (sm && !st.mcat) return 'mcat';
+          var es = M.ess(st.mcat), l = M.list(st.mcat);
+          for (var i = 0; i < l.length; i++) {
+            var k = l[i], val = String(st.mv[k] || '').trim(), essential = es.indexOf(k) >= 0;
+            if (sm && essential && st.mu[k]) continue;
+            if (!val) { if (sm && essential) return 'm:' + k; continue; }
+            if (M.DEFS[k][4] === 'cm' && !/^\d{1,3}([.,]\d{1,2})?$/.test(val)) return 'm:' + k;
+          }
+        }
+        return lateDate(st.kind) ? 'deadline' : null;
+      },
     },
     prodKind: {
       title: function () { return L('Your need', 'Ton besoin'); }, cards: true,
@@ -264,7 +299,7 @@
     if (s === 'piece') { add(L('Piece', 'Pièce'), pieceName() + (st.piece ? ' · ' + from((cfg.prices[st.kind] || {})[st.piece]) : '')); if (st.kind === 'surmesure') add(L('Add painting', 'Peinture en plus'), st.paint); }
     if (s === 'mode') add(L('Approach', 'Démarche'), st.mode === 'guide' ? L('I have an idea, guide me', 'J’ai une envie, guide-moi') : st.mode ? L('I know what I want', 'Je sais ce que je veux') : '');
     if (s === 'idea') { add(L('Mood', 'Ambiance'), st.mode === 'guide' ? st.mood : ''); add(L('Idea', 'Idée'), st.idea); add(L('Colours', 'Couleurs'), st.colors); add(L('References', 'Références'), st.refs); }
-    if (s === 'details') { add(L('Size', 'Taille'), st.kind === 'custom' ? st.size : ''); add(L('Measurements', 'Mesures'), st.kind === 'surmesure' ? st.measures : ''); add(L('Budget', 'Budget'), st.budget); add(L('Wanted by', 'Date souhaitée'), fmtDate(st.deadline)); }
+    if (s === 'details') { var M = window.VGMeasures, fr = lang() === 'fr'; if (M.list(st.mcat).length && !st.mtalk) add(L('Category', 'Catégorie'), (M.CATS.filter(function (c) { return c[0] === st.mcat; })[0] || [])[fr ? 2 : 1]); add(L('Measurements', 'Mesures'), M.compile(st, fr)); add(L('Budget', 'Budget'), st.budget); add(L('Wanted by', 'Date souhaitée'), fmtDate(st.deadline)); }
     if (s === 'prodKind') add(L('Need', 'Besoin'), st.prodKind === 'creation' ? L('A piece made for the project', 'Création pour le projet') : st.prodKind ? L('Rent an existing piece', 'Location d’une pièce existante') : '');
     if (s === 'project') { add(L('Project', 'Projet'), st.projectType); add('Dates', st.dates); add(L('Wanted by', 'Date souhaitée'), st.prodKind === 'location' ? fmtDate(st.deadline) : ''); add(L('Location', 'Lieu'), st.place); add(L('Pieces', 'Pièces'), st.count); add(L('Artist', 'Artiste'), st.artist); add('Budget', st.budget); }
     if (s === 'prodIdea') { add(L('Project', 'Projet'), st.idea); add(L('References', 'Références'), st.refs); }
@@ -303,8 +338,9 @@
     go(cur + 1, 'next', true);
   }
   function invalid(f) {
-    var el = stage.querySelector('[data-f="' + f + '"]') || stage.querySelector('[data-chip="' + f + '"]') || stage.querySelector('[data-set="' + f + '"]');
-    var msg = { deadline: L('Choose a date from ' + fmtDate(minDate(leadKey())) + ' (minimum time).', 'Choisis une date à partir du ' + fmtDate(minDate(leadKey())) + ' (délai minimum).'), firstName: L('Please enter your first name.', 'Merci d’indiquer ton prénom.'), lastName: L('Please enter your last name.', 'Merci d’indiquer ton nom.'), email: L('Please enter a valid email address.', 'Merci d’indiquer une adresse e-mail valide.'), link: L('The link must start with https://', 'Le lien doit commencer par https://'),
+    var el = /^m:/.test(f) ? stage.querySelector('#vgd-m-' + f.slice(2)) : f === 'mcat' ? stage.querySelector('[data-mcat]') : stage.querySelector('[data-f="' + f + '"]') || stage.querySelector('[data-chip="' + f + '"]') || stage.querySelector('[data-set="' + f + '"]');
+    var sm0 = st.kind === 'surmesure';
+    var msg = /^m:/.test(f) ? (sm0 ? L('Enter this measurement in cm (e.g. 92) or tap “I don’t know”.', 'Indique cette mesure en cm (ex. 92) ou touche « Je ne sais pas ».') : L('Enter a number in cm (e.g. 92).', 'Indique un nombre en cm (ex. 92).')) : { mcat: L('Choose the kind of piece.', 'Choisis la catégorie de pièce.'), deadline: L('Choose a date from ' + fmtDate(minDate(leadKey())) + ' (minimum time).', 'Choisis une date à partir du ' + fmtDate(minDate(leadKey())) + ' (délai minimum).'), firstName: L('Please enter your first name.', 'Merci d’indiquer ton prénom.'), lastName: L('Please enter your last name.', 'Merci d’indiquer ton nom.'), email: L('Please enter a valid email address.', 'Merci d’indiquer une adresse e-mail valide.'), link: L('The link must start with https://', 'Le lien doit commencer par https://'),
       measures: L('Please give your measurements.', 'Merci d’indiquer tes mesures.'), idea: L('Tell me a bit more (10 characters minimum).', 'Dis-m’en un peu plus (10 caractères minimum).'),
       mood: L('Tell me a bit more (10 characters minimum).', 'Dis-m’en un peu plus (10 caractères minimum).') }[f] || L('Please answer this question.', 'Merci de répondre à cette question.');
     var err = document.getElementById('vgd-err'); if (err) err.textContent = msg;
@@ -317,7 +353,8 @@
       var f = t.getAttribute('data-set'), v = t.getAttribute('data-v'), changed = st[f] !== v;
       st[f] = v; save();
       if (changed && f === 'what') { st.kind = ''; st.piece = ''; }
-      if (changed && f === 'kind') { st.piece = ''; st.paint = false; }
+      if (changed && f === 'kind') { st.piece = ''; st.paint = false; st.mcat = ''; }
+      if (changed && f === 'piece') st.mcat = '';
       stage.querySelectorAll('[data-set="' + f + '"]').forEach(function (b) { b.setAttribute('aria-pressed', String(b === t)); });
       if (!STEPS[path()[cur]].stay) setTimeout(next, matchMedia('(prefers-reduced-motion: reduce)').matches ? 0 : 230);
       return;
@@ -327,6 +364,17 @@
       stage.querySelectorAll('[data-chip="' + c + '"]').forEach(function (b) { b.setAttribute('aria-pressed', String(b === t)); });
       return;
     }
+    if (t.hasAttribute('data-mcat')) { st.mcat = t.getAttribute('data-mcat'); save(); render(); return; }
+    if (t.hasAttribute('data-mu')) {
+      var mk = t.getAttribute('data-mu'), on = !st.mu[mk], row = t.closest('.vgm-row'), inp = row.querySelector('input');
+      if (on) st.mu[mk] = true; else delete st.mu[mk];
+      save(); t.setAttribute('aria-pressed', String(on)); row.classList.toggle('unk', on); inp.disabled = on;
+      if (on) { inp.value = ''; delete st.mv[mk]; } else inp.focus();
+      var lab = row.querySelector('label'); lab.innerHTML = lab.innerHTML.replace(/ \*$/, '') + (on ? '' : ' *');
+      return;
+    }
+    if (t.hasAttribute('data-talk')) { st.mtalk = true; save(); next(); return; }
+    if (t.hasAttribute('data-untalk')) { st.mtalk = false; save(); render(); return; }
     if (t.hasAttribute('data-rm')) { files.splice(Number(t.getAttribute('data-rm')), 1); render(); return; }
     if (t.hasAttribute('data-edit')) { backToRecap = true; go(Number(t.getAttribute('data-edit')), 'back', true); return; }
     var g = t.getAttribute('data-go');
@@ -334,6 +382,8 @@
     if (g === 'back') { backToRecap = false; try { history.back(); } catch (err) { go(Math.max(0, cur - 1), 'back'); } }
   });
   stage.addEventListener('input', function (e) {
+    var mv = e.target.getAttribute && e.target.getAttribute('data-mv');
+    if (mv) { st.mv[mv] = e.target.value; save(); e.target.removeAttribute('aria-invalid'); return; }
     var f = e.target.getAttribute && e.target.getAttribute('data-f'); if (!f) return;
     st[f] = e.target.type === 'checkbox' ? e.target.checked : e.target.value; save();
     e.target.removeAttribute('aria-invalid');
@@ -342,6 +392,9 @@
     if (e.target.id === 'vgd-file') { addFiles(e.target.files); return; }
     var f = e.target.getAttribute && e.target.getAttribute('data-f'); if (f) { st[f] = e.target.type === 'checkbox' ? e.target.checked : e.target.value; save(); }
   });
+  function mrow(e) { var r = e.target.closest && e.target.closest('[data-mrow]'); return r ? r.getAttribute('data-mrow') : ''; }
+  stage.addEventListener('focusin', function (e) { var k = mrow(e); if (k) window.VGMeasures.hl(stage, k, true); });
+  stage.addEventListener('focusout', function (e) { var k = mrow(e); if (k) window.VGMeasures.hl(stage, k, false); });
   stage.addEventListener('keydown', function (e) {
     if (e.key === 'Enter' && e.target.matches('input:not([type=checkbox]):not([type=file])')) { e.preventDefault(); next(); }
   });
@@ -390,6 +443,7 @@
     var err = document.getElementById('vgd-err');
     var body = { type: type(), lang: lang(), t: Date.now() - t0 };
     for (var k in st) if (k !== 'what' && k !== 'kind') body[k] = typeof st[k] === 'string' ? st[k].trim() : st[k];
+    if (st.kind !== 'surmesure') body.mu = {};
     body.name = (st.firstName + ' ' + st.lastName).trim(); // ancien Worker (avant le déploiement) : champ unique
     fetch(EP + '/requests', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
       .then(function (r) { return r.json().catch(function () { return {}; }).then(function (j) { return { s: r.status, j: j }; }); })
