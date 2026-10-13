@@ -5,7 +5,7 @@
 // Admin -> assets/theme/admin/ : memes fichiers + pastille doree (distingue l'onglet admin)
 //          et admin/icon-192.png, admin/icon-512.png (manifest de l'admin).
 // Le logo est blanc chrome cerne de noir/bleu : lisible sur onglet clair ET sombre ; le SVG
-// ajoute en plus un leger halo adapte via prefers-color-scheme.
+// le SVG est une silhouette noire (theme clair) / blanche (theme sombre) via prefers-color-scheme ; ICO/PNG gardent les couleurs chrome, sans halo.
 const fs = require('fs');
 const path = require('path');
 const sharp = require('sharp');
@@ -16,7 +16,19 @@ const APPLE_BG = '#0b0b0b';
 const BADGE = '#ffa726';
 
 let logoBuf;
-async function logo() { return logoBuf || (logoBuf = await sharp(path.join(dir, 'logo.png')).trim({ threshold: 5 }).toBuffer()); }
+// Logo net : pas de halo (les pixels a moitie transparents autour des lettres sont retires), alpha raffermi.
+async function cleanAlpha(buf, white) {
+  const { data, info } = await sharp(buf).ensureAlpha().raw().toBuffer({ resolveWithObject: true });
+  for (let i = 0; i < data.length; i += 4) {
+    const a = Math.max(0, Math.min(255, Math.round((data[i + 3] - 90) * 255 / 100)));
+    data[i + 3] = a;
+    if (white) { data[i] = data[i + 1] = data[i + 2] = 255; }
+  }
+  return sharp(data, { raw: info }).png().toBuffer();
+}
+async function logo() { return logoBuf || (logoBuf = await cleanAlpha(await sharp(path.join(dir, 'logo.png')).trim({ threshold: 5 }).toBuffer(), false)); }
+let silBuf;
+async function silhouette() { return silBuf || (silBuf = await cleanAlpha(await logo(), true)); }
 
 // Pastille doree (coin bas-droit) pour l'admin.
 function badge(size) {
@@ -47,16 +59,16 @@ function ico(bufs, list) {
   return Buffer.concat([head, ...dirs, ...data]);
 }
 
-// SVG : le logo (PNG transparent integre) + halo selon le theme du navigateur.
+// SVG : silhouette du logo, sans fond ni halo ; noire en theme clair, blanche en theme sombre.
 async function svg(admin) {
-  const l = await sharp(await logo()).resize(128, 128, { fit: 'inside' }).png({ compressionLevel: 9 }).toBuffer();
+  const l = await sharp(await silhouette()).resize(128, 128, { fit: 'inside' }).png({ compressionLevel: 9 }).toBuffer();
   const m = await sharp(l).metadata();
   const w = m.width, h = m.height, S = 128, y = Math.round((S - h) / 2);
   const dot = admin ? `<circle cx="112" cy="112" r="14" fill="${BADGE}" stroke="#0b0b0b" stroke-width="5"/>` : '';
   return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${S} ${S}" width="${S}" height="${S}">
 <style>
-.l{filter:drop-shadow(0 0 2px rgba(0,0,0,.45))}
-@media (prefers-color-scheme: dark){.l{filter:drop-shadow(0 0 3px rgba(255,255,255,.7))}}
+.l{filter:brightness(0)}
+@media (prefers-color-scheme: dark){.l{filter:none}}
 </style>
 <image class="l" x="${Math.round((S - w) / 2)}" y="${y}" width="${w}" height="${h}" href="data:image/png;base64,${l.toString('base64')}"/>
 ${dot}

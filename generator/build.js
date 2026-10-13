@@ -211,7 +211,7 @@ function localizeBigCartelImages(text) {
 const HIDDEN_CONFIG = {};
 
 // ICON_V : a changer pour forcer les navigateurs a recharger les icones (le cache d'onglet est tetu).
-const ICON_V = 2;
+const ICON_V = 3;
 const FAVICON_LINKS = [
   `<link rel="icon" href="${BASE_PATH}/assets/theme/favicon.svg?v=${ICON_V}" type="image/svg+xml">`,
   `<link rel="icon" href="${BASE_PATH}/assets/theme/favicon-32.png?v=${ICON_V}" type="image/png" sizes="32x32">`,

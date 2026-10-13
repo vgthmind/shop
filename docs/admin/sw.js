@@ -1,7 +1,7 @@
 /* Service worker de l'admin installable : garde les pages de l'admin en mémoire pour qu'elles s'ouvrent même
    avec une mauvaise connexion. Réseau d'abord (toujours la dernière version quand il y a du réseau).
    Ne touche jamais aux appels vers le Worker ou GitHub (commandes, stock...) : seulement les fichiers de /admin/. */
-var CACHE = 'vg-admin-v6';
+var CACHE = 'vg-admin-v7';
 var SHELL = ['menu.html', 'aide.html', 'commandes.html', 'demandes.html', 'catalogue.html', 'stock.html', 'pieces.html', 'export.html', 'trafic.html', 'expedition.html', 'promos.html', 'vg-admin-auth.js', 'icon-192.png'];
 
 self.addEventListener('install', function (e) {
