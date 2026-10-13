@@ -23,13 +23,14 @@
   var FR = {
     'Home': 'Accueil', 'Products': 'Boutique', 'All': 'Tout', 'Tops': 'Hauts', 'Pants/Shorts': 'Pantalons/Shorts',
     'Accessories': 'Accessoires', 'Info & Terms': 'Infos & conditions', 'Track my order': 'Suivre ma commande', 'Cart': 'Panier', 'Cart (': 'Panier (',
-    'Add to cart': 'Ajouter au panier', 'Sold out': 'Vendu', 'Sold Out': 'Vendu', 'Your cart is empty': 'Ton panier est vide', 'Search': 'Rechercher',
+    'Add to cart': 'Ajouter au panier', 'Sold out': 'Vendu', 'Sold Out': 'Vendu', 'Coming soon': 'Bientôt disponible', 'Coming Soon': 'Bientôt disponible', 'Your cart is empty': 'Ton panier est vide', 'Search': 'Rechercher',
     'Unique piece': 'Pièce unique', 'UNIQUE PIECE': 'PIÈCE UNIQUE', 'Menu': 'Menu', 'Shop': 'Boutique',
-    'Start a project': 'Proposer un projet', 'My request': 'Ma demande', 'Enter': 'Entrer',
+    'One of a kind': 'Pièce unique', 'See all': 'Tout voir', 'No results': 'Aucun résultat', 'navigate': 'naviguer', 'open': 'ouvrir', 'close': 'fermer',
+    'Got a project?': 'Un projet ?', 'My request': 'Ma demande', 'Enter': 'Entrer',
     'Latest Drop': 'Dernier drop', '✦ Latest Drop': '✦ Dernier drop'
   };
   var EN = { 'Voir le post · @vgthmind': 'View the post · @vgthmind', 'Voir la piece portee · @vgthmind': 'See the piece worn · @vgthmind', 'Mentions légales': 'Legal notice', 'Confidentialité': 'Privacy', 'Produits': 'Products', 'PRODUITS': 'PRODUCTS', 'Boutique': 'Shop' };
-  var SELECTORS = 'nav.sections a, #navigation-modal a, .navigation-modal a, footer a, .welcome_button, .add-to-cart-button, .product-status, .product-list-thumb-status, .unique-badge, .alert-message__text, .vg-back-link, .vg-cart-btn, h1.page-title, body.custom h1, .featured-title, .cart-header h1, .page_list a, .vg-crumbs a, .subheader .categories a, .vg-category-tile-label, .vg-enter, .ig-reel-label, main h1';
+  var SELECTORS = 'nav.sections a, #navigation-modal a, .navigation-modal a, footer a, .welcome_button, .add-to-cart-button, .product-status, .product-list-thumb-status, .unique-badge, .alert-message__text, .vg-back-link, .vg-cart-btn, h1.page-title, body.custom h1, .featured-title, .cart-header h1, .page_list a, .vg-crumbs a, .subheader .categories a, .vg-category-tile-label, .vg-enter, .ig-reel-label, main h1, #search-modal label, .vg-sr-count, .vg-sr-all, .vg-sr-cat, .vg-sr-hint span';
 
   // Attributs lus par les lecteurs d'écran / info-bulles (texte anglais d'origine -> français).
   var ATTR_FR = {
@@ -65,7 +66,7 @@
     });
   }
   // Titres d'onglet : partie avant « | ». FR = textes anglais d'origine traduits, EN = textes français d'origine traduits.
-  var TITLE_FR = { 'Start a project': 'Proposer un projet', 'Cart': 'Panier', 'Products': 'Boutique', 'All': 'Tout', 'Tops': 'Hauts', 'Pants/Shorts': 'Pantalons/Shorts', 'Accessories': 'Accessoires', 'My request': 'Ma demande', 'Latest Drop': 'Dernier drop' };
+  var TITLE_FR = { 'Got a project?': 'Un projet ?', 'Cart': 'Panier', 'Products': 'Boutique', 'All': 'Tout', 'Tops': 'Hauts', 'Pants/Shorts': 'Pantalons/Shorts', 'Accessories': 'Accessoires', 'My request': 'Ma demande', 'Latest Drop': 'Dernier drop' };
   var TITLE_EN = {
     'vgthmind — créations fabriquées en France': 'vgthmind — handmade in France', 'Boutique — créations vgthmind': 'Shop — vgthmind',
     'Infos & conditions de vente': 'Info & terms of sale', 'Mentions légales': 'Legal notice', 'Confidentialité': 'Privacy', 'Suivre ma commande': 'Track my order'
@@ -103,12 +104,23 @@
     while (w.nextNode()) if (w.currentNode.nodeValue.trim()) out.push(w.currentNode);
     return out;
   }
+  // Texte anglais -> français : mot exact, « 7 results », ou « Catégorie · One of a kind » (chaque morceau).
+  function trFr(core) {
+    if (FR[core]) return FR[core];
+    var m = /^(\d+) results?$/.exec(core);
+    if (m) return m[1] + (m[1] === '1' ? ' résultat' : ' résultats');
+    if (core.indexOf(' · ') !== -1) {
+      var parts = core.split(' · '), out = parts.map(function (x) { return FR[x] || x; });
+      return out.join(' · ') !== core ? out.join(' · ') : undefined;
+    }
+    return undefined;
+  }
   function translateUi() {
     document.querySelectorAll(SELECTORS).forEach(function (el) {
       textNodes(el).forEach(function (n) {
         if (n.__vgO === undefined) n.__vgO = n.nodeValue;
         var o = n.__vgO, core = o.trim().replace(/^[←→+\s]+/, ''), pre = o.slice(0, o.indexOf(core)), post = o.slice(o.indexOf(core) + core.length);
-        var tr = lang === 'fr' ? FR[core] : EN[core];
+        var tr = lang === 'fr' ? trFr(core) : EN[core];
         n.nodeValue = tr ? pre + tr + post : o;
       });
     });

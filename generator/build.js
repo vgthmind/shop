@@ -23,7 +23,8 @@ const THEME_DIR = path.join(ROOT, 'theme');
 const CUSTOM_DIR = path.join(THEME_DIR, 'custom');
 const PAGES_DIR = path.join(THEME_DIR, 'pages');
 const DATA_DIR = path.join(ROOT, 'data');
-const OUT_DIR = path.join(ROOT, 'docs');
+// OUT_DIR (env) : dossier de sortie alternatif (essais de bascule, tests) ; par défaut docs/.
+const OUT_DIR = process.env.OUT_DIR ? path.resolve(process.env.OUT_DIR) : path.join(ROOT, 'docs');
 
 // The real BigCartel templates hardcode root-absolute links (/, /products,
 // /product/<slug>...) because BigCartel always serves a store from its domain
@@ -39,7 +40,8 @@ const BASE_PATH = process.env.BASE_PATH !== undefined ? process.env.BASE_PATH : 
 // SITE_URL (env) le remplace, ex. l'adresse .pages.dev pendant les essais.
 const SHOP_SETTINGS = Object.assign({ public: false, site_url: 'https://vgthmind.github.io/shop' },
   JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'data', 'shop-settings.json'), 'utf8')),
-  process.env.SITE_URL ? { site_url: process.env.SITE_URL } : {});
+  process.env.SITE_URL ? { site_url: process.env.SITE_URL } : {},
+  process.env.SHOP_PUBLIC ? { public: process.env.SHOP_PUBLIC === '1' } : {});
 // Vidéos (reels, clips des transitions, studio) : copiées dans assets/media/ (le site ne dépend
 // plus du portfolio). Hors du dépôt docs/ (.gitignore) : seul le build Cloudflare les publie.
 // L'ancien aperçu GitHub Pages (/shop) garde les adresses du portfolio jusqu'à son arrêt.
@@ -222,7 +224,7 @@ const CUSTOM_PAGES = [
   { name: 'Contact', url: '/contact-914a3d', permalink: 'contact-914a3d' },
   { name: 'Studio', url: '/studio', permalink: 'studio' },
   // Pièce sur demande / production / collab : parcours étape par étape (theme/pages/sur-demande.html + assets/vg-demande.js).
-  { name: 'Start a project', url: '/sur-demande', permalink: 'sur-demande' },
+  { name: 'Got a project?', url: '/sur-demande', permalink: 'sur-demande' },
 ];
 // Pages legales : liens du pied de page uniquement (required_pages du gabarit),
 // pas dans le menu du haut.
@@ -733,6 +735,24 @@ async function main() {
     + urls.map((u) => `  <url><loc>${SITE_ORIGIN}${u}</loc><lastmod>${today}</lastmod></url>`).join('\n')
     + '\n</urlset>\n';
   write('sitemap.xml', sitemap);
+
+  // products.xml : flux produits (RSS 2.0 + espace « g: » de Google Merchant Center, lu aussi par le catalogue Meta
+  // Instagram/Facebook), pour remplacer le /products.xml de l'ancienne boutique. Statique : la disponibilité vient du
+  // catalogue publié (le stock en direct est dans le Worker) ; une pièce « bientôt disponible » est marquée indisponible.
+  const xe = (t) => String(t == null ? '' : t).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  const feedItems = catalog.products.filter((p) => !p.hidden).map((p) => {
+    const desc = String(p.description || '').split(/\r?\n\s*\r?\n/)[0].replace(/\s+/g, ' ').trim() || p.name;
+    const og = SITE_ORIGIN + BASE_PATH + '/assets/products-og/' + encodeURIComponent(p.permalink) + '.jpg';
+    return '    <item>\n'
+      + `      <g:id>${xe(p.permalink)}</g:id>\n      <title>${xe(p.name)}</title>\n      <description>${xe(desc)}</description>\n`
+      + `      <link>${xe(SITE_ORIGIN + BASE_PATH + p.url)}</link>\n      <g:image_link>${xe(og)}</g:image_link>\n`
+      + `      <g:availability>${p.status === 'coming-soon' ? 'out of stock' : 'in stock'}</g:availability>\n`
+      + `      <g:price>${Number(p.price).toFixed(2)} EUR</g:price>\n      <g:condition>new</g:condition>\n      <g:brand>vgthmind</g:brand>\n      <g:identifier_exists>no</g:identifier_exists>\n`
+      + '    </item>';
+  });
+  write('products.xml', '<?xml version="1.0" encoding="UTF-8"?>\n<rss version="2.0" xmlns:g="http://base.google.com/ns/1.0">\n  <channel>\n'
+    + `    <title>vgthmind</title>\n    <link>${xe(SITE_ORIGIN + BASE_PATH + '/')}</link>\n    <description>vgthmind</description>\n`
+    + feedItems.join('\n') + '\n  </channel>\n</rss>\n');
 
   // GitHub Pages: serve files and folders starting with "_" too, no Jekyll.
   write('.nojekyll', '');

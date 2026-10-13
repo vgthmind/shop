@@ -63,3 +63,14 @@ collections:
         hint: "Facultatif, ancien systeme : le panier paie tout via Stripe Checkout. Ce lien ne sert que si le paiement groupe est coupe."
       - { label: "Position (ordre d'affichage, les plus petits nombres en premier)", name: "position", widget: "number", value_type: "int", default: 0 }
       - { label: "Date de creation", name: "created_at", widget: "datetime", required: false }
+      # Champs gérés par les autres pages de l'admin (Nouvelle pièce, Catalogue, Stock) : déclarés ici (cachés) pour que
+      # l'éditeur complet ne les efface jamais en enregistrant une fiche.
+      - { name: "unique", widget: "hidden", required: false }
+      - { name: "in_stock", widget: "hidden", required: false }
+      - { name: "color_name", widget: "hidden", required: false }
+      - { name: "color_hex", widget: "hidden", required: false }
+      - { name: "reel_url", widget: "hidden", required: false }
+      - { name: "reel_video", widget: "hidden", required: false }
+      - { name: "hidden", widget: "hidden", required: false }
+      - { name: "publish_at", widget: "hidden", required: false }
+      - { name: "coming_soon", widget: "hidden", required: false }

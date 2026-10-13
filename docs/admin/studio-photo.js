@@ -173,14 +173,23 @@
   (function () {
     var MAX = 40 * 1024 * 1024;
     function msg(t, err) { $('rpMsg').textContent = t; $('rpMsg').style.color = err ? '#a23b2a' : ''; }
-    $('fReelVideo').onchange = function (e) {
-      var f = e.target.files[0]; reelFile = null; if (!f) { msg(''); return; }
-      if (f.size > MAX) { msg('Vidéo trop lourde (' + Math.round(f.size / 1048576) + ' Mo, 40 Mo maximum) : exporte-la en plus léger.', true); return; }
+    function accept(f) {
       var v = document.createElement('video'), u = URL.createObjectURL(f);
       v.muted = true; v.preload = 'metadata';
       v.onloadedmetadata = function () { URL.revokeObjectURL(u); reelFile = f; scheduleDraft(); msg('Vidéo prête (' + Math.round(f.size / 1048576 * 10) / 10 + ' Mo, ' + Math.round(v.duration) + ' s).'); };
       v.onerror = function () { URL.revokeObjectURL(u); msg('Cette vidéo ne peut pas être lue par ce navigateur (vidéo iPhone HEVC ?) : exporte-la en MP4 H.264.', true); };
       v.src = u; msg('Lecture…');
+    }
+    $('fReelVideo').onchange = function (e) {
+      var f = e.target.files[0]; reelFile = null; if (!f) { msg(''); return; }
+      var mp4 = /\.mp4$/i.test(f.name) || f.type === 'video/mp4';
+      if (f.size <= MAX && mp4) { accept(f); return; }
+      // Trop lourde ou autre format (.mov de l'iPhone…) : conversion automatique dans le navigateur.
+      if (!window.VGVideoConvert || !VGVideoConvert.supported()) { msg(f.size > MAX ? 'Vidéo trop lourde (' + Math.round(f.size / 1048576) + ' Mo, 40 Mo maximum) : exporte-la en plus léger.' : 'Vidéo non MP4 : exporte-la en MP4 H.264.', true); return; }
+      msg('Conversion en MP4 léger… 0 % (garde l\'écran allumé)');
+      VGVideoConvert.convert(f, { maxSeconds: 30, maxWidth: 720, bitrate: 2000000, maxBytes: MAX - 1048576, onProgress: function (p) { msg('Conversion en MP4 léger… ' + Math.round(p * 100) + ' % (garde l\'écran allumé)'); } })
+        .then(function (out) { if (out.size > MAX) throw new Error('encore trop lourde après conversion'); accept(out); })
+        .catch(function (err) { msg('Conversion impossible : ' + err.message, true); });
     };
   })();
   function remove(i) {
@@ -606,6 +615,39 @@
     no.onclick = function () { box.remove(); draftPending = false; Draft.clear(); };
   })();
   document.addEventListener('input', scheduleDraft); document.addEventListener('change', scheduleDraft);
+
+  // --- Aperçu avant / après en plein écran (iPhone compris) : curseur glissant entre l'original et le détouré.
+  (function () {
+    var box = $('cmp'), stage = $('cmpStage'), after = $('cmpAfter'), line = $('cmpLine'), c1 = $('cmpC1'), c2 = $('cmpC2'), bgSel = $('cmpBg');
+    if (!box || !$('bCompare')) return;
+    Object.keys(BGS).forEach(function (k) { var o = document.createElement('option'); o.value = k; o.textContent = BGS[k].label.split(' (')[0]; bgSel.appendChild(o); });
+    var cb = document.createElement('option'); cb.value = 'checker'; cb.textContent = 'Damier'; bgSel.appendChild(cb);
+    bgSel.value = 'beige';
+    function paint() {
+      [[c1, origEl], [c2, cutEl]].forEach(function (a) {
+        a[0].width = a[1].width; a[0].height = a[1].height; a[0].getContext('2d').drawImage(a[1], 0, 0);
+      });
+      applyBg($('cmpBefore'), bgSel.value); applyBg(after, bgSel.value);
+    }
+    function setPos(x) {
+      var r = stage.getBoundingClientRect(), pct = Math.max(0, Math.min(100, (x - r.left) / r.width * 100));
+      after.style.clipPath = 'inset(0 0 0 ' + pct + '%)'; line.style.left = pct + '%';
+    }
+    var drag = false;
+    stage.addEventListener('pointerdown', function (e) { drag = true; try { stage.setPointerCapture(e.pointerId); } catch (x) {} setPos(e.clientX); });
+    stage.addEventListener('pointermove', function (e) { if (drag) setPos(e.clientX); });
+    ['pointerup', 'pointercancel'].forEach(function (n) { stage.addEventListener(n, function () { drag = false; }); });
+    function close() { box.hidden = true; document.body.style.overflow = ''; }
+    $('bCompare').onclick = function () {
+      if (!origEl.width || !cutEl.width) return;
+      paint(); box.hidden = false; document.body.style.overflow = 'hidden'; after.style.clipPath = 'inset(0 0 0 50%)'; line.style.left = '50%';
+      if (box.requestFullscreen && !E.isIOS) { try { box.requestFullscreen(); } catch (x) {} } // iPhone : le plein écran Safari ne couvre pas la page, le calque fixe suffit
+    };
+    $('cmpClose').onclick = function () { if (document.fullscreenElement) { try { document.exitFullscreen(); } catch (x) {} } close(); };
+    bgSel.onchange = paint;
+    document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && !box.hidden) close(); });
+    document.addEventListener('fullscreenchange', function () { if (!document.fullscreenElement && !box.hidden) close(); });
+  })();
 
   window.VGStudio = { colorSample: colorSample, count: function () { return exportable().length; }, pending: pendingCount, _state: function () { return { photos: photos, params: params }; } };
 })();

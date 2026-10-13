@@ -1,112 +1,60 @@
-# À faire de ton côté (pas à pas, sans terminal)
+# À faire de ton côté — du plus rapide au plus long (que des clics, pas de terminal)
 
-**Mise à jour du 12 octobre (nuit).** Rien de ce qui suit n'est en ligne tant que tu n'as pas dit OK pour pousser le site et déployer le Worker.
+Mise à jour de la nuit du 12 → 13 octobre 2026. **Rien de ce qui suit n'est en ligne tant que tu n'as pas dit OK** (étape 1). Tout est sur la branche `claude/keen-hypatia-ikrv7l` ; la bascule du domaine est sur la branche `bascule-prete` (jamais fusionnée sans toi).
 
-## E. Mise en ligne programmée (drops 18 h) : 1 réglage chez toi
-1. dash.cloudflare.com → Workers & Pages → **vgthmind-shop** → Settings → **Deploy Hooks** → Add : nom `drop`, branche `main` → copie l'adresse (https://api.cloudflare.com/client/v4/pages/webhooks/deploy_hooks/…).
-2. Dans le dossier `checkout-worker` (PowerShell) : `npx.cmd wrangler secret put DEPLOY_HOOK_URL` → colle l'adresse UNE fois → Entrée.
-3. Admin → Catalogue → une pièce en aperçu → **Programmer** → `2026-11-06 18:00` (heure de Paris) → Enregistrer. Le Worker lance la construction du site ~1 min avant l'heure ; la pièce apparaît à 18 h, à ± 20 secondes.
-La pièce doit avoir au moins une catégorie. « Annuler la programmation » la remet en aperçu.
+Dans Cloudflare, « ajouter un secret » = **dash.cloudflare.com → Workers & Pages → `vgthmind-shop-checkout` → Settings → Variables and Secrets → Add → Type : Secret → Nom + Valeur → Deploy**. Le secret n'apparaît ensuite plus jamais en clair (normal). Après chaque ajout, ouvre **Admin → État du système** : la ligne correspondante doit passer à `OK`.
 
-## F. Ventes → ton Sheet de compta
-Il me faut, **à saisir toi-même** (je ne les vois jamais) :
-- `npx.cmd wrangler secret put COMPTA_URL` : l'adresse « /exec » de ton script Google ;
-- `npx.cmd wrangler secret put COMPTA_SECRET` : la valeur de la propriété « SECRET » de ce script.
-Puis dis-moi « compta posée » : je fais un achat test sur une copie du Sheet (`COMPTA_TEST=1`), je vérifie la ligne, je retire `COMPTA_TEST`. Format de la ligne : voir chantier/PLAN-ADMIN.md §6 (id `site-VG-XXXXXX`, montant port compris). Pas encore branchés : les remboursements (il faudra ajouter l'événement Stripe `refund.created`) et les acomptes.
+## 1. Dire OK pour la mise en ligne de la nuit (10 secondes)
+Écris-moi **« déploie la branche de la nuit »** : je fusionne la branche dans `main` (Cloudflare reconstruit le site en 1–2 min) puis je déploie le Worker. Contenu : voir RAPPORT-NUIT.md. Retour arrière : « annule le déploiement de la nuit ». Ensuite regarde le numéro **Admin v2026-10-13-d** en bas à gauche de n'importe quelle page de l'admin (sur iPhone : ferme et rouvre l'admin si tu vois un autre numéro).
 
-## G. Vidéos d'ouverture (accueil)
-Admin → **Vidéos d'ouverture** : ajouter / retirer des clips. Format : MP4 H.264 vertical, 480 px, 3 s, sans son, < 1 Mo (max 3 Mo / 8 s accepté). Pour transformer un reel : glisse-le sur `outils\Convertir-reel-ouverture.bat` (ffmpeg requis : `winget install Gyan.FFmpeg`). Les reels déjà sur le site ont été convertis en clips d'ouverture (21 clips).
+## 2. Alerte de facturation Cloudflare (2 min)
+dash.cloudflare.com → **Notifications** → **Add** → **Usage Based Billing** → produit **R2** (seuils : 5 Go de stockage, 500 000 opérations) → destinataire contact@vgthmind.org → Save. (Pour être prévenu si un jour tu dépasses la partie gratuite.)
 
----
+## 3. DMARC (2 min, IONOS)
+IONOS → Domaines → vgthmind.org → DNS : supprime l'enregistrement `_dmarc`, ajoute un TXT nommé `_dmarc` avec la valeur `v=DMARC1; p=none; rua=mailto:contact@vgthmind.org`. Puis Resend → Domains : « Verified ».
 
-**Mise à jour du 12 octobre (soir).** Le Worker utilise maintenant ta clé Stripe **de test** (rk_test) : le paiement du site fonctionne en mode test (aucun vrai argent). Voir aussi `chantier/REDIRECTIONS.md` (anciennes adresses).
+## 4. Webhook Stripe : 2 événements en plus (2 min)
+Stripe → Développeurs → Webhooks → ton endpoint → **Ajouter des événements** : `payment_intent.payment_failed` et `checkout.session.async_payment_failed` (sinon pas d'alerte « paiement échoué »). À refaire le jour du passage en live.
 
-## 0. Le test de paiement avec la carte 4242 (2 minutes, à faire avec Claude)
-Je n'ai pas le droit de saisir un numéro de carte, même de test. Tout le reste est testé et marche (port de 15 € pour la Belgique bien facturé, pièce réservée mais pas décomptée avant paiement, annulation = pièce de nouveau en vente, mails corrects).
-1. Dis à Claude : « prépare le test de paiement ». Il publie une pièce fictive et te donne un lien Stripe (valable 30 minutes).
-2. Ouvre le lien. Carte `4242 4242 4242 4242`, date future, CVC 123, pays Belgique ou France.
-3. Après le paiement, dis « c'est payé » : Claude vérifie le stock (0 = Sold out), les deux mails, puis supprime la pièce.
-Si Stripe refuse quelque chose, il n'y a aucune case à cocher : la clé a déjà toutes les permissions nécessaires (testé).
+## 5. Double authentification GitHub (3 min)
+GitHub → Settings → Password and authentication → Two-factor (clé d'accès ou application). C'est la vraie protection de l'admin.
 
----
+## 6. Drops de 18 h : le « Deploy Hook » (5 min)
+1. dash.cloudflare.com → Workers & Pages → **vgthmind-shop** → Settings → **Builds** (ou « Deploy Hooks ») → **Add deploy hook** : nom `drop`, branche `main` → copie l'adresse (`https://api.cloudflare.com/client/v4/pages/webhooks/deploy_hooks/…`).
+2. Ajoute-la comme secret du Worker (voir en haut) : nom **`DEPLOY_HOOK_URL`**. Vérifie sur « État du système » la ligne `DEPLOY_HOOK_URL posée`.
+3. Admin → Catalogue → une pièce en aperçu → **Programmer** → `2026-11-06 18:00` (heure de Paris) → Enregistrer. La pièce apparaît à 18 h (± 20 s). Elle doit avoir au moins une catégorie. « Annuler la programmation » la remet en aperçu.
 
-## D. « Proposer un projet » (pièces sur demande) : 3 choses à faire
+## 7. Ventes → ton Sheet de compta (5 min + 2 min avec moi)
+Secrets du Worker (même chemin que ci-dessus), noms exacts : **`COMPTA_URL`** (l'adresse « /exec » de ton script Google) et **`COMPTA_SECRET`** (la propriété « SECRET » du script). Puis dis-moi « compta posée » : je fais un achat test sur une copie du Sheet, je vérifie la ligne, je retire le mode essai. Pas encore branchés : remboursements et acomptes.
+Le tableau de bord de l'admin a déjà le lien direct vers ta **Comptabilité** et ta **Facturation**.
 
-### D1. Activer R2 (stockage des photos / vidéos des demandes), 5 minutes
-Gratuit jusqu'à 10 Go stockés par mois (+ 1 million d'envois et 10 millions de lectures par mois). Une demande pèse au plus ~130 Mo, et les fichiers s'effacent tout seuls 6 mois après la fin de la demande : tu resteras très loin de la limite. Cloudflare demande quand même une carte bancaire pour ouvrir R2.
-1. Va sur **dash.cloudflare.com** (même compte que le Worker), menu de gauche **R2 Object Storage** (parfois rangé sous « Stockage et bases de données »).
-2. Clique **Activer R2** / **Purchase R2** (offre gratuite), ajoute ta carte si on te la demande. Tu ne payes rien sous les limites gratuites.
-3. **Create bucket** : nom **`vgthmind-demandes`** (exactement), **Location** : laisse « Automatic » **ou** choisis la juridiction **« European Union (EU) »** (mieux pour le RGPD). Note bien ce que tu as choisi.
-4. Ne rends **rien public** : pas de « Public access », pas de domaine, pas de jeton d'API à créer. Le Worker y accède tout seul.
-5. Dis-moi **« R2 activé, juridiction EU »** (ou « Automatic ») : j'active le stockage dans le Worker et je redéploie. Tant que ce n'est pas fait, le formulaire marche quand même, mais le client ne peut envoyer qu'un lien (WeTransfer, Drive) et tu ne peux pas ajouter les photos de la pièce finie.
+## 8. Relire les textes (10–20 min, à ton rythme)
+- `chantier/CGV-A-VERIFIER.md` (médiateur, délai de rétractation, pays livrés) et `chantier/CGV-PROPOSITION.html` (surligné jaune = à remplir ; section 5 bis « sur demande »).
+- **TVA** : décidé, « TVA non applicable, article 293 B du CGI » partout (mentions légales, factures). Rien à faire avant 2027.
+- Page Confidentialité (durée de conservation des messages : 12 mois, choix de ma part).
+- **Adresse de l'émetteur sur les factures** : une facture française porte normalement le nom et l'adresse du vendeur. Pour l'instant : « vgthmind, Vitry-sur-Seine, SIRET ». Si tu veux ajouter l'adresse : dis-le-moi.
+- Nouveau texte (livraison) : « Livraison via La Poste (Colissimo, ou lettre suivie pour les petites pièces en France) ».
 
-### D2. Alerte de facturation Cloudflare (2 minutes)
-Pour être prévenu si un jour tu dépasses la partie gratuite (il n'y a pas de plafond de dépense chez Cloudflare) :
-1. dash.cloudflare.com → **Notifications** (menu du compte) → **Add** (Ajouter).
-2. Choisis **« Usage Based Billing »** (facturation à l'usage). Produit : **R2** (fais-en une pour « Storage » et une pour « Class A Operations » si on te propose de choisir), seuil : par ex. **5 Go** pour le stockage, **500 000** pour les opérations.
-3. Destinataire : contact@vgthmind.org → **Save**.
-4. En plus (bonne habitude) : **Manage Account → Billing** : vérifie de temps en temps « Usage » ; tant que c'est 0,00 $, tout va bien.
-Si les noms de menus ont changé, cherche « Notifications » puis « billing » : c'est le même réglage.
+## 9. Test avec Claude, après la mise en ligne (2 min de ton temps)
+- **Paiement test (mode test)** : dis « prépare le test de paiement » ; je publie une pièce fictive et te donne un lien Stripe. Tu tapes toi-même la carte `4242 4242 4242 4242` (date future, CVC 123, pays Belgique ou France). Dis « c'est payé » : je vérifie stock (0 = Sold out), les deux mails, puis je supprime la pièce. Je n'ai pas le droit de taper un numéro de carte, même de test.
+- **Un éditeur à tester** : Admin → « Modifier une fiche » → change juste une virgule dans la description d'une pièce → Enregistrer → regarde que le badge « Pièce unique », la pastille de couleur et le reel sont toujours là (j'ai déclaré ces champs dans l'éditeur pour qu'il ne les efface pas ; je ne peux pas le vérifier sans ta connexion GitHub).
 
-### D3. Valider mes propositions
-- Les photos des cartes du parcours (liste dans le résumé de Claude) : tu peux les changer à tout moment dans Admin → Demandes → Réglages.
-- La section **5 bis** de `chantier/CGV-PROPOSITION.html` (passages surlignés en jaune).
-- Ensuite, test complet en mode test avec Claude : demande custom → devis → acompte (carte `4242 4242 4242 4242`, c'est toi qui la tapes) → photos → validation → solde → expédition.
+## 10. Stripe en live (15 min) — le dernier verrou avant le lancement
+Suis `chantier/BASCULE.md` §1 (clé restreinte live + webhook live). **Ne m'envoie ni la clé ni le secret** : ajoute-les toi-même dans les secrets du Worker (`STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`), puis dis-moi « clé live créée » : je mets `LIVE_MODE=1` et je redéploie. Droits en plus pour les codes promo : Écriture sur « Coupons » et « Promotion Codes » (facultatif).
+
+## 11. La bascule du domaine (1 h, un mardi ou mercredi matin)
+Tout est dans **`chantier/BASCULE-JOUR-J.md`** : 2 clics côté Cloudflare, 1 ligne à changer chez IONOS (`www`), le reste c'est moi (fusion de `bascule-prete`, vérification automatique de toutes les anciennes adresses, dont celle de ton Instagram). Retour d'urgence en 1 clic.
+
+## 12. Ce qui dépend de toi et que je ne peux pas inventer
+Photo de la **collection grise** (image d'accueil) ; photo d'origine du **pantalon denim bleu** (détourage) ; liens Instagram manquants ; **médiateur de la consommation** ; adresse pour le retour/rétractation ; décision sur le **prix États-Unis** (29 € alors que La Poste facture ~35 € pour 500 g : tu perds ~6 € par envoi) ; tu/vous.
 
 ---
 
-## A. Détourage depuis l'iPhone (tunnel Cloudflare)
+## Rappel : détourage depuis l'iPhone (inchangé, rien de nouveau à faire)
+Sur le PC : dossier `detourage-server` → double-clic **`Lancer-detourage-iphone.bat`** → laisse la fenêtre noire ouverte → envoie-toi le lien « Détourage iPhone prêt » → ouvre-le dans Safari. À chaque lancement l'adresse change ; ne partage jamais ce lien (il contient le mot de passe). Détourage sur PC : `Lancer-detourage.bat`. Le serveur de détourage hébergé (Hugging Face) est abandonné : rien n'en a été poussé.
 
-Testé de bout en bout sur ce PC : le tunnel démarre, le détourage aboutit par l'adresse Cloudflare avec le mot de passe, et il est refusé sans le mot de passe.
-Gratuit, sans carte bancaire, sans compte.
+## Rappel : vidéos d'ouverture
+Admin → **Vidéos d'ouverture** : choisis une vidéo (même .mov lourd de l'iPhone) : elle est convertie toute seule (garde l'écran allumé). À essayer sur ton iPhone et ton PC.
 
-**Sur le PC :**
-1. Ouvre le dossier `vgthmind-shop`, puis `detourage-server`.
-2. Double-clique sur **`Lancer-detourage-iphone.bat`** (le programme de Cloudflare, `cloudflared.exe`, est déjà téléchargé).
-3. Au bout de quelques secondes, le message **« PRÊT »** s'affiche et une page **« Détourage iPhone prêt »** s'ouvre avec un long lien. Il est **déjà copié**.
-4. **Laisse la fenêtre noire ouverte** tant que tu travailles sur l'iPhone. La fermer arrête tout.
-   - Si Windows demande une autorisation (pare-feu) : **Autoriser**.
-
-**Sur l'iPhone :**
-1. Envoie-toi le lien (Messages à toi-même, Notes, AirDrop ou e-mail).
-2. Ouvre-le **dans Safari**. Le studio « Nouvelle pièce » s'ouvre ; le lien se range tout seul dans l'iPhone.
-3. Connecte-toi à GitHub comme d'habitude, ajoute tes photos : le détourage part vers ton PC (environ 10 à 30 secondes par photo).
-
-**À savoir :**
-- **À chaque lancement, l'adresse change** : renvoie le nouveau lien à l'iPhone (30 secondes). L'ancien lien ne marche plus.
-- Le PC doit être **allumé, connecté à internet, avec la fenêtre noire ouverte**. Sinon le studio affiche « Le PC ne répond pas… ».
-- **Ne partage jamais ce lien** : il contient le mot de passe de ton serveur de détourage. Si tu l'as envoyé par erreur :
-  supprime le fichier `detourage-server\.token` (fichier caché : dans l'explorateur, onglet « Affichage » → « Éléments masqués »), puis relance le `.bat` : nouveau mot de passe, l'ancien lien est mort.
-- Sur le PC, le détourage continue de marcher comme avant avec `Lancer-detourage.bat` (sans mot de passe, tout reste sur le PC).
-- Une adresse fixe est possible mais demande un nom de domaine géré par Cloudflare (le tien est chez IONOS) : à voir plus tard, rien à faire maintenant.
-
----
-
-## B. Test conseillé du panier avec le choix du pays (5 minutes)
-
-Le panier propose maintenant « Pays de livraison » : le client choisit son pays **avant** de payer, le prix de livraison s'affiche pour ce pays,
-et l'adresse demandée sur la page de paiement est limitée à ce pays.
-
-1. Dans le studio, crée une pièce fictive (prix 10 €, poids 800 g, mode « Colis ») et publie-la. Attends 1 à 2 minutes que le site se reconstruise.
-2. Sur le site, ajoute-la au panier et ouvre le panier. Choisis tour à tour **France** (livraison offerte), **Belgique** (15 €), **Allemagne** (15 €), **Canada** (29 €), **Russie** (refusée, bouton bloqué).
-3. Mets une **ancienne pièce** dans le panier : ses frais restent ceux d'avant (par exemple 5 € en France, 25 € ailleurs pour ch_0002).
-4. Le paiement lui-même est toujours bloqué tant que le site est en mode test avec une clé « live » (message « Paiement en mode test uniquement ») : c'est le réglage actuel, ne change rien.
-5. Archive/supprime la pièce fictive depuis la page « Pièces » (ou demande-le à Claude).
-
----
-
-## C. Rien à faire, mais bon à savoir : brouillon automatique
-
-Le studio sauvegarde sur l'appareil les photos ajoutées, la vidéo et la fiche en cours. Si tu quittes la page (ou si Safari la recharge),
-un bandeau **« Brouillon retrouvé »** propose **Reprendre** ou **Effacer**. Les photos sont de nouveau détourées à la reprise.
-Le brouillon est effacé après une publication réussie, ou au bout de 14 jours.
-
----
-
-## À vérifier de ton côté
-- La boîte **contact@vgthmind.org** existe et tu la lis : les réponses des clients aux mails de commande y arrivent maintenant (avant : ton adresse Gmail). Si elle n'existe pas encore, dis-le-moi pour revenir en arrière.
-- Le brouillon des CGV (`rapports-nuit/brouillons/cgv.html`) donne encore l'adresse Gmail pour la rétractation : à harmoniser quand tu valides les CGV.
-- Admin « Expédition » : nouveaux réglages « Lettre suivie proposée ? » et « pays acceptés » (France seule pour l'instant, comme avant).
-
-## Ce qui reste de ton côté (inchangé)
-Liens Instagram manquants, médiateur, adresse, CGV, TVA, passage Stripe live, DNS IONOS : voir `ETAT.md`.
+## Rappel : brouillon automatique du studio
+Si tu quittes « Nouvelle pièce », un bandeau « Brouillon retrouvé » propose Reprendre ou Effacer (effacé après publication ou 14 jours).

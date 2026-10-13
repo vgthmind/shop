@@ -47,6 +47,8 @@
   var SIZED = [24, 320, 540, 800];
   window.__vgSized = function (url, px) {
     var m = /^(?:https?:\/\/[^\/]+)?(\/[^?#]*?)?\/assets\/products\/([^?#]+)\.(png|jpe?g|webp)(?:[?#].*)?$/i.exec(String(url));
+    // Déjà une variante allégée (/assets/products-sized/N/...) : on la re-choisit à la taille demandée (même fichier = pas de 2e téléchargement).
+    if (!m) m = /^(?:https?:\/\/[^\/]+)?(\/[^?#]*?)?\/assets\/products-sized\/\d+\/([^?#]+)\.webp(?:[?#].*)?$/i.exec(String(url));
     if (!m) return null;
     var w = SIZED[SIZED.length - 1];
     for (var i = 0; i < SIZED.length; i++) { if (SIZED[i] >= px) { w = SIZED[i]; break; } }
@@ -1702,6 +1704,27 @@ html{background:var(--background-color, #f4f2ec);}
   body .header{padding-left:max(32px, env(safe-area-inset-left)) !important;padding-right:max(32px, env(safe-area-inset-right)) !important;box-sizing:border-box;}
 }
 
+
+/* ===== PANIER : bouton « Retirer » = même style puck chromé que les autres boutons (version compacte) ===== */
+.cart-item button.vg-cart-remove{
+  position:relative !important; z-index:0 !important;
+  display:inline-flex !important; align-items:center !important; justify-content:center !important;
+  height:40px !important; min-height:40px !important; padding:0 16px !important; line-height:normal !important;
+  border:none !important; border-radius:10px !important;
+  background:linear-gradient(155deg, #eef0f2 0%, #c7cbd0 24%, #8f939a 50%, #d8dbde 68%, #6f7379 100%) !important;
+  box-shadow:0 3px 0 #6f7379, 0 5px 7px rgba(0,0,0,0.3), 0 1px 0 rgba(255,255,255,0.5) inset !important;
+  color:#3d4045 !important; font-size:12px !important; letter-spacing:.06em; text-transform:uppercase; text-decoration:none !important;
+  text-shadow:0 1px 0 rgba(255,255,255,0.5) !important;
+}
+.cart-item button.vg-cart-remove::before{
+  content:'' !important; position:absolute !important; z-index:-1 !important; inset:2px !important; border-radius:8px !important;
+  background:linear-gradient(165deg, #ffffff 0%, #f2f2f1 55%, #dfdfdd 100%) !important;
+  box-shadow:0 1px 2px rgba(0,0,0,0.1), 0 -1px 1px rgba(255,255,255,0.9) inset !important;
+}
+.cart-item button.vg-cart-remove:hover{ transform:translateY(-1px) !important; background:linear-gradient(155deg, #eef0f2 0%, #c7cbd0 24%, #8f939a 50%, #d8dbde 68%, #6f7379 100%) !important; text-decoration:none !important; }
+.cart-item button.vg-cart-remove:active{ transform:translateY(2px) !important; box-shadow:0 0 0 #6f7379, 0 1px 2px rgba(0,0,0,0.25) !important; }
+@media (max-width:1024px){ .cart-item button.vg-cart-remove{ margin-top:6px; } }
+
 </style>
 
 <script>try{var l=localStorage.getItem('vg-lang');if(l!=='fr'&&l!=='en')l=/^fr/i.test((navigator.languages&&navigator.languages[0])||navigator.language||'')?'fr':'en';document.documentElement.setAttribute('data-vg-lang',l);document.documentElement.setAttribute('lang',l);}catch(e){}</script>
@@ -1709,7 +1732,7 @@ html{background:var(--background-color, #f4f2ec);}
 <script>window.vgNamesEn={};</script>
 <style>body #navigation-modal .page_list li:has(> a[href="/shop/"]){display:none !important;}</style>
 <style>
-.vg-back-link{display:inline-block !important;margin-bottom:10px !important;font-family:'IBM Plex Mono',monospace !important;font-size:11px !important;letter-spacing:0.05em !important;text-transform:uppercase !important;color:#8d929a !important;text-decoration:none !important;}
+.vg-back-link{display:inline-block !important;margin-bottom:10px !important;font-family:'IBM Plex Mono',monospace !important;font-size:11px !important;letter-spacing:0.05em !important;text-transform:uppercase !important;color:#5c6068 !important;text-decoration:none !important;}
 .vg-back-link:hover{color:#3a4de8 !important;}
 </style>
 <style>.vg-cart-unavailable{font-size:.85em;opacity:.7;margin-top:4px;}
@@ -1819,7 +1842,7 @@ html{background:var(--background-color, #f4f2ec);}
             
               <li><a href="/shop/studio">Studio</a></li>
             
-              <li><a href="/shop/sur-demande">Start a project</a></li>
+              <li><a href="/shop/sur-demande">Got a project?</a></li>
             
           
           
@@ -1863,7 +1886,7 @@ html{background:var(--background-color, #f4f2ec);}
 <p lang="en"><em>&ldquo;Start a project&rdquo; requests (custom, made to measure, visual production, collab).</em> Your answers (name, e-mail, country, description, references, colours, size or measurements, budget, dates&hellip;) and the photos or videos you send (8 photos of 10&nbsp;MB and 1 video of 50&nbsp;MB maximum) are used only to study your request, send you a quote and make the piece. They are stored by Cloudflare (Durable Objects and R2 file storage, European Union and United States) and reach me by e-mail (Resend). For a deposit or a balance, the payment goes through Stripe, and I keep the date and wording of the conditions you accepted. <strong>How long:</strong> a request with no follow-up, declined or completed is deleted 12 months after our last exchange; your files are deleted 6 months after the request ends; the photos of the finished piece are kept only if you agreed to their use (optional box, which you can withdraw at any time by e-mail); invoices and payments are kept 10 years (accounting obligation). Your private request link is never shown to anyone else.</p>
 <p lang="en"><em>Visit statistics.</em> Cloudflare Web Analytics measures visits without any cookie and without identifying you. No advertising, no tracking cookies.</p>
 <p lang="en"><strong><span class="h3-fs">LEGAL BASIS, RECIPIENTS &amp; TRANSFERS</span></strong></p>
-<p lang="en">Orders: performance of the sales contract and legal accounting obligations. Forms and requests: your request (pre-contractual steps, then the contract for a paid piece); photos of the finished piece shown online: your consent and my legitimate interest in answering you. Statistics: legitimate interest (anonymous audience measurement). Recipients are only the providers needed: Stripe (payment), Resend (e-mails), Cloudflare (order service, anonymous statistics), GitHub (site hosting), and the carrier (delivery). Some are based in, or may process data in, the United States; these transfers rely on the safeguards provided by the GDPR (standard contractual clauses or the EU&ndash;US Data Privacy Framework). Watching a video on a product page loads Instagram (Meta) only after you click &ldquo;play&rdquo;.</p>
+<p lang="en">Orders: performance of the sales contract and legal accounting obligations. Forms and requests: your request (pre-contractual steps, then the contract for a paid piece); photos of the finished piece shown online: your consent and my legitimate interest in answering you. Statistics: legitimate interest (anonymous audience measurement). Recipients are only the providers needed: Stripe (payment), Resend (e-mails), Cloudflare (site hosting, order service, anonymous statistics), and the carrier (delivery). Some are based in, or may process data in, the United States; these transfers rely on the safeguards provided by the GDPR (standard contractual clauses or the EU&ndash;US Data Privacy Framework). Watching a video on a product page loads Instagram (Meta) only after you click &ldquo;play&rdquo;.</p>
 <p lang="en"><strong><span class="h3-fs">YOUR RIGHTS</span></strong></p>
 <p lang="en">You can ask to access, correct or delete your data, or object to its use, by writing to contact@vgthmind.org. If you think your rights are not respected, you can complain to the CNIL (cnil.fr).</p>
 <p class="vg-lang-sep"><span>Fran&ccedil;ais</span></p>
@@ -1875,7 +1898,7 @@ html{background:var(--background-color, #f4f2ec);}
 <p lang="fr"><em>Demandes &laquo;&nbsp;Proposer un projet&nbsp;&raquo; (custom, sur-mesure, production visuelle, collab).</em> Vos r&eacute;ponses (nom, e-mail, pays, description, r&eacute;f&eacute;rences, couleurs, taille ou mesures, budget, dates&hellip;) et les photos ou vid&eacute;os envoy&eacute;es (8 photos de 10&nbsp;Mo et 1 vid&eacute;o de 50&nbsp;Mo au maximum) servent uniquement &agrave; &eacute;tudier la demande, &eacute;tablir un devis et r&eacute;aliser la pi&egrave;ce. Elles sont stock&eacute;es chez Cloudflare (Durable Objects et stockage de fichiers R2, Union europ&eacute;enne et &Eacute;tats-Unis) et m&rsquo;arrivent par e-mail (Resend). Pour un acompte ou un solde, le paiement passe par Stripe, et je conserve la date et le texte des conditions accept&eacute;es. <strong>Dur&eacute;es :</strong> une demande sans suite, refus&eacute;e ou termin&eacute;e est supprim&eacute;e 12 mois apr&egrave;s notre dernier &eacute;change ; vos fichiers sont supprim&eacute;s 6 mois apr&egrave;s la fin de la demande ; les photos de la pi&egrave;ce finie ne sont gard&eacute;es que si vous avez accept&eacute; leur utilisation (case facultative, accord retirable &agrave; tout moment par e-mail) ; les factures et paiements sont conserv&eacute;s 10 ans (obligation comptable). Le lien priv&eacute; de votre demande n&rsquo;est jamais montr&eacute; &agrave; personne d&rsquo;autre.</p>
 <p lang="fr"><em>Statistiques de visite.</em> Cloudflare Web Analytics mesure les visites sans aucun cookie et sans vous identifier. Aucune publicit&eacute;, aucun cookie de suivi.</p>
 <p lang="fr"><strong><span class="h3-fs">BASE L&Eacute;GALE, DESTINATAIRES &amp; TRANSFERTS</span></strong></p>
-<p lang="fr">Commandes : ex&eacute;cution du contrat de vente et obligations comptables. Formulaires et demandes : votre demande (mesures pr&eacute;contractuelles, puis contrat pour une pi&egrave;ce payante) ; photos de la pi&egrave;ce finie montr&eacute;es en ligne : votre consentement et mon int&eacute;r&ecirc;t l&eacute;gitime &agrave; vous r&eacute;pondre. Statistiques : int&eacute;r&ecirc;t l&eacute;gitime (mesure d&rsquo;audience anonyme). Seuls les prestataires n&eacute;cessaires re&ccedil;oivent des donn&eacute;es : Stripe (paiement), Resend (e-mails), Cloudflare (service de commande, statistiques anonymes), GitHub (h&eacute;bergement du site) et le transporteur (livraison). Certains sont situ&eacute;s aux &Eacute;tats-Unis ou peuvent y traiter des donn&eacute;es ; ces transferts reposent sur les garanties pr&eacute;vues par le RGPD (clauses contractuelles types ou cadre de protection des donn&eacute;es UE&ndash;&Eacute;tats-Unis). Lire une vid&eacute;o sur une fiche produit ne charge Instagram (Meta) qu&rsquo;apr&egrave;s votre clic sur &laquo;&nbsp;lecture&nbsp;&raquo;.</p>
+<p lang="fr">Commandes : ex&eacute;cution du contrat de vente et obligations comptables. Formulaires et demandes : votre demande (mesures pr&eacute;contractuelles, puis contrat pour une pi&egrave;ce payante) ; photos de la pi&egrave;ce finie montr&eacute;es en ligne : votre consentement et mon int&eacute;r&ecirc;t l&eacute;gitime &agrave; vous r&eacute;pondre. Statistiques : int&eacute;r&ecirc;t l&eacute;gitime (mesure d&rsquo;audience anonyme). Seuls les prestataires n&eacute;cessaires re&ccedil;oivent des donn&eacute;es : Stripe (paiement), Resend (e-mails), Cloudflare (h&eacute;bergement du site, service de commande, statistiques anonymes) et le transporteur (livraison). Certains sont situ&eacute;s aux &Eacute;tats-Unis ou peuvent y traiter des donn&eacute;es ; ces transferts reposent sur les garanties pr&eacute;vues par le RGPD (clauses contractuelles types ou cadre de protection des donn&eacute;es UE&ndash;&Eacute;tats-Unis). Lire une vid&eacute;o sur une fiche produit ne charge Instagram (Meta) qu&rsquo;apr&egrave;s votre clic sur &laquo;&nbsp;lecture&nbsp;&raquo;.</p>
 <p lang="fr"><strong><span class="h3-fs">VOS DROITS</span></strong></p>
 <p lang="fr">Vous pouvez demander l&rsquo;acc&egrave;s, la rectification ou la suppression de vos donn&eacute;es, ou vous opposer &agrave; leur usage, en &eacute;crivant &agrave; contact@vgthmind.org. Si vous estimez que vos droits ne sont pas respect&eacute;s, vous pouvez saisir la CNIL (cnil.fr).</p>
 
@@ -1926,7 +1949,7 @@ html{background:var(--background-color, #f4f2ec);}
           
             <li><a href="/shop/studio">Studio</a></li>
           
-            <li><a href="/shop/sur-demande">Start a project</a></li>
+            <li><a href="/shop/sur-demande">Got a project?</a></li>
           
         
         
@@ -2037,7 +2060,7 @@ html{background:var(--background-color, #f4f2ec);}
             
               <li><a href="/shop/studio">Studio</a></li>
             
-              <li><a href="/shop/sur-demande">Start a project</a></li>
+              <li><a href="/shop/sur-demande">Got a project?</a></li>
             
           
           
@@ -2345,11 +2368,19 @@ window.__vgConfig = fetch('/assets/vg/products-config.json')
       video.className = 'ig-reel-video';
       video.src = videoUrl + '#t=0.1'; // iOS : affiche la 1re image de la vidéo même avant lecture
       video.muted = true;
-      video.autoplay = true;
       video.loop = true;
       video.playsInline = true;
       video.controls = true;
       video.setAttribute('preload', 'metadata');
+      // Lecture seulement quand le reel est à l'écran (économise plusieurs Mo sur iPhone tant qu'on ne descend pas jusqu'à lui).
+      if ('IntersectionObserver' in window) {
+        new IntersectionObserver(function (entries) {
+          entries.forEach(function (en) {
+            if (en.isIntersecting) { var pr = video.play(); if (pr && pr.catch) pr.catch(function () {}); }
+            else video.pause();
+          });
+        }, { threshold: 0.35 }).observe(video);
+      } else { video.autoplay = true; }
       wrap.appendChild(video);
       wrap.appendChild(extLink);
     } else {
@@ -2942,7 +2973,7 @@ nav.sections a:hover:hover:hover:hover:hover:hover,.header nav a:hover:hover:hov
 .vg-category-tile.vg-tile-featured .vg-category-tile-img{background-size:contain !important;}
 .vg-category-tile.vg-tile-featured .vg-category-tile-label{font-size:16px !important;}
 @media (max-width:640px){.vg-category-showcase{display:flex !important;flex-wrap:wrap !important;justify-content:center !important;}.vg-category-tile{flex:0 1 calc(50% - 7px) !important;max-width:calc(50% - 7px) !important;}.vg-category-tile.vg-tile-featured{flex:0 1 100% !important;max-width:100% !important;}}
-.vg-back-link{display:inline-block !important;margin-bottom:10px !important;font-family:'IBM Plex Mono',monospace !important;font-size:11px !important;letter-spacing:0.05em !important;text-transform:uppercase !important;color:#8d929a !important;text-decoration:none !important;}
+.vg-back-link{display:inline-block !important;margin-bottom:10px !important;font-family:'IBM Plex Mono',monospace !important;font-size:11px !important;letter-spacing:0.05em !important;text-transform:uppercase !important;color:#5c6068 !important;text-decoration:none !important;}
 .vg-back-link:hover{color:#3a4de8 !important;}
 .ig-reel-embed{position:relative !important;display:block !important;aspect-ratio:9/16 !important;max-width:280px !important;margin:16px auto 0 !important;padding:0 !important;border-radius:14px !important;overflow:hidden !important;text-decoration:none !important;background:#111 !important;box-shadow:0 4px 10px rgba(0,0,0,0.25) !important;}
 .ig-reel-video{width:100% !important;height:100% !important;object-fit:cover !important;display:block !important;border-radius:0 !important;background:#111 !important;}
@@ -3006,9 +3037,11 @@ nav.sections a:hover:hover:hover:hover:hover:hover,.header nav a:hover:hover:hov
       var isFeatured = cats[m].permalink === 'latest-drop';
       var extraClass = isFeatured ? ' vg-tile-featured' : '';
       if (isFeatured) labelText = '\u2726 ' + labelText;
+      // Variante WebP allégée (800 px au plus) au lieu du PNG d'origine (~450 Ko) : l'accueil pesait ~12 Mo.
+      var tileImg = function (u) { return (window.__vgSized && window.__vgSized(u, isFeatured ? 800 : 540)) || u; };
       var tileHtml = '<a class="vg-category-tile' + extraClass + '" href="/category/' + cats[m].permalink + '">' +
-        '<span class="vg-category-tile-img" style="background-image:url(&quot;' + cats[m].img + '&quot;)"></span>' +
-        (cats[m].img2 ? '<span class="vg-category-tile-img vg-category-tile-img-alt" style="background-image:url(&quot;' + cats[m].img2 + '&quot;)"></span>' : '') +
+        '<span class="vg-category-tile-img" style="background-image:url(&quot;' + tileImg(cats[m].img) + '&quot;)"></span>' +
+        (cats[m].img2 ? '<span class="vg-category-tile-img vg-category-tile-img-alt" style="background-image:url(&quot;' + tileImg(cats[m].img2) + '&quot;)"></span>' : '') +
         '<span class="vg-category-tile-label">' + labelText + '</span></a>';
       if (isFeatured) featuredHtml += tileHtml; else gridHtml += tileHtml;
     }

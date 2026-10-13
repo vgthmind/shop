@@ -260,6 +260,7 @@
   function makeModal(modal, openBtn, closeBtn, o) {
     if (!modal) return;
     var isOpen = function () { return modal.getAttribute('aria-hidden') === 'false'; };
+    if (!isOpen()) modal.inert = true; // fermée : rien de focusable caché derrière aria-hidden
     function onKey(e) { if (e.key === 'Escape') close(); }
     function onOutside(e) { if (e.target === modal) close(); }
     function trap(e) {
@@ -274,6 +275,7 @@
     function open() {
       if (isOpen()) return;
       if (o.input && !$(o.input, modal)) return;
+      modal.inert = false;
       modal.setAttribute('aria-hidden', 'false');
       doc.body.classList.add('overlay-open');
       doc.addEventListener('keydown', onKey);
@@ -293,6 +295,7 @@
     function close() {
       if (!isOpen()) return;
       modal.setAttribute('aria-hidden', 'true');
+      modal.inert = true;
       doc.body.classList.remove('overlay-open');
       doc.removeEventListener('keydown', onKey);
       doc.removeEventListener('click', onOutside);

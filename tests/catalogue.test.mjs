@@ -71,3 +71,24 @@ test('catalogue.html : charge les modules et ne lit que les fiches', () => {
   const html = readFileSync(new URL('../admin/catalogue.html', import.meta.url), 'utf8');
   for (const f of ['catalogue-core.js', 'pieces-save.js', 'studio-publish.js']) assert.ok(html.includes(f), f);
 });
+
+test('« bientôt disponible » : visible mais pas en vente, réversible, effacé par « aperçu »', () => {
+  const live = { slug: 'a', name: 'A' };
+  const soon = C.setComing(live, true);
+  assert.equal(C.state(soon), 'coming');
+  assert.equal(C.state(C.setComing(soon, false)), 'live');
+  assert.equal('coming_soon' in C.setComing(soon, false), false);
+  // aperçu = masquée : l'état « bientôt » ne s'affiche plus (le drapeau est retiré côté admin)
+  assert.equal(C.state(C.setHidden(soon, true)), 'preview');
+  assert.equal(C.state(C.setArchived(soon, true)), 'archived');
+});
+
+test('config.yml (éditeur complet) déclare tous les champs d’une fiche, sinon il pourrait les effacer', async () => {
+  const { readFileSync, readdirSync } = await import('node:fs');
+  const cfg = readFileSync(new URL('../admin/config.yml', import.meta.url), 'utf8');
+  const declared = new Set([...cfg.matchAll(/name: "([a-z_]+)"/g)].map((m) => m[1]));
+  const used = new Set(['hidden', 'publish_at', 'coming_soon', 'reel_video', 'unique', 'in_stock', 'color_name', 'color_hex', 'reel_url']);
+  for (const f of readdirSync(new URL('../data/products/', import.meta.url)).filter((x) => x.endsWith('.json'))) for (const k of Object.keys(JSON.parse(readFileSync(new URL('../data/products/' + f, import.meta.url), 'utf8')))) used.add(k);
+  const missing = [...used].filter((k) => !declared.has(k));
+  assert.deepEqual(missing, []);
+});

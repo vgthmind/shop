@@ -199,6 +199,21 @@
     return items;
   }
 
+  function showAlreadyInCart(form, series) {
+    var note = document.querySelector('.vg-already-in-cart');
+    if (!note) {
+      note = document.createElement('p');
+      note.className = 'vg-already-in-cart';
+      note.setAttribute('role', 'status');
+      var btn = form.querySelector('#add-to-cart-button');
+      (btn && btn.parentNode ? btn.parentNode : form).appendChild(note);
+    }
+    note.innerHTML = (series
+      ? L('Already in your cart in the maximum quantity.', 'Déjà dans ton panier, en quantité maximale.')
+      : L('Already in your cart (one-of-a-kind piece).', 'Déjà dans ton panier (pièce unique).'))
+      + ' <a href="/cart">' + L('View cart', 'Voir le panier') + '</a>';
+  }
+
   // --- "Add to cart" : le click (capturé par vg-transitions-dev.js, qui
   // joue l'animation du panier sans empêcher la soumission) arrive avant
   // ce handler submit - on bloque seulement la vraie requête réseau (il
@@ -215,6 +230,12 @@
         if (stock && stock[product.permalink] !== undefined) {
           if (stock[product.permalink] <= 0) { applyStock(stock); return; }
           product.quantity = stock[product.permalink];
+        }
+        // Pièce déjà au maximum dans le panier (une pièce unique, ou la série entière) : message clair, pas de nouvel ajout.
+        var inCart = readCart().filter(function (it) { return it.slug === product.permalink; })[0];
+        if (inCart && qty(inCart) >= Math.max(1, product.quantity || 1)) {
+          showAlreadyInCart(form, (product.quantity || 1) > 1);
+          return;
         }
         addItem(product);
         setTimeout(function () { loc.href = '/cart'; }, 200);
@@ -283,7 +304,7 @@
         li.className = 'cart-item';
         var note = '';
         if (blocked.indexOf(it) !== -1) {
-          note = '<div class="vg-cart-unavailable">France only / livraison en France uniquement</div>';
+          note = '<div class="vg-cart-unavailable">' + L('Ships to France only', 'Livraison en France uniquement') + '</div>';
         } else if (!ENDPOINT && it.stripe_payment_link) {
           note = '<a class="button minimal-button" href="' + esc(it.stripe_payment_link) + '" target="_blank" rel="noopener">Payer cette pièce</a>';
         }
@@ -369,7 +390,7 @@
           if (res.data.url) { window.location.href = res.data.url; return; }
           if (res.status === 409 && res.data.problems) {
             // Pièces vendues entre-temps : retirées du panier, on le dit.
-            var gone = res.data.problems.filter(function (p) { return p.reason === 'vendue' || p.reason === 'introuvable'; })
+            var gone = res.data.problems.filter(function (p) { return p.reason === 'vendue' || p.reason === 'introuvable' || p.reason === 'bientot'; })
               .map(function (p) { return p.slug; });
             var held = res.data.problems.filter(function (p) { return p.reason === 'reservee'; })
               .map(function (p) { return p.slug; });
@@ -384,7 +405,10 @@
               writeCart(cart);
               items = setQty(p.slug, p.available || 1);
             });
-            message = names.length
+            var soonSlugs = res.data.problems.filter(function (p) { return p.reason === 'bientot'; }).map(function (p) { return p.slug; });
+            message = soonSlugs.length && soonSlugs.length === gone.length
+              ? L('Not on sale yet: ', 'Pas encore en vente : ') + names.join(', ') + L('. Removed from your cart.', '. Retiré du panier.')
+              : names.length
               ? L('Sorry, already sold: ', 'Désolé, déjà vendu : ') + names.join(', ') + L('. Removed from your cart.', '. Retiré du panier.')
               : heldNames.length
                 ? L('Someone is paying for ' + heldNames.join(', ') + ' right now, try again in 30 min.', 'Quelqu’un est en train de payer ' + heldNames.join(', ') + ', réessaie dans 30 min.')

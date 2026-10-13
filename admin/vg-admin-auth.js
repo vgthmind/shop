@@ -7,6 +7,17 @@
   'use strict';
   var ENDPOINT = 'https://vgthmind-shop-checkout.vgthm66.workers.dev';
   window.VG_ENDPOINT = ENDPOINT;
+  // Numéro de version de l'admin, affiché en petit en bas à gauche de chaque page : permet de vérifier qu'on a bien la dernière version.
+  // À changer à chaque mise à jour de l'admin (aaaa-mm-jj + lettre).
+  window.VG_ADMIN_VERSION = '2026-10-13-d';
+  function showVersion() {
+    try {
+      var d = document.createElement('div'); d.id = 'vg-admin-version'; d.textContent = 'Admin v' + window.VG_ADMIN_VERSION;
+      d.style.cssText = 'position:fixed;left:8px;bottom:6px;z-index:5;font:11px/1 system-ui,sans-serif;color:#555;background:rgba(255,255,255,.8);padding:3px 6px;border-radius:6px;pointer-events:none';
+      document.body.appendChild(d);
+    } catch (e) {}
+  }
+  if (document.body) showVersion(); else document.addEventListener('DOMContentLoaded', showVersion);
 
   var KEY = 'vg-admin-session';
   var LAST = 'vg-admin-last'; // derniere activite (deconnexion automatique apres 30 min sans rien faire)

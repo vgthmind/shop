@@ -743,7 +743,7 @@ a.skip-link:focus {
 
 header {
   display: grid;
-  grid-template-columns: 1fr 50% 1fr;
+  grid-template-columns: auto 1fr auto; /* colonne du menu = tout l'espace libre (avant : 50 % fixe, « Un projet ? » passait à la ligne) */
   -webkit-flex-shrink: 0;
   flex-shrink: 0;
   border-bottom: 1px solid transparent;
@@ -2742,20 +2742,22 @@ body[data-bc-page-type="cart"] #payment-processor-messaging {
 }
 .cart-item .cart-item-image-link {
   display: block;
-  height: 88px;
+  height: 112px;
   overflow: hidden;
   width: 88px;
 }
 @media screen and (max-width: 1024px) {
   .cart-item .cart-item-image-link {
-    height: 72px;
+    height: 90px;
     width: 72px;
   }
 }
+/* contain : un pantalon (photo haute) ou une veste ne sont plus coupés */
 .cart-item .cart-item-image-link img {
   border-radius: var(--border-radius);
   height: 100%;
-  object-fit: cover;
+  object-fit: contain;
+  object-position: center;
   width: 100%;
 }
 .cart-item .cart-item-detail {
@@ -3313,3 +3315,7 @@ body[data-bc-page-type="cart"] #payment-processor-messaging {
 
  */
 
+
+/* Pièce déjà dans le panier (message sous le bouton d'ajout) */
+.vg-already-in-cart{margin:12px 0 0;font-size:14px;line-height:1.4}
+.vg-already-in-cart a{text-decoration:underline}

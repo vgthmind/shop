@@ -33,6 +33,8 @@
   var SIZED = [24, 320, 540, 800];
   window.__vgSized = function (url, px) {
     var m = /^(?:https?:\/\/[^\/]+)?(\/[^?#]*?)?\/assets\/products\/([^?#]+)\.(png|jpe?g|webp)(?:[?#].*)?$/i.exec(String(url));
+    // Déjà une variante allégée (/assets/products-sized/N/...) : on la re-choisit à la taille demandée (même fichier = pas de 2e téléchargement).
+    if (!m) m = /^(?:https?:\/\/[^\/]+)?(\/[^?#]*?)?\/assets\/products-sized\/\d+\/([^?#]+)\.webp(?:[?#].*)?$/i.exec(String(url));
     if (!m) return null;
     var w = SIZED[SIZED.length - 1];
     for (var i = 0; i < SIZED.length; i++) { if (SIZED[i] >= px) { w = SIZED[i]; break; } }

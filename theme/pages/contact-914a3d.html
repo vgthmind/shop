@@ -29,7 +29,7 @@
 <script>
 (function(){
   var f=document.getElementById('vg-contact-form'); if(!f) return;
-  var L=window.vgL||function(en){return en;};
+  var L=function(en,fr){return window.vgL?window.vgL(en,fr):en;}; // vg-lang.js se charge APRÈS ce script : on lit window.vgL au moment de l'appel
   var st=document.getElementById('vg-contact-status'), btn=f.querySelector('button'), t0=Date.now();
   var EP=window.VG_SHOP_CHECKOUT_ENDPOINT!==undefined?window.VG_SHOP_CHECKOUT_ENDPOINT:'https://vgthmind-shop-checkout.vgthm66.workers.dev';
   function say(c,m){st.className='vg-cf-status '+c;st.textContent=m;}

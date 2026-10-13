@@ -1,10 +1,12 @@
 # Mise en production : Stripe live, domaine, e-mails, surveillance, factures (PLAN, rien n'est activé)
 
+> **Le §2 (domaine) est remplacé par `BASCULE-JOUR-J.md`** (le site est sur Cloudflare Pages, plus sur GitHub Pages). Le reste (Stripe live §1, DMARC §3, checklist §6) reste valable.
+
 Écrit le 2026-10-12. Rien de ce document n'a été exécuté : LIVE_MODE reste 0, aucun DNS touché.
 
 ## 1. Stripe en live (31) : ce que TU crées dans le tableau de bord Stripe
 1. Stripe, coin haut-gauche : **désactive « Mode test »** (tu es en live).
-2. Développeurs, Clés API, **Créer une clé restreinte**. Nom : `vgthmind-worker-live`. Permissions : **Écriture** sur *Checkout Sessions* ; **Lecture** sur *PaymentIntents*, *Charges*, *Products*, *Customers*. Rien d'autre. Copie la clé (`rk_live_...`) : tu ne la reverras plus.
+2. Développeurs, Clés API, **Créer une clé restreinte**. Nom : `vgthmind-worker-live`. Permissions : **Écriture** sur *Checkout Sessions* ; **Lecture** sur *PaymentIntents*, *Charges*, *Products*, *Customers* ; et, pour les codes promo de l'admin : **Écriture** sur *Coupons* et *Promotion Codes* (facultatif : sans eux, la page « Codes promo » de l'admin affiche un message clair, le reste marche). Rien d'autre. Copie la clé (`rk_live_...`) : tu ne la reverras plus.
 3. Développeurs, Webhooks, **Ajouter un endpoint** : adresse `https://vgthmind-shop-checkout.vgthm66.workers.dev/webhook` ; événements : `checkout.session.completed`, `checkout.session.async_payment_succeeded`, `checkout.session.expired`, `payment_intent.payment_failed`, `checkout.session.async_payment_failed`. Copie le **secret de signature** (`whsec_...`).
 4. Ne m'envoie ces deux valeurs **nulle part**. Dis-moi juste « clé live créée » : je te donne les commandes à coller : `wrangler secret put STRIPE_SECRET_KEY` (clé live), `wrangler secret put STRIPE_WEBHOOK_SECRET` (whsec live), puis `LIVE_MODE = "1"` dans `wrangler.toml` + redéploiement.
 5. Paramètres, Moyens de paiement : carte (+ Apple Pay / Google Pay si tu veux). Paramètres, Informations de l'entreprise : nom « vgthmind », SIRET.
@@ -24,7 +26,7 @@ Retour arrière : `LIVE_MODE="0"` + secrets de test (`rk_test...`) + `npx wrangl
 4. Je déploie le Worker avec le nouveau domaine, je pousse le build racine, je teste (checklist §6).
 - **Retour arrière** : redonner à `www` le CNAME `vgthmind.bigcartel.com` (1 clic dans IONOS), BigCartel revient en quelques minutes. Baisser le TTL de `www` à 300 s la veille. Redéployer l'ancien Worker (`rollback`).
 - **Meilleur moment** : un mardi ou mercredi matin, hors drop et hors promotion Instagram, toi disponible 2 h. Éviter week-end et veille de sortie.
-- Liens Instagram : `/product/<nom>` et `/category/...` sont identiques à BigCartel (voir REDIRECTIONS.md), rien ne casse une fois la racine prise. Seul `/products.xml` disparaît.
+- Liens Instagram : `/product/<nom>` et `/category/...` sont identiques à BigCartel (voir REDIRECTIONS.md), rien ne casse une fois la racine prise. `/products.xml` existe aussi sur le nouveau site (flux Merchant/Meta généré).
 - BigCartel : ne pas résilier avant 1 à 2 semaines de recul.
 
 ## 3. Domaine d'envoi Resend (33)

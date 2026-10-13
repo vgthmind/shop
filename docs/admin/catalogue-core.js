@@ -27,7 +27,7 @@
   // Programmée = masquée avec une date de mise en ligne (publish_at) encore à venir.
   function state(p, now) {
     if (p.archived) return 'archived';
-    if (!p.hidden) return 'live';
+    if (!p.hidden) return p.coming_soon === true ? 'coming' : 'live';
     return p.publish_at && Date.parse(p.publish_at) > (now || Date.now()) ? 'scheduled' : 'preview';
   }
 
@@ -91,7 +91,9 @@
   }
 
   function setArchived(p, on) { var q = Object.assign({}, p); if (on) { q.archived = true; } else { delete q.archived; } return q; }
+  // « Bientôt disponible » : la pièce est visible et listée, mais le bouton d'achat est remplacé par un libellé (comme chez BigCartel).
+  function setComing(p, on) { var q = Object.assign({}, p); if (on) q.coming_soon = true; else delete q.coming_soon; return q; }
   function setHidden(p, on) { var q = Object.assign({}, p); if (on) q.hidden = true; else { delete q.hidden; delete q.publish_at; } return q; }
 
-  return { slugify: slugify, sorted: sorted, state: state, move: move, freeSlug: freeSlug, duplicate: duplicate, setArchived: setArchived, setHidden: setHidden, schedule: schedule, parisToIso: parisToIso };
+  return { slugify: slugify, sorted: sorted, state: state, move: move, freeSlug: freeSlug, duplicate: duplicate, setArchived: setArchived, setHidden: setHidden, setComing: setComing, schedule: schedule, parisToIso: parisToIso };
 }));

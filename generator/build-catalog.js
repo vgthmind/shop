@@ -110,7 +110,8 @@ function buildProduct(admin, imageMap) {
     // stays raw UTF-8 (verified on the live catalog: short-coupe-évasée's
     // permalink is unencoded, its url is /product/short-coupe-%C3%A9vas%C3%A9e)
     url: `/product/${encodeURIComponent(admin.slug)}`,
-    status: inStock ? 'active' : 'sold-out',
+    // coming_soon (admin « Bientôt disponible ») : visible et listée, mais pas achetable (thème : libellé « Coming soon »).
+    status: admin.coming_soon === true ? 'coming-soon' : inStock ? 'active' : 'sold-out',
     created_at: admin.created_at || new Date().toISOString(),
     has_password_protection: false,
     images,

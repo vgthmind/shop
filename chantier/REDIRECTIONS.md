@@ -10,7 +10,7 @@ Méthode : plan du site de l'ancienne boutique (`sitemap.xml`, 38 adresses) comp
 ## Ce qui casserait
 | Ancienne adresse | Nouveau site | Effet | Redirection proposée |
 |---|---|---|---|
-| `/products.xml` (flux Big Cartel) | n'existe pas | 404 (flux produits pour Google/Pinterest si utilisé) | aucune utile ; utiliser `/products.json` ou refaire un flux si besoin |
+| `/products.xml` (flux Big Cartel) | **existe maintenant** (flux RSS Google Merchant / catalogue Meta, généré au build) | OK : même adresse | à lire par Google Merchant / Meta s'ils l'utilisaient (rien dans le dépôt ne le prouve : à vérifier dans Meta Commerce Manager et Merchant Center) |
 | `/products?page=2`, `/products?category=…`, `/products?search=…` | page `/products` sans ces filtres côté serveur | atterrit sur la liste complète | rien à faire (la liste complète est servie) |
 | `/product/<nom>` d'une pièce **vendue/supprimée** plus tard | page « Sold out » tant que la fiche existe ; 404 si la fiche est supprimée | 404 | `404.html` : renvoyer vers `/products` |
 | `/contact` | existe | OK | — |

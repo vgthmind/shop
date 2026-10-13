@@ -15,6 +15,7 @@ const catalog = [
   { permalink: 'old1', name: 'Vieille', price: 30, url: '/p/old1', images: [], quantity: 1, shipping: line(4, 8), weight_g: 100, mode: 'colis' },
   { permalink: 'old2', name: 'Vieille FR', price: 30, url: '/p/old2', images: [], quantity: 1, shipping: line(6) },
   { permalink: 'new1', name: 'Nouvelle', price: 50, url: '/p/new1', images: [], quantity: 1, shipping: line(0, 29), weight_g: 500, mode: 'colis', alone: false, shipping_derived: true },
+  { permalink: 'soon1', name: 'Bientôt', price: 60, url: '/p/soon1', images: [], quantity: 1, status: 'coming-soon', shipping: line(0, 29), weight_g: 300, mode: 'colis', alone: false, shipping_derived: true },
   { permalink: 'new2', name: 'Nouvelle 2', price: 40, url: '/p/new2', images: [], quantity: 1, shipping: line(0, 29), weight_g: 400, mode: 'colis', alone: false, shipping_derived: true },
 ];
 
@@ -120,4 +121,12 @@ test('checkout : pièce France seulement vers l’international refusée', async
   reset();
   const r = await post('/checkout', { items: items('old2'), country: 'CA', cart_id: 'cart-12345678' });
   assert.equal(r.status, 409); assert.equal(stripeBodies.length, 0);
+});
+
+test('checkout : une pièce « bientôt disponible » est refusée (jamais de page Stripe)', async () => {
+  reset();
+  const r = await post('/checkout', { items: items('soon1'), country: 'fr', cart_id: 'cart-12345678' });
+  assert.equal(r.status, 409);
+  assert.deepEqual((await r.json()).problems, [{ slug: 'soon1', reason: 'bientot' }]);
+  assert.equal(stripeBodies.length, 0);
 });

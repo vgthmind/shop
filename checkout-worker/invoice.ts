@@ -1,7 +1,7 @@
 // Facture d'une commande payée : données seulement (le rendu imprimable / PDF se fait dans le navigateur,
 // assets/vg-invoice.js). Numéro W-AAAA-NNN (compteur du Worker, distinct du Facturier AAAA-NNN).
 export const VAT_MENTION = 'TVA non applicable, art. 293 B du CGI';
-// Passage à la mention CIBS (art. L. 223-3) prévu courant 2027 : voir ETAT.md.
+// Recodification CIBS reportée au 1er janvier 2027 : à reprendre alors (ici, mentions légales, Facturier).
 
 export interface InvoiceLine { name: string; size?: string; qty: number; unit: number; amount: number }
 export interface Invoice {
