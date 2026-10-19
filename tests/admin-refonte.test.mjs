@@ -115,3 +115,12 @@ test('assistant : étapes Photos, Détourage, Fiche, Poids et ports, Publier ; b
   assert.ok(h.includes('id="bDraft"') && h.indexOf('id="bDraft"') > h.indexOf('id="stepNav"'));
   assert.ok(read('studio-photo.js').includes('collectDraft'));
 });
+
+test('assistant : le détourage ne se lance jamais tout seul ; choix par photo (Détourer / Garder telle quelle / Revenir à l\'original)', () => {
+  const js = read('studio-photo.js'), h = read('nouvelle-piece.html');
+  const add = /async function addFiles[\s\S]*?\r?\n  }\r?\n/.exec(js)[0];
+  assert.ok(!add.includes('runQueue()'), 'ajouter une photo ne lance rien');
+  assert.ok(add.includes("status: 'new'"));
+  for (const id of ['bCutAll', 'bKeepAll']) assert.ok(h.includes('id="' + id + '"'), id);
+  assert.ok(js.includes("Revenir à l'original") && js.includes('Garder telle quelle') && js.includes('✂ Détourer'));
+});
