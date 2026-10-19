@@ -644,7 +644,7 @@ async function main() {
   // too: compute it with the layout's own preamble first.
   const preamble = layoutSrc.slice(0, layoutSrc.indexOf('<!DOCTYPE'));
   const withTitle = (ctx) => Object.assign(ctx, { page_title: liquid.render(preamble + '{{ page_title }}', ctx, filters).trim() });
-  const page = (relPath, templateSrc, ctx, product) => {
+  const page = (relPath, templateSrc, ctx, product, post) => {
     withTitle(ctx);
     let pageContent = liquid.render(templateSrc, ctx, filters);
     // The Body adds a "← Produits" link above the title of category and
@@ -657,7 +657,8 @@ async function main() {
     }
     const layoutCtx = Object.assign({}, ctx, { page_content: pageContent, head_content: headContent(ctx.page, product, imageMap) });
     const html = liquid.render(layoutSrc, layoutCtx, filters);
-    write(relPath, withBasePath(injectAround(html, parts, product, relPath)));
+    const out = withBasePath(injectAround(html, parts, product, relPath));
+    write(relPath, post ? post(out) : out);
   };
 
   page('index.html', src.home, Object.assign({}, base, {
@@ -690,6 +691,25 @@ async function main() {
       page: { name: p.name, permalink: p.permalink, category: 'product', full_url: `/product/${p.permalink}` },
       product: p,
     }), p);
+  }
+  // Aperçu des pièces masquées ou programmées, réservé à l'admin : /admin/apercu/<nom>/ (le garde functions/admin/_middleware.js
+  // exige la connexion pour tout /admin/*). La fiche est rendue comme elle sera publiée (statut, photos, prix, reel, texte),
+  // sans bouton panier, avec un bandeau, et jamais indexée.
+  // Les scripts du thème reconstruisent le <body> au chargement : le bandeau est donc posé par un petit script qui le remet s'il disparaît ;
+  // le style (panier caché, marge) est dans le <head>, il survit.
+  const PREVIEW_HEAD = '<meta name="robots" content="noindex, nofollow"><style>#add-to-cart-form,.add-to-cart-button{display:none !important}#vg-preview-bar{position:fixed;left:0;right:0;top:0;z-index:2147483001;padding:calc(6px + env(safe-area-inset-top)) 10px 6px;background:#b3261e;color:#fff;font:600 13px/1.3 system-ui,sans-serif;text-align:center}body{padding-top:34px !important}header.page.fixed,header.fixed{top:34px !important}</style>'
+    + '<script>(function(){function add(){if(!document.body||document.getElementById("vg-preview-bar"))return;var d=document.createElement("div");d.id="vg-preview-bar";d.setAttribute("role","note");d.textContent="Aperçu, pièce non publiée";document.body.insertBefore(d,document.body.firstChild);}add();document.addEventListener("DOMContentLoaded",add);new MutationObserver(add).observe(document.documentElement,{childList:true,subtree:true});})();</script>';
+  const previewHtml = (html) => html
+    .replace(/<meta name="robots"[^>]*>/gi, '')
+    .replace(/<head([^>]*)>/i, '<head$1>' + PREVIEW_HEAD)
+    .replace(/<body([^>]*)>/i, '<body$1><div id="vg-preview-bar" role="note">Aperçu, pièce non publiée</div>');
+  for (const p of catalog.products) {
+    if (!p.hidden) continue;
+    const pv = Object.assign({}, p, { hidden: false, scheduled: false, status: p.coming_soon_flag ? 'coming-soon' : 'active' });
+    page(`admin/apercu/${p.permalink}/index.html`, src.product, Object.assign({}, base, {
+      page: { name: p.name, permalink: p.permalink, category: 'product', full_url: `/product/${p.permalink}` },
+      product: pv,
+    }), pv, previewHtml);
   }
   // /contact (formulaire natif BigCartel, sans backend ici) : renvoie vers
   // la vraie page Contact (Instagram + e-mail), celle de la navigation.
