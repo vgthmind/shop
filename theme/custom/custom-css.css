@@ -1470,3 +1470,11 @@ html{background:var(--background-color, #f4f2ec);}
     cursor:none !important;
   }
 }
+
+/* Cases à cocher du site (demande, page client du devis…) : le gabarit retire l'apparence native de tous les champs
+   (appearance:none), donc la coche n'apparaissait pas. On dessine une vraie case : bordure nette décochée, noire avec coche blanche cochée. */
+input[type="checkbox"]:not(#vg-nc){-webkit-appearance:none;-moz-appearance:none;appearance:none;box-sizing:border-box;width:22px;height:22px;min-width:22px;flex:none;margin:1px 0 0;padding:0;border:2px solid #171717;border-radius:5px;background:#fff center/76% no-repeat;cursor:pointer;transition:background-color .12s ease,transform .12s ease}
+input[type="checkbox"]:not(#vg-nc):checked{background-color:#171717;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23fff' stroke-width='3.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M5 12.5l4.5 4.5L19 7'/%3E%3C/svg%3E")}
+input[type="checkbox"]:not(#vg-nc):active{transform:scale(.92)}
+input[type="checkbox"]:not(#vg-nc):focus-visible{outline:3px solid rgba(23,23,23,.35);outline-offset:2px}
+input[type="checkbox"][aria-invalid="true"]:not(#vg-nc){border-color:#b3261e}
