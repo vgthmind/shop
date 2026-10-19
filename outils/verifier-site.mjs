@@ -23,6 +23,25 @@ for (const p of paths) {
   if (r.status === 200) { if (!process.env.QUIET) ok(p); } else ko(`${p} -> ${r.status || r.error}`);
 }
 
+// Les 27 adresses exactes de l'ancienne boutique BigCartel (liste figée dans archives/) : chacune doit arriver sur une fiche (200), directement ou par redirection.
+console.log('Anciennes adresses BigCartel (redirections)');
+try {
+  const { readFileSync } = await import('node:fs');
+  const old = JSON.parse(readFileSync(new URL('../archives/catalog.bigcartel-import.json', import.meta.url), 'utf8'));
+  const oldList = Array.isArray(old) ? old : old.products || [];
+  for (const o of oldList) {
+    const p = '/product/' + encodeURIComponent(o.permalink);
+    try {
+      const r = await fetch(origin + p, { redirect: 'follow' });
+      const u = new URL(r.url);
+      if (r.status === 200 && u.pathname.startsWith('/product/')) { if (!process.env.QUIET) ok(p + (u.pathname.replace(/\/$/, '') === p ? '' : ' -> ' + decodeURIComponent(u.pathname))); }
+      else ko(`${p} -> ${r.url} (${r.status}) : l'ancien lien n'arrive pas sur une fiche`);
+    } catch (e) { ko(p + ' : ' + e.message); }
+  }
+  const inconnue = await fetch(origin + '/product/adresse-qui-nexiste-pas', { redirect: 'manual' });
+  if ([301, 302, 307, 308].includes(inconnue.status) && /\/products\/?$/.test(inconnue.headers.get('location') || '')) ok('pièce inconnue -> /products'); else ko('pièce inconnue : attendu une redirection vers /products, reçu ' + inconnue.status);
+} catch (e) { ko('liste des anciennes adresses illisible : ' + e.message); }
+
 console.log('Référencement');
 const robots = await (await get('/robots.txt')).text();
 if (!priv) {
