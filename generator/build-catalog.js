@@ -30,7 +30,7 @@ const SHIPPING_CONFIG = JSON.parse(fs.readFileSync(path.join(ROOT, 'admin', 'shi
 function derivedShipping(admin) {
   const w = Math.floor(Number(admin.weight_g));
   if (!(w > 0)) return null;
-  const rows = SHIPPING.quoteByZone(SHIPPING_CONFIG, { slug: admin.slug, weight_g: w, mode: admin.mode === 'lettre' ? 'lettre' : 'colis', alone: admin.alone === true });
+  const rows = SHIPPING.quoteByZone(SHIPPING_CONFIG, { slug: admin.slug, weight_g: w, mode: admin.mode === 'lettre' ? 'lettre' : 'colis', alone: admin.alone === true, price: admin.price });
   const ok = rows.filter((r) => r.ok);
   const fr = ok.find((r) => r.zone === 'FR');
   if (!fr) return null;

@@ -10,13 +10,55 @@ Règle : Claude ne déploie le Worker et ne pousse le site qu'après ton « OK �
 ## A. Avant de lancer (tout est faisable aujourd'hui)
 1. **Ménage des données de test** (je le fais, j'ai besoin de ta connexion) : ouvre le panneau « Browser » de l'application Claude, va sur `https://vgthmind-shop.pages.dev/admin/connexion`, touche « Se connecter avec GitHub » (ton compte), puis dis-moi « connecté ». Je lance l'aperçu, je te montre la liste « SUPPRIMÉ / GARDÉ », puis j'applique.
    Ensuite, **toi** : Stripe, bouton « Mode test » en haut, Développeurs, « Supprimer toutes les données de test » (je n'ai pas accès à ton Stripe).
-2. **Adresse de facturation** : admin > Réglages > Facturation > Adresse (numéro, rue, code postal) > « Enregistrer les réglages ». Sans elle, la première facture sort sans adresse.
-3. **Prix** (tu décides, je ne touche à rien) :
+2. **Prix** (tu décides, je ne touche à rien) :
    - Une pièce de la boutique : admin > Pièces > touche la photo > section « Prix et stock » > Prix > « Enregistrer ».
    - Les prix « à partir de » des demandes sur mesure (custom, sur-mesure), l'acompte, les délais : admin > Réglages > « Prix et délais » > « Enregistrer les réglages ».
    - Les frais de livraison : admin > Réglages > Livraison.
-4. **Textes légaux** : le juriste valide `chantier/CGV-A-VERIFIER.md` (médiateur, délai de rétractation, pays livrés), l'entreprise individuelle (EI) et ce qui s'imprime sur les factures (nom ou non), la mention de TVA à adapter au 2027-01-01 (CIBS). Ce sont des décisions à toi.
-5. **Checklist iPhone** (voir la fin du message de Claude) : 10 minutes avec l'appli installée.
+3. **Checklist iPhone** (voir la fin du message de Claude) : 10 minutes avec l'appli installée.
+
+## Domaine : faire pointer vgthmind.org vers le nouveau site (IONOS, débutant)
+Écrit le 2026-10-19. **Toi seul, chez IONOS : je ne touche à rien là-bas.** À faire le jour J (voir D, étape 3), pas avant : tant que tu ne changes pas la ligne `www`, BigCartel reste en ligne. Relevé DNS vérifié le 2026-10-19 depuis l'extérieur : `www` pointe toujours vers BigCartel, les MX sont ceux d'IONOS.
+
+**On change UNE seule ligne** (`www`). Les adresses restent identiques (`/products`, `/product/…`, `/category/…`, `/contact`, `/cart` : le nouveau site les a toutes, voir `REDIRECTIONS.md`). Les mails (`contact@`, `commande@`) ne bougent pas : ils dépendent des lignes MX, qu'on ne touche pas.
+
+### La veille (5 minutes)
+1. ionos.fr, connecte-toi, **Domaines & SSL**, clique **vgthmind.org**.
+2. Onglet **DNS**. **Fais une capture d'écran de toute la liste** (ta copie de secours) et envoie-la moi.
+3. Ligne **`www`**, type **CNAME** (valeur `vgthmind.bigcartel.com`) : crayon, **TTL = 300 secondes**, Enregistrer. Ne change pas la valeur.
+
+### Le matin du jour J (30 minutes)
+1. **Cloudflare** (dash.cloudflare.com) : Workers & Pages > **vgthmind-shop** (le site, pas `vgthmind-shop-checkout`) > **Custom domains** > **Set up a custom domain** > `www.vgthmind.org` > **Continue**. Ne transfère pas le domaine chez Cloudflare.
+2. **IONOS** > vgthmind.org > DNS, ligne à modifier :
+
+   | Nom d'hôte | Type | Valeur actuelle | Nouvelle valeur |
+   |---|---|---|---|
+   | `www` | CNAME | `vgthmind.bigcartel.com` | **`vgthmind-shop.pages.dev`** |
+
+   Crayon > remplace la valeur (sans `https://`, sans `/` final) > **Enregistrer**. Si IONOS refuse : supprime la ligne `www`, puis ajoute un CNAME `www` vers `vgthmind-shop.pages.dev`, TTL 300.
+3. **Attendre** : Cloudflare > Custom domains, jusqu'à **Active** (2 à 30 minutes, certificat HTTPS).
+4. **Vérifier** (tu me dis « domaine actif », je lance `node outils/verifier-site.mjs https://www.vgthmind.org`) :
+   - `https://www.vgthmind.org/products` et une fiche `/product/…` s'ouvrent sur le nouveau site, avec le cadenas ;
+   - **envoie-toi un mail de test** vers `contact@vgthmind.org` ET `commande@vgthmind.org` depuis une autre adresse : les deux doivent arriver ;
+   - Resend > Domains : `vgthmind.org` reste **Verified** ;
+   - `http://vgthmind.org/products` (sans www) : s'il t'envoie sur l'accueil et pas sur `/products`, dis-le-moi (la redirection d'IONOS ne garde peut-être pas le chemin ; on ajoutera une règle).
+
+### Retour arrière (5 minutes)
+IONOS, ligne `www` : remets `vgthmind.bigcartel.com`. BigCartel revient (TTL 300 s). Rien d'autre n'a changé.
+
+### Les enregistrements à NE JAMAIS toucher
+Si IONOS propose de « tout réinitialiser », de changer les serveurs de noms ou d'« optimiser » : **refuse**.
+
+| Nom | Type | Rôle | Si tu y touches |
+|---|---|---|---|
+| `@` | **MX** `mx00.ionos.fr`, `mx01.ionos.fr` | Réception de `contact@`, `commande@` | Plus aucun mail reçu |
+| `@` | **TXT** `v=spf1 include:_spf-eu.ionos.com ~all` | SPF : IONOS peut envoyer | Mails en spam |
+| `@` | **A** `217.160.0.54`, **AAAA** `2001:8d8:100f:f000::200` | Redirige `vgthmind.org` vers `www` | Le domaine sans www ne s'ouvre plus |
+| `send` | **MX** + **TXT** (amazonses.com) | Resend : retours d'envoi | Mails de commande en spam |
+| `resend._domainkey` | **TXT** (longue clé `p=MIGf…`) | Resend : signature des confirmations de commande | Confirmations refusées |
+| `s1-ionos._domainkey`, `s2-ionos._domainkey`, `s42582890._domainkey` | **CNAME** `*.dkim.ionos.com` | Signature DKIM IONOS | Mails IONOS en spam |
+| `autodiscover` | **CNAME** `adsredir.ionos.info` | Réglage auto de la messagerie | Ajout du compte mail plus dur |
+| `_dmarc` | **TXT** `v=DMARC1; p=none; rua=mailto:contact@vgthmind.org` | Anti-usurpation (déjà posé) | Perte de la surveillance |
+| `_domainconnect`, `_dep_ws_mutex` | CNAME / TXT | Outils IONOS | Sans effet sur le site, laisse-les |
 
 ## B. Stripe en réel (15 minutes, toi seul)
 1. Stripe : le compte doit être **activé** (identité, compte bancaire, SIRET). Tableau de bord > « Activer votre compte » si le bandeau est là.
@@ -36,11 +78,7 @@ Règle : Claude ne déploie le Worker et ne pousse le site qu'après ton « OK �
    Les clés de test d'avant sont remplacées : jusqu'au passage en réel (étape D) le Worker refuse une clé live tant que `LIVE_MODE` vaut 0, donc rien ne bouge pour tes proches.
 
 ## C. Le nom de domaine (le matin du jour J, toi 30 minutes)
-La veille : IONOS > Domaines > vgthmind.org > DNS > ligne `www` > TTL **300 secondes**. Ne touche jamais aux lignes MX, SPF, DKIM, `_dmarc`, `send`, `resend`, ni à la ligne `@`.
-1. Cloudflare (dash.cloudflare.com) > Workers & Pages > **vgthmind-shop** > onglet **Custom domains** > « Set up a custom domain » > `www.vgthmind.org` > Continue.
-2. IONOS > DNS > ligne `www` (CNAME) : remplace `vgthmind.bigcartel.com` par `vgthmind-shop.pages.dev` > Enregistrer.
-3. Cloudflare > Custom domains : attends « **Active** » (2 à 30 minutes, certificat HTTPS).
-4. Resend (resend.com) > Domains : `vgthmind.org` doit être « **Verified** ».
+Pas-à-pas détaillé : section « Domaine » plus haut (avant la partie B). Seule la ligne `www` change.
 
 ## D. Le jour J avec Claude (dans cet ordre, je te guide)
 1. Toi : tu me dis **« essai réel »** quand B est fait. Moi : `node outils/preparer-bascule.mjs --live-seul --apply` (le Worker passe en réel, le site reste de test), `npm test`. Moi : je déploie le Worker (ton OK écrit dans le chat d'abord).
@@ -51,6 +89,7 @@ La veille : IONOS > Domaines > vgthmind.org > DNS > ligne `www` > TTL **300 seco
 
 ## E. Après le lancement
 - 48 h : regarde Stripe (paiements, webhooks en erreur) et ta boîte contact@.
+- **Relecture juriste** (décision à toi, pas bloquante pour le lancement) : mentions légales et CGV, `chantier/CGV-A-VERIFIER.md` (médiateur, délai de rétractation, pays livrés), entreprise individuelle (EI) et ce qui figure sur tes factures, mention de TVA à adapter au 2027-01-01 (CIBS). Les factures sont faites par toi avec ton outil de facturation (le site n'envoie qu'une confirmation de commande) : aucune adresse de facturation n'est à saisir dans l'admin.
 - Search Console : ajoute `www.vgthmind.org`, envoie `sitemap.xml`.
 - IONOS : remets le TTL de `www` à 1 heure.
 - Cloudflare Web Analytics : vérifie que le nouveau domaine est suivi.

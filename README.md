@@ -150,7 +150,7 @@ remplacé par un renvoi vers les mentions légales de vgthmind.org).
 - Les reels vidéo (18 MP4) et les fichiers téléchargés au build (`vg-transitions-dev.js`/`.css`, `products-config.json`, `search-keywords.json`) viennent encore du dépôt `vgthmind.github.io`.
 - **Rebond « déjà sur la page »** et petites différences liées au
   sous-dossier : à vérifier en vidéo.
-- Liste complète et à jour : rubrique BACKLOG de `chantier/ETAT.md` (dépôt privé).
+- Liste complète et à jour : `A-FAIRE.md` et `../ETAT-DETAIL.md`.
 
 ---
 

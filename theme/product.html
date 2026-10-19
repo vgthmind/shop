@@ -182,7 +182,7 @@
           {% endif %}
         {% endif %}
         <button id="add-to-cart-button" class="button add-to-cart-button" type="submit" data-add-title="{{ t['products.add_to_cart'] }}" data-sold-title="{{ t['products.sold_out'] }}">{{ t['products.add_to_cart'] }}</button>
-        {% for s in product.shipping %}{% if s.country.code == 'FR' and s.amount_alone == 0 %}<p class="vg-free-fr"><span data-l="en">Free shipping in France</span><span data-l="fr">Livraison offerte en France</span></p>{% endif %}{% endfor %}
+        {% for s in product.shipping %}{% if s.country.code == 'FR' %}<p class="vg-free-fr"><span data-l="en">Free shipping in France from €60</span><span data-l="fr">Livraison offerte en France dès 60 €</span></p>{% endif %}{% endfor %}
         {{ store | instant_checkout_button: 'dark', '44px' }}
         <div class="inventory-status-message" data-inventory-message></div>
         {% if product.has_option_groups %}

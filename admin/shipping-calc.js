@@ -256,11 +256,13 @@
   // Une piece seule vers chaque zone livree (pour la fiche de la piece). item : { slug, weight_g, mode, alone }.
   // Pays d'essai : zone.sample_country, sinon le 1er pays cite, sinon « US ».
   // Renvoie [{ zone, name, country, ok, kind, cost, total, gap }]  (cost = La Poste, total = client, gap = total - cost).
+  // item.price (EUR, facultatif) : prix de la piece ; s'il est donne, la livraison offerte de la grille s'applique (France des 60 EUR).
   function quoteByZone(config, item) {
-    var plain = Object.assign({}, config, { free_shipping: { enabled: false } });
+    var priced = item && Number(item.price) > 0, subtotal = priced ? Number(item.price) : 0;
+    var plain = priced ? config : Object.assign({}, config, { free_shipping: { enabled: false } });
     return (config.zones || []).filter(function (z) { return z.enabled !== false; }).map(function (z) {
       var country = z.sample_country || (z.countries || []).filter(function (c) { return c !== '*'; })[0] || 'US';
-      var r = quoteShipping(plain, { items: [Object.assign({ qty: 1 }, item)], subtotal: 0 }, country);
+      var r = quoteShipping(plain, { items: [Object.assign({ qty: 1 }, item)], subtotal: subtotal }, country);
       return r.ok
         ? { zone: z.id, name: z.name || z.id, country: country, ok: true, kind: r.parcels[0].kind, cost: r.cost, total: r.total, gap: r.gap }
         : { zone: z.id, name: z.name || z.id, country: country, ok: false, error: r.error, message: r.message };
