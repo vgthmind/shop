@@ -928,11 +928,11 @@ async function refundOversold(env: Env, s: any, slugs: string[]) {
 // --- Emails de commande (Resend) ---------------------------------------------
 // Alerte pour l'admin (ALERT_EMAIL) ; confirmation au client seulement si un
 // domaine verifie est configure (MAIL_FROM). Une seule fois par commande.
-async function resendSend(env: Env, from: string, to: string, subject: string, html: string, text: string, replyTo?: string) {
+async function resendSend(env: Env, from: string, to: string, subject: string, html: string, text: string, replyTo?: string, attachments?: { filename: string; content: string }[]) {
   const res = await fetch('https://api.resend.com/emails', {
     method: 'POST',
     headers: { Authorization: `Bearer ${env.RESEND_API_KEY}`, 'Content-Type': 'application/json' },
-    body: JSON.stringify({ from, to: [to], subject, html, text, ...(replyTo ? { reply_to: replyTo } : {}) }),
+    body: JSON.stringify({ from, to: [to], subject, html, text, ...(replyTo ? { reply_to: replyTo } : {}), ...(attachments && attachments.length ? { attachments } : {}) }),
   });
   return res.ok;
 }
@@ -1545,7 +1545,7 @@ function reqDeps(env: Env): ReqDeps {
   return {
     stripeKey: () => { const k = stripeKey(env); return k.ok ? k.value : null; },
     stripe: stripeCall,
-    send: (f, t, su, h, tx, rt) => resendSend(env, f, t, su, h, tx, rt),
+    send: (f, t, su, h, tx, rt, at) => resendSend(env, f, t, su, h, tx, rt, at),
     alert: (k, su, d) => alertAdmin(env, k, su, d),
     shipping: (product, country) => checkoutShipping(env as any, [product], new Map([[product.permalink, 1]]), country === 'FR' ? 'fr' : 'intl', country),
     invoice: async (sessionId) => { const k = stripeKey(env); return k.ok ? invoiceData(env, k.value, sessionId) : { ok: false, error: k.error, status: 503 }; },

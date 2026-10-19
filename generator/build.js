@@ -536,7 +536,7 @@ function injectAround(html, parts, product, relPath) {
 // Chemin inconnu (hors pages du site) = accueil. Désinscrit aussi le service worker et vide les caches de l'ancien admin.
 // Bandeau « Version de test » sur toutes les pages de la boutique tant que data/shop-settings.json n'a pas "public": true
 // (même interrupteur que le noindex : il disparaît à la bascule, sans rien d'autre à faire). Ne gêne aucun clic.
-const TEST_BANNER = '<div id="vg-test-banner" role="note" style="position:fixed;left:0;right:0;bottom:0;z-index:2147483000;padding:5px 10px calc(5px + env(safe-area-inset-bottom));background:rgba(23,23,23,.88);color:#f4f2ec;font:11px/1.35 IBM Plex Mono,ui-monospace,monospace;letter-spacing:.03em;text-align:center;pointer-events:none">Version de test : aucun paiement réel, carte de test 4242 4242 4242 4242</div><style>.vg-splash{z-index:2147482999!important}</style>';
+const TEST_BANNER = '<div id="vg-test-banner" role="note" style="position:fixed;left:0;right:0;bottom:0;z-index:2147483000;padding:5px 10px calc(5px + env(safe-area-inset-bottom));background:rgba(23,23,23,.88);color:#f4f2ec;font:11px/1.35 IBM Plex Mono,ui-monospace,monospace;letter-spacing:.03em;text-align:center;pointer-events:none">Version de test : aucun paiement réel, carte de test 4242 4242 4242 4242</div><style>.vg-splash{z-index:2147482999!important}body{padding-bottom:calc(64px + env(safe-area-inset-bottom))!important}</style>';
 function testBanner(html, relPath) {
   if (SHOP_SETTINGS.public || typeof html !== 'string' || !/\.html$/.test(relPath || '') || /^admin\//.test(relPath)) return html;
   const i = html.lastIndexOf('</body>');

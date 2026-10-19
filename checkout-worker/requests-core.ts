@@ -35,7 +35,7 @@ export const FIELDS_BY_TYPE: Record<string, string[]> = {
 export const STATUSES = ['brouillon', 'nouvelle', 'discussion', 'devis', 'acompte', 'fabrication', 'validation', 'solde', 'envoyee', 'terminee', 'refusee'] as const;
 export const STATUS_LABELS: Record<string, string> = {
   brouillon: 'Envoi en cours', nouvelle: 'Nouvelle', discussion: 'En discussion', devis: 'Devis envoyé', acompte: 'Acompte payé',
-  fabrication: 'En fabrication', validation: 'En attente de validation client', solde: 'Solde payé', envoyee: 'Envoyée', terminee: 'Terminée', refusee: 'Refusée',
+  fabrication: 'En cours (fabrication)', validation: 'En attente de validation client', solde: 'Solde payé', envoyee: 'Envoyée', terminee: 'Terminée', refusee: 'Refusée',
 };
 const CLOSED = ['terminee', 'refusee'];
 
@@ -309,19 +309,32 @@ export function mergeSettings(saved: any): Settings {
 export function depositFor(total: number, pct: number) { return round2((total * pct) / 100); }
 
 // Texte exact de la case à cocher avant l'acompte (gardé tel quel dans le journal de la demande).
-export function consentText(lang: string, q: { total: number; deposit: number; depositPct: number }, s: Settings): string {
+export function consentText(lang: string, q: { total: number; deposit: number; depositPct: number; number?: string; version?: number }, s: Settings): string {
   const eur = (n: number) => n.toFixed(2).replace('.', lang === 'fr' ? ',' : '.') + ' €';
+  const ref = q.number ? `${q.number}${q.version && q.version > 1 ? ' v' + q.version : ''}` : '';
   if (lang === 'fr') {
-    return `Je commande une pièce personnalisée, réalisée selon mes demandes : je reconnais ne pas disposer du droit de rétractation (article L221-28 3° du Code de la consommation). `
+    return (ref ? `J'accepte le devis ${ref} et les conditions générales de vente. ` : '') + `Je commande une pièce personnalisée, réalisée selon mes demandes : je reconnais ne pas disposer du droit de rétractation (article L221-28 3° du Code de la consommation). `
       + `Je verse un acompte de ${eur(q.deposit)} (${q.depositPct} % du prix total de ${eur(q.total)}) : il s'agit d'un acompte et non d'arrhes (article L214-1 du Code de la consommation), ma commande est ferme. `
       + `Le solde est payé après validation de la pièce sur photos, avant l'envoi. Sans validation ni paiement du solde ${s.forfeitDays} jours après l'envoi des photos (relance comprise), l'acompte reste acquis à vgthmind. `
       + `Si vgthmind refuse ou abandonne la commande, l'acompte est remboursé intégralement.`;
   }
-  return `I am ordering a personalised piece, made to my specifications: I acknowledge that I have no right of withdrawal (article L221-28 3° of the French Consumer Code). `
+  return (ref ? `I accept quote ${ref} and the terms of sale. ` : '') + `I am ordering a personalised piece, made to my specifications: I acknowledge that I have no right of withdrawal (article L221-28 3° of the French Consumer Code). `
     + `I pay a deposit of ${eur(q.deposit)} (${q.depositPct}% of the total price of ${eur(q.total)}): this is a down payment ("acompte", not "arrhes", article L214-1 of the French Consumer Code), so my order is firm. `
     + `The balance is paid after I approve the piece from photos, before shipping. If I neither approve nor pay the balance ${s.forfeitDays} days after the photos are sent (reminder included), vgthmind keeps the deposit. `
     + `If vgthmind declines or abandons the order, the deposit is refunded in full.`;
 }
+
+// Location / collab : acceptation du devis (case à cocher). L'acompte est facultatif.
+export function consentTextOptional(lang: string, q: { total: number; deposit: number; depositPct: number; number?: string; version?: number }): string {
+  const eur = (n: number) => n.toFixed(2).replace('.', lang === 'fr' ? ',' : '.') + ' €';
+  const ref = `${q.number || ''}${q.version && q.version > 1 ? ' v' + q.version : ''}`.trim();
+  if (lang === 'fr') {
+    return `J'accepte le devis ${ref} (${eur(q.total)}) et les conditions générales de vente.` + (q.deposit ? ` L'acompte de ${eur(q.deposit)} (${q.depositPct} %) est facultatif ; versé, il n'est pas remboursable une fois le travail commencé, sauf si vgthmind refuse ou abandonne la commande.` : '');
+  }
+  return `I accept quote ${ref} (${eur(q.total)}) and the terms of sale.` + (q.deposit ? ` The deposit of ${eur(q.deposit)} (${q.depositPct}%) is optional; once paid, it is non-refundable once work has started, unless vgthmind declines or abandons the order.` : '');
+}
+
+export interface QuoteLine { label: string; qty: number; unit: number; amount: number }
 
 // --- Actions ------------------------------------------------------------------------------------
 export type Effect = { kind: string; data?: any };
@@ -361,28 +374,67 @@ export function applyAction(input: any, action: string, d: any, s: Settings, now
       return done(rec, now, `Statut : ${STATUS_LABELS[from]} → ${STATUS_LABELS[d.status]}`);
     }
     case 'notes': rec.notes = block(d.notes, 5000); return done(rec, now, null);
-    case 'quote': {
-      if (!paid) return fail('Pas de devis automatique pour une location ou une collab : réponds par mail.');
-      if (rec.deposit && rec.deposit.paidAt) return fail('Acompte déjà payé : le devis ne peut plus changer.');
-      const total = round2(Number(d.total));
+    case 'quote': { // devis numéroté (DEV-AAAA-NNN, v2, v3… si on le renvoie), avec lignes de détail et date de validité
+      if ((rec.quote && rec.quote.acceptedAt) || (rec.deposit && (rec.deposit.acceptedAt || rec.deposit.paidAt))) return fail('Devis accepté : il ne peut plus être modifié.');
+      const rawLines: any[] = Array.isArray(d.lines) ? d.lines.slice(0, 12) : [];
+      const lines: QuoteLine[] = [];
+      for (const l of rawLines) {
+        const label = clean(l && l.label, 140); if (!label) continue;
+        const qty = Math.floor(Number(l.qty) || 1), unit = round2(Number(l.unit));
+        if (!(qty >= 1 && qty <= 99) || !(unit >= 0 && unit <= 20000)) return fail('Ligne de devis invalide : ' + label);
+        lines.push({ label, qty, unit, amount: round2(qty * unit) });
+      }
+      const total = lines.length ? round2(lines.reduce((t, l) => t + l.amount, 0)) : round2(Number(d.total));
       if (!(total >= 1 && total <= 20000)) return fail('Prix total invalide.');
-      const pct = d.depositPct == null || d.depositPct === '' ? s.depositPct : Math.floor(Number(d.depositPct));
-      if (!(pct >= 1 && pct <= 100)) return fail('Pourcentage d’acompte invalide.');
-      const piece = PIECES[rec.type].find((p) => p.key === rec.fields.piece);
-      const weight = Math.floor(Number(d.weight_g) || (piece ? piece.weight_g : 600));
-      if (!(weight > 0 && weight <= 30000)) return fail('Poids invalide.');
+      const rawPct = d.depositPct == null || d.depositPct === '' ? (paid ? s.depositPct : 0) : Math.floor(Number(d.depositPct));
+      if (!(paid ? rawPct >= 1 && rawPct <= 100 : rawPct >= 0 && rawPct <= 100)) return fail('Pourcentage d’acompte invalide.');
+      const piece = (PIECES[rec.type] || []).find((p) => p.key === rec.fields.piece);
+      const weight = paid ? Math.floor(Number(d.weight_g) || (piece ? piece.weight_g : 600)) : 0;
+      if (paid && !(weight > 0 && weight <= 30000)) return fail('Poids invalide.');
       const delay = clean(d.delay, 120);
-      if (!delay) return fail('Indique le délai de fabrication.');
-      rec.quote = { total, depositPct: pct, deposit: depositFor(total, pct), delay, weight_g: weight, message: block(d.message, 3000), title: clean(d.title, 120) || defaultTitle(rec), sentAt: now };
+      if (!delay) return fail(paid ? 'Indique le délai de fabrication.' : 'Indique le délai.');
+      const validDays = d.validDays == null || d.validDays === '' ? 30 : Math.floor(Number(d.validDays));
+      if (!(validDays >= 1 && validDays <= 180)) return fail('Validité du devis : 1 à 180 jours.');
+      const number = rec.quoteNumber || clean(d.number, 20);
+      if (!number) return fail('Numéro de devis indisponible.');
+      const version = (rec.quoteVersion || 0) + 1;
+      const title = clean(d.title, 120) || defaultTitle(rec);
+      rec.quoteNumber = number; rec.quoteVersion = version;
+      rec.quote = {
+        number, version, lines: lines.length ? lines : [{ label: title, qty: 1, unit: total, amount: total }], total, depositPct: rawPct, deposit: depositFor(total, rawPct), optionalDeposit: !paid,
+        delay, weight_g: weight, message: block(d.message, 3000), title, sentAt: now, validDays, validUntil: now + validDays * DAY,
+      };
       rec.status = 'devis';
       rec.reminders = {};
-      return done(rec, now, `Devis envoyé : ${total} €, acompte ${pct} % (${rec.quote.deposit} €), délai ${delay}`, [{ kind: 'mail:quote' }]);
+      return done(rec, now, `Devis ${number}${version > 1 ? ' v' + version : ''} envoyé : ${total} €${rec.quote.deposit ? `, acompte ${rawPct} % (${rec.quote.deposit} €)` : ', sans acompte'}, délai ${delay}, valable ${validDays} jours`, [{ kind: 'mail:quote' }]);
     }
-    case 'acceptDeposit': { // le client coche la mention puis part payer
-      if (!paid || rec.status !== 'devis' || !rec.quote) return fail('not_payable', 409);
+    case 'cancelQuote': { // devis non accepté : annulé (le numéro reste réservé, le prochain sera v+1)
+      if (!rec.quote) return fail('Aucun devis à annuler.');
+      if (rec.quote.acceptedAt || (rec.deposit && (rec.deposit.acceptedAt || rec.deposit.paidAt))) return fail('Devis accepté : il ne peut plus être annulé ni modifié.');
+      rec.quoteHistory = [...(rec.quoteHistory || []), { ...rec.quote, cancelledAt: now }].slice(-20);
+      const label = `${rec.quote.number}${rec.quote.version > 1 ? ' v' + rec.quote.version : ''}`;
+      rec.quote = null; rec.status = 'discussion'; rec.reminders = {};
+      return done(rec, now, `Devis ${label} annulé`);
+    }
+    case 'acceptQuote': { // location / collab : le client accepte le devis (acompte facultatif, payé à part s'il y en a un)
+      if (paid || rec.status !== 'devis' || !rec.quote) return fail('not_payable', 409);
+      if (rec.quote.acceptedAt) return done(rec, now, null, [], { already: true });
+      if (d.accept !== true) return fail('consent_required');
+      if (rec.quote.validUntil && now > rec.quote.validUntil) return fail('quote_expired', 409);
+      const text = consentTextOptional(rec.lang, rec.quote);
+      rec.quote.acceptedAt = now;
+      rec.deposit = { ...(rec.deposit || {}), acceptedAt: now, acceptIp: clean(d.ip, 60), consent: text, amount: rec.quote.deposit };
+      const label = `${rec.quote.number}${rec.quote.version > 1 ? ' v' + rec.quote.version : ''}`;
+      if (!d.payDeposit) { rec.status = 'fabrication'; rec.reminders = {}; }
+      return done(rec, now, `Devis ${label} accepté par le client : « ${text} »`, d.payDeposit ? [] : [{ kind: 'mail:quoteAccepted' }, { kind: 'alert', data: { subject: `Devis accepté : ${rec.id}`, detail: `${rec.client.name} a accepté le devis ${label} (${rec.quote.total} €)${rec.quote.deposit ? ', sans payer l’acompte facultatif (caution ou acompte à régler à part)' : ''}. La demande est « en cours ».` } }]);
+    }
+    case 'acceptDeposit': { // le client coche la mention puis part payer (location / collab : seulement si le devis prévoit un acompte facultatif)
+      if (rec.status !== 'devis' || !rec.quote || (!paid && !(rec.quote.optionalDeposit && rec.quote.deposit > 0))) return fail('not_payable', 409);
       if (rec.deposit && rec.deposit.paidAt) return fail('already_paid', 409);
       if (d.accept !== true) return fail('consent_required');
-      const text = consentText(rec.lang, rec.quote, s);
+      if (rec.quote.validUntil && now > rec.quote.validUntil) return fail('quote_expired', 409);
+      const text = paid ? consentText(rec.lang, rec.quote, s) : consentTextOptional(rec.lang, rec.quote);
+      rec.quote.acceptedAt = rec.quote.acceptedAt || now;
       rec.deposit = { ...(rec.deposit || {}), acceptedAt: now, acceptIp: clean(d.ip, 60), consent: text, amount: rec.quote.deposit };
       return done(rec, now, 'Mention acceptée avant l’acompte : « ' + text + ' »');
     }
@@ -526,8 +578,8 @@ export function clientView(rec: any, s: Settings) {
   return {
     id: rec.id, type: rec.type, lang: rec.lang, status: rec.status, created: rec.created,
     name: rec.client.name, country: rec.client.country, piece: rec.fields.piece,
-    quote: rec.quote ? { total: rec.quote.total, deposit: rec.quote.deposit, depositPct: rec.quote.depositPct, balance: round2(rec.quote.total - rec.quote.deposit), delay: rec.quote.delay, message: rec.quote.message, title: rec.quote.title, sentAt: rec.quote.sentAt } : null,
-    consent: rec.quote ? consentText(rec.lang, rec.quote, s) : '',
+    quote: rec.quote ? { number: rec.quote.number, version: rec.quote.version, lines: rec.quote.lines, total: rec.quote.total, deposit: rec.quote.deposit, depositPct: rec.quote.depositPct, optionalDeposit: !!rec.quote.optionalDeposit, balance: round2(rec.quote.total - rec.quote.deposit), delay: rec.quote.delay, message: rec.quote.message, title: rec.quote.title, sentAt: rec.quote.sentAt, validUntil: rec.quote.validUntil || 0, expired: !!(rec.quote.validUntil && Date.now() > rec.quote.validUntil && !rec.quote.acceptedAt), acceptedAt: rec.quote.acceptedAt || 0 } : null,
+    consent: rec.quote ? (PAID_TYPES.includes(rec.type) ? consentText(rec.lang, rec.quote, s) : consentTextOptional(rec.lang, rec.quote)) : '',
     depositPaid: !!(rec.deposit && rec.deposit.paidAt),
     validation: v ? { round: v.round, sentAt: v.sentAt, validatedAt: v.validatedAt || null, retouchesLeft: Math.max(0, s.retouchesIncluded - v.retouchesUsed), retouchesIncluded: s.retouchesIncluded } : null,
     photos: rec.status === 'validation' || rec.status === 'solde' || rec.status === 'envoyee' || rec.status === 'terminee' ? rec.finals.map((_f: any, i: number) => i) : [],

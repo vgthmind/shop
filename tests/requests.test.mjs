@@ -392,8 +392,7 @@ test('réglages : prix sous le prix boutique équivalent refusés, délais et ac
 test('production visuelle / collab : pas de paiement automatique ; réponse par mail depuis l’admin', async () => {
   const { id, k } = await submit({ ...FORM, type: 'collab', collabType: 'Vidéo YouTube', links: 'youtube.com/@x', idea: 'Une vidéo making-of ensemble' });
   await call('/requests/confirm', { id, k });
-  assert.equal((await admin('/admin/requests/act', { id, action: 'quote', total: 100, delay: 'x' })).status, 400);
-  assert.equal((await J(await call('/requests/deposit', { id, k, accept: true }))).status, 409);
+  assert.equal((await J(await call('/requests/deposit', { id, k, accept: true }))).status, 409, 'pas de devis : pas de paiement');
   const r = await admin('/admin/requests/act', { id, action: 'reply', subject: 'Ta collab', message: 'Partant ! On s’appelle ?' });
   assert.equal(r.request.status, 'discussion');
   const m = mails.at(-1);
@@ -435,4 +434,99 @@ test('sans R2 : formulaire accepté, envoi de fichiers indisponible (lien seulem
   assert.equal(r.uploads, false);
   assert.equal((await call(`/requests/file?id=${r.id}&k=${r.k}&name=a`, new Uint8Array(4), 'PUT', { 'content-type': 'image/jpeg', 'content-length': '4' })).status, 503);
   assert.equal((await J(await call('/requests/settings', null, 'GET'))).uploads, false);
+});
+
+// --- Devis pro : numéro, versions, lignes, validité, PDF, acceptation, verrouillage ---
+const hexOf = (t) => [...t].map((ch) => ch.charCodeAt(0).toString(16).padStart(2, '0')).join('');
+const pdfText = async (path) => { const r = await call(path, null, 'GET', path.startsWith('/admin') ? { authorization: 'Bearer ' + adminTok() } : {}); assert.equal(r.status, 200); assert.equal(r.headers.get('content-type'), 'application/pdf'); return Buffer.from(await r.arrayBuffer()).toString('latin1'); };
+
+test('devis pro : numéro DEV-AAAA-NNN, lignes de détail, validité, PDF joint au mail et téléchargeable', async () => {
+  const { id, k } = await submit(); await call('/requests/confirm', { id, k });
+  const q = await admin('/admin/requests/act', { id, action: 'quote', title: 'Hoodie océan', delay: '3 semaines', validDays: 15, lines: [{ label: 'Hoodie zippé', qty: 1, unit: 120 }, { label: 'Peinture aérographe', qty: 2, unit: 40 }] });
+  assert.equal(q.ok, true);
+  assert.match(q.request.quote.number, /^DEV-\d{4}-001$/);
+  assert.equal(q.request.quote.version, 1);
+  assert.equal(q.request.quote.total, 200, 'total = somme des lignes');
+  assert.equal(q.request.quote.deposit, 60);
+  assert.ok(Math.abs(q.request.quote.validUntil - Date.now() - 15 * DAY) < 5000);
+  const m = mails.at(-1);
+  assert.match(m.subject, /Ton devis vgthmind DEV-\d{4}-001 \(D-/);
+  assert.equal(m.attachments.length, 1);
+  assert.match(m.attachments[0].filename, /^Devis-DEV-\d{4}-001\.pdf$/);
+  const bin = Buffer.from(m.attachments[0].content, 'base64').toString('latin1');
+  assert.ok(bin.startsWith('%PDF-1.4') && bin.trimEnd().endsWith('%%EOF'));
+  const win = (t) => [...t].map((ch) => (ch === 'é' ? 'e9' : ch.charCodeAt(0).toString(16).padStart(2, '0'))).join('');
+  for (const t of ['vgthmind', 'TVA non applicable, art. 293 B du CGI', 'SIRET', 'Hoodie zippé', 'Alex Martin', 'pas de droit de rétractation']) assert.ok(bin.includes(win(t)), 'PDF : ' + t);
+  assert.equal((await pdfText('/requests/quote.pdf?id=' + id + '&k=' + k)).slice(0, 5), '%PDF-');
+  assert.equal((await pdfText('/admin/requests/quote.pdf?id=' + id)).slice(0, 5), '%PDF-');
+  assert.equal((await call('/requests/quote.pdf?id=' + id + '&k=' + 'x'.repeat(32), null, 'GET')).status, 404, 'lien secret obligatoire');
+  const v = await view(id, k);
+  assert.match(v.consent, /^J'accepte le devis DEV-\d{4}-001 et les conditions générales de vente\./);
+  assert.equal(v.quote.lines.length, 2);
+  // Renvoi : même numéro, version 2, avant acceptation.
+  const q2 = await admin('/admin/requests/act', { id, action: 'quote', delay: '4 semaines', total: 220 });
+  assert.equal(q2.request.quote.number, q.request.quote.number);
+  assert.equal(q2.request.quote.version, 2);
+  assert.match(mails.at(-1).subject, /DEV-\d{4}-001 v2/);
+  // Deux demandes : deux numéros différents.
+  const o = await submit(); await call('/requests/confirm', { id: o.id, k: o.k });
+  const qo = await admin('/admin/requests/act', { id: o.id, action: 'quote', total: 90, delay: '2 semaines' });
+  assert.match(qo.request.quote.number, /-002$/);
+});
+
+test('devis pro : annulation d’un devis non accepté, puis v2 ; devis accepté = verrouillé ; devis expiré = refusé', async () => {
+  const { id, k } = await submit(); await call('/requests/confirm', { id, k });
+  await admin('/admin/requests/act', { id, action: 'quote', total: 100, delay: '2 semaines' });
+  const c = await admin('/admin/requests/act', { id, action: 'cancelQuote' });
+  assert.equal(c.ok, true); assert.equal(c.request.quote, null); assert.equal(c.request.status, 'discussion');
+  assert.equal((await J(await call('/requests/deposit', { id, k, accept: true }))).status, 409, 'plus de devis à payer');
+  const q = await admin('/admin/requests/act', { id, action: 'quote', total: 120, delay: '2 semaines' });
+  assert.equal(q.request.quote.version, 2);
+  // Le client accepte (case + clic sur « payer ») : plus aucune modification.
+  await call('/requests/deposit', { id, k, accept: true });
+  assert.equal((await admin('/admin/requests/act', { id, action: 'quote', total: 10, delay: 'x' })).status, 400);
+  assert.match((await admin('/admin/requests/act', { id, action: 'cancelQuote' })).error, /accepté/);
+  // Expiré : refus côté serveur.
+  const e = await submit(); await call('/requests/confirm', { id: e.id, k: e.k });
+  await admin('/admin/requests/act', { id: e.id, action: 'quote', total: 100, delay: '2 semaines', validDays: 1 });
+  const realNow = Date.now; Date.now = () => realNow() + 2 * DAY;
+  try {
+    const d = await J(await call('/requests/deposit', { id: e.id, k: e.k, accept: true }));
+    assert.equal(d.status, 409); assert.equal(d.error, 'quote_expired');
+    assert.equal((await view(e.id, e.k)).quote.expired, true);
+  } finally { Date.now = realNow; }
+});
+
+test('devis pro : montants toujours calculés côté serveur (lignes ou total invalides refusés)', async () => {
+  const { id, k } = await submit(); await call('/requests/confirm', { id, k });
+  assert.equal((await admin('/admin/requests/act', { id, action: 'quote', delay: 'x', lines: [{ label: 'a', qty: 1, unit: -5 }] })).status, 400);
+  assert.equal((await admin('/admin/requests/act', { id, action: 'quote', delay: 'x', total: 0 })).status, 400);
+  assert.equal((await admin('/admin/requests/act', { id, action: 'quote', delay: 'x', total: 100, validDays: 400 })).status, 400);
+  await admin('/admin/requests/act', { id, action: 'quote', delay: 'x', total: 100 });
+  const dep = await J(await call('/requests/deposit', { id, k, accept: true, amount: 1, total: 1 }));
+  assert.equal(created.at(-1).get('line_items[0][price_data][unit_amount]'), '3000', 'acompte = 30 % du devis, jamais du navigateur');
+  assert.ok(dep.url);
+});
+
+test('devis pro : location / collab, acompte facultatif — acceptation sans payer, ou acompte payé', async () => {
+  const mk = async () => { const x = await submit({ ...FORM, type: 'collab', collabType: 'Vidéo', links: 'youtube.com/@x', idea: 'Une vidéo making-of ensemble' }); await call('/requests/confirm', { id: x.id, k: x.k }); return x; };
+  // a) sans acompte : le client accepte, la demande passe en « en cours », alerte + confirmation
+  let { id, k } = await mk();
+  const q = await admin('/admin/requests/act', { id, action: 'quote', title: 'Clip', delay: '2 semaines', lines: [{ label: 'Location pièce clip', qty: 1, unit: 300 }], depositPct: 0 });
+  assert.equal(q.ok, true); assert.equal(q.request.quote.deposit, 0);
+  assert.equal((await J(await call('/requests/deposit', { id, k, accept: true }))).status, 409, 'pas d’acompte prévu');
+  mails.length = 0;
+  assert.equal((await J(await call('/requests/accept', { id, k }))).status, 400, 'case obligatoire');
+  const a = await J(await call('/requests/accept', { id, k, accept: true }));
+  assert.equal(a.ok, true); assert.equal(a.request.status, 'fabrication');
+  assert.ok(mails.some((m) => m.to[0] === 'alex@example.com' && /Devis accepté/.test(m.subject)));
+  assert.ok(mails.some((m) => /Devis accepté : D-/.test(m.subject)), 'alerte pour vgthmind');
+  assert.equal((await admin('/admin/requests/act', { id, action: 'quote', total: 1, delay: 'x' })).status, 400, 'accepté : verrouillé');
+  // b) avec acompte facultatif de 20 % : payé via Stripe, puis « en cours »
+  ({ id, k } = await mk());
+  await admin('/admin/requests/act', { id, action: 'quote', total: 300, delay: '2 semaines', depositPct: 20 });
+  const dep = await J(await call('/requests/deposit', { id, k, accept: true }));
+  assert.equal(created.at(-1).get('line_items[0][price_data][unit_amount]'), '6000');
+  await webhook('checkout.session.completed', pay(dep.url.split('/').pop()));
+  assert.equal((await getReq(id)).status, 'fabrication');
 });

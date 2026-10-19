@@ -14,11 +14,14 @@ const T = {
     receivedLead: 'Merci ! Ta demande est bien reçue. Je la lis avec attention et je reviens vers toi en général sous 2 à 5 jours ouvrés, avec des questions ou un devis.',
     receivedPaid: 'Si on part ensemble : je t’envoie un devis (prix total et délai). Un acompte lance la fabrication, tu valides la pièce sur photos, puis tu payes le solde avant l’envoi.',
     receivedManual: 'Pour une production visuelle ou une collab, je te réponds directement par mail (devis, caution, contrat selon le projet).',
-    quote: (id: string) => `Ton devis vgthmind (${id})`,
-    quoteLead: 'Voici le devis pour ta pièce :', total: 'Prix total', deposit: (p: number) => `Acompte (${p} %) à payer maintenant`, balance: 'Solde à payer après validation sur photos',
+    quote: (id: string, no?: string) => `Ton devis vgthmind${no ? ' ' + no : ''} (${id})`,
+    quoteLead: 'Voici le devis pour ta pièce :', quoteLeadOpt: 'Voici le devis pour ton projet :', valid: (d: string) => `Devis valable jusqu’au ${d}.`, pdf: 'Le devis est joint à ce mail en PDF.',
+    depositOpt: (p: number) => `Acompte facultatif (${p} %)`, seeQuote: 'Voir le devis et l’accepter',
+    quoteNoteOpt: 'L’acompte est facultatif ; versé, il n’est pas remboursable une fois le travail commencé, sauf si vgthmind refuse ou abandonne la commande.',
+    accepted: (id: string) => `Devis accepté, merci ! (${id})`, acceptedLead: 'Merci, ton devis est bien accepté. Je lance le projet et je reviens vers toi pour la suite (caution, calendrier, détails).', total: 'Prix total', deposit: (p: number) => `Acompte (${p} %) à payer maintenant`, balance: 'Solde à payer après validation sur photos',
     delay: 'Délai de fabrication', shipping: 'Le port est ajouté au solde, selon ton pays.', payDeposit: 'Voir le devis et payer l’acompte',
     quoteNote: 'L’acompte rend la commande ferme et lance la fabrication. Pièce personnalisée : pas de droit de rétractation (article L221-28 3° du Code de la consommation).',
-    quoteRemind: (id: string) => `Rappel : ton devis vgthmind t’attend (${id})`, quoteRemindLead: 'Petit rappel : ton devis est toujours là. Tu peux le relire et payer l’acompte quand tu veux, ou me répondre si tu as des questions.',
+    quoteRemind: (id: string, no?: string) => `Rappel : ton devis vgthmind${no ? ' ' + no : ''} t’attend (${id})`, quoteRemindLead: 'Petit rappel : ton devis est toujours là. Tu peux le relire et payer l’acompte quand tu veux, ou me répondre si tu as des questions.',
     depositPaid: (id: string) => `Acompte reçu, la fabrication commence (${id})`,
     depositPaidLead: (a: string, d: string) => `Merci, ton acompte de ${a} est bien reçu : ta commande est ferme et je commence ta pièce. Délai prévu : ${d}. Je t’envoie des photos dès qu’elle est finie pour que tu la valides.`,
     invoice: 'Ta facture d’acompte est disponible sur la page de ta demande.',
@@ -35,11 +38,14 @@ const T = {
     receivedLead: 'Thank you! Your request is received. I’ll read it carefully and get back to you, usually within 2 to 5 working days, with questions or a quote.',
     receivedPaid: 'If we go ahead: I send you a quote (total price and lead time). A deposit starts the work, you approve the piece from photos, then you pay the balance before shipping.',
     receivedManual: 'For a visual production or a collab, I’ll reply to you directly by email (quote, deposit cheque, contract depending on the project).',
-    quote: (id: string) => `Your vgthmind quote (${id})`,
-    quoteLead: 'Here is the quote for your piece:', total: 'Total price', deposit: (p: number) => `Deposit (${p}%) to pay now`, balance: 'Balance, paid after you approve the photos',
+    quote: (id: string, no?: string) => `Your vgthmind quote${no ? ' ' + no : ''} (${id})`,
+    quoteLead: 'Here is the quote for your piece:', quoteLeadOpt: 'Here is the quote for your project:', valid: (d: string) => `Quote valid until ${d}.`, pdf: 'The quote is attached to this email as a PDF.',
+    depositOpt: (p: number) => `Optional deposit (${p}%)`, seeQuote: 'View the quote and accept it',
+    quoteNoteOpt: 'The deposit is optional; once paid, it is non-refundable once work has started, unless vgthmind declines or abandons the order.',
+    accepted: (id: string) => `Quote accepted, thank you! (${id})`, acceptedLead: 'Thank you, your quote is accepted. I’m starting the project and will get back to you for the next steps (deposit cheque, schedule, details).', total: 'Total price', deposit: (p: number) => `Deposit (${p}%) to pay now`, balance: 'Balance, paid after you approve the photos',
     delay: 'Making time', shipping: 'Shipping is added to the balance, depending on your country.', payDeposit: 'View the quote and pay the deposit',
     quoteNote: 'The deposit makes the order firm and starts the work. Personalised piece: no right of withdrawal (article L221-28 3° of the French Consumer Code).',
-    quoteRemind: (id: string) => `Reminder: your vgthmind quote is waiting (${id})`, quoteRemindLead: 'A quick reminder: your quote is still there. You can read it again and pay the deposit whenever you like, or reply with any questions.',
+    quoteRemind: (id: string, no?: string) => `Reminder: your vgthmind quote${no ? ' ' + no : ''} is waiting (${id})`, quoteRemindLead: 'A quick reminder: your quote is still there. You can read it again and pay the deposit whenever you like, or reply with any questions.',
     depositPaid: (id: string) => `Deposit received, work begins (${id})`,
     depositPaidLead: (a: string, d: string) => `Thank you, your deposit of ${a} is received: your order is firm and I’m starting your piece. Expected time: ${d}. I’ll send you photos as soon as it’s finished so you can approve it.`,
     invoice: 'Your deposit invoice is available on your request page.',
@@ -89,18 +95,36 @@ export function newRequestAlert(rec: any, c: ReqMailCtx): Mail {
   return { subject: `${testTag(c)}[vgthmind] Nouvelle demande ${rec.id} · ${TYPE_LABELS[rec.type]}`, html: shell('fr', 'Nouvelle demande', inner), text };
 }
 
+const quoteRef = (q: any) => `${q.number || ''}${q.version > 1 ? ' v' + q.version : ''}`.trim();
+const dayFmt = (ms: number, lang: string) => new Intl.DateTimeFormat(lang === 'fr' ? 'fr-FR' : 'en-GB', { timeZone: 'Europe/Paris', day: 'numeric', month: 'long', year: 'numeric' }).format(new Date(ms));
 function quoteBlock(rec: any) {
-  const t = tr(rec.lang), q = rec.quote, l = rec.lang;
-  return amountsTable([[t.total, eur(q.total, l), true], [t.deposit(q.depositPct), eur(q.deposit, l)], [t.balance, eur(q.total - q.deposit, l)], [t.delay, q.delay]]);
+  const t: any = tr(rec.lang), q = rec.quote, l = rec.lang;
+  const rows: [string, string, boolean?][] = [[t.total, eur(q.total, l), true]];
+  if (q.deposit > 0) rows.push([q.optionalDeposit ? t.depositOpt(q.depositPct) : t.deposit(q.depositPct), eur(q.deposit, l)]);
+  if (q.deposit > 0 && !q.optionalDeposit) rows.push([t.balance, eur(q.total - q.deposit, l)]);
+  rows.push([t.delay, q.delay]);
+  return amountsTable(rows);
 }
 export function quoteEmail(rec: any, c: ReqMailCtx, reminder = false): Mail {
-  const t = tr(rec.lang), q = rec.quote;
-  const subject = reminder ? t.quoteRemind(rec.id) : t.quote(rec.id);
-  const inner = para(esc(t.hi(rec.client.name))) + para(esc(reminder ? t.quoteRemindLead : t.quoteLead))
-    + heading(q.title || rec.id) + quoteBlock(rec) + (q.message && !reminder ? para(esc(q.message).replace(/\n/g, '<br>'), 'margin-top:16px') : '')
-    + para(esc(t.shipping), `color:${MUTED};font-size:13px;margin-top:12px`) + button(c.pageUrl, t.payDeposit)
-    + para(esc(t.quoteNote), `color:${MUTED};font-size:13px;margin-top:14px`) + sign(rec.lang) + footer(rec.lang, c);
-  const text = `${t.hi(rec.client.name)}\n\n${reminder ? t.quoteRemindLead : t.quoteLead}\n${q.title}\n${t.total} : ${eur(q.total, rec.lang)}\n${t.deposit(q.depositPct)} : ${eur(q.deposit, rec.lang)}\n${t.balance} : ${eur(q.total - q.deposit, rec.lang)}\n${t.delay} : ${q.delay}\n${q.message && !reminder ? '\n' + q.message + '\n' : ''}\n${t.shipping}\n${t.payDeposit} : ${c.pageUrl}\n\n${t.quoteNote}\n\nvgthmind`;
+  const t: any = tr(rec.lang), q = rec.quote, opt = !!q.optionalDeposit, no = quoteRef(q);
+  const subject = reminder ? t.quoteRemind(rec.id, no) : t.quote(rec.id, no);
+  const note = opt ? (q.deposit > 0 ? t.quoteNoteOpt : '') : t.quoteNote;
+  const valid = q.validUntil ? t.valid(dayFmt(q.validUntil, rec.lang)) : '';
+  const inner = para(esc(t.hi(rec.client.name))) + para(esc(reminder ? t.quoteRemindLead : opt ? t.quoteLeadOpt : t.quoteLead))
+    + heading(`${q.title || rec.id}${no ? ' · ' + no : ''}`) + quoteBlock(rec) + (q.message && !reminder ? para(esc(q.message).replace(/\n/g, '<br>'), 'margin-top:16px') : '')
+    + (opt ? '' : para(esc(t.shipping), `color:${MUTED};font-size:13px;margin-top:12px`)) + (valid ? para(esc(valid), `color:${MUTED};font-size:13px;margin-top:10px`) : '') + button(c.pageUrl, opt ? t.seeQuote : t.payDeposit)
+    + (note ? para(esc(note), `color:${MUTED};font-size:13px;margin-top:14px`) : '') + para(esc(t.pdf), `color:${MUTED};font-size:13px`) + sign(rec.lang) + footer(rec.lang, c);
+  const lines = [
+    t.hi(rec.client.name), '', reminder ? t.quoteRemindLead : opt ? t.quoteLeadOpt : t.quoteLead,
+    `${q.title}${no ? ' · ' + no : ''}`, `${t.total} : ${eur(q.total, rec.lang)}`,
+    ...(q.deposit > 0 ? [`${opt ? t.depositOpt(q.depositPct) : t.deposit(q.depositPct)} : ${eur(q.deposit, rec.lang)}`] : []),
+    ...(q.deposit > 0 && !opt ? [`${t.balance} : ${eur(q.total - q.deposit, rec.lang)}`] : []),
+    `${t.delay} : ${q.delay}`,
+    ...(q.message && !reminder ? ['', q.message] : []),
+    ...(opt ? [] : ['', t.shipping]), ...(valid ? ['', valid] : []),
+    '', `${opt ? t.seeQuote : t.payDeposit} : ${c.pageUrl}`, '', ...(note ? [note, ''] : []), t.pdf, '', 'vgthmind',
+  ];
+  const text = lines.join('\n');
   return { subject: testTag(c) + subject, html: shell(rec.lang, subject, inner), text };
 }
 
@@ -127,6 +151,14 @@ export function replyEmail(rec: any, c: ReqMailCtx, subject: string, message: st
   const t = tr(rec.lang);
   const inner = para(esc(message).replace(/\n/g, '<br>')) + `<div style="height:8px"></div>` + para(link(c.pageUrl, esc(`${t.view} (${rec.id})`)), 'font-size:14px') + sign(rec.lang);
   return { subject: testTag(c) + subject, html: shell(rec.lang, subject, inner), text: `${message}\n\n${t.view} : ${c.pageUrl}\n\nvgthmind\n${CONTACT_EMAIL}` };
+}
+
+// Location / collab : le client a accepté le devis.
+export function quoteAcceptedEmail(rec: any, c: ReqMailCtx): Mail {
+  const t: any = tr(rec.lang), no = quoteRef(rec.quote);
+  const subject = t.accepted(rec.id);
+  const inner = para(esc(t.hi(rec.client.name))) + para(esc(t.acceptedLead)) + heading(`${rec.quote.title || rec.id}${no ? ' · ' + no : ''}`) + quoteBlock(rec) + button(c.pageUrl, t.view) + sign(rec.lang) + footer(rec.lang, c);
+  return { subject: testTag(c) + subject, html: shell(rec.lang, subject, inner), text: [t.hi(rec.client.name), '', t.acceptedLead, '', `${t.view} : ${c.pageUrl}`, '', 'vgthmind'].join('\n') };
 }
 
 export { STATUS_LABELS };

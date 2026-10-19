@@ -44,6 +44,7 @@
     .thumb button { position: absolute; top: 4px; right: 4px; padding: 2px 8px; font-size: 12px; }
     .form { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 10px; }
     .form label, .lbl { display: flex; flex-direction: column; gap: 4px; font-size: 13px; color: var(--muted); }
+    .qline { display: grid; grid-template-columns: 1fr 64px 110px; gap: 6px; margin-bottom: 6px; } .qline input { width: 100%; box-sizing: border-box; }
     .actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; align-items: center; }
     .log { font-size: 13px; color: var(--muted); max-height: 220px; overflow: auto; border-top: 1px solid var(--line); margin-top: 8px; padding-top: 6px; white-space: pre-wrap; }
     #msg { min-height: 1.4em; }
@@ -166,6 +167,37 @@
     if (r.id !== open) return '<article class="req ' + stCls(r) + '" id="r-' + r.id + '">' + head + '</article>';
     return '<article class="req open ' + stCls(r) + '" id="r-' + r.id + '">' + head + detail(r) + '</article>';
   }
+  // Devis : récapitulatif, PDF, annulation, et formulaire (lignes de détail, acompte, validité) tant qu'il n'est pas accepté.
+  function quoteBlock(r, paid) {
+    var q = r.quote, locked = !!((q && q.acceptedAt) || (r.deposit && (r.deposit.acceptedAt || r.deposit.paidAt)));
+    var ref = q ? q.number + (q.version > 1 ? ' v' + q.version : '') : '';
+    var h = '<h3>' + (paid ? '1. ' : '') + 'Devis' + (paid ? ' et acompte' : ' (location, collab : acompte facultatif)') + '</h3>';
+    if (q) {
+      h += '<p>Devis <b>' + esc(ref) + '</b> du ' + esc(date(q.sentAt)) + ' : <b>' + money(q.total) + '</b>'
+        + (q.deposit ? ', acompte ' + q.depositPct + ' % = <b>' + money(q.deposit) + '</b>' + (q.optionalDeposit ? ' (facultatif)' : ', solde ' + money(q.total - q.deposit) + ' + port') : ', sans acompte')
+        + ', délai ' + esc(q.delay) + (q.weight_g ? ', poids ' + q.weight_g + ' g' : '') + (q.validUntil ? ', valable jusqu’au ' + esc(new Date(q.validUntil).toLocaleDateString('fr-FR')) : '') + '.</p>'
+        + '<ul class="muted">' + (q.lines || []).map(function (l) { return '<li>' + esc(l.label) + ' : ' + l.qty + ' × ' + money(l.unit) + ' = ' + money(l.amount) + '</li>'; }).join('') + '</ul>'
+        + '<div class="actions"><button type="button" data-qpdf>Télécharger le PDF</button>' + (!locked ? '<button type="button" data-act="cancelQuote" style="color:var(--err)">Annuler ce devis</button>' : '') + '</div>';
+    }
+    if (r.deposit && r.deposit.paidAt) h += '<p><span class="tag ok">Acompte payé le ' + esc(date(r.deposit.paidAt)) + ' : ' + money(r.deposit.amount) + '</span> ' + (r.deposit.session ? '<button type="button" data-inv="' + esc(r.deposit.session) + '">Facture d’acompte</button>' : '') + '</p>';
+    else if (q && q.acceptedAt) h += '<p class="muted"><span class="tag ok">Devis accepté le ' + esc(date(q.acceptedAt)) + '</span> (case « j’accepte le devis et les CGV » cochée' + (r.deposit && r.deposit.acceptIp ? ', IP ' + esc(r.deposit.acceptIp) : '') + ')' + (paid ? ', paiement de l’acompte pas encore reçu' : '') + '. Il ne peut plus être modifié.</p>';
+    if (locked) return h;
+    var rows = (q && q.lines && q.lines.length ? q.lines : []).slice(0, 12), n = Math.max(rows.length, 3), lines = '';
+    for (var i = 0; i < n; i++) {
+      var l = rows[i] || {};
+      lines += '<div class="qline"><input type="text" data-ql="label" maxlength="140" placeholder="Désignation (ex. Hoodie zippé)" value="' + esc(l.label || '') + '"><input type="number" data-ql="qty" min="1" max="99" value="' + (l.qty || 1) + '" aria-label="Quantité"><input type="number" step="0.01" min="0" data-ql="unit" placeholder="Prix unit. €" value="' + (l.unit != null ? l.unit : '') + '" aria-label="Prix unitaire"></div>';
+    }
+    h += '<div class="form"><label>Titre<input type="text" data-q="title" value="' + esc(q ? q.title : '') + '" placeholder="ex. Hoodie custom océan"></label>'
+      + '<label>Délai<input type="text" data-q="delay" value="' + esc(q ? q.delay : '') + '" placeholder="ex. 3 semaines"></label>'
+      + '<label>' + (paid ? 'Acompte (%)' : 'Acompte facultatif (%, 0 = aucun)') + '<input type="number" min="' + (paid ? 1 : 0) + '" max="100" data-q="depositPct" value="' + (q ? q.depositPct : (paid ? (settings ? settings.depositPct : 30) : 0)) + '"></label>'
+      + '<label>Valable (jours)<input type="number" min="1" max="180" data-q="validDays" value="' + (q ? q.validDays || 30 : 30) + '"></label>'
+      + (paid ? '<label>Poids emballé (g, pour le port)<input type="number" data-q="weight_g" value="' + (q ? q.weight_g : '') + '" placeholder="auto"></label>' : '') + '</div>'
+      + '<p class="muted" style="margin:10px 0 4px">Lignes du devis (le total est la somme des lignes)</p><div data-qlines>' + lines + '</div>'
+      + '<div class="actions"><button type="button" data-qadd>+ Ligne</button><b>Total : <span data-qtotal>0,00 €</span></b></div>'
+      + '<label class="lbl" style="margin-top:8px">Message dans le devis (facultatif)<textarea data-q="message">' + esc(q ? q.message : '') + '</textarea></label>'
+      + '<div class="actions"><button type="button" class="main" data-act="quote">' + (q ? 'Envoyer le devis modifié (v' + (q.version + 1) + ')' : 'Envoyer le devis au client') + '</button><span class="muted">Le client reçoit un mail avec le PDF et le lien vers sa page, où il accepte le devis et les CGV' + (paid ? ' puis paie l’acompte' : '') + '.</span></div>';
+    return h;
+  }
   function detail(r) {
     var paid = r.type === 'custom' || r.type === 'surmesure', q = r.quote, h = '';
     var meas = r.answers.filter(function (a) { return a[0] === 'Mesures' || a[0] === 'Measurements'; })[0];
@@ -178,14 +210,8 @@
     h += '<h3>Fichiers du client</h3>' + (r.files.length ? '<div class="grid" data-thumbs="files">' + r.files.map(function (f) { return '<div class="thumb">' + (f.kind === 'photo' ? '<img data-key="' + esc(f.key) + '" alt="">' : '<button type="button" data-video="' + esc(f.key) + '" style="position:static;margin:30px auto;display:block">▶ Vidéo</button>') + '<span title="' + esc(f.name) + '">' + esc(f.name) + '</span></div>'; }).join('') + '</div>' : '<p class="muted">Aucun fichier' + (r.fields.link ? ' (lien ci-dessus)' : '') + '.</p>');
     h += '<h3>Statut et notes privées</h3><div class="actions"><select data-status>' + STATUS.map(function (s) { return '<option value="' + s[0] + '"' + (r.status === s[0] ? ' selected' : '') + '>' + esc(s[1]) + '</option>'; }).join('') + '</select><button type="button" data-act="status">Changer le statut</button></div>'
       + '<textarea data-notes placeholder="Notes privées (jamais montrées au client)">' + esc(r.notes) + '</textarea><div class="actions"><button type="button" data-act="notes">Enregistrer les notes</button></div>';
+    h += quoteBlock(r, paid);
     if (paid) {
-      var locked = r.deposit && r.deposit.paidAt;
-      h += '<h3>1. Devis et acompte</h3>' + (q ? '<p>Devis du ' + esc(date(q.sentAt)) + ' : <b>' + money(q.total) + '</b>, acompte ' + q.depositPct + ' % = <b>' + money(q.deposit) + '</b>, solde ' + money(q.total - q.deposit) + ' + port, délai ' + esc(q.delay) + ', poids ' + q.weight_g + ' g.</p>' : '')
-        + (r.deposit && r.deposit.paidAt ? '<p><span class="tag ok">Acompte payé le ' + esc(date(r.deposit.paidAt)) + ' : ' + money(r.deposit.amount) + '</span> ' + (r.deposit.session ? '<button type="button" data-inv="' + esc(r.deposit.session) + '">Facture d’acompte</button>' : '') + '</p>' : r.deposit && r.deposit.acceptedAt ? '<p class="muted">Mention acceptée le ' + esc(date(r.deposit.acceptedAt)) + ', paiement pas encore reçu.</p>' : '')
-        + (locked ? '' : '<div class="form"><label>Titre de la pièce<input type="text" data-q="title" value="' + esc(q ? q.title : '') + '" placeholder="ex. Hoodie custom océan"></label><label>Prix total (€)<input type="number" step="0.01" data-q="total" value="' + (q ? q.total : '') + '"></label>'
-          + '<label>Délai<input type="text" data-q="delay" value="' + esc(q ? q.delay : '') + '" placeholder="ex. 3 semaines"></label><label>Acompte (%)<input type="number" data-q="depositPct" value="' + (q ? q.depositPct : (settings ? settings.depositPct : 30)) + '"></label>'
-          + '<label>Poids emballé (g, pour le port)<input type="number" data-q="weight_g" value="' + (q ? q.weight_g : '') + '" placeholder="auto"></label></div><label class="lbl" style="margin-top:8px">Message dans le devis (facultatif)<textarea data-q="message">' + esc(q ? q.message : '') + '</textarea></label>'
-          + '<div class="actions"><button type="button" class="main" data-act="quote">' + (q ? 'Renvoyer le devis modifié' : 'Envoyer le devis au client') + '</button><span class="muted">Le client reçoit un mail avec le lien de paiement de l’acompte (après la mention obligatoire).</span></div>');
       h += '<h3>2. Photos de la pièce finie et validation</h3>' + (r.finals.length ? '<div class="grid" data-thumbs="finals">' + r.finals.map(function (f) { return '<div class="thumb"><img data-key="' + esc(f.key) + '" alt=""><span>' + esc(f.name) + '</span><button type="button" data-rmfinal="' + esc(f.key) + '">×</button></div>'; }).join('') + '</div>' : '<p class="muted">Aucune photo.</p>')
         + '<div class="actions"><button type="button" data-addfinal ' + (uploads ? '' : 'disabled') + '>Ajouter des photos</button><button type="button" class="main" data-act="sendValidation" ' + (r.deposit && r.deposit.paidAt && r.finals.length && !(r.balance && r.balance.paidAt) ? '' : 'disabled') + '>Envoyer pour validation</button></div>';
       if (r.validation) {
@@ -195,7 +221,7 @@
       }
       h += '<h3>3. Solde et envoi</h3>' + (r.balance && r.balance.paidAt ? '<p><span class="tag ok">Solde payé le ' + esc(date(r.balance.paidAt)) + ' : ' + money(r.balance.amount) + ' (dont port ' + money(r.balance.shipping) + ')</span> ' + (r.balance.session ? '<button type="button" data-inv="' + esc(r.balance.session) + '">Facture de solde</button> ' : '') + '→ suivi et mail « partie » : onglet <a href="commandes.html">Commandes</a>.</p>' : '<p class="muted">Le client paie le solde depuis sa page après avoir validé. La commande arrive ensuite dans l’onglet Commandes.</p>');
     } else {
-      h += '<p class="muted" style="margin-top:14px">Production visuelle / collab : pas de paiement automatique. Réponds par mail (devis, caution par chèque, contrat) et suis le statut à la main.</p>';
+      h += '<p class="muted" style="margin-top:14px">Production visuelle / collab : pas de solde ni de validation automatiques. Le devis ci-dessus (acompte facultatif) se paie et s’accepte en ligne ; la caution par chèque, le contrat et le suivi restent à la main (statut ci-dessus).</p>';
     }
     h += '<h3>Répondre par mail</h3><div class="form" style="grid-template-columns:1fr"><label>Sujet<input type="text" data-reply="subject" value="' + esc('Ta demande vgthmind ' + r.id) + '"></label></div><textarea data-reply="message" placeholder="Ton message (envoyé depuis commande@vgthmind.org, réponse vers contact@vgthmind.org)"></textarea>'
       + '<div class="actions"><button type="button" data-act="reply">Envoyer le mail</button><a class="btn" href="' + esc(r.pageUrl) + '" target="_blank" rel="noopener">Page du client</a><button type="button" data-copy="' + esc(r.pageUrl) + '">Copier le lien client</button></div>';
@@ -232,10 +258,13 @@
     if (a === 'notes') act(r, 'notes', { notes: art.querySelector('[data-notes]').value });
     if (a === 'quote') {
       var v = {}; art.querySelectorAll('[data-q]').forEach(function (i) { v[i.getAttribute('data-q')] = i.value; });
-      if (!(Number(v.total) > 0) || !v.delay) { say('Indique au moins le prix total et le délai.'); return; }
-      if (!confirm('Envoyer le devis à ' + r.client.email + ' : ' + money(Number(v.total)) + ', acompte ' + (v.depositPct || 30) + ' % ?')) return;
+      v.lines = collectLines(art);
+      var tot = v.lines.reduce(function (a, l) { return a + l.qty * l.unit; }, 0);
+      if (!v.lines.length || !(tot > 0) || !v.delay) { say('Indique au moins une ligne avec son prix, et le délai.'); return; }
+      if (!confirm('Envoyer le devis à ' + r.client.email + ' : ' + money(tot) + (Number(v.depositPct) ? ', acompte ' + v.depositPct + ' %' : ', sans acompte') + ' ?' + (r.quote ? ' (nouvelle version v' + (r.quote.version + 1) + ')' : ''))) return;
       act(r, 'quote', v, 'Devis envoyé au client.');
     }
+    if (a === 'cancelQuote') { if (confirm('Annuler le devis ' + (r.quote ? r.quote.number : '') + ' ? Le client ne pourra plus l’accepter ; tu pourras en envoyer une nouvelle version.')) act(r, 'cancelQuote', {}, 'Devis annulé.'); }
     if (a === 'sendValidation') { if (confirm('Envoyer les ' + r.finals.length + ' photo(s) au client pour validation ?')) act(r, 'sendValidation', {}, 'Photos envoyées pour validation.'); }
     if (a === 'reply') {
       var su = art.querySelector('[data-reply=subject]').value.trim(), me = art.querySelector('[data-reply=message]').value.trim();
@@ -244,6 +273,8 @@
     }
     if (t.hasAttribute('data-rmfinal')) { if (confirm('Retirer cette photo ?')) act(r, 'removeFinal', { key: t.getAttribute('data-rmfinal') }); }
     if (t.hasAttribute('data-inv')) { window.VGInvoice.openAsync(api('/admin/invoice?id=' + encodeURIComponent(t.getAttribute('data-inv'))).then(function (d) { return d.invoice; }), 'fr'); return; }
+    if (t.hasAttribute('data-qpdf')) { fetch(EP + '/admin/requests/quote.pdf?id=' + encodeURIComponent(r.id), { headers: { Authorization: 'Bearer ' + token() } }).then(function (x) { if (!x.ok) throw new Error('devis introuvable'); return x.blob(); }).then(function (bl) { window.open(URL.createObjectURL(bl), '_blank'); }).catch(function (err) { say('PDF : ' + err.message); }); return; }
+    if (t.hasAttribute('data-qadd')) { var box = art.querySelector('[data-qlines]'); if (box && box.children.length < 12) { var d = document.createElement('div'); d.className = 'qline'; d.innerHTML = '<input type="text" data-ql="label" maxlength="140" placeholder="Désignation"><input type="number" data-ql="qty" min="1" max="99" value="1" aria-label="Quantité"><input type="number" step="0.01" min="0" data-ql="unit" placeholder="Prix unit. €" aria-label="Prix unitaire">'; box.appendChild(d); } return; }
     if (t.hasAttribute('data-addfinal')) { $('final-input').setAttribute('data-id', r.id); $('final-input').click(); }
     if (t.hasAttribute('data-video')) blob(t.getAttribute('data-video'), r.id).then(function (u) { window.open(u, '_blank'); }).catch(function () { say('Vidéo effacée ou introuvable.'); });
     if (t.hasAttribute('data-copy')) { try { navigator.clipboard.writeText(t.getAttribute('data-copy')); say('Lien copié.'); } catch (err) { prompt('Lien client :', t.getAttribute('data-copy')); } }
@@ -251,6 +282,16 @@
       if (!confirm('Supprimer définitivement ' + r.id + ' (réponses, fichiers, photos) ? Les paiements restent dans Stripe.')) return;
       api('/admin/requests/delete', { method: 'POST', body: JSON.stringify({ id: r.id }) }).then(function () { list = list.filter(function (x) { return x.id !== r.id; }); open = ''; draw(); say('Demande supprimée.'); }).catch(function (err) { say('Erreur : ' + err.message); });
     }
+  });
+  function collectLines(art) {
+    return Array.prototype.map.call(art.querySelectorAll('.qline'), function (row) {
+      var g = function (k) { return row.querySelector('[data-ql=' + k + ']').value; };
+      return { label: g('label').trim(), qty: Math.max(1, Math.floor(Number(g('qty')) || 1)), unit: g('unit') === '' ? NaN : Number(g('unit')) };
+    }).filter(function (l) { return l.label && !isNaN(l.unit); });
+  }
+  $('requests').addEventListener('input', function (e) {
+    var art = e.target.closest('.req'); if (!art || !e.target.hasAttribute('data-ql')) return;
+    var span = art.querySelector('[data-qtotal]'); if (span) span.textContent = money(collectLines(art).reduce(function (a, l) { return a + l.qty * l.unit; }, 0));
   });
   $('final-input').addEventListener('change', function () {
     var id = this.getAttribute('data-id'), fl = Array.prototype.slice.call(this.files || []); this.value = '';

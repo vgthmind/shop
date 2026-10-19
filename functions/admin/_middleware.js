@@ -54,5 +54,7 @@ export async function onRequest(context) {
   const res = await next();
   const out = new Response(res.body, res);
   out.headers.set('Cache-Control', 'private, no-store');
+  // Les en-têtes de _headers ne s'appliquent pas aux réponses d'une Function : on les pose ici (la CSP reste absente, voir generator/_headers).
+  out.headers.set('X-Frame-Options', 'DENY'); out.headers.set('X-Content-Type-Options', 'nosniff'); out.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');
   return out;
 }
