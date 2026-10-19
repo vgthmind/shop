@@ -36,6 +36,26 @@
   var ESS = { haut: ['chest', 'waist', 'hips', 'arm'], bas: ['waist', 'hips', 'inseam', 'floor'], cou: ['head', 'neck'], acc: ['aw', 'ah'] };
   var OPT = { haut: ['shoulders', 'shl', 'back', 'wrist'], bas: ['rise', 'thigh', 'calf', 'knee', 'hem'], cou: ['hh', 'nh'], acc: [] };
   var UNIVERSAL = ['height', 'usual']; // seulement pour les pièces qui s’habillent (haut, bas)
+  var SIZES = ['usual']; // « tailles habituelles » : se demandent mais ne se mesurent pas : pas de numéro, pas sur le schéma
+  // Textes propres à une catégorie (remplacent ceux de DEFS) : clé -> catégorie -> [en, fr, aide en, aide fr]
+  var CATDEF = {
+    usual: {
+      haut: ['Size you usually wear', 'Taille portée d’habitude', 'In hoodies, jackets or tops that fit you well (S, M, L…).', 'Dans les hoodies, vestes ou hauts qui te vont bien (S, M, L…).'],
+      bas: ['Size you usually wear', 'Taille portée d’habitude', 'In trousers or shorts that fit you well (e.g. 38, M).', 'Dans les pantalons ou shorts qui te vont bien (ex. 38, M).']
+    },
+    waist: { bas: ['Waist', 'Tour de ceinture', 'Around the waist, where you wear your trousers or shorts.', 'Autour de la taille, là où tu portes ton pantalon ou ton short.'] }
+  };
+  var NOTES = {
+    haut: ['Measure yourself in a thin T-shirt, tape flat, and ask someone to help with your back and arms.', 'Mesure-toi en t-shirt fin, mètre bien à plat, et fais-toi aider pour le dos et les bras.'],
+    bas: ['Measure yourself in underwear or thin, close-fitting clothes, tape flat and not too tight, and ask someone to help with the lengths along the side.', 'Mesure-toi en sous-vêtements ou en vêtements fins et ajustés, mètre bien à plat sans serrer, et fais-toi aider pour les longueurs sur le côté.'],
+    cou: ['Tape flat and not too tight; the head measurement is easier with some help.', 'Mètre bien à plat, sans serrer ; fais-toi aider pour le tour de tête.'],
+    acc: ['', '']
+  };
+  function def(k, cat) { return (CATDEF[k] && CATDEF[k][cat]) || DEFS[k]; }
+  function note(cat, fr) { return (NOTES[cat] || ['', ''])[fr ? 1 : 0]; }
+  function isSize(k) { return SIZES.indexOf(k) >= 0; }
+  function sizes(cat) { return list(cat).filter(isSize); }
+  function numbered(cat) { return list(cat).filter(function (k) { return !isSize(k); }); }
   function ess(cat) { return cat && ESS[cat] ? (cat === 'haut' || cat === 'bas' ? UNIVERSAL : []).concat(ESS[cat]) : []; }
   function opt(cat) { return cat && OPT[cat] ? OPT[cat] : []; }
   function list(cat) { return ess(cat).concat(opt(cat)); }
@@ -63,7 +83,7 @@
   function view(x0, title, body, ty) { return '<g transform="translate(' + x0 + ',0)">' + body + '<text class="vt" x="100" y="' + (ty || 366) + '">' + title + '</text></g>'; }
 
   function svg(cat, fr) {
-    var l = list(cat), N = {}; l.forEach(function (k, i) { N[k] = i + 1; });
+    var N = {}; numbered(cat).forEach(function (k, i) { N[k] = i + 1; });
     var T = fr ? { f: 'Face', b: 'Dos', p: 'Profil' } : { f: 'Front', b: 'Back', p: 'Side' };
     var v = '', vb = '0 0 430 374';
     var hgt = N.height ? g('height', arrow(14, 8, 14, 344) + bd(N.height, 14, 176)) : '';
@@ -112,5 +132,5 @@
     if (st.mother && st.mother.trim()) out.push((fr ? 'Autre précision : ' : 'Other details: ') + st.mother.trim());
     return out.join('\n');
   }
-  window.VGMeasures = { CATS: CATS, DEFS: DEFS, ESS: ESS, OPT: OPT, UNIVERSAL: UNIVERSAL, ess: ess, opt: opt, list: list, catFor: catFor, svg: svg, hl: hl, compile: compile };
+  window.VGMeasures = { CATS: CATS, DEFS: DEFS, ESS: ESS, OPT: OPT, UNIVERSAL: UNIVERSAL, ess: ess, opt: opt, list: list, def: def, note: note, isSize: isSize, sizes: sizes, numbered: numbered, catFor: catFor, svg: svg, hl: hl, compile: compile };
 })();

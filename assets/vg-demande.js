@@ -155,16 +155,20 @@
             + M.CATS.map(function (c) { return '<button type="button" class="vgd-chip" data-mcat="' + c[0] + '" aria-pressed="' + (st.mcat === c[0]) + '">' + esc(L(c[1], c[2])) + '</button>'; }).join('') + '</div></div>';
           var es = M.ess(st.mcat), op = M.opt(st.mcat), n = 0;
           var row = function (k, essential) {
-            var d = M.DEFS[k], cm = d[4] === 'cm', unk = sm && essential && st.mu[k];
-            n++;
-            return '<div class="vgd-row vgm-row' + (unk ? ' unk' : '') + '" data-mrow="' + k + '"><label for="vgd-m-' + k + '"><span class="vgm-n">' + n + '</span>' + esc(d[fr ? 1 : 0]) + (sm && essential && !unk ? ' *' : '') + '</label>'
+            var d = M.def(k, st.mcat), cm = d[4] === 'cm', unk = sm && essential && st.mu[k], size = M.isSize(k);
+            // Les tailles habituelles ne sont pas numérotées (elles ne se mesurent pas et ne sont pas sur le schéma).
+            if (!size) n++;
+            return '<div class="vgd-row vgm-row' + (unk ? ' unk' : '') + '" data-mrow="' + k + '"><label for="vgd-m-' + k + '">' + (size ? '' : '<span class="vgm-n">' + n + '</span>') + esc(d[fr ? 1 : 0]) + (sm && essential && !unk ? ' *' : '') + '</label>'
               + '<small>' + esc(d[fr ? 3 : 2]) + '</small><div class="vgm-in"><input id="vgd-m-' + k + '" data-mv="' + k + '" maxlength="' + (cm ? 6 : 30) + '"' + (cm ? ' inputmode="decimal" placeholder="cm"' : '') + (unk ? ' disabled' : '') + ' value="' + esc(unk ? '' : st.mv[k] || '') + '">'
               + (sm && essential ? '<button type="button" class="vgm-dk" data-mu="' + k + '" aria-pressed="' + !!unk + '">' + esc(L('I don’t know', 'Je ne sais pas')) + '</button>' : '') + '</div></div>';
           };
           if (es.length) {
-            h += (st.mcat === 'acc' ? '' : '<p class="vgd-note">' + esc(L('Measure yourself in a thin T-shirt, tape flat, and ask someone to help with your back and arms.', 'Mesure-toi en t-shirt fin, mètre bien à plat, et fais-toi aider pour le dos et les bras.')) + '</p>')
+            var sz = es.filter(M.isSize), ms = es.filter(function (k) { return !M.isSize(k); }), nt = M.note(st.mcat, fr);
+            h += (sz.length ? '<p class="vgm-title">' + esc(L('Your usual sizes', 'Tes tailles habituelles')) + '</p><div class="vgm-rows">' + sz.map(function (k) { return row(k, true); }).join('') + '</div>' : '')
+              + '<p class="vgm-title">' + esc(L('Your measurements', 'Tes mesures')) + '</p>'
+              + (nt ? '<p class="vgd-note">' + esc(nt) + '</p>' : '')
               + '<div class="vgm-guide">' + M.svg(st.mcat, fr) + '</div>'
-              + (op.length ? '<p class="vgm-sub">' + esc(L('The essentials', 'L’essentiel')) + '</p>' : '') + '<div class="vgm-rows">' + es.map(function (k) { return row(k, true); }).join('') + '</div>'
+              + (op.length ? '<p class="vgm-sub">' + esc(L('The essentials', 'L’essentiel')) + '</p>' : '') + '<div class="vgm-rows">' + ms.map(function (k) { return row(k, true); }).join('') + '</div>'
               + (op.length ? '<p class="vgm-sub">' + esc(L('If you can (optional)', 'Si tu peux (facultatif)')) + '</p><div class="vgm-rows">' + op.map(function (k) { return row(k, false); }).join('') + '</div>' : '')
               + '<label class="vgd-check"><input type="checkbox" data-f="mapprox"' + (st.mapprox ? ' checked' : '') + '><span>' + esc(L('My measurements are approximate', 'Mes mesures sont approximatives')) + '</span></label>'
               + input('mother', L('Anything else about the fit?', 'Autre précision'), { area: true, rows: 2, max: 500 });

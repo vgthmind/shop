@@ -765,7 +765,8 @@ async function main() {
   write('assets/vg/products-config.json', JSON.stringify(productsConfig, null, 1));
   // Clips de l'écran d'ouverture : tous les .mp4 du dossier assets/media/splash/ (ajout depuis l'admin « Vidéos d'ouverture »).
   const splashDir = rel(ROOT, 'assets', 'media', 'splash');
-  const splashList = fs.existsSync(splashDir) ? fs.readdirSync(splashDir).filter((f) => /.mp4$/i.test(f)).sort().map((f) => BASE_PATH + '/assets/media/splash/' + encodeURIComponent(f)) : [];
+  // Catégorie : « couture » si le nom du fichier le contient, sinon « peinture » (peinture / aérographe).
+  const splashList = fs.existsSync(splashDir) ? fs.readdirSync(splashDir).filter((f) => /.mp4$/i.test(f)).sort().map((f) => ({ src: BASE_PATH + '/assets/media/splash/' + encodeURIComponent(f), cat: /couture/i.test(f) ? 'couture' : 'peinture' })) : [];
   write('assets/vg/splash.json', JSON.stringify(splashList));
   // Mots-clés de recherche : fichier commun du portfolio + ceux saisis dans
   // l'admin pour chaque pièce (champ « Mots-clés de recherche »).
