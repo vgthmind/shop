@@ -1460,3 +1460,13 @@ html{background:var(--background-color, #f4f2ec);}
 .vg-free-fr{text-align:center;margin:6px 0 0;font-size:.78em;letter-spacing:.02em;opacity:.6}
 .vg-product-sold-out .vg-free-fr,.product-form[style*="display: none"] .vg-free-fr{display:none}
 .vg-field-flash{outline:2px solid #c0392b;outline-offset:2px;border-radius:8px;transition:outline-color .4s}
+
+/* === CURSEUR DE BASE MASQUE PARTOUT (souris) : liens, champs, boutons, desactives, survols, pseudo-elements === */
+/* Le :not(#vg-nc) donne la specificite d'un identifiant : aucune regle « cursor » a classe ne peut le reprendre. */
+@media (hover:hover) and (pointer:fine){
+  *:not(#vg-nc), *:not(#vg-nc)::before, *:not(#vg-nc)::after,
+  input:not(#vg-nc)::-webkit-search-cancel-button, input:not(#vg-nc)::-webkit-inner-spin-button, input:not(#vg-nc)::-webkit-calendar-picker-indicator,
+  input:not(#vg-nc)::file-selector-button, input:not(#vg-nc)::-webkit-file-upload-button, summary:not(#vg-nc)::marker{
+    cursor:none !important;
+  }
+}

@@ -713,11 +713,23 @@ window.__vgProducts = window.__vgProducts || fetch('/products.json').then(functi
 /* APPLIQUER_LOT_A.md), ce fichier prend le relais seul. */
 (function () {
   if (location.pathname !== '/') return;
-  var seen = false;
-  try { seen = sessionStorage.getItem('vg-splash-seen'); } catch (err) {}
-  if (seen) return;
+  // Une seule fois par visite : drapeau pose des l'affichage (un rechargement ne la relance pas, meme
+  // avant le clic), en sessionStorage + en localStorage avec une duree de 30 min (Safari iOS peut
+  // perdre le sessionStorage : appli installee relancee, onglet restaure).
+  var SEEN_MS = 30 * 60 * 1000;
+  function wasSeen() {
+    try { if (sessionStorage.getItem('vg-splash-seen')) return true; } catch (err) {}
+    try { var t = +localStorage.getItem('vg-splash-seen-at'); if (t && Date.now() - t < SEEN_MS && Date.now() >= t) return true; } catch (err) {}
+    return false;
+  }
+  function markSeen() {
+    try { sessionStorage.setItem('vg-splash-seen', '1'); } catch (err) {}
+    try { localStorage.setItem('vg-splash-seen-at', String(Date.now())); } catch (err) {}
+  }
+  if (wasSeen()) return;
 
   function boot() {
+    markSeen();
     var splash = document.createElement('div');
     splash.className = 'vg-splash';
     splash.innerHTML = '<img class="vg-splash-logo" src="https://assets.bigcartel.com/theme_images/122404563/Illustration_sans_titre+_1_.PNG" alt="vgthmind"><div class="vg-enter">Enter</div>';
@@ -741,18 +753,32 @@ window.__vgProducts = window.__vgProducts || fetch('/products.json').then(functi
     });
     var sequence = [];
     var clipsReady = fetch('/assets/vg/splash.json').then(function (r) { return r.ok ? r.json() : []; }).catch(function () { return []; }).then(function (list) {
-      var clips = (list || []).slice();
-      for (var si = clips.length - 1; si > 0; si--) {
-        var sj = Math.floor(Math.random() * (si + 1));
-        var stmp = clips[si]; clips[si] = clips[sj]; clips[sj] = stmp;
+      // Entrees : {src, cat} (cat = « couture » ou « peinture ») ; une simple adresse compte comme « peinture ».
+      var clips = (list || []).map(function (c) { return typeof c === 'string' ? { src: c, cat: 'peinture' } : c; });
+      var last = [], lastFirst = '';
+      try { last = JSON.parse(localStorage.getItem('vg-splash-last') || '[]') || []; lastFirst = localStorage.getItem('vg-splash-first') || ''; } catch (err) {}
+      function pick(cat) {
+        var pool = clips.filter(function (c) { return c.cat === cat; });
+        var fresh = pool.filter(function (c) { return last.indexOf(c.src) < 0; });
+        if (fresh.length) pool = fresh; // jamais le meme clip que la visite precedente (si possible)
+        return pool.length ? pool[Math.floor(Math.random() * pool.length)] : null;
       }
-      sequence = clips.slice(0, 2);
+      // Un clip de chaque categorie par visite, l'ordre alterne d'une visite a l'autre.
+      var firstCat = lastFirst === 'couture' ? 'peinture' : lastFirst === 'peinture' ? 'couture' : (Math.random() < 0.5 ? 'couture' : 'peinture');
+      var c1 = pick(firstCat), c2 = pick(firstCat === 'couture' ? 'peinture' : 'couture');
+      var chosen = [c1, c2].filter(Boolean);
+      if (chosen.length < 2) { // une seule categorie disponible : deux clips differents au hasard
+        var rest = clips.filter(function (c) { return chosen.indexOf(c) < 0; });
+        while (chosen.length < 2 && rest.length) chosen.push(rest.splice(Math.floor(Math.random() * rest.length), 1)[0]);
+      }
+      try { localStorage.setItem('vg-splash-last', JSON.stringify(chosen.map(function (c) { return c.src; }))); localStorage.setItem('vg-splash-first', firstCat); } catch (err) {}
+      sequence = chosen.map(function (c) { return c.src; });
       if (sequence[0]) { vidA.src = sequence[0]; vidA.load(); }
       if (sequence[1]) { vidB.src = sequence[1]; vidB.load(); }
     });
 
     splash.addEventListener('click', function () {
-      try { sessionStorage.setItem('vg-splash-seen', '1'); } catch (err) {}
+      markSeen();
       splash.classList.add('vg-splash-playing');
       var finished = false;
       function finish() {

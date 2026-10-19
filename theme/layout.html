@@ -39,9 +39,9 @@
 <style>
 #vg-transition-boot{position:fixed;inset:0;z-index:2147483646;background:#f4f2ec;pointer-events:none;transition:opacity .35s ease;}
 #vg-transition-boot.vg-boot-out{opacity:0;}
-#vg-transition-boot img{position:absolute;left:50%;top:50%;object-fit:contain;will-change:transform;animation-timing-function:linear;animation-iteration-count:infinite;}
+#vg-transition-boot img{position:absolute;left:50%;top:50%;object-fit:contain;backface-visibility:visible;animation-timing-function:linear;animation-iteration-count:infinite;}
 @keyframes vg-boot-spin-z{from{transform:translate(-50%,-50%) perspective(var(--vg-persp,1000px)) rotate(0deg)}to{transform:translate(-50%,-50%) perspective(var(--vg-persp,1000px)) rotate(360deg)}}
-@keyframes vg-boot-spin-y{from{transform:translate(-50%,-50%) perspective(var(--vg-persp,1000px)) rotate3d(0.35,0.5,1,0deg)}to{transform:translate(-50%,-50%) perspective(var(--vg-persp,1000px)) rotate3d(0.35,0.5,1,360deg)}}
+@keyframes vg-boot-spin-y{from{transform:translate(-50%,-50%) perspective(var(--vg-persp,1000px)) rotate3d(0,1,0,0deg)}to{transform:translate(-50%,-50%) perspective(var(--vg-persp,1000px)) rotate3d(0,1,0,360deg)}}
 </style>
 <script>
 (function () {

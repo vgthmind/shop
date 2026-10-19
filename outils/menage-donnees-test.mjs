@@ -47,11 +47,15 @@ export function plan(data, cutoff) {
   for (const o of testOrders) for (const it of o.items || []) { const slug = it.slug || bySlugName.get(String(it.name)); if (slug) testSlugs.add(slug); }
   for (const slug of Object.keys(data.stock || {})) if (/^test/i.test(slug)) testSlugs.add(slug);
   const stockReset = [...testSlugs].filter((s) => data.stock && data.stock[s] && data.stock[s].fromCatalog === false);
+  // « Vendu » sans commande de test ni commande réelle qui l'explique : jamais remis en vente automatiquement, à regarder à la main.
+  const realSlugs = new Set();
+  for (const o of realOrders) for (const it of o.items || []) { const slug = it.slug || bySlugName.get(String(it.name)); if (slug) realSlugs.add(slug); }
+  const stockUnknown = Object.keys(data.stock || {}).filter((s) => data.stock[s] && data.stock[s].fromCatalog === false && !(data.stock[s].stock > 0) && !testSlugs.has(s) && !realSlugs.has(s));
   const days = (data.trafficDays || []).filter((d) => /^\d{4}-\d{2}-\d{2}$/.test(d) && parisMidnight(d) < cutoff);
   // KV : clés qui portent un identifiant de session de TEST (cs_test_…), états de connexion/limites, sauvegardes de commandes.
   const refTest = new Set((data.kvRefs || []).filter((r) => String(r.value).startsWith('cs_test_')).map((r) => r.key));
   const kvDelete = (data.kvKeys || []).filter((k) => /cs_test_/.test(k) || refTest.has(k) || /^(rl:|oauth:|oauthx:|lc:|obackup:)/.test(k));
-  return { testOrders, realOrders, oldReq, keepReq, stockReset, days, kvDelete };
+  return { testOrders, realOrders, oldReq, keepReq, stockReset, stockUnknown, days, kvDelete };
 }
 
 async function api(token, p, opts = {}) {
@@ -129,14 +133,22 @@ async function main() {
   const p = plan(data, cutoff);
   const pieces = testPieces(path.join(path.dirname(fileURLToPath(import.meta.url)), '..'));
 
+  const when = (ts) => { const n = Number(ts); return n ? new Date(n).toLocaleString('fr-FR', { timeZone: 'Europe/Paris' }) : '?'; };
   console.log('SUPPRIMÉ');
-  console.log(` - Demandes de test (créées avant le ${avant}) : ${p.oldReq.length}` + (p.oldReq.length ? ' (' + p.oldReq.map((r) => r.id).join(', ') + ') + leurs fichiers R2' : ''));
-  console.log(` - Stock : lignes à remettre à la quantité du catalogue : ${p.stockReset.length}` + (p.stockReset.length ? ' (' + p.stockReset.join(', ') + ')' : ''));
+  console.log(` - Demandes de test (créées avant le ${avant}) : ${p.oldReq.length}` + (p.oldReq.length ? ' + leurs fichiers R2' : ''));
+  for (const r of p.oldReq) console.log(`     · ${r.id} · ${when(r.created)} · ${[r.firstName, r.lastName, r.name].filter(Boolean).join(' ') || '—'} · ${r.email || '—'} · ${r.type || r.what || ''} · ${r.status || ''}`);
+  console.log(` - Pièces à REMETTRE EN VENTE (« Vendu » à cause d'une vente de test) : ${p.stockReset.length}`);
+  for (const s of p.stockReset) console.log(`     · ${data.names[s] || s} (${s}) : stock actuel ${data.stock[s] ? data.stock[s].stock : '?'} -> quantité du catalogue`);
   console.log(` - Visites des jours de test à remettre à zéro : ${p.days.length}`);
   if (useKv) console.log(` - KV (états d'expédition/remboursement/numéros des commandes de test, limites, connexions en cours, sauvegardes de commandes) : ${p.kvDelete.length} clés`);
-  console.log(` - Commandes de TEST (${p.testOrders.length}, ${p.testOrders.map((o) => o.ref).filter(Boolean).join(', ') || '—'}) : se suppriment dans Stripe (mode Test > Supprimer toutes les données de test), pas ici.`);
+  console.log(` - Commandes de TEST (${p.testOrders.length}) : se suppriment dans Stripe (mode Test > Supprimer toutes les données de test), pas ici. Liste :`);
+  for (const o of p.testOrders) console.log(`     · ${o.ref || o.id} · ${when(o.created)} · ${o.email || (o.customer && o.customer.email) || '—'} · ${(o.items || []).map((it) => it.name).join(' + ') || '—'}`);
   console.log(' - Codes promo de test : même chose (ils partent avec les données de test de Stripe).');
   console.log(` - Pièces de test (${pieces.length}) : ${pieces.map((x) => x.slug).join(', ') || 'aucune'} : à retirer du dépôt (commandes ci-dessous).`);
+  if (p.stockUnknown.length) {
+    console.log('À VÉRIFIER À LA MAIN (marquées « Vendu » sans commande de test ni réelle qui l’explique, donc NON remises en vente) :');
+    for (const s of p.stockUnknown) console.log(`     · ${data.names[s] || s} (${s})`);
+  }
   console.log('GARDÉ');
   console.log(` - Commandes RÉELLES : ${p.realOrders.length} (jamais touchées)`);
   console.log(` - Demandes créées à partir du ${avant} : ${p.keepReq.length}`);

@@ -35,10 +35,11 @@ html,body{overflow-x:clip !important;}
 /* SECTION 3 : --vg-out-x/--vg-out-y (poses par JS quand pageTransition() */
 /* recoit x/y) deplacent l'icone du centre (valeur par defaut 50%) vers le */
 /* point clique -- meme mecanisme que --vg-origin ci-dessus. */
-#vg-transition-out img{position:absolute !important;left:var(--vg-out-x, 50%) !important;top:var(--vg-out-y, 50%) !important;object-fit:contain !important;translate:-50% -50% !important;will-change:translate,rotate,scale,opacity !important;}
+#vg-transition-out img{position:absolute !important;left:var(--vg-out-x, 50%) !important;top:var(--vg-out-y, 50%) !important;object-fit:contain !important;translate:-50% -50% !important;backface-visibility:visible !important;image-rendering:auto !important;}
 @keyframes vg-out-pop{0%{scale:0;opacity:0;}70%{scale:1.1;opacity:1;}100%{scale:1;opacity:1;}}
 @keyframes vg-out-spin-z{from{rotate:0deg;}to{rotate:360deg;}}
-@keyframes vg-out-spin-y{from{rotate:0.35 0.5 1 0deg;}to{rotate:0.35 0.5 1 360deg;}}
+/* Tour sur l'axe vertical AVEC perspective (comme le panier) : proportions gardees a chaque instant. Meme transform que l'arrivee (vg-boot-spin-y du <head>). */
+@keyframes vg-out-spin-y{from{transform:perspective(var(--vg-persp,1200px)) rotate3d(0,1,0,0deg);}to{transform:perspective(var(--vg-persp,1200px)) rotate3d(0,1,0,360deg);}}
 /* SECTION 3 : depart depuis la vignette au repos (scale 1/1,15 -> 1). */
 @keyframes vg-out-grow{from{scale:var(--vg-s0,0.87);opacity:1;}to{scale:1;opacity:1;}}
 #vg-transition-out img{filter:drop-shadow(0 14px 22px rgba(23,23,23,0.22));}
@@ -246,7 +247,7 @@ body #search-modal input.search-input::-webkit-search-cancel-button{
   appearance:none !important;
   width:14px !important;
   height:14px !important;
-  cursor:pointer !important;
+  cursor:none !important;
   background-color:#6c6c6c !important;
   -webkit-mask-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><path d='M1 1l14 14M15 1L1 15' stroke='black' stroke-width='2' stroke-linecap='round'/></svg>") !important;
   mask-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><path d='M1 1l14 14M15 1L1 15' stroke='black' stroke-width='2' stroke-linecap='round'/></svg>") !important;
@@ -299,7 +300,7 @@ body #search-modal .vg-search-close-fallback{
   padding:0 !important;
   border:none !important;
   border-radius:50% !important;
-  cursor:pointer !important;
+  cursor:none !important;
   color:#2f3134 !important;
   background:linear-gradient(155deg,#eef0f2 0%,#c7cbd0 24%,#8f939a 50%,#d8dbde 68%,#6f7379 100%) !important;
   box-shadow:0 2px 0 #6f7379, 0 3px 6px rgba(0,0,0,0.25) !important;

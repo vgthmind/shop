@@ -30,6 +30,13 @@ test('stock : seules les lignes modifiées des pièces vendues en test (ou nomm�
   assert.deepEqual(p.stockReset.sort(), ['ch_0002', 'test'], 'Veste B (vente réelle) et Veste C (déjà au catalogue) ne bougent pas');
 });
 
+test('stock : une pièce « Vendu » sans commande qui l’explique est signalée, jamais remise en vente toute seule', () => {
+  const stock = { a: { stock: 0, fromCatalog: false }, b: { stock: 0, fromCatalog: false }, c: { stock: 0, fromCatalog: false }, d: { stock: 2, fromCatalog: false } };
+  const p = plan({ stock, names: { a: 'A', b: 'B', c: 'C', d: 'D' }, orders: [{ livemode: false, items: [{ name: 'A' }] }, { livemode: true, items: [{ name: 'B' }] }] }, CUT);
+  assert.deepEqual(p.stockReset, ['a']);
+  assert.deepEqual(p.stockUnknown, ['c'], 'B = vente réelle (expliquée), D a du stock : seule C est inexpliquée');
+});
+
 test('visites : seuls les jours avant la limite', () => {
   const p = plan({ trafficDays: ['2026-10-10', '2026-10-24', '2026-10-25', '2026-10-30', 'x'] }, CUT);
   assert.deepEqual(p.days, ['2026-10-10', '2026-10-24']);
