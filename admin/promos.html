@@ -28,7 +28,8 @@
     .row strong { letter-spacing: .06em; }
     .tag { font-size: 12px; padding: 2px 8px; border-radius: 999px; border: 1px solid var(--line); white-space: nowrap; }
     .tag.on { color: var(--ok); border-color: var(--ok); } .tag.off { color: var(--muted); } .tag.expired, .tag.exhausted { color: var(--warn); border-color: var(--warn); }
-    .row .acts { display: flex; gap: 8px; }
+    details.old { margin-top: 12px; border-top: 1px solid var(--line); padding-top: 8px; }
+    details.old summary { cursor: pointer; padding: 10px 0; min-height: 44px; color: var(--muted); font-size: 13px; }
     #msg { min-height: 1.4em; margin: 12px 0; }
     @media (max-width: 520px) { form.card { grid-template-columns: 1fr; } }
       .card { border-radius: 18px; box-shadow: 0 1px 2px rgba(0,0,0,.04), 0 6px 18px rgba(0,0,0,.04); }
@@ -73,16 +74,21 @@
   function say(t, bad) { $('msg').textContent = t || ''; $('msg').style.color = bad ? 'var(--warn)' : ''; }
   function fmtDate(iso) { try { return new Date(iso).toLocaleDateString('fr-FR', { timeZone: 'Europe/Paris' }); } catch (e) { return iso; } }
   var STATE = { on: 'actif', off: 'désactivé', expired: 'expiré', exhausted: 'épuisé' };
+  function row(p) {
+    var bits = [p.off];
+    bits.push(p.used + (p.max ? ' / ' + p.max : '') + ' utilisation' + (p.used > 1 || p.max > 1 ? 's' : ''));
+    if (p.min) bits.push('dès ' + p.min + ' €');
+    if (p.first) bits.push('1re commande');
+    if (p.expires) bits.push('jusqu’au ' +fmtDate(p.expires));
+    return '<div class="row" data-id="' + esc(p.id) + '"><div><strong>' + esc(p.code) + '</strong> <span class="tag ' + esc(p.status || (p.active ? 'on' : 'off')) + '">' + esc(STATE[p.status] || (p.active ? 'actif' : 'désactivé')) + '</span><div class="muted">' + esc(bits.join(' · ')) + '</div></div>'
+      + (p.status === 'expired' || p.status === 'exhausted' ? '' : '<button type="button" data-act="' + (p.active ? 'off' : 'on') + '">' + (p.active ? 'Désactiver' : 'Réactiver') + '</button>') + '</div>';
+  }
+  // Codes actifs en tête ; désactivés, expirés et épuisés rangés dans une section repliée dessous (ouverte si on vient d'en réactiver un).
   function draw(promos) {
-    $('list').innerHTML = promos.length ? promos.map(function (p) {
-      var bits = [p.off];
-      bits.push(p.used + (p.max ? ' / ' + p.max : '') + ' utilisation' + (p.used > 1 || p.max > 1 ? 's' : ''));
-      if (p.min) bits.push('dès ' + p.min + ' €');
-      if (p.first) bits.push('1re commande');
-      if (p.expires) bits.push('jusqu\'au ' + fmtDate(p.expires));
-      return '<div class="row" data-id="' + esc(p.id) + '"><div><strong>' + esc(p.code) + '</strong> <span class="tag ' + esc(p.status || (p.active ? 'on' : 'off')) + '">' + esc(STATE[p.status] || (p.active ? 'actif' : 'désactivé')) + '</span><div class="muted">' + esc(bits.join(' · ')) + '</div></div>'
-        + (p.status === 'expired' || p.status === 'exhausted' ? '' : '<button type="button" data-act="' + (p.active ? 'off' : 'on') + '">' + (p.active ? 'Désactiver' : 'Réactiver') + '</button>') + '</div>';
-    }).join('') : '<span class="muted">Aucun code pour le moment.</span>';
+    var on = promos.filter(function (p) { return p.active; }), off = promos.filter(function (p) { return !p.active; });
+    var wasOpen = !!document.querySelector('#list details[open]');
+    $('list').innerHTML = (on.length ? on.map(row).join('') : '<span class="muted">Aucun code actif.</span>')
+      + (off.length ? '<details class="old"' + (wasOpen ? ' open' : '') + '><summary>Désactivés, expirés ou épuisés (' + off.length + ')</summary>' + off.map(row).join('') + '</details>' : '');
   }
   function load() {
     if (!window.vgAdminToken()) { $('login').hidden = false; $('app').hidden = true; return; }
