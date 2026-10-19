@@ -81,7 +81,6 @@
     <button type="button" data-f="stats" aria-pressed="false">Stats</button>
     <input type="text" id="q" placeholder="Rechercher : VG-…, nom, e-mail" aria-label="Rechercher une commande" autocomplete="off">
     <button type="button" id="refresh">Actualiser</button>
-    <button type="button" id="logout">Se déconnecter</button>
   </div>
 
   <p id="msg" role="status" aria-live="polite"></p>
@@ -201,14 +200,14 @@
         + '<div class="who"><b>' + esc(o.name || o.email) + '</b> <span class="pill ref0">' + esc(o.ref || '') + '</span>' + (o.livemode ? '' : '<span class="pill ref0">test</span>') + '<small>' + esc(first.name || '') + (o.items.length > 1 ? ' +' + (o.items.length - 1) : '') + ' · ' + esc(date(o.created)) + ' · ' + esc(countryName(o.address && o.address.country)) + '</small></div>'
         + '<div class="amt"><b>' + money(o.total) + '</b><br><span class="pill ' + st[0] + '">' + st[1] + '</span></div></div>'
         + '<div class="drawer"' + (isOpen ? '' : ' hidden') + '>'
-        + '<header><div><span class="tag ref">' + esc(o.ref || '') + '</span> <strong>' + esc(o.name || o.email) + '</strong> '
+        + '<header><div>'
         + (o.livemode ? '' : '<span class="tag test">test</span> ')
         + (o.invoice_no ? '<span class="tag">facturée ' + esc(o.invoice_no) + '</span> ' : '')
         + (o.refunded ? '<span class="tag refunded">' + (o.refunded.full ? 'Remboursée' : 'Remboursée en partie') + ' · ' + esc(String(o.refunded.amount).replace('.', ',')) + ' €</span> ' : '')
         + (o.preparing && !o.shipped ? '<span class="tag prep">en préparation depuis le ' + esc(date(o.preparing.at)) + '</span> ' : '')
         + (o.shipped ? '<span class="tag ok">expédiée le ' + esc(date(o.shipped.at)) + (o.shipped.tracking ? ' · suivi ' + esc(o.shipped.tracking) : '') + (o.shipped.notified ? ' · client prévenu' : '') + '</span>' : '')
         + '<div class="muted">' + esc(date(o.created)) + ' · ' + esc(o.email) + (o.phone ? ' · ' + esc(o.phone) : '') + '</div></div>'
-        + '<div class="total">' + money(o.total) + '</div></header>'
+        + '</header>'
         + '<ul class="items">' + o.items.map(function (it) {
           return '<li>' + (it.image ? '<img src="' + esc(it.image) + '" alt="' + esc(it.name) + '" width="56" height="59" loading="lazy">' : '<span class="ph"></span>')
             + '<span class="nm"><strong>' + esc(it.name) + '</strong><small>' + (it.size ? 'Taille ' + esc(it.size) + ' · ' : '') + 'Qté ' + esc(it.qty || 1) + (it.unit ? ' (' + money(it.unit) + ' l\'unité)' : '') + '</small></span>'
@@ -360,10 +359,6 @@
     draw();
   });
   $('refresh').addEventListener('click', load);
-  $('logout').addEventListener('click', function () {
-    window.vgAdminLogout();
-    orders = []; draw(); $('login').hidden = false; $('filters').hidden = true;
-  });
   $('login-btn').addEventListener('click', function () {
     window.vgAdminLogin().then(load).catch(function (e) { $('msg').textContent = e.message; });
   });
