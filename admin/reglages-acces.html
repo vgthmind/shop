@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="robots" content="noindex, nofollow">
+  <title>Accès au site — admin vgthmind</title>
+  <style>
+    :root { --bg: #f4f2ec; --ink: #171717; --muted: #6b6860; }
+    body { margin: 0; background: var(--bg); color: var(--ink); font: 16px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif; }
+    main { max-width: 760px; margin: 0 auto; padding: 20px 16px 60px; }
+    a { color: inherit; }
+    h1 { font-size: 20px; letter-spacing: .08em; text-transform: uppercase; }
+    h2 { font-size: 14px; letter-spacing: .08em; text-transform: uppercase; margin: 26px 0 8px; }
+    .muted { color: var(--muted); }
+    .opt { display: flex; gap: 12px; align-items: flex-start; background: rgba(255,255,255,.7); border: 1px solid rgba(0,0,0,.12); border-radius: 12px; padding: 14px; margin: 8px 0; cursor: pointer; }
+    .opt input { margin-top: 5px; width: 20px; height: 20px; flex: none; }
+    .opt strong { display: block; }
+    .opt.on { border-color: #171717; box-shadow: 0 0 0 2px #171717 inset; }
+    label.f { display: block; margin: 12px 0 4px; font-weight: 600; }
+    input[type=text], textarea { font: inherit; width: 100%; box-sizing: border-box; padding: 10px 12px; border-radius: 10px; border: 1px solid rgba(0,0,0,.25); background: #fff; color: var(--ink); }
+    textarea { min-height: 84px; resize: vertical; }
+    button { font: inherit; padding: 12px 18px; border-radius: 10px; border: 1px solid #171717; background: #171717; color: #fff; cursor: pointer; }
+    button[disabled] { opacity: .5; }
+    #msg { margin-top: 12px; min-height: 24px; }
+    #msg.err { color: #a02a1c; }
+    #msg.ok { color: #1c6b3a; }
+    .state { background: rgba(255,255,255,.7); border: 1px solid rgba(0,0,0,.12); border-radius: 12px; padding: 12px 14px; }
+  </style>
+<link rel="icon" href="../assets/theme/admin/favicon.svg?v=3" type="image/svg+xml">
+<link rel="icon" href="../assets/theme/admin/favicon-32.png?v=3" type="image/png" sizes="32x32">
+<link rel="icon" href="../assets/theme/admin/favicon-16.png?v=3" type="image/png" sizes="16x16">
+<link rel="shortcut icon" href="../assets/theme/admin/favicon.ico?v=3">
+<link rel="apple-touch-icon" sizes="180x180" href="../assets/theme/admin/apple-touch-icon.png?v=3">
+</head>
+<body>
+<main>
+  <nav class="vg-back"><a href="reglages.html">← Réglages</a></nav>
+  <h1>Accès au site</h1>
+  <p class="muted">Qui peut entrer sur le site. Le changement est effectif en quelques secondes, depuis l'ordinateur comme depuis l'iPhone. L'admin, le suivi client (lien secret des mails, suivi de commande), le retour de paiement Stripe et les mails marchent toujours, même fermé.</p>
+  <p class="state" id="state">Connexion requise.</p>
+  <p><button type="button" id="login" hidden>Se connecter avec GitHub</button></p>
+
+  <form id="form" hidden>
+    <h2>Mode</h2>
+    <label class="opt"><input type="radio" name="mode" value="open"><span><strong>Ouvert</strong><span class="muted">Tout le monde entre. Le bouton « Entrer » mène au site.</span></span></label>
+    <label class="opt"><input type="radio" name="mode" value="closed"><span><strong>Fermé</strong><span class="muted">L'accueil montre « Bientôt de retour » (bouton grisé) et le message ci-dessous. Les visiteurs entrés avec un code sont déconnectés.</span></span></label>
+    <label class="opt"><input type="radio" name="mode" value="code"><span><strong>Accès par code</strong><span class="muted">« Entrer » ouvre un champ pour le code. Une fois le code juste, le visiteur reste connecté jusqu'à ce que tu changes le code ou fermes le site.</span></span></label>
+
+    <h2>Code d'accès</h2>
+    <label class="f" for="code">Nouveau code <span class="muted" id="codeinfo"></span></label>
+    <input type="text" id="code" maxlength="64" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="4 caractères au moins">
+    <p class="muted">Le code est gardé chiffré : il ne peut pas être relu, seulement remplacé. Changer le code déconnecte tous les visiteurs.</p>
+
+    <h2>Message de la page de pause</h2>
+    <label class="f" for="msgfr">Français</label>
+    <textarea id="msgfr" maxlength="500"></textarea>
+    <label class="f" for="msgen">English</label>
+    <textarea id="msgen" maxlength="500"></textarea>
+    <p class="muted">Affiché sous le bouton quand le site est fermé ou sous code. Vide = message par défaut.</p>
+
+    <p><button type="submit" id="save">Enregistrer</button></p>
+    <div id="msg" role="status"></div>
+  </form>
+</main>
+<script src="vg-admin-auth.js"></script>
+<script src="vg-admin-ui.js"></script>
+<script>
+(function () {
+  'use strict';
+  var form = document.getElementById('form'), state = document.getElementById('state'), msg = document.getElementById('msg');
+  var LABEL = { open: 'Ouvert', closed: 'Fermé', code: 'Accès par code' };
+  var hasCode = false;
+  function say(t, cls) { msg.textContent = t || ''; msg.className = cls || ''; }
+  function mark() { [].forEach.call(form.querySelectorAll('.opt'), function (o) { o.classList.toggle('on', o.querySelector('input').checked); }); }
+  function paint(d) {
+    hasCode = !!d.has_code;
+    state.textContent = 'Mode actuel : ' + (LABEL[d.mode] || d.mode) + (d.has_code ? ' · un code est défini' : ' · aucun code défini');
+    [].forEach.call(form.querySelectorAll('input[name=mode]'), function (r) { r.checked = r.value === d.mode; });
+    mark();
+    document.getElementById('msgfr').value = d.msg_fr || '';
+    document.getElementById('msgen').value = d.msg_en || '';
+    document.getElementById('codeinfo').textContent = d.has_code ? '(laisse vide pour garder le code actuel)' : '';
+    document.getElementById('code').value = '';
+  }
+  function load() {
+    if (!window.vgAdminToken()) { state.textContent = 'Connexion requise.'; document.getElementById('login').hidden = false; form.hidden = true; return; }
+    document.getElementById('login').hidden = true;
+    window.vgAdminApi('/admin/access').then(function (d) { form.hidden = false; paint(d); }).catch(function (e) { state.textContent = 'Impossible de lire le réglage : ' + e.message; });
+  }
+  form.addEventListener('change', mark);
+  form.addEventListener('submit', function (e) {
+    e.preventDefault();
+    var mode = (form.querySelector('input[name=mode]:checked') || {}).value, code = document.getElementById('code').value.trim();
+    if (!mode) return say('Choisis un mode.', 'err');
+    if (mode === 'code' && !hasCode && !code) return say('Choisis d\'abord un code.', 'err');
+    if (mode === 'closed' && !window.confirm('Fermer le site ? Les visiteurs déjà entrés avec un code seront déconnectés.')) return;
+    var body = { mode: mode, msg_fr: document.getElementById('msgfr').value, msg_en: document.getElementById('msgen').value };
+    if (code) body.code = code;
+    var btn = document.getElementById('save'); btn.disabled = true; say('Enregistrement…');
+    window.vgAdminApi('/admin/access', { method: 'POST', body: JSON.stringify(body) })
+      .then(function (d) { paint(d); say('Enregistré. Effectif dans quelques secondes.', 'ok'); })
+      .catch(function (err) { say(err.message, 'err'); })
+      .then(function () { btn.disabled = false; });
+  });
+  document.getElementById('login').addEventListener('click', function () { window.vgAdminLogin().then(load).catch(function (e) { state.textContent = e.message; }); });
+  load();
+})();
+</script>
+<script src="vg-admin-cursor.js"></script>
+</body>
+</html>

@@ -44,6 +44,12 @@ try {
 
 console.log('Référencement');
 const robots = await (await get('/robots.txt')).text();
+{ // Mode d'accès (Réglages > Accès au site) et en-têtes de sécurité de l'accueil (la Function d'accès ne doit pas les retirer).
+  const h = await get('/');
+  const gated = /window\.VG_GATE=/.test(await h.text());
+  if (gated && !priv) ko("accueil sous verrou : mode d'accès « Fermé » ou « Accès par code » (voir admin > Réglages > Accès au site)"); else ok(gated ? "mode d'accès : fermé ou par code (accepté avec --prive)" : "mode d'accès : ouvert");
+  if (!h.headers.get('content-security-policy')) ko("accueil : en-têtes de sécurité (CSP) absents (la Function d'accès les retire-t-elle ?)"); else ok('accueil : en-têtes de sécurité présents');
+}
 if (!priv) {
   if (/^Disallow:\s*\/\s*$/m.test(robots)) ko('robots.txt bloque tout le site'); else ok('robots.txt ouvert');
   if (!new RegExp('Sitemap: ' + origin.replace(/[.]/g, '\\.') + '/sitemap.xml').test(robots)) ko('robots.txt : ligne Sitemap absente ou mauvais domaine'); else ok('Sitemap déclaré');

@@ -45,7 +45,7 @@ test('menu : 5 entrées (Accueil, Commandes, Demandes, Pièces, Réglages), chaq
   assert.equal(UI.activeFor('/admin/catalogue'), 'pieces');
   assert.equal(UI.activeFor('/admin/commandes.html'), 'orders');
   assert.equal(UI.activeFor('/admin/demandes'), 'requests');
-  for (const p of ['reglages', 'reglages-livraison', 'reglages-promos', 'reglages-demandes', 'reglages-videos', 'reglages-compta', 'reglages-sauvegardes', 'reglages-visites', 'reglages-sante', 'reglages-aide']) assert.equal(UI.activeFor('/admin/' + p + '.html'), 'settings', p);
+  for (const p of ['reglages', 'reglages-livraison', 'reglages-promos', 'reglages-acces', 'reglages-demandes', 'reglages-videos', 'reglages-compta', 'reglages-sauvegardes', 'reglages-visites', 'reglages-sante', 'reglages-aide']) assert.equal(UI.activeFor('/admin/' + p + '.html'), 'settings', p);
   assert.equal(UI.activeFor('/admin/'), 'dash');
 });
 

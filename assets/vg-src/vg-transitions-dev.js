@@ -726,16 +726,74 @@ window.__vgProducts = window.__vgProducts || fetch('/products.json').then(functi
     try { sessionStorage.setItem('vg-splash-seen', '1'); } catch (err) {}
     try { localStorage.setItem('vg-splash-seen-at', String(Date.now())); } catch (err) {}
   }
-  if (wasSeen()) return;
+  // Mode d'accès (Réglages > Accès au site) : la Function Pages injecte window.VG_GATE quand le site est fermé ou sous code.
+  // L'écran « Entrer » est alors toujours montré (sans le drapeau « déjà vu ») et ne laisse pas entrer sans le bon code.
+  var GATE = window.VG_GATE && (window.VG_GATE.mode === 'closed' || window.VG_GATE.mode === 'code') ? window.VG_GATE : null;
+  if (!GATE && wasSeen()) return;
+
+  function gateLang() {
+    if (window.vgLang) return window.vgLang;
+    try { var l = localStorage.getItem('vg-lang'); if (l === 'fr' || l === 'en') return l; } catch (err) {}
+    return /^fr/i.test((navigator.languages && navigator.languages[0]) || navigator.language || '') ? 'fr' : 'en';
+  }
+  // Écran fermé / sous code, dans le même décor que « Enter » : bouton grisé + message, ou bouton + champ du code.
+  function bootGate(splash, enter) {
+    var fr = gateLang() === 'fr';
+    var msg = document.createElement('p');
+    msg.className = 'vg-gate-msg';
+    msg.textContent = (fr ? GATE.msg_fr : GATE.msg_en) || '';
+    if (GATE.mode === 'closed') {
+      enter.className = 'vg-enter vg-enter-off';
+      enter.textContent = fr ? 'Bientôt de retour' : 'Back soon';
+      enter.setAttribute('aria-disabled', 'true');
+      splash.appendChild(msg);
+      return;
+    }
+    var form = document.createElement('form');
+    form.className = 'vg-gate-form';
+    form.hidden = true;
+    form.setAttribute('autocomplete', 'off');
+    form.innerHTML = '<input type="text" name="vg-code" maxlength="64" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" aria-label="' + (fr ? 'Code' : 'Code') + '" placeholder="' + (fr ? 'Code' : 'Code') + '"><button type="submit" aria-label="OK">OK</button>';
+    var err = document.createElement('div');
+    err.className = 'vg-gate-err';
+    err.setAttribute('role', 'alert');
+    splash.appendChild(form);
+    splash.appendChild(err);
+    if (msg.textContent) splash.appendChild(msg);
+    var input = form.querySelector('input');
+    enter.addEventListener('click', function (e) { e.stopPropagation(); form.hidden = false; input.focus(); });
+    var busy = false;
+    form.addEventListener('submit', function (e) {
+      e.preventDefault();
+      var code = input.value.trim();
+      if (!code || busy) return;
+      busy = true; err.textContent = '';
+      fetch('/acces', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ code: code }), credentials: 'same-origin' })
+        .then(function (r) { return r.json().catch(function () { return {}; }).then(function (j) { return { status: r.status, j: j }; }); })
+        .then(function (x) {
+          busy = false;
+          if (x.j && x.j.ok) {
+            // Cookie posé : on recharge l'accueil (qui n'est plus sous verrou) et on lance l'entrée tout de suite.
+            try { sessionStorage.setItem('vg-gate-autoplay', '1'); sessionStorage.removeItem('vg-splash-seen'); localStorage.removeItem('vg-splash-seen-at'); } catch (err2) {}
+            location.reload();
+            return;
+          }
+          err.textContent = x.status === 429 ? (fr ? 'Trop d’essais, réessaie plus tard.' : 'Too many tries, please retry later.') : (fr ? 'Code incorrect.' : 'Wrong code.');
+          input.select();
+        })
+        .catch(function () { busy = false; err.textContent = fr ? 'Connexion impossible, réessaie.' : 'Connection failed, please retry.'; });
+    });
+  }
 
   function boot() {
-    markSeen();
+    if (!GATE) markSeen();
     var splash = document.createElement('div');
     splash.className = 'vg-splash';
     splash.innerHTML = '<img class="vg-splash-logo" src="https://assets.bigcartel.com/theme_images/122404563/Illustration_sans_titre+_1_.PNG" alt="vgthmind"><div class="vg-enter">Enter</div>';
     document.body.appendChild(splash);
     var prevOverflow = document.documentElement.style.overflow;
     document.documentElement.style.overflow = 'hidden';
+    if (GATE) { bootGate(splash, splash.querySelector('.vg-enter')); return; }
 
     // Clips d'ouverture : liste dans /assets/vg/splash.json (dossier assets/media/splash/, courts et legers : H.264 480 px).
     // Deux clips tires au hasard sont charges DES L'AFFICHAGE de l'ecran « Enter » (avant le clic) : au clic, ils demarrent tout de suite.
@@ -777,6 +835,8 @@ window.__vgProducts = window.__vgProducts || fetch('/products.json').then(functi
       if (sequence[1]) { vidB.src = sequence[1]; vidB.load(); }
     });
 
+    var autoplay = false;
+    try { autoplay = sessionStorage.getItem('vg-gate-autoplay') === '1'; sessionStorage.removeItem('vg-gate-autoplay'); } catch (err) {}
     splash.addEventListener('click', function () {
       markSeen();
       splash.classList.add('vg-splash-playing');
@@ -815,6 +875,7 @@ window.__vgProducts = window.__vgProducts || fetch('/products.json').then(functi
         }, 500);
       }); });
     });
+    if (autoplay) splash.click(); // le code vient d'être accepté : on entre sans second clic
   }
 
   if (document.readyState === 'loading') { document.addEventListener('DOMContentLoaded', boot); } else { boot(); }
