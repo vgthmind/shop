@@ -331,7 +331,7 @@ export async function requestRoutes(request: Request, env: ReqEnv, deps: ReqDeps
       const k = q('key') || 'rbackup:latest';
       if (!/^rbackup:[\w-]+$/.test(k)) return json({ error: 'Clé invalide.' }, 400);
       const v = await env.HOLDS.get(k);
-      return v ? new Response(v, { headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' } }) : json({ error: 'Introuvable.' }, 404);
+      return v ? new Response(v, { headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store', 'Access-Control-Allow-Origin': '*' } }) : json({ error: 'Introuvable.' }, 404);
     }
     if (path === '/admin/requests/backup' && request.method === 'POST') return json(await backupRequests(env));
     if (path === '/admin/requests/restore' && request.method === 'POST') {
@@ -357,7 +357,7 @@ export async function requestRoutes(request: Request, env: ReqEnv, deps: ReqDeps
     if (path === '/admin/requests/quote.pdf' && request.method === 'GET') {
       const rec = isId(q('id')) ? await S.get(q('id')) : null;
       const pdf = rec ? await quotePdfFor(env, rec) : null;
-      return pdf ? new Response(pdf, { headers: { 'Content-Type': 'application/pdf', 'Content-Disposition': `inline; filename="${pdfName(rec)}"`, 'Cache-Control': 'private, no-store' } }) : json({ error: 'Aucun devis.' }, 404);
+      return pdf ? new Response(pdf, { headers: { 'Content-Type': 'application/pdf', 'Content-Disposition': `inline; filename="${pdfName(rec)}"`, 'Cache-Control': 'private, no-store', 'Access-Control-Allow-Origin': '*' } }) : json({ error: 'Aucun devis.' }, 404);
     }
     if (path === '/admin/requests/final' && request.method === 'PUT') {
       if (!env.FILES) return json({ error: 'Stockage des fichiers (R2) pas encore activé.' }, 503);
