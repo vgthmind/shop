@@ -42,7 +42,7 @@ Petits coûts possibles hors Cloud Run (à confirmer sur ta facture) : stockage 
 Une alerte de budget **prévient, elle ne bloque pas** : c'est pourquoi le service est limité à 1 instance et 100 photos/jour.
 
 ## 1. Compte et facturation
-1. https://console.cloud.google.com — connecte-toi avec vgthm66@gmail.com, accepte les conditions.
+1. https://console.cloud.google.com — connecte-toi avec le compte Google de vgthmind, accepte les conditions.
 2. Menu ☰ → **Facturation** → crée un compte de facturation (carte bancaire). Si on te propose l'essai gratuit de 300 $, tu peux l'accepter ou non ; le niveau sans frais de Cloud Run existe dans les deux cas.
 3. Menu ☰ → **IAM et administration** → **Gérer les ressources** → **Créer un projet** : nom `vgthmind-detourage`, rattaché à ton compte de facturation.
 
