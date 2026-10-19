@@ -19,7 +19,7 @@ const paths = ['/', '/products', '/cart', '/contact', ...['all', 'latest-drop', 
 for (const p of paths) {
   let r = await get(p);
   // /category/x -> /category/x/ (redirection de dossier) : on la suit une fois.
-  if ([301, 302, 307, 308].includes(r.status)) { const loc = r.headers.get('location') || ''; if (decodeURIComponent(loc.replace(origin, '')).replace(/\/$/, '') === decodeURIComponent(p).replace(/\/$/, '')) r = await get(loc.replace(origin, '')); }
+  if ([301, 302, 307, 308].includes(r.status)) { const loc = Buffer.from(r.headers.get('location') || '', 'latin1').toString('utf8'); /* Node lit les en-têtes en latin1 : « é » arriverait en « Ã© » */ if (decodeURIComponent(loc.replace(origin, '')).replace(/\/$/, '') === decodeURIComponent(p).replace(/\/$/, '')) r = await get(p.replace(/\/$/, '') + '/'); }
   if (r.status === 200) { if (!process.env.QUIET) ok(p); } else ko(`${p} -> ${r.status || r.error}`);
 }
 
