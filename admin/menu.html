@@ -19,27 +19,25 @@
     .today a:hover b { text-decoration: underline; }
     .today .n { min-width: 30px; text-align: center; }
     .today .ok { color: var(--muted); padding: 12px 0; }
-    .big { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin: 14px 0 6px; }
-    .big .vg-btn { min-height: 64px; font-size: 13px; text-align: center; flex-direction: column; gap: 4px; }
-    .big small { font: 400 10px/1.2 var(--f-mono); letter-spacing: .04em; opacity: .75; text-transform: none; }
+    .big { margin: 14px 0 6px; }
+    .big .vg-btn { width: 100%; min-height: 56px; font-size: 13px; }
     .kpis { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-top: 12px; }
     .kpis b { display: block; font: 700 26px/1.1 var(--f-title); }
     .kpis span { color: var(--muted); font-size: 13px; }
-    .cols { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 12px; }
+    .per { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 16px; }
+    .per button { min-height: 40px; padding: 6px 14px; border-radius: 999px; border: 1px solid var(--line); background: #fff; color: var(--ink); font: 500 12px/1 var(--f-mono); letter-spacing: .04em; cursor: pointer; }
+    .per button[aria-pressed="true"] { background: var(--ink); color: #fff; border-color: var(--ink); }
     .row { display: flex; justify-content: space-between; gap: 12px; padding: 7px 0; border-top: 1px solid var(--line); }
     .row:first-of-type { border-top: 0; }
     .row span:first-child { overflow-wrap: anywhere; }
     .row .n2 { font-variant-numeric: tabular-nums; font-weight: 500; white-space: nowrap; }
     #chart { width: 100%; height: 96px; display: block; }
     .sec { font: 500 12px/1 var(--f-mono); letter-spacing: .08em; text-transform: uppercase; color: var(--muted); margin: 0 0 10px; }
-    .box { background: #fff; border: 1px solid var(--line); border-radius: 18px; padding: 12px 16px; margin-bottom: 12px; }
-    .box p { margin: 4px 0 8px; font-size: 14px; }
-    .head-links { display: flex; gap: 8px; flex-wrap: wrap; }
+    .alert { display: flex; gap: 10px; align-items: center; justify-content: space-between; flex-wrap: wrap; background: rgba(162,59,42,.1); border: 1px solid rgba(162,59,42,.4); border-radius: 14px; padding: 10px 14px; margin-bottom: 12px; font-size: 14px; }
+    .alert a { color: var(--ink); font-weight: 600; }
+    .inst { margin: 14px 4px 0; font-size: 13px; }
     @media (max-width: 759px) {
-      .big { grid-template-columns: 1fr; }
-      .big .vg-btn { min-height: 56px; flex-direction: row; justify-content: space-between; }
       .kpis { grid-template-columns: 1fr 1fr; }
-      .cols { grid-template-columns: 1fr; }
     }
   </style>
 <link rel="icon" href="../assets/theme/admin/favicon.svg?v=3" type="image/svg+xml">
@@ -51,51 +49,41 @@
 <body>
 <main class="vg-page">
   <div class="vg-head">
-    <div><h1>Tableau de bord</h1><p class="vg-sub" id="day"></p></div>
+    <div><h1>Accueil</h1><p class="vg-sub" id="day"></p></div>
   </div>
 
-  <div class="box" id="install" hidden>
-    <strong>Installer l'admin comme une appli</strong>
-    <p class="vg-muted" id="install-help"></p>
-    <button type="button" class="vg-btn" id="install-btn" hidden>Installer</button>
-  </div>
+  <div id="app">
+    <div class="alert" id="health" hidden><span id="health-t"></span><a href="reglages-sante.html">Voir la santé du site</a></div>
 
-  <div class="box" id="login" hidden>
-    <p>Connecte-toi pour voir tes commandes et tes chiffres.</p>
-    <button type="button" class="vg-btn" id="login-btn">Se connecter avec GitHub</button>
-    <p class="vg-muted" id="login-msg" role="status"></p>
-  </div>
-
-  <div id="app" hidden>
     <section class="vg-card" aria-labelledby="t-today">
-      <p class="sec" id="t-today">Aujourd'hui</p>
+      <p class="sec" id="t-today">À faire</p>
       <ul class="today" id="today"><li class="ok">Chargement…</li></ul>
-      <div class="big">
-        <a class="vg-btn" href="catalogue.html#/new">+ Nouvelle pièce</a>
-        <a class="vg-btn ghost" href="drop.html">Préparer un drop<small>même heure</small></a>
-        <a class="vg-btn ghost" href="rapide.html">Pièce rapide (iPhone)<small>brouillon</small></a>
-      </div>
+      <div class="big"><a class="vg-btn" href="nouvelle-piece.html">+ Nouvelle pièce</a></div>
     </section>
 
+    <div class="per" id="per" role="group" aria-label="Période">
+      <button type="button" data-p="7" aria-pressed="false">7 jours</button>
+      <button type="button" data-p="30" aria-pressed="true">30 jours</button>
+      <button type="button" data-p="month" aria-pressed="false">Ce mois</button>
+      <button type="button" data-p="year" aria-pressed="false">Cette année</button>
+    </div>
     <div class="kpis">
-      <div class="vg-card"><b id="k-ca">–</b><span>chiffre d'affaires, 30 jours</span></div>
-      <div class="vg-card"><b id="k-n">–</b><span>commandes, 30 jours</span></div>
-      <div class="vg-card"><b id="k-avg">–</b><span>panier moyen</span></div>
-      <div class="vg-card"><b id="k-vis">–</b><span>visiteurs, 7 jours</span></div>
+      <div class="vg-card"><b id="k-vis">–</b><span>visiteurs</span></div>
+      <div class="vg-card"><b id="k-n">–</b><span>commandes</span></div>
+      <div class="vg-card"><b id="k-conv">–</b><span>conversion</span></div>
+      <div class="vg-card"><b id="k-ca">–</b><span>chiffre d'affaires</span></div>
     </div>
     <p class="vg-muted" id="k-note" style="margin:6px 4px 0;font-size:13px"></p>
 
     <section class="vg-card" style="margin-top:12px">
       <p class="sec">Visiteurs par jour (30 jours)</p>
       <svg id="chart" viewBox="0 0 300 90" preserveAspectRatio="none" role="img" aria-label="Visiteurs par jour"></svg>
-      <p class="vg-muted" style="margin:6px 0 0;font-size:13px"><span id="live">–</span> en ce moment · <a href="trafic.html">Voir le détail des visites</a></p>
+      <p class="vg-muted" style="margin:6px 0 0;font-size:13px"><span id="live">–</span> en ce moment · <a href="reglages-visites.html">Détail des visites</a></p>
     </section>
 
-    <div class="cols">
-      <section class="vg-card"><p class="sec">Par mois</p><div id="months"><span class="vg-muted">–</span></div></section>
-      <section class="vg-card"><p class="sec">Pièces qui rapportent le plus</p><div id="top"><span class="vg-muted">–</span></div></section>
-    </div>
+    <section class="vg-card" style="margin-top:12px"><p class="sec">Pièces qui rapportent le plus</p><div id="top"><span class="vg-muted">–</span></div></section>
     <p class="vg-muted" style="margin:10px 4px 0;font-size:13px">Chiffres calculés sur les 100 derniers paiements (ventes réelles ; s'il n'y en a pas encore, ventes de test). Remboursements déduits.</p>
+    <p class="vg-muted inst" id="inst" hidden>Pense à <a href="reglages.html#installer">installer l'admin comme une appli</a> sur cet appareil.</p>
   </div>
 </main>
 <script src="vg-admin-auth.js"></script>
@@ -110,19 +98,11 @@
   function eur(n) { return (Math.round((n || 0) * 100) / 100).toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' €'; }
 
   $('day').textContent = new Date().toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' });
-
-  // Installation comme une appli.
+  // Ligne discrète tant que l'admin n'est pas installé (l'explication complète est dans Réglages > Installer l'appli).
   var standalone = window.matchMedia('(display-mode: standalone)').matches || navigator.standalone;
-  var deferred = null, ios = /iphone|ipad|ipod/i.test(navigator.userAgent);
-  if (!standalone) {
-    $('install').hidden = false;
-    $('install-help').textContent = ios
-      ? "Sur iPhone : ouvre cette page dans Safari, touche le bouton Partager (carré avec une flèche), puis « Sur l'écran d'accueil »."
-      : "Sur PC (Chrome ou Edge) : clique sur l'icône « Installer » à droite de la barre d'adresse, ou sur le bouton ci-dessous quand il apparaît.";
-  }
-  window.addEventListener('beforeinstallprompt', function (e) { e.preventDefault(); deferred = e; $('install-btn').hidden = false; });
-  $('install-btn').addEventListener('click', function () { if (deferred) { deferred.prompt(); deferred = null; $('install-btn').hidden = true; } });
+  if (!standalone) $('inst').hidden = false;
 
+  var api = window.vgAdminApi, period = '30', orders = [], visitorsBy = {};
   var todo = { orders: null, requests: null, schedule: null, soldout: null, noweight: null };
   function drawToday() {
     var rows = [];
@@ -131,7 +111,7 @@
     var d = S.nextDrop(todo.schedule, Date.now());
     if (d) rows.push(['plan', d.count, 'pièce' + (d.count > 1 ? 's' : '') + ' programmée' + (d.count > 1 ? 's' : '') + ' ' + S.inWords(d.at, Date.now()), 'catalogue.html']);
     if (todo.noweight) rows.push(['todo', todo.noweight, 'pièce' + (todo.noweight > 1 ? 's' : '') + ' sans poids : ports impossibles à calculer', 'catalogue.html#/noweight']);
-    if (todo.soldout) rows.push(['bad', todo.soldout, 'pièce' + (todo.soldout > 1 ? 's' : '') + ' épuisée' + (todo.soldout > 1 ? 's' : ''), 'stock.html']);
+    if (todo.soldout) rows.push(['bad', todo.soldout, 'pièce' + (todo.soldout > 1 ? 's' : '') + ' épuisée' + (todo.soldout > 1 ? 's' : ''), 'catalogue.html#/soldout']);
     $('today').innerHTML = rows.length ? rows.map(function (r) {
       return '<li><a href="' + r[3] + '"><span class="vg-pill n ' + r[0] + '">' + r[1] + '</span><b>' + esc(r[2]) + '</b></a></li>';
     }).join('') : '<li class="ok">Rien en attente. Tout est à jour.</li>';
@@ -145,33 +125,47 @@
     }).join('');
   }
 
-  function drawOrders(orders) {
-    var st = S.salesStats(orders, Date.now());
-    $('k-ca').textContent = eur(st.ca30); $('k-n').textContent = st.n30; $('k-avg').textContent = st.n30 ? eur(st.avg30) : '–';
+  // Les 4 chiffres de la période choisie.
+  function drawKpis() {
+    var now = Date.now(), st = S.salesBetween(orders, S.periodStart(period, now), now), vis = visitorsBy[period];
+    $('k-ca').textContent = eur(st.ca); $('k-n').textContent = st.n;
+    $('k-vis').textContent = vis == null ? '–' : vis;
+    var conv = vis == null ? null : S.conversion(st.n, vis);
+    $('k-conv').textContent = conv == null ? '–' : String(conv).replace('.', ',') + ' %';
     $('k-note').textContent = st.test ? 'Aucune vente réelle pour l\'instant : chiffres de TEST.' : '';
-    $('months').innerHTML = st.months.length ? st.months.map(function (m) { return '<div class="row"><span>' + esc(m.label) + ' · ' + m.n + ' commande' + (m.n > 1 ? 's' : '') + '</span><span class="n2">' + eur(m.total) + '</span></div>'; }).join('') : '<span class="vg-muted">Pas encore de ventes.</span>';
-    $('top').innerHTML = st.top.length ? st.top.map(function (p) { return '<div class="row"><span>' + esc(p.name) + '</span><span class="n2">' + eur(p.amount) + '</span></div>'; }).join('') : '<span class="vg-muted">Pas encore de ventes.</span>';
+    $('top').innerHTML = st.top.length ? st.top.map(function (p) { return '<div class="row"><span>' + esc(p.name) + '</span><span class="n2">' + eur(p.amount) + '</span></div>'; }).join('') : '<span class="vg-muted">Pas de ventes sur cette période.</span>';
+    Array.prototype.forEach.call($('per').children, function (b) { b.setAttribute('aria-pressed', String(b.getAttribute('data-p') === period)); });
   }
+  function loadVisitors(p) {
+    if (visitorsBy[p] != null) return Promise.resolve();
+    return api('/admin/traffic?days=' + S.periodDays(p, Date.now())).then(function (r) {
+      visitorsBy[p] = r.visitors != null ? r.visitors : (r.series || []).reduce(function (s, x) { return s + x.visitors; }, 0);
+      if (p === '30') { drawChart(r.series || []); $('live').textContent = r.live != null ? r.live + ' visiteur' + (r.live > 1 ? 's' : '') : '–'; }
+    }).catch(function () {});
+  }
+  $('per').addEventListener('click', function (e) {
+    var p = e.target.getAttribute('data-p'); if (!p) return;
+    period = p; drawKpis(); loadVisitors(p).then(drawKpis);
+  });
 
   function load() {
-    if (!window.vgAdminToken()) { $('login').hidden = false; $('app').hidden = true; return; }
-    $('login').hidden = true; $('app').hidden = false;
-    var api = window.vgAdminApi;
     api('/orders').then(function (d) {
-      var orders = d.orders || [];
-      todo.orders = S.toShip(orders); drawToday(); drawOrders(orders);
-    }).catch(function (e) { if (e.status !== 401) { $('k-note').textContent = 'Commandes : ' + e.message; } else { $('login').hidden = false; $('app').hidden = true; } });
+      orders = d.orders || [];
+      todo.orders = S.toShip(orders); drawToday(); drawKpis();
+    }).catch(function (e) { if (e.status !== 401) { $('k-note').textContent = 'Commandes : ' + e.message; } });
     api('/admin/requests').then(function (d) { todo.requests = S.requestsTodo(d.requests || []); drawToday(); }).catch(function () {});
     api('/admin/schedule').then(function (d) { todo.schedule = d.schedule || []; drawToday(); }).catch(function () {});
     fetch('../products.json', { cache: 'no-store' }).then(function (r) { return r.ok ? r.json() : []; }).then(function (l) { todo.noweight = S.noWeight(Array.isArray(l) ? l : []).length; drawToday(); }).catch(function () {});
     api('/admin/stock').then(function (d) { todo.soldout = Object.keys(d.stock || {}).filter(function (s) { return d.names && d.names[s] && d.stock[s].stock <= 0; }).length; drawToday(); }).catch(function () {});
-    api('/admin/traffic?days=30').then(function (r) {
-      drawChart(r.series || []);
-      $('k-vis').textContent = (r.series || []).slice(-7).reduce(function (s, p) { return s + p.visitors; }, 0);
-      $('live').textContent = r.live != null ? r.live + ' visiteur' + (r.live > 1 ? 's' : '') : '–';
-    }).catch(function () { $('k-vis').textContent = '–'; });
+    loadVisitors('30').then(drawKpis);
+    // Alerte santé : seulement s'il y a un problème.
+    fetch(window.VG_ENDPOINT + '/status', { headers: { Authorization: 'Bearer ' + window.vgAdminToken() } })
+      .then(function (r) { return r.ok ? r.text() : ''; })
+      .then(function (t) {
+        var pb = S.healthProblems(t);
+        if (pb.length) { $('health').hidden = false; $('health-t').textContent = pb.length + ' point' + (pb.length > 1 ? 's' : '') + ' à regarder : ' + pb.slice(0, 2).join(' · ') + (pb.length > 2 ? '…' : ''); }
+      }).catch(function () {});
   }
-  $('login-btn').addEventListener('click', function () { window.vgAdminLogin().then(load).catch(function (e) { $('login-msg').textContent = e.message; }); });
   load();
 })();
 </script>

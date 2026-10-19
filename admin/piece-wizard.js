@@ -1,9 +1,9 @@
-/* Assistant « Nouvelle pièce » : navigation par étapes + étapes Fiche et Ports de studio-photo.html.
+/* Assistant « Nouvelle pièce » : navigation par étapes + étapes Fiche et Ports de nouvelle-piece.html.
    Logique pure : piece-form.js (testée). Les photos, le détourage et la publication : studio-photo.js / studio-publish.js. */
 (function () {
   'use strict';
   var F = window.VGPieceForm, $ = function (id) { return document.getElementById(id); };
-  var STEPS = ['Photos', 'Détourage', 'Fiche', 'Ports', 'Publier'];
+  var STEPS = ['Photos', 'Détourage', 'Fiche', 'Poids et ports', 'Publier'];
   var step = 1, config = null, categories = [], colorTouched = false, uniqueTouched = false, slugTouched = false;
 
   function esc(s) { return String(s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
@@ -26,6 +26,9 @@
     var f = form();
     return F.buildPiece(f, cats());
   }
+
+  // Brouillon : même formulaire, exigences minimales (nom + prix), pièce créée masquée. Utilisé par « Enregistrer en brouillon » (studio-photo.js).
+  function collectDraft() { return F.buildDraft(form(), cats()); }
 
   // ---------- étapes ----------
   function show(n) {
@@ -119,6 +122,6 @@
     fetch('shipping-config.json').then(function (r) { return r.json(); }).then(function (c) { config = c; }).catch(function () {});
   }
 
-  window.VGWizard = { collect: collect, show: show };
+  window.VGWizard = { collect: collect, collectDraft: collectDraft, show: show };
   init();
 })();

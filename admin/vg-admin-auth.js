@@ -19,7 +19,7 @@
       return;
     }
   } catch (e) {}
-  // Lien « Détourage iPhone » (…/studio-photo.html#srv=<tunnel>&k=<mot de passe>) : retenu dès la première page ouverte, même si la
+  // Lien « Détourage iPhone » (…/nouvelle-piece.html#srv=<tunnel>&k=<mot de passe>) : retenu dès la première page ouverte, même si la
   // connexion s'intercale (le « # » se perdait). Le studio lit ces valeurs ; rien n'est envoyé à un site.
   try {
     var hp = new URLSearchParams((location.hash || '').replace(/^#/, ''));
@@ -173,7 +173,11 @@
         if (!m) return;
         var payload = {};
         try { payload = JSON.parse(m[2]); } catch (err) {}
-        if (m[1] === 'success' && payload.session) ok(payload.session);
+        if (m[1] === 'success' && payload.session) {
+          // Une seule connexion pour tout l'admin : le jeton d'écriture GitHub (pages Pièces) arrive avec la session, la fenêtre GitHub n'est pas rouverte.
+          if (payload.token) { try { sessionStorage.setItem('vg-gh-token', JSON.stringify({ t: payload.token, at: Date.now() })); } catch (err) {} }
+          ok(payload.session);
+        }
         else ko(new Error(payload.message || 'Connexion refusée.'));
       }
       window.addEventListener('message', onMessage);

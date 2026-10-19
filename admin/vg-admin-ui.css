@@ -68,3 +68,20 @@ body.vg-ui main, body.vg-ui .vg-page { max-width: 1100px; }
   .vg-page, body.vg-ui main { padding-top: calc(18px + env(safe-area-inset-top, 0px)); }
   .vg-page { padding-right: 14px; padding-bottom: 24px; padding-left: 14px; }
 }
+
+/* ---- Voir la boutique : icône en haut à droite (dans la barre sur PC, flottante sur iPhone) ---- */
+#vg-nav a.shop { display: flex; align-items: center; justify-content: center; width: 40px; height: 40px; border-radius: 999px; border: 1px solid var(--line); color: var(--ink); margin-left: auto; flex: none; }
+#vg-nav a.shop:hover { border-color: var(--ink); }
+#vg-nav a.shop svg { display: block; width: 20px; height: 20px; stroke: currentColor; fill: none; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+#vg-shop-m { display: none; }
+@media (max-width: 759px) {
+  #vg-nav a.shop { display: none; }
+  #vg-shop-m { display: flex; position: absolute; top: calc(10px + env(safe-area-inset-top, 0px)); right: 14px; z-index: 45; width: 40px; height: 40px; align-items: center; justify-content: center; border-radius: 999px; border: 1px solid rgba(0,0,0,.28); background: var(--chrome); color: var(--ink); box-shadow: 0 1px 0 #fff inset, 0 1px 3px rgba(0,0,0,.18); }
+  #vg-shop-m svg { width: 20px; height: 20px; stroke: currentColor; fill: none; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+  .vg-head { padding-right: 52px; }
+}
+
+/* ---- Lien « ← Réglages » en tête des sous-pages de Réglages ---- */
+nav.vg-back { margin: 0 0 10px; }
+nav.vg-back a { display: inline-flex; align-items: center; min-height: 40px; padding: 6px 14px; border-radius: 999px; border: 1px solid var(--line); color: var(--ink); text-decoration: none; font: 500 12px/1 var(--f-mono); letter-spacing: .05em; text-transform: uppercase; background: #fff; }
+nav.vg-back a:hover { border-color: var(--ink); }

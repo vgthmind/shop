@@ -29,7 +29,7 @@ function studioUrl() {
   if (process.env.STUDIO_URL) return process.env.STUDIO_URL;
   let base = 'https://vgthmind-shop.pages.dev'; // l'admin est sur Cloudflare Pages (plus sur github.io)
   try { base = JSON.parse(fs.readFileSync(path.join(DIR, '..', 'data', 'shop-settings.json'), 'utf8')).site_url || base; } catch (e) { /* valeur par défaut */ }
-  return base.replace(/\/$/, '') + '/admin/studio-photo.html';
+  return base.replace(/\/$/, '') + '/admin/nouvelle-piece.html';
 }
 
 function buildLink(studio, tunnelUrl, token) {

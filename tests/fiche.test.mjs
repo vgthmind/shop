@@ -160,11 +160,13 @@ test('enregistrement : refuse une pièce nouvelle déjà existante, une adresse 
   await assert.rejects(() => S.saveFiche(fakeGh({ patchFails: 1 }).gh, { slug: 'a', product: {}, images: [] }), /Rien n'a été enregistré/);
 });
 
-test('pages : la grille charge les modules, garde les anciens outils et les accès rapides', () => {
+test('pages : la grille charge les modules, propose Nouvelle pièce (assistant), Programmer, et plus aucun doublon', () => {
   const html = readFileSync(new URL('../admin/catalogue.html', import.meta.url), 'utf8');
   for (const f of ['catalogue-core.js', 'pieces-save.js', 'studio-publish.js', 'fiche-core.js', 'fiche-save.js', 'piece-form.js', 'pieces-view.js', 'shipping-calc.js']) assert.ok(html.includes(f), f);
-  for (const a of ['promos.html', 'studio-photo.html', 'pieces.html', 'stock.html']) assert.ok(html.includes(a), a);
+  for (const a of ['reglages-promos.html', 'nouvelle-piece.html', '#/programmer']) assert.ok(html.includes(a), a);
+  for (const gone of ['stock.html', 'pieces.html', 'index.html', 'drop.html', 'rapide.html', 'studio-photo.html', 'Sveltia']) assert.ok(!html.includes(gone), gone + ' ne doit plus être cité');
   assert.match(html, /Enregistrer/); assert.match(html, /Nouvelle pièce/); assert.match(html, /Épuisée/);
   const menu = readFileSync(new URL('../admin/menu.html', import.meta.url), 'utf8');
-  assert.match(menu, /href="drop\.html"/); assert.match(menu, /href="rapide\.html"/); assert.match(menu, /catalogue\.html#\/new/);
+  assert.match(menu, /href="nouvelle-piece\.html"/);
+  for (const gone of ['drop.html', 'rapide.html', 'stock.html', 'trafic.html']) assert.ok(!menu.includes(gone), gone);
 });

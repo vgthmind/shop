@@ -136,5 +136,39 @@
     return { product: w.product };
   }
 
-  return { COLORS: COLORS, colorById: colorById, slugify: slugify, colorFromText: colorFromText, averageRgb: averageRgb, nearestColor: nearestColor, suggestColor: suggestColor, defaultUnique: defaultUnique, reelError: reelError, joinDescription: joinDescription, buildPiece: buildPiece };
+  // Brouillon (« Enregistrer en brouillon », à chaque étape de l'assistant) : seuls le nom et le prix sont exigés.
+  // La pièce est créée MASQUÉE (hidden) : elle ne s'affiche nulle part sur le site ; le reste se complète ensuite dans sa fiche (Pièces).
+  function buildDraft(form, categoryPermalinks, now) {
+    var name = String(form.name || '').trim();
+    if (!name) return { error: 'Donne au moins un nom à la pièce pour l\'enregistrer en brouillon.' };
+    var slug = slugify(form.slug || name);
+    if (!slug) return { error: 'Nom (slug) invalide.' };
+    var price = Number(form.price);
+    if (!isFinite(price) || price <= 0) return { error: 'Donne aussi un prix (nombre supérieur à 0) : il est modifiable ensuite dans la fiche.' };
+    var quantity = Number(form.quantity);
+    if (!isFinite(quantity) || Math.floor(quantity) !== quantity || quantity < 1) quantity = 1;
+    var cats = (form.categories || []).filter(function (c) { return c !== 'all' && c !== 'latest-drop' && categoryPermalinks.indexOf(c) !== -1; });
+    var reel = String(form.reel_url || '').trim(), re = reelError(reel);
+    if (re) return { error: re };
+    var base = {
+      name: name, slug: slug, price: price, description: joinDescription(form.description_en, form.description_fr), images: [],
+      categories: cats, latest_drop: form.latest_drop === true, unique: form.unique !== false && quantity === 1 ? true : form.unique === true,
+      in_stock: true, hidden: true, position: 0, created_at: now || new Date().toISOString(), stripe_payment_link: '', quantity: quantity
+    };
+    var nameEn = String(form.name_en || '').trim();
+    if (nameEn && nameEn !== name) base.name_en = nameEn;
+    if (form.color === 'autre') {
+      var other = String(form.color_other || '').trim();
+      if (other) { base.color_name = other; base.color_hex = DEFAULT_OTHER_HEX; }
+    } else if (form.color) {
+      var c = colorById(form.color);
+      if (c) { base.color_name = c.name || c.id; base.color_hex = c.hex; }
+    }
+    if (reel) base.reel_url = reel;
+    var w = View.applyEdit(base, { weight_g: form.weight_g, mode: form.mode || 'colis', alone: form.alone === true });
+    if (w.error) return { error: w.error };
+    return { product: w.product };
+  }
+
+  return { buildDraft: buildDraft, COLORS: COLORS, colorById: colorById, slugify: slugify, colorFromText: colorFromText, averageRgb: averageRgb, nearestColor: nearestColor, suggestColor: suggestColor, defaultUnique: defaultUnique, reelError: reelError, joinDescription: joinDescription, buildPiece: buildPiece };
 }));

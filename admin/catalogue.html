@@ -90,6 +90,21 @@
       .two { grid-template-columns: 1fr; }
       .head-acts .vg-btn.big { flex: 1; }
     }
+
+    /* Programmer (ancien « drop ») */
+    #v-drop .grid { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px; }
+    .pick { position: relative; display: block; background: #fff; border: 2px solid var(--line); border-radius: 16px; overflow: hidden; cursor: pointer; padding: 0; text-align: left; font: inherit; color: inherit; }
+    .pick[aria-pressed="true"] { border-color: #171717; box-shadow: 0 0 0 1px #171717; }
+    .pick img { width: 100%; aspect-ratio: 4 / 5; object-fit: contain; background: #ebe8e0; display: block; }
+    .pick .t { padding: 8px 10px; display: block; }
+    .pick .t b { display: block; font: 700 13px/1.2 var(--f-title); letter-spacing: .03em; text-transform: uppercase; overflow-wrap: anywhere; }
+    .pick .t span { font-size: 12px; color: var(--muted); }
+    .pick .ck { position: absolute; right: 8px; top: 8px; width: 28px; height: 28px; border-radius: 50%; background: #fff; border: 2px solid #171717; display: flex; align-items: center; justify-content: center; font-size: 16px; }
+    .pick[aria-pressed="true"] .ck { background: #171717; color: #fff; }
+    .pick .vg-pill { position: absolute; left: 8px; top: 8px; font-size: 10px; }
+    .quick { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 10px; }
+    .quick .vg-btn { min-height: 44px; }
+    .quick .vg-btn[aria-pressed="true"] { background: var(--ink); color: #fff; }
   </style>
 <link rel="icon" href="../assets/theme/admin/favicon.svg?v=3" type="image/svg+xml">
 <link rel="icon" href="../assets/theme/admin/favicon-32.png?v=3" type="image/png" sizes="32x32">
@@ -100,8 +115,8 @@
 <body>
 <main class="vg-page">
   <div class="vg-card" id="login">
-    <p>Connecte-toi avec GitHub pour voir et modifier tes pièces.</p>
-    <button type="button" class="vg-btn" id="login-btn">Se connecter avec GitHub</button>
+    <p>Dernière étape : autorise l'admin à écrire les pièces sur GitHub (une seule fois par session, c'est la même connexion GitHub).</p>
+    <button type="button" class="vg-btn" id="login-btn">Autoriser les modifications</button>
   </div>
 
   <div id="app" hidden>
@@ -112,7 +127,8 @@
         <div class="head-acts">
           <button type="button" class="vg-btn ghost" id="reorder">Réordonner</button>
           <button type="button" class="vg-btn ghost" id="refresh">Actualiser</button>
-          <a class="vg-btn big" href="#/new">+ Nouvelle pièce</a>
+          <a class="vg-btn ghost" href="#/programmer">Programmer</a>
+          <a class="vg-btn big" href="nouvelle-piece.html">+ Nouvelle pièce</a>
         </div>
       </div>
       <div class="alert" id="alert-w" hidden><span id="alert-w-t"></span><button type="button" id="alert-w-b">Voir ces pièces</button></div>
@@ -121,16 +137,38 @@
         <div class="chips" id="chips"></div>
       </div>
       <div class="grid" id="grid"></div>
-      <p class="muted" style="margin-top:16px">Autres outils : <a href="studio-photo.html">Studio photo (détourage, assistant « Nouvelle pièce »)</a> · <a href="pieces.html">Poids et ports, tableau de toutes les pièces</a> · <a href="stock.html">Stock en tableau et sauvegardes</a> · <a href="index.html">Éditeur technique (Sveltia)</a></p>
     </section>
 
     <!-- FICHE -->
     <section id="v-fiche" hidden></section>
+
+    <!-- PROGRAMMER (plusieurs pièces à la même heure) -->
+    <section id="v-drop" hidden>
+      <div class="fhead"><a class="vg-btn ghost" href="#" id="d-back">← Pièces</a><h1>Programmer</h1></div>
+      <p class="vg-sub" style="margin:0 0 12px">Coche les pièces, choisis l'heure : elles passent toutes en « Programmée » à la même minute.</p>
+      <section class="vg-card sect">
+        <h2>1 · Les pièces</h2>
+        <p class="muted" style="margin-top:0">Pièces masquées (aperçu) ou déjà programmées. Chacune doit avoir au moins une photo et une catégorie. Pour une seule pièce, tu peux aussi choisir « Programmée » dans sa fiche.</p>
+        <div class="grid" id="d-grid"></div>
+      </section>
+      <section class="vg-card sect">
+        <h2>2 · Date et heure (heure de Paris)</h2>
+        <div class="quick" id="d-quick"></div>
+        <input type="datetime-local" id="d-when" aria-label="Date et heure de mise en ligne">
+        <p class="muted" style="margin:8px 0 0">Le site se met à jour tout seul à l'heure choisie.</p>
+      </section>
+      <section class="vg-card sect">
+        <h2>3 · Texte pour Instagram</h2>
+        <textarea id="d-txt" rows="9" aria-label="Texte Instagram"></textarea>
+        <div style="margin-top:10px"><button type="button" class="vg-btn ghost" id="d-copy">Copier le texte</button></div>
+      </section>
+    </section>
   </div>
   <p id="msg" role="status" aria-live="polite"></p>
 </main>
 
 <div class="bar2" id="bar-list" hidden><span id="bar-list-t"></span><button type="button" class="vg-btn ghost" id="list-cancel">Annuler</button><button type="button" class="vg-btn" id="list-save">Enregistrer</button></div>
+<div class="bar2" id="bar-drop" hidden><span id="d-bar-t"></span><button type="button" class="vg-btn" id="d-go" disabled>Programmer</button></div>
 <div class="bar2" id="bar-fiche" hidden><span id="bar-fiche-t"></span><button type="button" class="vg-btn ghost" id="fiche-cancel">Annuler</button><button type="button" class="vg-btn" id="fiche-save">Enregistrer</button></div>
 
 <script src="catalogue-core.js"></script>
@@ -226,11 +264,7 @@
             + '<div class="acts">'
             + (isNew ? '' : '<button type="button" class="vg-btn ghost" data-act="edit">Ouvrir la fiche</button>' + (st === 'preview' ? '' : '<a class="vg-btn ghost" target="_blank" rel="noopener" href="../product/' + encodeURIComponent(p.slug) + '">Voir sur le site ↗</a>') + (st === 'preview' || st === 'scheduled' ? '<a class="vg-btn ghost" target="_blank" rel="noopener" href="apercu/' + encodeURIComponent(p.slug) + '/">Aperçu</a>' : ''))
             + '<button type="button" class="vg-btn ghost" data-act="dup">Dupliquer</button>'
-            + (st === 'preview' || st === 'scheduled' ? '<button type="button" class="vg-btn ghost" data-act="publish">Publier maintenant</button>' : '')
-            + (st === 'scheduled' ? '<button type="button" class="vg-btn ghost" data-act="unschedule">Annuler la programmation</button>' : '')
-            + (st === 'live' ? '<button type="button" class="vg-btn ghost" data-act="coming">Marquer « bientôt disponible »</button>' : '')
-            + (st === 'coming' ? '<button type="button" class="vg-btn ghost" data-act="open">Ouvrir à la vente</button>' : '')
-            + (st === 'live' || st === 'coming' ? '<button type="button" class="vg-btn ghost" data-act="hide">Passer en aperçu (masquer)</button>' : '')
+            + (st === 'preview' || st === 'scheduled' ? '<a class="vg-btn ghost" href="#/programmer">Programmer</a>' : '')
             + (st === 'archived' ? '<button type="button" class="vg-btn ghost" data-act="restore">Remettre en ligne</button>' : '<button type="button" class="vg-btn ghost" data-act="archive">Archiver (retirer du site)</button>')
             + '</div>')
         + '</article>';
@@ -266,11 +300,6 @@
       one[r.slug] = r.product; openCard = null; applyChanges(one);
       return say('Copie « ' + r.product.name + ' » créée en aperçu. Enregistre, puis ouvre sa fiche pour changer ses photos.');
     }
-    if (act === 'unschedule') { var u = Object.assign({}, p); delete u.publish_at; one[slug] = u; }
-    if (act === 'publish') { if (!(p.categories || []).length) return say('Cette pièce n\'a aucune catégorie : ouvre sa fiche et ajoutes-en une.', true); one[slug] = C.setHidden(p, false); }
-    if (act === 'hide') one[slug] = C.setComing(C.setHidden(p, true), false);
-    if (act === 'coming') one[slug] = C.setComing(p, true);
-    if (act === 'open') one[slug] = C.setComing(p, false);
     if (act === 'archive') one[slug] = C.setArchived(p, true);
     if (act === 'restore') one[slug] = C.setArchived(p, false);
     openCard = null; applyChanges(one);
@@ -338,8 +367,8 @@
       + (isNew ? '' : '<button type="button" class="vg-btn ghost" id="f-dup">Dupliquer</button>') + '</div>'
 
       + '<section class="vg-card sect"><h2>Photos</h2><div class="photos" id="photos"></div>'
-      + '<div class="head-acts" style="margin-top:12px"><label class="vg-btn ghost" style="cursor:pointer">+ Ajouter des photos<input type="file" id="f-addph" accept="image/*" multiple hidden></label><a class="vg-btn ghost" href="studio-photo.html">✂ Détourer / retoucher avec le studio</a></div>'
-      + '<p class="muted" id="phmsg" style="margin:8px 0 0">La 1re photo est la photo principale. Les photos ajoutées ici sont publiées telles quelles : pour un fond détouré, passe par le studio photo.</p></section>'
+      + '<div class="head-acts" style="margin-top:12px"><label class="vg-btn ghost" style="cursor:pointer">+ Ajouter des photos<input type="file" id="f-addph" accept="image/*" multiple hidden></label><a class="vg-btn ghost" href="nouvelle-piece.html">✂ Détourer avec l\'assistant</a></div>'
+      + '<p class="muted" id="phmsg" style="margin:8px 0 0">La 1re photo est la photo principale. Les photos ajoutées ici sont publiées telles quelles : pour un fond détouré, passe par l\'assistant « + Nouvelle pièce ».</p></section>'
 
       + '<section class="vg-card sect"><h2>Pièce</h2>'
       + '<label class="fl" for="f-name">Nom</label><input type="text" id="f-name" autocomplete="off" value="' + esc(f.name) + '">'
@@ -358,7 +387,7 @@
       + '<section class="vg-card sect"><h2>Prix et stock</h2><div class="two"><div><label class="fl" for="f-price">Prix (€)</label><input type="text" id="f-price" inputmode="decimal" value="' + esc(f.price) + '"></div>'
       + '<div><label class="fl" for="f-stock">Stock</label><input type="number" id="f-stock" min="0" max="9999" step="1" inputmode="numeric" value="' + esc(cur.stock) + '"></div></div>'
       + '<label class="chk" style="margin-top:8px"><input type="checkbox" id="f-unique"' + (f.unique ? ' checked' : '') + '>Badge « UNIQUE PIECE » sur la fiche</label>'
-      + '<p class="muted" style="margin:6px 0 0">Stock à 0 : « Épuisée » sur le site. Une vente payée baisse le stock toute seule. Pour une promotion, utilise un <a href="promos.html">code promo</a> (remise sur les pièces, pas sur la livraison).</p></section>'
+      + '<p class="muted" style="margin:6px 0 0">Stock à 0 : « Épuisée » sur le site. Une vente payée baisse le stock toute seule. Pour une promotion, utilise un <a href="reglages-promos.html">code promo</a> (Réglages) (remise sur les pièces, pas sur la livraison).</p></section>'
 
       + '<section class="vg-card sect"><h2>Couleur et vidéo</h2><div class="colors" id="f-colors">' + colors + '</div>'
       + '<input type="text" id="f-color-other" placeholder="Autre couleur (texte libre)" value="' + esc(f.color_other) + '" style="margin-top:8px"' + (f.color === 'autre' ? '' : ' hidden') + '>'
@@ -378,7 +407,7 @@
       + '<label class="chk" style="margin-top:8px"><input type="checkbox" id="f-intl"' + (f.ships_intl ? ' checked' : '') + '>Livrable hors de France</label>'
       + '<label class="fl" for="f-stripe">Lien de paiement Stripe (ancien système, facultatif)</label><input type="text" id="f-stripe" inputmode="url" value="' + esc(f.stripe_payment_link) + '">'
       + (isNew ? '' : '<p class="muted" style="margin-top:10px">Position dans la boutique : ' + esc(p.position == null ? 0 : p.position) + ' (change-la avec « Réordonner » dans la liste) · créée le ' + esc(p.created_at ? new Date(p.created_at).toLocaleDateString('fr-FR') : '—') + '</p>')
-      + '<div class="head-acts" style="margin-top:10px">' + (isNew ? '' : '<button type="button" class="vg-btn ghost" id="f-archive">' + (cur.form.status === 'archived' ? 'Remettre en ligne' : 'Archiver (retirer du site)') + '</button>') + '<a class="vg-btn ghost" href="index.html">Éditeur technique (Sveltia)</a></div></details>'
+      + '<div class="head-acts" style="margin-top:10px">' + (isNew ? '' : '<button type="button" class="vg-btn ghost" id="f-archive">' + (cur.form.status === 'archived' ? 'Remettre en ligne' : 'Archiver (retirer du site)') + '</button>') + '</div></details>'
       + '<div class="note err" id="f-err" hidden></div>';
   }
 
@@ -443,10 +472,13 @@
   function route() {
     var h = decodeURIComponent(location.hash || '');
     if (!$('app') || $('app').hidden) return;
-    if (/^#\/new/.test(h)) return openFiche(null, true);
+    if (/^#\/new/.test(h)) { location.replace('nouvelle-piece.html'); return; }
+    if (h === '#/programmer') return openDrop();
     var m = /^#\/p\/(.+)$/.exec(h);
     if (m) return openFiche(m[1], false);
     if (h === '#/noweight') filter = 'noweight';
+    if (h === '#/soldout') filter = 'soldout';
+    $('v-drop').hidden = true; $('bar-drop').hidden = true;
     if (cur) closeFiche(); else { $('v-list').hidden = false; $('v-fiche').hidden = true; drawList(); }
   }
   var lastHash = location.hash;
@@ -536,6 +568,61 @@
       if (isNew) location.hash = '#/p/' + encodeURIComponent(slug); else openFiche(slug, false);
     } catch (e) { say('Erreur : ' + e.message, true); err.textContent = e.message; err.hidden = false; }
     btn.disabled = false;
+  });
+
+  // ---------- PROGRAMMER (ancien « drop » : plusieurs pièces à la même heure + texte Instagram) ----------
+  var dPicked = {}, dTouched = false;
+  function fmtD(iso, o) { try { return new Date(iso).toLocaleString('fr-FR', Object.assign({ timeZone: 'Europe/Paris' }, o)); } catch (e) { return iso; } }
+  function dCandidates() { return C.sorted(pieces).filter(function (p) { var s = C.state(p); return s === 'preview' || s === 'scheduled'; }); }
+  function dWhen() { var v = $('d-when').value; return v ? C.parisToIso(v.replace('T', ' ')) : null; }
+  function dLabel(iso) {
+    var d = fmtD(iso, { weekday: 'long', day: 'numeric', month: 'long' }), h = fmtD(iso, { hour: 'numeric', minute: '2-digit', hour12: false }).replace(':00', '').replace(':', ' h ');
+    return d + ' à ' + (/h/.test(h) ? h : h + ' h');
+  }
+  function dChosen() { return dCandidates().filter(function (p) { return dPicked[p.slug]; }); }
+  function drawDrop() {
+    $('d-grid').innerHTML = dCandidates().map(function (p) {
+      var st = C.state(p);
+      return '<button type="button" class="pick" data-slug="' + esc(p.slug) + '" aria-pressed="' + !!dPicked[p.slug] + '">' + thumb((p.images || [])[0])
+        + '<span class="ck">' + (dPicked[p.slug] ? '✓' : '') + '</span>' + (st === 'scheduled' ? '<span class="vg-pill plan">' + esc(fmtD(p.publish_at, { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })) + '</span>' : '')
+        + '<span class="t"><b>' + esc(p.name || p.slug) + '</b><span>' + eur(p.price) + (p.images && p.images.length ? '' : ' · sans photo') + ((p.categories || []).length ? '' : ' · sans catégorie') + '</span></span></button>';
+    }).join('') || '<p class="muted">Aucune pièce masquée ou programmée. Crée une pièce (elle démarre masquée avec « Enregistrer en brouillon »), puis reviens ici.</p>';
+    refreshDrop();
+  }
+  function refreshDrop() {
+    var list = dChosen(), iso = dWhen();
+    $('bar-drop').hidden = false;
+    $('d-bar-t').textContent = list.length + ' pièce' + (list.length > 1 ? 's' : '') + (iso ? ' · ' + dLabel(iso) : ' · choisis l\'heure');
+    $('d-go').disabled = !list.length || !iso;
+    if (!dTouched) $('d-txt').value = list.length && iso ? F.dropText(list, location.origin, dLabel(iso)) : '';
+    Array.prototype.forEach.call($('d-quick').children, function (b) { b.setAttribute('aria-pressed', String(b.getAttribute('data-t') === $('d-when').value.replace('T', ' '))); });
+  }
+  function openDrop() {
+    cur = null; dPicked = {}; dTouched = false;
+    $('v-list').hidden = true; $('v-fiche').hidden = true; $('v-drop').hidden = false; $('bar-list').hidden = true; $('bar-fiche').hidden = true;
+    $('d-quick').innerHTML = F.quickDates(Date.now()).map(function (x) { return '<button type="button" class="vg-btn ghost" data-t="' + x.text + '" aria-pressed="false">' + x.label + '</button>'; }).join('');
+    drawDrop(); window.scrollTo(0, 0);
+    if (Object.keys(listChanges).length) say('Les changements non enregistrés de la liste ne sont pas inclus ici : enregistre-les d\'abord.', true);
+  }
+  $('d-quick').addEventListener('click', function (e) { var t = e.target.getAttribute('data-t'); if (t) { $('d-when').value = t.replace(' ', 'T'); dTouched = false; refreshDrop(); } });
+  $('d-when').addEventListener('input', function () { dTouched = false; refreshDrop(); });
+  $('d-txt').addEventListener('input', function () { dTouched = true; });
+  $('d-grid').addEventListener('click', function (e) { var b = e.target.closest('.pick'); if (!b) return; var s = b.getAttribute('data-slug'); if (dPicked[s]) delete dPicked[s]; else dPicked[s] = true; dTouched = false; drawDrop(); });
+  $('d-back').addEventListener('click', function (e) { e.preventDefault(); location.hash = ''; });
+  $('d-copy').addEventListener('click', function () {
+    var t = $('d-txt').value;
+    (navigator.clipboard && navigator.clipboard.writeText ? navigator.clipboard.writeText(t) : Promise.reject()).then(function () { say('Texte copié.'); }, function () { $('d-txt').select(); say('Sélectionné : copie-le (Ctrl+C / Copier).'); });
+  });
+  $('d-go').addEventListener('click', function () {
+    var iso = dWhen(), r = F.planDrop(pieces, dChosen().map(function (p) { return p.slug; }), iso, Date.now());
+    if (r.error) return say(r.error, true);
+    var n = Object.keys(r.changes).length;
+    if (!confirm('Programmer ' + n + ' pièce' + (n > 1 ? 's' : '') + ' pour le ' + dLabel(iso) + ' (heure de Paris) ?')) return;
+    $('d-go').disabled = true; say('Enregistrement…');
+    VGPiecesSave.saveFiles(gh(), r.changes, 'Drop programmé le ' + iso, say)
+      .then(function () { return syncSchedule(r.changes); })
+      .then(function () { pieces = pieces.map(function (p) { return r.changes[p.slug] || p; }); dPicked = {}; drawDrop(); say('Programmé : ' + n + ' pièce' + (n > 1 ? 's' : '') + ' le ' + dLabel(iso) + '. Le site se reconstruit tout seul (1 à 2 min), puis se remet à jour à l\'heure dite.'); })
+      .catch(function (e) { say('Erreur : ' + e.message, true); $('d-go').disabled = false; });
   });
 
   // ---------- chargement ----------

@@ -29,11 +29,11 @@ GitHub → Settings → Password and authentication → Two-factor (clé d'accè
 ## 6. Drops de 18 h : le « Deploy Hook » (5 min)
 1. dash.cloudflare.com → Workers & Pages → **vgthmind-shop** → Settings → **Builds** (ou « Deploy Hooks ») → **Add deploy hook** : nom `drop`, branche `main` → copie l'adresse (`https://api.cloudflare.com/client/v4/pages/webhooks/deploy_hooks/…`).
 2. Ajoute-la comme secret du Worker (voir en haut) : nom **`DEPLOY_HOOK_URL`**. Vérifie sur « État du système » la ligne `DEPLOY_HOOK_URL posée`.
-3. Admin → Catalogue → une pièce en aperçu → **Programmer** → `2026-11-06 18:00` (heure de Paris) → Enregistrer. La pièce apparaît à 18 h (± 20 s). Elle doit avoir au moins une catégorie. « Annuler la programmation » la remet en aperçu.
+3. Admin → Pièces → **Programmer** (ou la fiche d'une pièce → statut « Programmée ») → `2026-11-06 18:00` (heure de Paris) → Enregistrer. La pièce apparaît à 18 h (± 20 s). Elle doit avoir au moins une catégorie. « Annuler la programmation » la remet en aperçu.
 
 ## 7. Ventes → ton Sheet de compta (5 min + 2 min avec moi)
 Secrets du Worker (même chemin que ci-dessus), noms exacts : **`COMPTA_URL`** (l'adresse « /exec » de ton script Google) et **`COMPTA_SECRET`** (la propriété « SECRET » du script). Puis dis-moi « compta posée » : je fais un achat test sur une copie du Sheet, je vérifie la ligne, je retire le mode essai. Pas encore branchés : remboursements et acomptes.
-Le tableau de bord de l'admin a déjà le lien direct vers ta **Comptabilité** et ta **Facturation**.
+Réglages → Compta a déjà le lien direct vers ta **Comptabilité** et ta **Facturation** (hors boutique seulement).
 
 ## 8. Relire les textes (10–20 min, à ton rythme)
 - `chantier/CGV-A-VERIFIER.md` (médiateur, délai de rétractation, pays livrés) et `chantier/CGV-PROPOSITION.html` (surligné jaune = à remplir ; section 5 bis « sur demande »).
@@ -44,7 +44,7 @@ Le tableau de bord de l'admin a déjà le lien direct vers ta **Comptabilité** 
 
 ## 9. Test avec Claude, après la mise en ligne (2 min de ton temps)
 - **Paiement test (mode test)** : dis « prépare le test de paiement » ; je publie une pièce fictive et te donne un lien Stripe. Tu tapes toi-même la carte `4242 4242 4242 4242` (date future, CVC 123, pays Belgique ou France). Dis « c'est payé » : je vérifie stock (0 = Sold out), les deux mails, puis je supprime la pièce. Je n'ai pas le droit de taper un numéro de carte, même de test.
-- **Un éditeur à tester** : Admin → « Modifier une fiche » → change juste une virgule dans la description d'une pièce → Enregistrer → regarde que le badge « Pièce unique », la pastille de couleur et le reel sont toujours là (j'ai déclaré ces champs dans l'éditeur pour qu'il ne les efface pas ; je ne peux pas le vérifier sans ta connexion GitHub).
+- **Un éditeur à tester** : Admin → Pièces → toucher une photo (la fiche) → change juste une virgule dans la description d'une pièce → Enregistrer → regarde que le badge « Pièce unique », la pastille de couleur et le reel sont toujours là (j'ai déclaré ces champs dans l'éditeur pour qu'il ne les efface pas ; je ne peux pas le vérifier sans ta connexion GitHub).
 
 ## 10. Stripe en live (15 min) — le dernier verrou avant le lancement
 Suis `chantier/BASCULE.md` §1 (clé restreinte live + webhook live). **Ne m'envoie ni la clé ni le secret** : ajoute-les toi-même dans les secrets du Worker (`STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`), puis dis-moi « clé live créée » : je mets `LIVE_MODE=1` et je redéploie. Droits en plus pour les codes promo : Écriture sur « Coupons » et « Promotion Codes » (facultatif).

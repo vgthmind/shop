@@ -31,8 +31,9 @@ generator/        moteur Liquid + générateur (Node, zéro dépendance)
   build.js            rend theme/ + data/catalog.json -> docs/
   migrate-to-admin-products.js  outil ponctuel (déjà utilisé une fois, voir plus bas)
   (archives/import-catalog.js : ancien outil de RE-SEED depuis BigCartel, archivé hors build)
-admin/            interface de gestion (Sveltia CMS) - ajouter/modifier/
-                  retirer une pièce sans toucher au code, voir "Admin" ci-dessous
+admin/            interface de gestion maison (menu : Accueil, Commandes, Demandes, Pièces,
+                  Réglages) - ajouter/modifier/retirer une pièce sans toucher au code,
+                  voir "Admin" ci-dessous
 data/products/    UNE PIÈCE = UN FICHIER JSON - la vraie source du catalogue,
                   éditée par admin/ (ou à la main)
 data/categories.json  les 7 catégories (id/nom/URL stables), pas éditable par l'admin
@@ -50,9 +51,9 @@ docs/             site généré (servi par GitHub Pages : main / docs)
 
 ## Admin — ajouter/modifier/retirer une pièce sans toucher au code
 
-Ouvrir `/shop/admin/` (Sveltia CMS), se connecter avec un jeton GitHub
-"fine-grained" limité à ce dépôt (voir "Sécurité" plus bas), puis créer/
-éditer/supprimer une fiche dans "Pièces". Chaque sauvegarde est un commit
+Ouvrir `/admin/` (page de connexion GitHub unique, compte vgthmind seul), puis
+Pièces : « + Nouvelle pièce » (assistant) ou toucher une photo pour ouvrir la fiche
+(un seul endroit pour modifier une pièce). L'ancien éditeur Sveltia est supprimé. Chaque sauvegarde est un commit
 direct sur `main` dans `data/products/<slug>.json` ; le `GitHub Action`
 `.github/workflows/build-shop.yml` reconstruit alors automatiquement
 `data/catalog.json` puis tout `docs/` et pousse le résultat — le site en
@@ -174,7 +175,7 @@ affiliation).
    maison.** Le contenu vit dans des fichiers texte (JSON) commit dans ce
    dépôt Git. Pas de mot de passe utilisateur stocké, pas de serveur perso à
    maintenir/patcher.
-3. **Le seul secret sensible est un jeton d'accès GitHub** (pour Sveltia),
+3. **Le seul secret sensible est un jeton d'accès GitHub** (pour l'admin),
    limité à ce dépôt, jamais partagé, jamais stocké dans le code - plus,
    une fois l'étape 3 faite, les secrets du Cloudflare Worker Stripe
    (jamais dans ce dépôt non plus).

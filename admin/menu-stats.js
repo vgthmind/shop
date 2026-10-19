@@ -56,7 +56,35 @@
       top: Object.keys(pieces).sort(function (a, b) { return pieces[b] - pieces[a]; }).slice(0, 5).map(function (n) { return { name: n, amount: pieces[n] }; })
     };
   }
+  // Début d'une période (ms) : '7' | '30' = les N derniers jours ; 'month' = le 1er du mois ; 'year' = le 1er janvier (heure de l'appareil).
+  function periodStart(period, now) {
+    var d = new Date(now);
+    if (period === 'month') return new Date(d.getFullYear(), d.getMonth(), 1).getTime();
+    if (period === 'year') return new Date(d.getFullYear(), 0, 1).getTime();
+    return now - (period === '7' ? 7 : 30) * DAY;
+  }
+  // Nombre de jours à demander au compteur de visites pour couvrir la période (1 à 365).
+  function periodDays(period, now) { return Math.max(1, Math.min(365, Math.ceil((now - periodStart(period, now)) / DAY))); }
+  // Ventes d'une période : commandes réelles (à défaut de test), remboursements déduits, acomptes exclus.
+  // Renvoie { test, n, ca, top[5] } ; la conversion = n / visiteurs (voir conversion).
+  function salesBetween(orders, from, now) {
+    var all = (orders || []).filter(function (o) { return o.kind !== 'deposit'; });
+    var live = all.filter(function (o) { return o.livemode; });
+    var set = live.length ? live : all;
+    var net = function (o) { var r = o.refunded ? (o.refunded.full ? o.total : Number(o.refunded.amount) || 0) : 0; return Math.max(0, (o.total || 0) - r); };
+    var sel = set.filter(function (o) { return !(o.refunded && o.refunded.full) && o.created * 1000 >= from && o.created * 1000 <= now; });
+    var pieces = {};
+    sel.forEach(function (o) { (o.items || []).forEach(function (it) { pieces[it.name] = (pieces[it.name] || 0) + (Number(it.amount) || 0); }); });
+    return {
+      test: !live.length && all.length > 0, n: sel.length, ca: sel.reduce(function (s, o) { return s + net(o); }, 0),
+      top: Object.keys(pieces).sort(function (a, b) { return pieces[b] - pieces[a]; }).slice(0, 5).map(function (n) { return { name: n, amount: pieces[n] }; })
+    };
+  }
+  // Commandes / visiteurs, en pourcentage (null s'il n'y a aucun visiteur).
+  function conversion(orders, visitors) { return visitors > 0 ? Math.round(orders / visitors * 1000) / 10 : null; }
+  // Lignes « à regarder » de /status : celles qui commencent par « -- » (clé manquante, sauvegarde absente…).
+  function healthProblems(text) { return String(text || '').split('\n').filter(function (l) { return /^-- /.test(l); }).map(function (l) { return l.slice(3).trim(); }); }
   // Pièces du catalogue public (products.json) sans poids : les ports ne peuvent pas être calculés.
   function noWeight(list) { return (list || []).filter(function (p) { return !(Math.floor(Number(p && p.weight_g)) > 0); }); }
-  return { noWeight: noWeight, toShip: toShip, requestsTodo: requestsTodo, nextDrop: nextDrop, inWords: inWords, salesStats: salesStats };
+  return { periodStart: periodStart, periodDays: periodDays, salesBetween: salesBetween, conversion: conversion, healthProblems: healthProblems, noWeight: noWeight, toShip: toShip, requestsTodo: requestsTodo, nextDrop: nextDrop, inWords: inWords, salesStats: salesStats };
 }));

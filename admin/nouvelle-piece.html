@@ -86,7 +86,7 @@
 <body>
 <main>
   <h1>Nouvelle pièce</h1>
-  <nav><a href="index.html">← Pièces</a><a href="pieces.html">Poids &amp; ports</a><a href="stock.html">Stock</a></nav>
+  <nav class="vg-back"><a href="catalogue.html">← Pièces</a></nav>
   <p class="muted">Photos → détourage → fiche → ports → publier. Le détourage se fait dans ton navigateur : les photos ne quittent pas cet appareil avant la publication.</p>
   <div class="steps" id="steps" role="tablist"></div>
 
@@ -221,7 +221,7 @@
       <label class="muted"><input id="replace" type="checkbox" checked> Remplacer les photos actuelles si la pièce existe déjà</label>
     </div>
     <div class="bar">
-      <button id="bLogin">Se connecter à GitHub</button>
+      <button id="bLogin">Autoriser les modifications (GitHub)</button>
       <button id="bPublish" class="primary" disabled>Publier la pièce</button>
       <span class="muted" id="pubMsg"></span>
     </div>
@@ -229,8 +229,10 @@
 
   <div class="bar" id="stepNav">
     <button id="bPrev">← Précédent</button>
+    <button id="bDraft" type="button" title="Crée la pièce masquée (rien n'est visible sur le site) : tu la complètes plus tard dans Pièces">Enregistrer en brouillon</button>
     <button id="bNext" class="primary">Suivant →</button>
   </div>
+  <div class="muted" id="draftOut" role="status" aria-live="polite" style="margin-top:6px"></div>
 </main>
 <script src="video-convert.js"></script>
 <script src="studio-process.js"></script>

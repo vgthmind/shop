@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="robots" content="noindex, nofollow">
-  <title>Mode d'emploi — admin vgthmind</title>
+  <title>Aide — admin vgthmind</title>
   <style>
     :root { --bg: #f4f2ec; --ink: #171717; --muted: #6b6860; --line: rgba(0,0,0,.12); }
     body { margin: 0; background: var(--bg); color: var(--ink); font: 17px/1.55 system-ui, -apple-system, "Segoe UI", sans-serif; }
@@ -25,9 +25,9 @@
 </head>
 <body>
 <main>
-  <nav><a href="menu.html">← Tableau de bord</a></nav>
-  <h1>Mode d'emploi</h1>
-  <p>Pour gérer la boutique sans jamais écrire une ligne de code. Tout se passe depuis le <a href="menu.html">tableau de bord</a> : sur iPhone comme sur PC, les mêmes grosses tuiles.</p>
+  <nav class="vg-back"><a href="reglages.html">← Réglages</a></nav>
+  <h1>Aide</h1>
+  <p>Pour gérer la boutique sans jamais écrire une ligne de code. Tout se passe depuis le menu à 5 entrées, identique sur iPhone et sur PC : <strong>Accueil · Commandes · Demandes · Pièces · Réglages</strong>.</p>
   <ul class="toc">
     <li><a href="#connexion">Se connecter</a></li>
     <li><a href="#piece">Mettre une pièce en ligne</a></li>
@@ -45,34 +45,34 @@
   <h2 id="connexion">Se connecter</h2>
   <ol>
     <li>Ouvre l'admin (raccourci « Admin boutique vgthmind » sur le PC, ou l'icône sur l'iPhone).</li>
-    <li>Touche <strong>« Se connecter avec GitHub »</strong> sur la page demandée. Seul ton compte GitHub est accepté.</li>
+    <li>Touche <strong>« Se connecter avec GitHub »</strong> sur la page de connexion (la seule de l'admin). Seul ton compte GitHub est accepté. Quand tu modifies une pièce, il peut te demander une dernière autorisation (« Autoriser les modifications »).</li>
     <li>Si tu ne fais rien pendant 30 minutes, tu es déconnecté tout seul (sécurité) : reclique simplement sur le bouton.</li>
   </ol>
   <div class="tip">Protège ton compte GitHub avec la double authentification (clé d'accès / passkey ou application). C'est la vraie porte d'entrée de l'admin.</div>
 
   <h2 id="piece">Mettre une pièce en ligne</h2>
   <ol>
-    <li>Tableau de bord → <strong>Nouvelle pièce</strong>.</li>
+    <li>Pièces → <strong>+ Nouvelle pièce</strong> (ou le même bouton sur l'Accueil). Un doute en route : <strong>Enregistrer en brouillon</strong> (à chaque étape) crée la pièce masquée, tu la complètes plus tard dans Pièces.</li>
     <li>Ajoute les photos : elles sont détourées automatiquement. Depuis l'iPhone, le PC doit être allumé avec le détourage lancé (voir « Détourage iPhone » dans le fichier « A-FAIRE » du dossier du projet).</li>
     <li>Remplis le nom, le prix, la description (anglais, ligne vide, français), les catégories, la quantité (1 = pièce unique), la couleur.</li>
     <li>Publie. Le site se met à jour tout seul en 1 à 2 minutes.</li>
-    <li>Tableau de bord → <strong>Poids et ports</strong> : indique le poids emballé et le mode (colis ou lettre suivie). Les frais de port se calculent tout seuls pour tous les pays.</li>
+    <li>À l'étape <strong>Poids et ports</strong> (ou dans la fiche de la pièce, section Livraison) : indique le poids sans emballage et le mode (colis ou lettre suivie). Les frais de port se calculent tout seuls pour tous les pays. Le filtre « Sans poids » de Pièces retrouve les pièces oubliées.</li>
     <li>Le lien Instagram (reel) est facultatif : la fiche s'affiche très bien sans.</li>
   </ol>
 
   <h2 id="serie">Faire une série (copier une pièce)</h2>
   <ol>
-    <li>Tableau de bord → <strong>Catalogue</strong> → bouton <strong>Dupliquer</strong> à côté de la pièce.</li>
+    <li>Pièces → <strong>⋯</strong> sur la carte de la pièce → <strong>Dupliquer</strong>.</li>
     <li>Donne un nom à la copie (ex. « Cache-cou bleu »), puis <strong>Enregistrer</strong> (barre noire en bas).</li>
     <li>La copie est d'abord <em>en aperçu</em> : sa page existe mais elle n'apparaît pas dans la boutique. Attends 1 à 2 minutes, clique <strong>Voir la page</strong> pour vérifier.</li>
     <li>Quand c'est bon : <strong>Publier</strong>, puis <strong>Enregistrer</strong>.</li>
-    <li>Change les photos de la copie dans <strong>Modifier une fiche</strong> (la copie démarre avec les photos de l'original).</li>
+    <li>Change les photos de la copie dans <strong>sa fiche</strong> (Pièces → toucher la photo ; la copie démarre avec les photos de l'original).</li>
   </ol>
   <p>Même écran pour : changer l'ordre d'affichage (flèches ▲ ▼), <strong>Archiver</strong> une pièce (elle disparaît du site mais la fiche reste, rien n'est supprimé), la remettre en ligne.</p>
 
   <h2 id="statuts">Les statuts d'une pièce</h2>
   <ul>
-    <li><strong>En ligne</strong> : visible et achetable. <strong>Sold out</strong> : quantité à 0 dans <strong>Stock</strong> (permanent, rien à renouveler).</li>
+    <li><strong>En ligne</strong> : visible et achetable. <strong>Sold out</strong> : quantité à 0 dans <strong>Pièces</strong> (boutons − / + de la carte, ou champ Stock de la fiche ; permanent, rien à renouveler).</li>
     <li><strong>Bientôt disponible</strong> : visible dans la boutique avec le libellé « Coming soon », sans bouton d'achat. Bouton « Marquer bientôt disponible », puis « Ouvrir à la vente » le jour J.</li>
     <li><strong>Aperçu</strong> (masquée) : la page existe mais n'est dans aucune liste ni recherche ; sert à vérifier avant publication.</li>
     <li><strong>Programmée</strong> : aperçu qui passe en ligne tout seul à l'heure choisie (drops de 18 h).</li>
@@ -82,7 +82,7 @@
   <h2 id="commande">Gérer une commande</h2>
   <ol>
     <li>Tu reçois un mail d'alerte à chaque nouvelle commande (il arrive sur ton téléphone comme n'importe quel mail).</li>
-    <li>Tableau de bord → <strong>Commandes</strong>. L'onglet « À expédier » liste ce qui reste à envoyer ; le détail montre les pièces, la taille, l'adresse, le pays et le port.</li>
+    <li><strong>Commandes</strong>. L'onglet « À expédier » liste ce qui reste à envoyer ; le détail montre les pièces, la taille, l'adresse, le pays et le port.</li>
     <li><strong>Bon de commande (imprimer)</strong> : une page prête à imprimer, à glisser dans le colis ou à recopier sur l'étiquette.</li>
     <li>Tu peux marquer « en préparation » : le client le voit sur sa page de suivi.</li>
   </ol>
@@ -98,14 +98,14 @@
   <h2 id="soldout">Mettre une pièce en sold out (ou la remettre)</h2>
   <ul>
     <li>Une vente la passe automatiquement en sold out à 0 exemplaire.</li>
-    <li>À la main : Tableau de bord → <strong>Stock</strong> → mets <strong>0</strong> → Enregistrer (visible sous 15 secondes).</li>
+    <li>À la main : <strong>Pièces</strong> → bouton <strong>−</strong> de la carte (ou champ Stock de la fiche) jusqu'à <strong>0</strong> → Enregistrer (visible sous 15 secondes).</li>
     <li>Pour la remettre en vente : mets le nombre d'exemplaires → Enregistrer.</li>
-    <li>Pour la retirer complètement du site : Catalogue → <strong>Archiver</strong>.</li>
+    <li>Pour la retirer complètement du site : Pièces → <strong>⋯</strong> → <strong>Archiver</strong>.</li>
   </ul>
 
   <h2 id="compta">Exporter pour la compta</h2>
   <ol>
-    <li>Tableau de bord → <strong>Export compta</strong>.</li>
+    <li><strong>Réglages</strong> → <strong>Compta</strong>.</li>
     <li>Choisis le mois, le trimestre ou l'année, puis télécharge le fichier CSV (il s'ouvre dans Excel). Il ne contient aucun nom de client.</li>
     <li>Tuile <strong>Comptabilité</strong> : ton livre des recettes. Tuile <strong>Facturation</strong> : ton outil de factures.</li>
   </ol>
@@ -118,11 +118,11 @@
   </ul>
 
   <h2 id="demandes">Demandes sur mesure (custom, sur-mesure, production, collab)</h2>
-  <p>Les clients remplissent la page <strong>« Proposer un projet »</strong> du site (bouton dans le menu et sur la page Studio). Tu reçois un mail « Nouvelle demande D-XXXXXX » avec toutes les réponses ; le client reçoit « demande bien reçue » avec le lien de sa page privée. Tout se gère dans Tableau de bord → <strong>Demandes</strong> (clique sur une demande pour l'ouvrir).</p>
+  <p>Les clients remplissent la page <strong>« Proposer un projet »</strong> du site (bouton dans le menu du site). Tu reçois un mail « Nouvelle demande D-XXXXXX » avec toutes les réponses ; le client reçoit « demande bien reçue » avec le lien de sa page privée. Tout se gère dans <strong>Demandes</strong> (clique sur une demande pour l'ouvrir).</p>
   <p><strong>Custom et sur-mesure</strong> (paiement en ligne, 3 étapes) :</p>
   <ol>
     <li><strong>Devis.</strong> Échange d'abord par mail si besoin (« Répondre par mail » : le statut passe en « En discussion »). Puis remplis le titre de la pièce, le prix total, le délai (et le poids emballé si la pièce est lourde) → <strong>Envoyer le devis au client</strong>. Il reçoit un mail avec le bouton pour payer l'acompte (30 % par défaut). Avant de payer, il doit cocher la mention (acompte et non arrhes, pas de rétractation, acompte conservé) : la date et le texte sont gardés dans le journal.</li>
-    <li><strong>Acompte payé</strong> → tu reçois une alerte, la demande passe toute seule en <em>En fabrication</em>. Le client a sa facture d'acompte sur sa page. L'acompte n'apparaît pas dans « Commandes » (rien à expédier) mais il est bien dans l'Export compta (nature « acompte »).</li>
+    <li><strong>Acompte payé</strong> → tu reçois une alerte, la demande passe toute seule en <em>En fabrication</em>. Le client a sa facture d'acompte sur sa page. L'acompte n'apparaît pas dans « Commandes » (rien à expédier) mais il est bien dans l'export de Réglages → Compta (nature « acompte »).</li>
     <li><strong>Photos de validation.</strong> Pièce finie : <strong>Ajouter des photos</strong> (depuis l'iPhone ou le PC), puis <strong>Envoyer pour validation</strong>. Le client reçoit les photos avec « Je valide et je paie le solde » ou « Je demande une retouche ». 1 retouche est incluse (réglable) : tu reçois une alerte, la demande repasse en fabrication, tu renvoies de nouvelles photos. Au-delà, le client voit « retouche supplémentaire sur devis » et tu reçois une alerte : réponds-lui par mail.</li>
     <li><strong>Solde payé</strong> (prix total − acompte + port selon son pays) → la commande arrive dans <strong>Commandes</strong> comme les autres : mail de confirmation, « Marquer expédiée » + numéro de suivi (la demande passe alors en <em>Envoyée</em>), facture qui déduit l'acompte. Passe ensuite la demande en <em>Terminée</em>.</li>
   </ol>
@@ -139,15 +139,15 @@
 
   <h2 id="probleme">Que faire en cas de problème</h2>
   <ul>
-    <li><strong>« Connexion expirée »</strong> : reclique sur « Se connecter avec GitHub ». Rien n'est perdu.</li>
+    <li><strong>« Connexion expirée »</strong> : tu es renvoyé sur la page de connexion, reclique sur « Se connecter avec GitHub ». Rien n'est perdu.</li>
     <li><strong>Une modif n'apparaît pas sur le site</strong> : attends 2 minutes et recharge la page (touche Ctrl+F5 sur PC). Le site se reconstruit à chaque enregistrement.</li>
     <li><strong>Un client ne reçoit pas son mail</strong> : demande-lui de regarder ses spams ; sinon, sur la commande, « Renvoyer le mail ».</li>
-    <li><strong>Une pièce vendue apparaît encore en vente</strong> : page Stock, mets 0, Enregistrer.</li>
+    <li><strong>Une pièce vendue apparaît encore en vente</strong> : Pièces, mets le stock à 0, Enregistrer.</li>
     <li><strong>Un client dit qu'il ne peut pas payer</strong> : la pièce est peut-être réservée par quelqu'un d'autre pendant 30 minutes (anti double vente). Il peut réessayer plus tard.</li>
     <li><strong>J'ai fait une erreur sur le catalogue</strong> : GitHub garde toutes les versions. Dis-le à Claude (« annule le dernier changement du catalogue »).</li>
-    <li><strong>Sauvegardes</strong> : le stock et l'état des commandes sont sauvegardés chaque nuit (gardés 180 jours). Pages <strong>Stock</strong> et <strong>Commandes</strong> : « Télécharger la dernière » ou « Restaurer depuis un fichier ». Le catalogue est sauvegardé à chaque enregistrement (historique GitHub).</li>
+    <li><strong>Sauvegardes</strong> : le stock et l'état des commandes sont sauvegardés chaque nuit (gardés 180 jours). Un seul endroit : <strong>Réglages → Sauvegardes</strong> (stock et commandes) : « Sauvegarder maintenant », « Télécharger la dernière » ou « Restaurer depuis un fichier ». Le catalogue est sauvegardé à chaque enregistrement (historique GitHub).</li>
     <li><strong>Alerte par mail</strong> : si tu reçois « [vgthmind ALERTE] … » (Worker planté, paiement échoué, mail non parti), note le sujet et envoie-le à Claude.</li>
-    <li><strong>Codes promo</strong> : se créent dans Stripe (Catalogue de produits → Coupons → code promotionnel). Le champ apparaît tout seul au paiement.</li>
+    <li><strong>Codes promo</strong> : <strong>Réglages → Promos</strong>. Le champ apparaît tout seul au paiement.</li>
     <li>Si rien ne marche : écris-moi à Claude avec une capture d'écran.</li>
   </ul>
 </main>

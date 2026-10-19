@@ -42,13 +42,13 @@ test('nom anglais facultatif : filtre name_i18n (deux langues si différent, nom
   assert.equal(filters.name_i18n({ name: 'Pantalon rouge', name_en: 'Red <b>trousers' }), '<span data-l="fr">Pantalon rouge</span><span data-l="en">Red &lt;b&gt;trousers</span>');
 });
 
-test('nom anglais facultatif : admin (formulaire, Sveltia) et catalogue', () => {
+test('nom anglais facultatif : admin (formulaire, fiche) et catalogue', () => {
   const F = req('../admin/piece-form.js');
   const base = { name: 'Pantalon', price: 100, quantity: 1, categories: ['pants'], description_en: 'x', weight_g: 500, mode: 'colis' };
   assert.equal(F.buildPiece(Object.assign({}, base, { name_en: ' Trousers ' }), ['pants']).product.name_en, 'Trousers');
   assert.equal('name_en' in F.buildPiece(Object.assign({}, base, { name_en: '' }), ['pants']).product, false);
   assert.equal('name_en' in F.buildPiece(Object.assign({}, base, { name_en: 'Pantalon' }), ['pants']).product, false);
-  assert.ok(read('admin/config.yml').includes('name: "name_en"'));
+  assert.ok(read('admin/catalogue.html').includes('id="f-name-en"'));
   assert.ok(read('generator/build-catalog.js').includes('name_en'));
 });
 

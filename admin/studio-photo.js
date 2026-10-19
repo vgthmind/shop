@@ -547,6 +547,30 @@
     $('bPublish').disabled = !window.VGStudioPublish.connected();
   };
 
+  // « Enregistrer en brouillon » (à chaque étape) : crée la pièce MASQUÉE avec les photos validées et ce qui est déjà rempli (nom et prix obligatoires).
+  // C'est l'ancienne « pièce rapide » : elle se complète ensuite dans Pièces (fiche), puis se publie ou se programme.
+  $('bDraft').onclick = async function () {
+    var out = $('draftOut'), n = exportable().length;
+    function say(t) { out.textContent = t; }
+    if (!n) { say('Ajoute et valide au moins une photo (étapes 1 et 2) pour enregistrer un brouillon.'); return; }
+    var piece = window.VGWizard && window.VGWizard.collectDraft();
+    if (!piece || piece.error) { say(piece ? piece.error : 'Assistant indisponible.'); return; }
+    var pend = pendingCount();
+    if (!confirm('Enregistrer « ' + piece.product.name + ' » en brouillon (masquée, ' + n + ' photo(s))' + (pend ? ' ; ' + pend + ' photo(s) non validée(s) ne seront pas incluses' : '') + ' ?')) return;
+    $('bDraft').disabled = true;
+    try {
+      if (!window.VGStudioPublish.connected()) { say('Autorisation GitHub…'); await window.VGStudioPublish.login(); $('bPublish').disabled = false; $('bLogin').textContent = 'Connecté ✓'; }
+      if (await window.VGStudioPublish.exists(piece.product.slug)) throw new Error('Une pièce « ' + piece.product.slug + ' » existe déjà : change le nom (ou l\'adresse) puis réessaie.');
+      var r = await buildFiles();
+      var rv = reelFile ? { data: new Uint8Array(await reelFile.arrayBuffer()) } : null;
+      await window.VGStudioPublish.publish({ slug: piece.product.slug, piece: piece.product, isNew: true, files: r.files, reelVideo: rv, replace: false, onStatus: say });
+      draftOff = true; Draft.clear();
+      say('Brouillon enregistré : « ' + piece.product.name + ' » est masquée. Complète-la dans Pièces, puis publie-la ou programme-la.');
+      out.innerHTML = '<strong>Brouillon enregistré</strong> : « ' + piece.product.name.replace(/[<>&]/g, '') + ' » est masquée (rien n\'est visible sur le site). <a href="catalogue.html#/p/' + encodeURIComponent(piece.product.slug) + '">Ouvrir sa fiche pour la compléter</a>';
+    } catch (e) { say('Échec : ' + (e.message || e)); }
+    $('bDraft').disabled = false;
+  };
+
   // Échantillon de la photo principale (réduit à 64 px) pour proposer une couleur dans la fiche.
   function colorSample() {
     var l = exportable(); if (!l.length) return null;

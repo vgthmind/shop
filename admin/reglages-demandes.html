@@ -1,0 +1,232 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="robots" content="noindex, nofollow">
+  <title>Prix, délais et facturation — admin vgthmind</title>
+  <style>
+    :root { --bg: #f4f2ec; --ink: #171717; --muted: #6b6860; --line: rgba(0,0,0,.12); --card: rgba(255,255,255,.6); --ok: #2f7d4a; --warn: #8a5a00; --err: #a23b2a; }
+    * { box-sizing: border-box; }
+    [hidden] { display: none !important; }
+    body { margin: 0; background: var(--bg); color: var(--ink); font: 15px/1.45 system-ui, -apple-system, "Segoe UI", sans-serif; }
+    main { max-width: 900px; margin: 0 auto; padding: 24px 16px 64px; }
+    h1 { font-size: 22px; letter-spacing: .04em; text-transform: uppercase; margin: 0 0 4px; }
+    h3 { font-size: 13px; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); margin: 18px 0 8px; }
+    nav a { color: var(--muted); font-size: 13px; }
+    .bar { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin: 14px 0; }
+    input[type=text], input[type=number], input[type=email], select, textarea { padding: 9px 11px; border: 1px solid var(--line); border-radius: 10px; background: #fff; font: inherit; color: var(--ink); }
+    textarea { width: 100%; min-height: 90px; }
+    button, .btn { padding: 9px 14px; border-radius: 999px; border: 1px solid var(--line); background: #fff; color: var(--ink); font: inherit; cursor: pointer; text-decoration: none; display: inline-block; }
+    button:hover, .btn:hover { border-color: var(--ink); }
+    button.main { background: var(--ink); color: #fff; border-color: var(--ink); }
+    button[disabled] { opacity: .45; cursor: default; }
+    .chips button, .tabs button { font-family: var(--f-mono, ui-monospace, monospace); font-size: 12px; letter-spacing: .03em; min-height: 40px; }
+    .chips button[aria-pressed=true], .tabs button[aria-pressed=true] { background: var(--chrome, #e4e4e8); color: var(--ink); border-color: rgba(0,0,0,.28); box-shadow: 0 1px 0 #fff inset, 0 1px 3px rgba(0,0,0,.18); }
+    .req { border-radius: 18px; box-shadow: 0 1px 2px rgba(0,0,0,.04), 0 6px 18px rgba(0,0,0,.04); }
+    .req { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 12px 14px; margin: 10px 0; }
+    .req > header { display: flex; justify-content: space-between; gap: 8px; flex-wrap: wrap; align-items: baseline; cursor: pointer; }
+    .muted { color: var(--muted); font-size: 13px; }
+    .tag { font-size: 12px; padding: 2px 8px; border-radius: 999px; border: 1px solid var(--line); white-space: nowrap; }
+    .tag.ref { font-weight: 700; color: var(--ink); border-color: var(--ink); }
+    .tag.st { background: #fff; }
+    .tag.warn { color: var(--warn); border-color: var(--warn); }
+    .tag.err { color: var(--err); border-color: var(--err); }
+    .tag.ok { color: var(--ok); border-color: var(--ok); }
+    .branch { font-weight: 700; }
+    dl.ans { display: grid; grid-template-columns: minmax(130px, 30%) 1fr; gap: 4px 12px; margin: 8px 0; font-size: 14px; }
+    dl.ans dt { color: var(--muted); }
+    dl.ans dd { margin: 0; white-space: pre-wrap; overflow-wrap: anywhere; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: 8px; }
+    .thumb { position: relative; border: 1px solid var(--line); border-radius: 10px; overflow: hidden; background: #fff; font-size: 12px; }
+    .thumb img { display: block; width: 100%; aspect-ratio: 1; object-fit: cover; background: var(--bg); }
+    .thumb span { display: block; padding: 4px 6px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .thumb button { position: absolute; top: 4px; right: 4px; padding: 2px 8px; font-size: 12px; }
+    .form { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 10px; }
+    .form label, .lbl { display: flex; flex-direction: column; gap: 4px; font-size: 13px; color: var(--muted); }
+    .actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; align-items: center; }
+    .log { font-size: 13px; color: var(--muted); max-height: 220px; overflow: auto; border-top: 1px solid var(--line); margin-top: 8px; padding-top: 6px; white-space: pre-wrap; }
+    #msg { min-height: 1.4em; }
+    .cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; }
+    .cardset { border: 1px solid var(--line); border-radius: 12px; background: #fff; padding: 6px; font-size: 13px; }
+    .cardset img { width: 100%; aspect-ratio: 4/5; object-fit: cover; border-radius: 8px; background: var(--bg); display: block; }
+    .cardset .actions { margin-top: 6px; gap: 4px; }
+    .cardset button, .cardset label.btn { padding: 4px 9px; font-size: 12px; }
+    .picker { position: fixed; inset: 0; background: rgba(0,0,0,.45); display: flex; align-items: center; justify-content: center; padding: 16px; z-index: 10; }
+    .picker > div { background: var(--bg); border-radius: 14px; max-width: 760px; width: 100%; max-height: 85vh; overflow: auto; padding: 14px; }
+    .picker .grid img { cursor: pointer; aspect-ratio: 4/5; }
+    @media (max-width: 560px) { dl.ans { grid-template-columns: 1fr; } dl.ans dt { margin-top: 6px; } }
+    .ans .warn{display:inline-block;background:#fff3cd;color:#7a4b00;border-radius:4px;padding:1px 6px;margin:1px 0;font-weight:600}
+    .req { border-left: 5px solid var(--line); }
+    .req.todo { border-left-color: #c9741a; } .req.ok { border-left-color: var(--ok); } .req.err { border-left-color: var(--err); }
+    .tag.st.todo { color: #fff; background: #c9741a; border-color: #c9741a; } .tag.st.ok { color: #fff; background: var(--ok); border-color: var(--ok); } .tag.st.err { color: #fff; background: var(--err); border-color: var(--err); }
+    .req.open > header { padding-bottom: 8px; }
+    .req.open h3 { border-top: 1px solid var(--line); padding-top: 12px; }
+    .meas { background: #fff; border: 1px solid var(--line); border-radius: 14px; padding: 4px 14px 10px; margin: 8px 0; }
+    .meas h3 { border-top: 0 !important; padding-top: 0 !important; margin-top: 10px; }
+    .ml { padding: 5px 0; border-bottom: 1px dashed var(--line); font-size: 14px; overflow-wrap: anywhere; }
+    .ml:last-child { border-bottom: 0; }
+    .ml.warn { background: #fff3cd; color: #7a4b00; font-weight: 600; border-radius: 6px; padding: 5px 8px; margin: 2px 0; border-bottom: 0; }
+    @media (max-width: 560px) { .req > header > div:last-child { width: 100%; } .req .actions button, .req .actions .btn { min-height: 44px; } .form { grid-template-columns: 1fr; } }
+    .set { background: var(--card); border: 1px solid var(--line); border-radius: 18px; padding: 4px 18px 16px; margin: 12px 0; box-shadow: 0 1px 2px rgba(0,0,0,.04), 0 6px 18px rgba(0,0,0,.04); }
+    .set h3 { margin-top: 14px; }
+    .savebar { position: sticky; bottom: 12px; background: rgba(244,242,236,.94); border: 1px solid var(--line); border-radius: 999px; padding: 8px 12px; z-index: 5; }
+    @media (max-width: 759px) { .savebar { bottom: calc(var(--bar-h, 58px) + 14px + env(safe-area-inset-bottom, 0px)); } }
+</style>
+<link rel="icon" href="../assets/theme/admin/favicon.svg?v=3" type="image/svg+xml">
+<link rel="icon" href="../assets/theme/admin/favicon-32.png?v=3" type="image/png" sizes="32x32">
+<link rel="icon" href="../assets/theme/admin/favicon-16.png?v=3" type="image/png" sizes="16x16">
+<link rel="shortcut icon" href="../assets/theme/admin/favicon.ico?v=3">
+<link rel="apple-touch-icon" sizes="180x180" href="../assets/theme/admin/apple-touch-icon.png?v=3">
+</head>
+<body>
+<main class="vg-page">
+  <nav class="vg-back"><a href="reglages.html">← Réglages</a></nav>
+  <div class="vg-head"><div><h1>Prix, délais et facturation</h1><p class="vg-sub">Réglages des demandes sur mesure (page « Proposer un projet ») et de l'adresse imprimée sur les factures.</p></div></div>
+  <p id="msg" role="status" aria-live="polite"></p>
+
+  <section id="settings-view">
+    <div class="set" id="prix">
+    <h3>Prix « à partir de » (affichés sur la page)</h3>
+    <p class="muted">Jamais en dessous du prix boutique équivalent (la pièce la moins chère de la même famille, indiquée à côté) : l'enregistrement est refusé sinon.</p>
+    <div class="form" id="prices"></div>
+    </div>
+    <div class="set">
+    <h3>Acompte, relances, retouches</h3>
+    <div class="form">
+      <label>Acompte (% du prix total)<input type="number" id="s-depositPct" min="1" max="100"></label>
+      <label>Relance du client après (jours)<input type="number" id="s-remindDays" min="1"></label>
+      <label>Alerte pour moi après (jours)<input type="number" id="s-alertDays" min="1"></label>
+      <label>Acompte conservé après (jours, CGV)<input type="number" id="s-forfeitDays" min="1"></label>
+      <label>Retouches incluses après les photos<input type="number" id="s-retouchesIncluded" min="0" max="10"></label>
+    </div>
+    <p class="muted">Si tu changes « acompte conservé » ou « retouches incluses », mets aussi à jour les CGV.</p>
+    </div>
+    <div class="set" id="facturation">
+    <h3>Facturation</h3>
+    <div class="form">
+      <label style="grid-column:1/-1">Adresse (imprimée sur les factures et avoirs, nulle part ailleurs)<input type="text" id="s-sellerAddress" maxlength="200" autocomplete="off" placeholder="numéro, rue, code postal"></label>
+    </div>
+    <p class="muted">La facture affiche « vgthmind », cette adresse, Vitry-sur-Seine, le SIRET et contact@vgthmind.org. Jamais de nom ni de prénom. Reste vide tant que tu ne l'as pas remplie : remplis-la AVANT la première facture réelle. Elle est gardée dans les données du site, pas dans le code.</p>
+    </div>
+    <div class="set">
+    <h3>Délais affichés sur la page « Proposer un projet »</h3>
+    <p class="muted">En semaines. Le minimum est aussi la date la plus proche que le client peut choisir ; le maximum sert au délai indicatif affiché (identique au minimum = « 2 semaines »).</p>
+    <div class="form">
+      <label>Location · minimum<input type="number" id="s-lead-location-min" min="1" max="52"></label>
+      <label>Location · maximum<input type="number" id="s-lead-location-max" min="1" max="52"></label>
+      <label>Custom · minimum<input type="number" id="s-lead-custom-min" min="1" max="52"></label>
+      <label>Custom · maximum<input type="number" id="s-lead-custom-max" min="1" max="52"></label>
+      <label>Sur-mesure · minimum<input type="number" id="s-lead-surmesure-min" min="1" max="52"></label>
+      <label>Sur-mesure · maximum<input type="number" id="s-lead-surmesure-max" min="1" max="52"></label>
+    </div>
+    </div>
+    <div class="set">
+    <h3>Photos des cartes du parcours</h3>
+    <p class="muted">Chaque choix de la page « Proposer un projet » montre une photo. Change-la avec un fichier (JPEG / PNG / WebP, 3 Mo max, format portrait 4:5 conseillé) ou une photo de la boutique.</p>
+    <div class="cards" id="cards"></div>
+    </div>
+    <div class="actions savebar"><button type="button" class="main" id="save-settings">Enregistrer les réglages</button><span id="smsg" class="muted" role="status"></span></div>
+  </section>
+</main>
+<input type="file" id="card-input" accept="image/jpeg,image/png,image/webp" hidden>
+<script src="vg-admin-auth.js"></script>
+<script src="vg-admin-ui.js"></script>
+<script>
+(function () {
+  'use strict';
+  var $ = function (id) { return document.getElementById(id); };
+  var api = window.vgAdminApi, EP = window.VG_ENDPOINT, token = window.vgAdminToken;
+  var BASE = location.pathname.replace(/\/admin\/.*$/, ''); // « /shop » (vide le jour où le site passe à la racine)
+  var settings = null, floors = {}, uploads = true;
+  var PIECES = { custom: [['tshirt', 'T-shirt'], ['hoodie', 'Sweat / hoodie'], ['veste', 'Veste / jean / jogging'], ['autre', 'Autre pièce']], surmesure: [['short', 'Short'], ['pantalon', 'Pantalon'], ['haut', 'Haut'], ['veste', 'Veste']] };
+  var CARDS = [['piece', 'Une pièce pour moi'], ['production', 'Production visuelle'], ['collab', 'Collab'], ['custom', 'Custom'], ['surmesure', 'Sur-mesure'], ['know', 'Je sais ce que je veux'], ['guide', 'Guide-moi'], ['location', 'Location'], ['creation', 'Création pour le projet'],
+    ['custom.tshirt', 'Custom · T-shirt'], ['custom.hoodie', 'Custom · Sweat / hoodie'], ['custom.veste', 'Custom · Veste / jean / jogging'], ['custom.autre', 'Custom · Autre pièce'], ['surmesure.short', 'Sur-mesure · Short'], ['surmesure.pantalon', 'Sur-mesure · Pantalon'], ['surmesure.haut', 'Sur-mesure · Haut'], ['surmesure.veste', 'Sur-mesure · Veste']];
+  var NO_DEFAULT = {};
+  function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+
+  // --- Réglages ------------------------------------------------------------------------------
+  var cards = {};
+  function loadSettings() {
+    $('smsg').textContent = 'Chargement…';
+    api('/admin/requests/settings').then(function (d) {
+      settings = d.settings; floors = d.floors || {}; cards = Object.assign({}, settings.cards || {});
+      var h = '';
+      ['custom', 'surmesure'].forEach(function (t) {
+        PIECES[t].forEach(function (p) {
+          var fl = floors[t + '.' + p[0]];
+          h += '<label>' + (t === 'custom' ? 'Custom' : 'Sur-mesure') + ' · ' + esc(p[1]) + ' (€)<input type="number" step="1" data-price="' + t + '.' + p[0] + '" value="' + settings.prices[t][p[0]] + '"><small>' + (fl ? 'boutique : dès ' + fl.price + ' € (' + esc(fl.name) + ')' : 'pas d’équivalent en boutique') + '</small></label>';
+        });
+      });
+      h += '<label>Peinture en plus (sur-mesure, €)<input type="number" step="1" data-price="paintFrom" value="' + settings.prices.paintFrom + '"><small>« à partir de », prix final dans le devis</small></label>';
+      $('prices').innerHTML = h;
+      ['depositPct', 'remindDays', 'alertDays', 'forfeitDays', 'retouchesIncluded'].forEach(function (k) { $('s-' + k).value = settings[k]; });
+      $('s-sellerAddress').value = settings.sellerAddress || '';
+      ['location', 'custom', 'surmesure'].forEach(function (t) { var l = (settings.leadWeeks || {})[t] || { min: 2, max: 2 }; $('s-lead-' + t + '-min').value = l.min; $('s-lead-' + t + '-max').value = l.max; });
+      drawCards(); $('smsg').textContent = '';
+    }).catch(function (e) { $('smsg').textContent = 'Erreur : ' + e.message; });
+  }
+  function cardSrc(k) {
+    var v = cards[k];
+    if (v && v.indexOf('card:') === 0) return EP + '/requests/card?f=' + encodeURIComponent(v.slice(5));
+    if (v && v.charAt(0) === '/') return BASE + v;
+    if (v) return v;
+    return NO_DEFAULT[k] ? '' : '../assets/demande/' + k.replace('.', '-') + '-400.webp';
+  }
+  function drawCards() {
+    $('cards').innerHTML = CARDS.map(function (c) {
+      var src = cardSrc(c[0]);
+      return '<div class="cardset">' + (src ? '<img src="' + esc(src) + '" alt="">' : '<div style="aspect-ratio:4/5;display:flex;align-items:center;justify-content:center;background:var(--bg);border-radius:8px" class="muted">texte seul</div>')
+        + '<b>' + esc(c[1]) + '</b>' + (cards[c[0]] ? ' <span class="tag warn">modifiée</span>' : '')
+        + '<div class="actions"><button type="button" data-cfile="' + c[0] + '" ' + (uploads ? '' : 'disabled title="R2 pas encore activé"') + '>Fichier…</button><button type="button" data-cshop="' + c[0] + '">Boutique…</button>' + (cards[c[0]] ? '<button type="button" data-creset="' + c[0] + '">Origine</button>' : '') + '</div></div>';
+    }).join('');
+  }
+  $('cards').addEventListener('click', function (e) {
+    var t = e.target.closest('button'); if (!t) return;
+    if (t.hasAttribute('data-cfile')) { $('card-input').setAttribute('data-c', t.getAttribute('data-cfile')); $('card-input').click(); }
+    if (t.hasAttribute('data-creset')) { delete cards[t.getAttribute('data-creset')]; drawCards(); $('smsg').textContent = 'Pense à enregistrer.'; }
+    if (t.hasAttribute('data-cshop')) pickShop(t.getAttribute('data-cshop'));
+  });
+  $('card-input').addEventListener('change', function () {
+    var c = this.getAttribute('data-c'), f = this.files && this.files[0]; this.value = '';
+    if (!f) return;
+    $('smsg').textContent = 'Envoi de la photo…';
+    fetch(EP + '/admin/requests/card?c=' + encodeURIComponent(c), { method: 'PUT', headers: { Authorization: 'Bearer ' + token(), 'Content-Type': f.type }, body: f })
+      .then(function (r) { return r.json().then(function (d) { if (!r.ok) throw new Error(d.error || r.status); cards[c] = d.value; drawCards(); $('smsg').textContent = 'Photo envoyée : clique « Enregistrer les réglages ».'; }); })
+      .catch(function (e) { $('smsg').textContent = 'Erreur : ' + e.message; });
+  });
+  function pickShop(c) {
+    fetch('../products.json').then(function (r) { return r.json(); }).then(function (ps) {
+      var imgs = [];
+      ps.forEach(function (p) { (p.images || []).slice(0, 3).forEach(function (im) { if (im.url) imgs.push([im.url, p.name]); }); });
+      var box = document.createElement('div'); box.className = 'picker';
+      box.innerHTML = '<div><div class="actions" style="justify-content:space-between;margin:0 0 10px"><b>Choisir une photo de la boutique</b><button type="button" data-close>Fermer</button></div><div class="grid">'
+        + imgs.map(function (x) { return '<div class="thumb"><img src="' + esc(x[0]) + '" data-pick="' + esc(x[0]) + '" alt="" loading="lazy"><span>' + esc(x[1]) + '</span></div>'; }).join('') + '</div></div>';
+      box.addEventListener('click', function (e) {
+        var p = e.target.getAttribute('data-pick');
+        if (p) { cards[c] = p.indexOf(BASE + '/') === 0 ? p.slice(BASE.length) : p; drawCards(); $('smsg').textContent = 'Pense à enregistrer.'; }
+        if (p || e.target.hasAttribute('data-close') || e.target === box) box.remove();
+      });
+      document.body.appendChild(box);
+    });
+  }
+  $('save-settings').addEventListener('click', function () {
+    var s = JSON.parse(JSON.stringify(settings));
+    document.querySelectorAll('[data-price]').forEach(function (i) { var k = i.getAttribute('data-price'); if (k === 'paintFrom') s.prices.paintFrom = Number(i.value); else { var p = k.split('.'); s.prices[p[0]][p[1]] = Number(i.value); } });
+    ['depositPct', 'remindDays', 'alertDays', 'forfeitDays', 'retouchesIncluded'].forEach(function (k) { s[k] = Number($('s-' + k).value); });
+    s.leadWeeks = {}; ['location', 'custom', 'surmesure'].forEach(function (t) { s.leadWeeks[t] = { min: Number($('s-lead-' + t + '-min').value), max: Number($('s-lead-' + t + '-max').value) }; });
+    s.cards = cards;
+    s.sellerAddress = $('s-sellerAddress').value;
+    $('smsg').textContent = 'Enregistrement…';
+    api('/admin/requests/settings', { method: 'POST', body: JSON.stringify({ settings: s }) }).then(function (d) { settings = d.settings; $('smsg').textContent = 'Réglages enregistrés (la page publique se met à jour en 1 minute environ).'; })
+      .catch(function (e) { $('smsg').textContent = 'Refusé : ' + e.message; });
+  });
+
+  api('/admin/requests').then(function (d) { uploads = d.uploads; loadSettings(); }).catch(function (e) { $('smsg').textContent = 'Erreur : ' + e.message; });
+  // Ancre (#prix, #facturation) : la page est longue, on arrive directement sur la bonne section.
+  window.addEventListener('load', function () { var t = location.hash && document.querySelector(location.hash); if (t) setTimeout(function () { t.scrollIntoView(); }, 400); });
+})();
+</script>
+<script src="vg-admin-cursor.js"></script>
+</body>
+</html>
