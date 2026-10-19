@@ -458,7 +458,7 @@
         if (!(x.s === 200 && x.j.ok)) throw new Error(L('Could not send. Please email contact@vgthmind.org.', 'La demande n’a pas pu partir. Écris à contact@vgthmind.org.'));
         return uploads(x.j);
       })
-      .catch(function (e) { sending = false; if (btn) btn.disabled = false; if (err) err.textContent = e.message; });
+      .catch(function (e) { sending = false; if (btn) btn.disabled = false; if (err) err.textContent = e && e.message === 'turnstile' ? L('The anti-bot check could not load (ad blocker?). Reload the page or email contact@vgthmind.org.', 'La vérification anti-robot n’a pas pu se charger (bloqueur de pub ?). Recharge la page ou écris à contact@vgthmind.org.') : e.message; });
   }
   function uploads(res) {
     var total = files.reduce(function (a, f) { return a + f.size; }, 0), doneBytes = 0, failed = [];
