@@ -12,6 +12,7 @@
 //                  commandes RÉELLES (livemode = true), sauvegardes du stock (backup:*), sessions admin, compte Stripe lui-même.
 // Les données de Stripe en mode test (commandes, codes promo, clients) se suppriment dans Stripe : Mode test > Développeurs > « Supprimer toutes les données de test ».
 import { execFileSync } from 'node:child_process';
+import readline from 'node:readline';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
@@ -81,14 +82,27 @@ async function main() {
   const useKv = args.includes('--kv');
   const avant = (args.find((a) => a.startsWith('--avant=')) || '').slice(8);
   const cutoff = parisMidnight(avant);
-  const token = process.env.VG_ADMIN_TOKEN || '';
-  if (!cutoff) { console.error('Il manque --avant=AAAA-MM-JJ (le jour des derniers essais ; tout ce qui est plus ancien est du test).'); process.exit(2); }
-  if (!token) { console.error('Il manque la variable VG_ADMIN_TOKEN (voir l\'en-tête du fichier).'); process.exit(2); }
+  if (!cutoff) {
+    const demain = new Date(Date.now() + 86400000).toISOString().slice(0, 10);
+    console.error('Il manque la date limite. Écris par exemple :\n  node outils/menage-donnees-test.mjs --avant=' + demain + ' --kv\n--avant = le lendemain du jour de ton dernier essai : tout ce qui a été créé AVANT ce jour est du test et pourra être supprimé ; ce qui arrive après n\'est jamais touché.');
+    process.exit(2);
+  }
+  let token = process.env.VG_ADMIN_TOKEN || '';
+  if (!token && process.stdin.isTTY) {
+    // Pas de variable : on la demande ici (elle s'affiche à l'écran pendant que tu la colles : ferme la fenêtre PowerShell ensuite).
+    const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
+    token = (await new Promise((r) => rl.question('Colle ici la session admin (Chrome, admin ouvert et connecté, F12, onglet Console : copy(localStorage[\'vg-admin-session\'])), puis Entrée : ', r))).trim();
+    rl.close();
+  }
+  if (!token) { console.error('Il manque la session admin (variable VG_ADMIN_TOKEN, voir l\'en-tête du fichier).'); process.exit(2); }
   console.log(apply ? '=== SUPPRESSION RÉELLE ===' : '=== APERÇU : rien n\'est supprimé (ajoute --apply pour supprimer) ===');
   console.log('Test = créé avant le ' + avant + ' à minuit (Paris).\n');
 
   const data = {};
-  data.orders = (await api(token, '/orders')).orders || [];
+  try { data.orders = (await api(token, '/orders')).orders || []; } catch (e) {
+    console.error(/401/.test(e.message) ? 'La session admin est refusée ou expirée : reconnecte-toi dans l\'admin, recopie-la, et recommence. Rien n\'a été supprimé.' : 'Impossible de lire les commandes (' + e.message + '). Rien n\'a été supprimé.');
+    process.exit(1);
+  }
   data.requests = (await api(token, '/admin/requests')).requests || [];
   const st = await api(token, '/admin/stock');
   data.stock = st.stock || {};
@@ -99,6 +113,7 @@ async function main() {
     data.trafficDays = [...set];
   } catch (e) { data.trafficDays = []; console.log('(Visites : lecture impossible, ' + e.message + ')'); }
   if (useKv) {
+    try { wrangler(['--version']); } catch (e) { console.error('--kv demande wrangler (installé avec npx) et une connexion Cloudflare : dans le dossier checkout-worker, lance une fois « npx wrangler@4 login », puis recommence. Rien n\'a été supprimé.'); process.exit(1); }
     const keys = []; let cursor = '';
     for (let i = 0; i < 50; i++) {
       const out = JSON.parse(wrangler(['kv', 'key', 'list', '--binding', 'HOLDS', '--remote'].concat(cursor ? ['--cursor', cursor] : [])));
