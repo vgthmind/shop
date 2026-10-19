@@ -19,5 +19,6 @@
   "quantity": 1,
   "mode": "colis",
   "alone": false,
-  "publish_at": "2026-10-24T16:00:00.000Z"
+  "publish_at": "2026-10-24T16:00:00.000Z",
+  "archived": true
 }
