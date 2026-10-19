@@ -124,3 +124,10 @@ test('assistant : le détourage ne se lance jamais tout seul ; choix par photo (
   for (const id of ['bCutAll', 'bKeepAll']) assert.ok(h.includes('id="' + id + '"'), id);
   assert.ok(js.includes("Revenir à l'original") && js.includes('Garder telle quelle') && js.includes('✂ Détourer'));
 });
+
+test('assistant : plus d\'alerte « Quitter sans enregistrer ? » une fois le brouillon ou la publication enregistré', () => {
+  const js = read('studio-photo.js');
+  assert.ok(js.includes('photos.length && !savedOnline'));
+  assert.equal((js.match(/savedOnline = true/g) || []).length, 2, 'brouillon ET publication');
+  assert.ok(/async function addFiles[\s\S]{0,60}savedOnline = false/.test(js));
+});
