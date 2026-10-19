@@ -66,13 +66,14 @@ export interface Settings {
   retouchesIncluded: number;
   leadWeeks: Record<LeadKey, { min: number; max: number }>; // délai indicatif (min à max semaines) ; min = date la plus proche acceptée
   cards: Record<string, string>; // photo de chaque carte du parcours ('' = photo livrée avec le site)
+  sellerAddress: string; // adresse de l'émetteur, imprimée seulement sur les factures et avoirs ; saisie dans Réglages, gardée ici (jamais dans le dépôt), vide par défaut
 }
 // Cartes avec photo du parcours (page « Sur demande »). Photo changeable dans l'admin (Réglages).
 export const CARD_KEYS = ['piece', 'production', 'collab', 'custom', 'surmesure', 'know', 'guide', 'location', 'creation',
   'custom.tshirt', 'custom.hoodie', 'custom.veste', 'custom.autre', 'surmesure.short', 'surmesure.pantalon', 'surmesure.haut', 'surmesure.veste'];
 export const DEFAULT_SETTINGS: Settings = {
   prices: { custom: { tshirt: 75, hoodie: 140, veste: 160, autre: 75 }, surmesure: { short: 150, pantalon: 220, haut: 200, veste: 320 }, paintFrom: 10 },
-  depositPct: 30, remindDays: 7, alertDays: 14, forfeitDays: 30, retouchesIncluded: 1, cards: {},
+  depositPct: 30, remindDays: 7, alertDays: 14, forfeitDays: 30, retouchesIncluded: 1, cards: {}, sellerAddress: '',
   leadWeeks: { location: { min: 2, max: 2 }, custom: { min: 2, max: 3 }, surmesure: { min: 3, max: 4 } },
 };
 
@@ -282,6 +283,9 @@ export function checkSettings(s: any, floors: Record<string, { price: number; na
     if (u.length > 500 || !/^(https:\/\/[^\s"'<>]+|\/[^\s"'<>]*|card:[a-z.]+:[a-f0-9]{8,32})$/i.test(u)) errors.push(`Photo de la carte ${k} : adresse invalide`);
     else out.cards[k] = u;
   }
+  const addr = String(s?.sellerAddress ?? '').replace(/\s+/g, ' ').trim();
+  if (addr.length > 200 || /[<>]/.test(addr)) errors.push('Adresse : 200 caractères au plus, sans < ni >');
+  else out.sellerAddress = addr;
   if (!errors.length && out.alertDays <= out.remindDays) errors.push('Alerte : doit venir après la relance');
   if (!errors.length && out.forfeitDays <= out.alertDays) errors.push('Acompte conservé : doit venir après l’alerte');
   return errors.length ? { ok: false, errors } : { ok: true, value: out };
@@ -296,6 +300,7 @@ export function mergeSettings(saved: any): Settings {
   for (const k of ['depositPct', 'remindDays', 'alertDays', 'forfeitDays', 'retouchesIncluded']) if (saved[k] != null) s[k] = saved[k];
   for (const k of LEAD_KEYS) { const l = saved.leadWeeks?.[k]; if (l && l.min >= 1 && l.max >= l.min) s.leadWeeks[k] = { min: l.min, max: l.max }; }
   if (saved.cards && typeof saved.cards === 'object') s.cards = { ...saved.cards };
+  if (typeof saved.sellerAddress === 'string') s.sellerAddress = saved.sellerAddress;
   return s;
 }
 

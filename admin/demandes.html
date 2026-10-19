@@ -118,6 +118,13 @@
     <p class="muted">Si tu changes « acompte conservé » ou « retouches incluses », mets aussi à jour les CGV.</p>
     </div>
     <div class="set">
+    <h3>Facturation</h3>
+    <div class="form">
+      <label style="grid-column:1/-1">Adresse (imprimée sur les factures et avoirs, nulle part ailleurs)<input type="text" id="s-sellerAddress" maxlength="200" autocomplete="off" placeholder="numéro, rue, code postal"></label>
+    </div>
+    <p class="muted">La facture affiche « vgthmind », cette adresse, Vitry-sur-Seine, le SIRET et contact@vgthmind.org. Jamais de nom ni de prénom. Reste vide tant que tu ne l'as pas remplie : remplis-la AVANT la première facture réelle. Elle est gardée dans les données du site, pas dans le code.</p>
+    </div>
+    <div class="set">
     <h3>Délais affichés sur la page « Proposer un projet »</h3>
     <p class="muted">En semaines. Le minimum est aussi la date la plus proche que le client peut choisir ; le maximum sert au délai indicatif affiché (identique au minimum = « 2 semaines »).</p>
     <div class="form">
@@ -329,6 +336,7 @@
       h += '<label>Peinture en plus (sur-mesure, €)<input type="number" step="1" data-price="paintFrom" value="' + settings.prices.paintFrom + '"><small>« à partir de », prix final dans le devis</small></label>';
       $('prices').innerHTML = h;
       ['depositPct', 'remindDays', 'alertDays', 'forfeitDays', 'retouchesIncluded'].forEach(function (k) { $('s-' + k).value = settings[k]; });
+      $('s-sellerAddress').value = settings.sellerAddress || '';
       ['location', 'custom', 'surmesure'].forEach(function (t) { var l = (settings.leadWeeks || {})[t] || { min: 2, max: 2 }; $('s-lead-' + t + '-min').value = l.min; $('s-lead-' + t + '-max').value = l.max; });
       drawCards(); $('smsg').textContent = '';
     }).catch(function (e) { $('smsg').textContent = 'Erreur : ' + e.message; });
@@ -383,6 +391,7 @@
     ['depositPct', 'remindDays', 'alertDays', 'forfeitDays', 'retouchesIncluded'].forEach(function (k) { s[k] = Number($('s-' + k).value); });
     s.leadWeeks = {}; ['location', 'custom', 'surmesure'].forEach(function (t) { s.leadWeeks[t] = { min: Number($('s-lead-' + t + '-min').value), max: Number($('s-lead-' + t + '-max').value) }; });
     s.cards = cards;
+    s.sellerAddress = $('s-sellerAddress').value;
     $('smsg').textContent = 'Enregistrement…';
     api('/admin/requests/settings', { method: 'POST', body: JSON.stringify({ settings: s }) }).then(function (d) { settings = d.settings; $('smsg').textContent = 'Réglages enregistrés (la page publique se met à jour en 1 minute environ).'; })
       .catch(function (e) { $('smsg').textContent = 'Refusé : ' + e.message; });

@@ -17,7 +17,7 @@ Autres documents : `AVANT-APRES.md` (tableau de relecture), `mails-confirmation.
 4. Copier dans `theme/pages/`, puis `node generator/build.js` avant de commiter (règle de CLAUDE.md).
 
 ## Informations à fournir
-- **Identité** : nom et prénom d'état civil (comme à l'INSEE) — éditeur, directeur de publication, vendeur, responsable de traitement.
+- **Identité** : décision du 2026-10-19 : le site et les documents n'affichent que « vgthmind », Vitry-sur-Seine, le SIRET et contact@vgthmind.org (jamais de nom ni de prénom). La mention « entrepreneur individuel » / « EI » et le nom sur les factures sont à valider avec le juriste.
 - **Adresse** de domiciliation / d'activité (et **adresse de retour** des colis, si différente) ; **téléphone**.
 - **Immatriculation** : numéro RM + département, ou « non applicable » (à confirmer avec la CCI/CMA).
 - **Médiateur** : nom, adresse postale, site web, email/formulaire.
