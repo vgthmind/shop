@@ -99,22 +99,23 @@ export const EMAIL_RE = /^[^\s@<>"]+@[^\s@<>"]+\.[^\s@<>"]{2,}$/;
 
 // --- Mesures (même liste que assets/vg-mesures.js) : clé -> [FR, EN, type]
 export const MEASURE_DEFS: Record<string, [string, string, 'cm' | 'txt']> = {
-  height: ['Taille', 'Height', 'cm'], usual: ['Taille portée d’habitude', 'Size usually worn', 'txt'],
-  chest: ['Tour de poitrine', 'Chest', 'cm'], waist: ['Tour de ceinture', 'Waist', 'cm'], hips: ['Tour de bassin', 'Hips', 'cm'], arm: ['Longueur de bras', 'Arm length', 'cm'],
+  height: ['Hauteur', 'Height', 'cm'], usual: ['Taille habituelle', 'Usual size', 'txt'],
+  chest: ['Tour de poitrine', 'Chest', 'cm'], waist: ['Tour de taille', 'Waist', 'cm'], hips: ['Tour de bassin', 'Hips', 'cm'], arm: ['Longueur de bras', 'Arm length', 'cm'],
   shoulders: ['Carrure dos', 'Back width', 'cm'], shl: ['Longueur d’épaule', 'Shoulder length', 'cm'], back: ['Longueur taille dos', 'Back waist length', 'cm'], wrist: ['Tour de poignet', 'Wrist', 'cm'],
-  inseam: ['Longueur d’entrejambe', 'Inside leg', 'cm'], floor: ['Hauteur taille à terre', 'Waist to floor', 'cm'], rise: ['Hauteur de montant', 'Crotch depth', 'cm'], thigh: ['Tour de cuisse', 'Thigh', 'cm'],
-  calf: ['Tour de mollet', 'Calf', 'cm'], knee: ['Hauteur taille au genou', 'Waist to knee', 'cm'], hem: ['Largeur du bas souhaitée', 'Leg opening (wanted)', 'cm'],
+  inseam: ['Longueur d’entrejambe', 'Inside leg', 'cm'], floor: ['Longueur taille–sol', 'Waist to floor', 'cm'], rise: ['Hauteur de montant', 'Crotch depth', 'cm'], thigh: ['Tour de cuisse', 'Thigh', 'cm'],
+  calf: ['Tour de mollet', 'Calf', 'cm'], knee: ['Longueur taille–genou', 'Waist to knee', 'cm'], hem: ['Largeur du bas souhaitée', 'Leg opening (wanted)', 'cm'],
   head: ['Tour de tête', 'Head', 'cm'], neck: ['Tour d’encolure', 'Neck', 'cm'], hh: ['Hauteur de tête', 'Head height', 'cm'], nh: ['Hauteur souhaitée', 'Wanted height', 'cm'],
-  aw: ['Largeur', 'Width', 'cm'], ah: ['Hauteur', 'Height', 'cm'],
+  aw: ['Largeur souhaitée', 'Wanted width', 'cm'], ah: ['Hauteur souhaitée', 'Wanted height', 'cm'],
+  len: ['Longueur souhaitée', 'Wanted length', 'cm'], armc: ['Tour de bras', 'Upper arm', 'cm'],
 };
 // ess = essentielles (obligatoires en sur-mesure, ou « je ne sais pas ») ; opt = « si tu peux » (toujours facultatives).
 export const MEASURE_CATS: Record<string, { fr: string; en: string; ess: string[]; opt: string[] }> = {
-  haut: { fr: 'Hoodie / veste / haut', en: 'Hoodie / jacket / top', ess: ['chest', 'waist', 'hips', 'arm'], opt: ['shoulders', 'shl', 'back', 'wrist'] },
-  bas: { fr: 'Pantalon / short', en: 'Trousers / shorts', ess: ['waist', 'hips', 'inseam', 'floor'], opt: ['rise', 'thigh', 'calf', 'knee', 'hem'] },
+  haut: { fr: 'Hoodie / veste / haut', en: 'Hoodie / jacket / top', ess: ['chest', 'waist', 'hips', 'arm', 'len'], opt: ['shoulders', 'shl', 'back', 'wrist', 'armc'] },
+  bas: { fr: 'Pantalon / short', en: 'Trousers / shorts', ess: ['waist', 'hips', 'inseam', 'floor'], opt: ['height', 'rise', 'thigh', 'calf', 'knee', 'hem'] },
   cou: { fr: 'Cache-cou', en: 'Neck gaiter', ess: ['head', 'neck'], opt: ['hh', 'nh'] },
   acc: { fr: 'Accessoire', en: 'Accessory', ess: ['aw', 'ah'], opt: [] },
 };
-const MEASURE_UNIVERSAL = ['height', 'usual']; // haut et bas seulement
+const MEASURE_UNIVERSAL: Record<string, string[]> = { haut: ['height', 'usual'], bas: ['usual'] }; // en tête des essentielles ; « Hauteur » facultative pour le bas
 // Texte des mesures pour l'admin et les mails. « ⚠ » en début de ligne = à redemander (approximatif, « je ne sais pas », à discuter).
 // Sur-mesure : les essentielles sont obligatoires, sauf celles marquées « je ne sais pas » ; « à discuter directement » laisse tout passer.
 export function parseMeasures(body: any, lang: string, strict: boolean): { used: boolean; ok: boolean; text: string } {
@@ -127,7 +128,7 @@ export function parseMeasures(body: any, lang: string, strict: boolean): { used:
   const vals = body?.mv && typeof body.mv === 'object' ? body.mv : {}, unk = body?.mu && typeof body.mu === 'object' ? body.mu : {};
   const lines: string[] = [(fr ? 'Catégorie : ' : 'Category: ') + MEASURE_CATS[cat][fr ? 'fr' : 'en']];
   if (body?.mapprox) lines.push(fr ? '⚠ Mesures approximatives' : '⚠ Approximate measurements');
-  const ess = (cat === 'haut' || cat === 'bas' ? MEASURE_UNIVERSAL : []).concat(MEASURE_CATS[cat].ess);
+  const ess = (MEASURE_UNIVERSAL[cat] || []).concat(MEASURE_CATS[cat].ess);
   let ok = true;
   for (const k of ess.concat(MEASURE_CATS[cat].opt)) {
     const d = MEASURE_DEFS[k], v = clean(vals[k], 30).replace(',', '.'), essential = ess.includes(k), isUnk = strict && essential && !!unk[k];

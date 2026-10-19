@@ -38,3 +38,26 @@ test('écran d\'entrée : clips couture et peinture présents, aucun extrait de 
   assert.ok(files.filter((f) => !/couture/i.test(f)).length >= 2, 'au moins 2 clips peinture');
   for (const retire of ['reel-custom-tee-shirt-col-en-v.mp4', 'clip_1.mp4', 'reel-cd-vgtape.mp4', 'reel-ch_0004.mp4', 'reel-sma_0001.mp4', 'reel-sma_0003.mp4']) assert.ok(!files.includes(retire), retire + ' doit rester retiré');
 });
+
+test('mesures : listes validées (haut, bas) et noms clairs', () => {
+  assert.deepEqual([...M.ess('haut')], ['height', 'usual', 'chest', 'waist', 'hips', 'arm', 'len']);
+  assert.deepEqual([...M.opt('haut')], ['shoulders', 'shl', 'back', 'wrist', 'armc']);
+  assert.deepEqual([...M.ess('bas')], ['usual', 'waist', 'hips', 'inseam', 'floor']);
+  assert.ok(M.opt('bas').includes('height') && !M.ess('bas').includes('height'));
+  assert.equal(M.def('height', 'haut')[1], 'Hauteur (cm)');
+  assert.equal(M.def('usual', 'haut')[1], 'Taille habituelle (S, M, L…)');
+  assert.equal(M.def('waist', 'bas')[1], 'Tour de taille');
+  assert.equal(M.def('waist', 'haut')[1], 'Tour de taille');
+  const all = JSON.stringify(M.DEFS);
+  assert.ok(!/ceinture/i.test(all), 'plus de « ceinture »');
+  const txt = M.compile({ mcat: 'haut', mv: { height: '178', usual: 'M' }, mu: {} }, true);
+  assert.match(txt, /^Hauteur : 178 cm$/m);
+  assert.match(txt, /^Taille habituelle : M$/m);
+});
+
+test('mesures : le schéma ne montre que les mesures de la catégorie (haut : longueur souhaitée et tour de bras avec leurs numéros)', () => {
+  const svg = M.svg('haut', true);
+  for (const k of ['len', 'armc', 'chest']) assert.ok(svg.includes('data-m="' + k + '"'), k);
+  assert.ok(!svg.includes('data-m="thigh"'));
+  assert.ok(!M.svg('bas', true).includes('data-m="len"'));
+});
