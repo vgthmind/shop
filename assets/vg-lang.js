@@ -218,7 +218,10 @@
   }
 
   function init() { addButton(); apply(); }
-  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init); else init();
+  // Le script est en fin de <body> : la page est déjà analysée. On traduit tout de suite (sinon le texte anglais d'origine
+  // reste ~50 ms visible entre deux pages, le temps d'attendre DOMContentLoaded), puis on repasse à DOMContentLoaded (apply est répétable).
+  if (document.body) init();
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
   // Contenus ajoutés après coup (Sold out, panier...).
   var t = null;
   new MutationObserver(function () { clearTimeout(t); t = setTimeout(function () { translateUi(); tagDescription(); translateAttrs(); translatePrices(); }, 120); })
