@@ -17,5 +17,6 @@
   "stripe_payment_link": "",
   "quantity": 1,
   "mode": "colis",
-  "alone": false
+  "alone": false,
+  "archived": true
 }
