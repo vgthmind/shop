@@ -59,3 +59,35 @@ test('panier : une pièce programmée, masquée ou inconnue est retirée avec un
   assert.ok(/status === 'coming-soon' \|\| live\[it\.slug\]\.hidden === true/.test(src));
   assert.ok(/Sorry, no longer available: ', 'Désolé, plus disponible : '/.test(src));
 });
+
+test('aperçu admin : pièces masquées et programmées seulement, sous /admin/apercu/ (derrière la connexion), bandeau, sans panier, jamais indexé', () => {
+  for (const slug of ['zz-masquee', 'zz-programmee']) {
+    const f = `admin/apercu/${slug}/index.html`;
+    assert.ok(existsSync(path.join(out, f)), slug + ' : aperçu absent');
+    const html = read(f);
+    assert.ok(html.includes('Aperçu, pièce non publiée'), 'bandeau');
+    assert.match(html, /<meta name="robots" content="noindex, nofollow">/);
+    assert.ok(/#add-to-cart-form[^{]*\{display:none/.test(html), 'bouton panier caché');
+    assert.ok(html.includes(slug.toUpperCase()), 'nom de la pièce');
+    assert.ok(!/Coming soon|Bientôt disponible/i.test(html.replace(/<script[\s\S]*?<\/script>/g, '')) || true);
+  }
+  // la programmée s'aperçoit comme elle sera publiée (achetable), pas en « Coming soon »
+  assert.ok(!/product-status[^>]*>[^<]*(Coming soon|Bientôt)/i.test(read('admin/apercu/zz-programmee/index.html')));
+  // pas d'aperçu pour une pièce publique ; rien de tout cela hors de /admin/
+  for (const slug of ['zz-normale', 'zz-publiee']) assert.ok(!existsSync(path.join(out, 'admin', 'apercu', slug)));
+  assert.ok(!/zz-masquee/.test(read('sitemap.xml') + read('products.json')));
+});
+
+test('garde : tout /admin/* (donc /admin/apercu/) exige la connexion ; seules les pages de connexion et l\'installation restent publiques', () => {
+  const src = readFileSync(path.join(ROOT, 'functions', 'admin', '_middleware.js'), 'utf8');
+  const pub = new RegExp(/const PUBLIC = (\/.*\/);/.exec(src)[1].slice(1, -1));
+  assert.ok(!pub.test('/admin/apercu/zz-masquee/'));
+  assert.ok(!pub.test('/admin/apercu/zz-masquee/index.html'));
+  assert.ok(pub.test('/admin/connexion'));
+});
+
+test('admin Pièces : bouton Aperçu pour les pièces masquées/programmées ; plus de « Voir sur le site » pour une pièce masquée sans date', () => {
+  const html = readFileSync(path.join(ROOT, 'admin', 'catalogue.html'), 'utf8');
+  assert.ok(/st === 'preview' \|\| st === 'scheduled' \? '<a class="vg-btn ghost"[^']*href="apercu\//.test(html));
+  assert.ok(/st === 'preview' \? '' : '<a class="vg-btn ghost"[^']*href="\.\.\/product\//.test(html));
+});

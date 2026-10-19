@@ -139,6 +139,7 @@ function buildProduct(admin, imageMap) {
     categories,
     ...(isHidden ? { hidden: true } : {}),
     ...(scheduled ? { scheduled: true } : {}),
+    ...(isHidden && admin.coming_soon === true ? { coming_soon_flag: true } : {}), // aperçu admin : la pièce se publiera « bientôt disponible »
     option_groups: [],
     // ships_intl:false = France only (no "everywhere else" line, as on
     // BigCartel for SC_0008/SC_0009): the cart and the checkout Worker

@@ -224,7 +224,7 @@
           ? (st === 'archived' ? '' : '<div class="reorder"><button type="button" class="mini" data-act="up" aria-label="Avancer ' + nm + '">◀</button><button type="button" class="mini" data-act="down" aria-label="Reculer ' + nm + '">▶</button></div>')
           : '<div class="row"><span class="step"><button type="button" data-act="minus" aria-label="Stock moins un">−</button><output>' + s + '</output><button type="button" data-act="plus" aria-label="Stock plus un">+</button></span><button type="button" class="mini" data-act="menu" aria-label="Actions pour ' + nm + '" aria-expanded="' + (openCard === p.slug) + '">⋯</button></div>'
             + '<div class="acts">'
-            + (isNew ? '' : '<button type="button" class="vg-btn ghost" data-act="edit">Ouvrir la fiche</button><a class="vg-btn ghost" target="_blank" rel="noopener" href="../product/' + encodeURIComponent(p.slug) + '">Voir sur le site ↗</a>')
+            + (isNew ? '' : '<button type="button" class="vg-btn ghost" data-act="edit">Ouvrir la fiche</button>' + (st === 'preview' ? '' : '<a class="vg-btn ghost" target="_blank" rel="noopener" href="../product/' + encodeURIComponent(p.slug) + '">Voir sur le site ↗</a>') + (st === 'preview' || st === 'scheduled' ? '<a class="vg-btn ghost" target="_blank" rel="noopener" href="apercu/' + encodeURIComponent(p.slug) + '/">Aperçu</a>' : ''))
             + '<button type="button" class="vg-btn ghost" data-act="dup">Dupliquer</button>'
             + (st === 'preview' || st === 'scheduled' ? '<button type="button" class="vg-btn ghost" data-act="publish">Publier maintenant</button>' : '')
             + (st === 'scheduled' ? '<button type="button" class="vg-btn ghost" data-act="unschedule">Annuler la programmation</button>' : '')
@@ -334,7 +334,7 @@
       + '<label><input type="radio" name="color" value="autre"' + (f.color === 'autre' ? ' checked' : '') + '>Autre…</label><label><input type="radio" name="color" value=""' + (!f.color ? ' checked' : '') + '>Aucune</label>';
     var p = cur.base;
     return '<div class="fhead"><a class="vg-btn ghost" href="#" id="back">← Pièces</a><h1 id="ftitle">' + esc(isNew ? 'Nouvelle pièce' : (p.name || p.slug)) + '</h1>'
-      + (isNew || (p.hidden && !p.publish_at) ? '' : '<a class="vg-btn ghost" target="_blank" rel="noopener" href="../product/' + encodeURIComponent(p.slug) + '">Voir sur le site ↗</a>')
+      + (isNew ? '' : (p.hidden ? '<a class="vg-btn ghost" target="_blank" rel="noopener" href="apercu/' + encodeURIComponent(p.slug) + '/">Aperçu</a>' : '') + (p.hidden && !p.publish_at ? '' : '<a class="vg-btn ghost" target="_blank" rel="noopener" href="../product/' + encodeURIComponent(p.slug) + '">Voir sur le site ↗</a>'))
       + (isNew ? '' : '<button type="button" class="vg-btn ghost" id="f-dup">Dupliquer</button>') + '</div>'
 
       + '<section class="vg-card sect"><h2>Photos</h2><div class="photos" id="photos"></div>'
