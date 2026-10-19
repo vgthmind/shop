@@ -36,15 +36,20 @@ function main() {
   const cur = { settings: fs.readFileSync(files.settings, 'utf8'), toml: fs.readFileSync(files.toml, 'utf8') };
   const eol = cur.settings.includes('\r\n') ? '\r\n' : '\n';
   const next = transform({ settings: cur.settings.replace(/\r\n/g, '\n'), toml: cur.toml.replace(/\r\n/g, '\n') }, { site, live: args.includes('--live'), liveSeul: args.includes('--live-seul'), retour: args.includes('--retour') });
+  const mode = args.includes('--retour') ? 'RETOUR ARRIÈRE : remet les valeurs de TEST (site non public, adresse pages.dev, LIVE_MODE 0)'
+    : args.includes('--live-seul') ? 'ESSAI À 1 € : passe seulement le Worker en mode réel (LIVE_MODE 1) ; le site reste en test'
+    : args.includes('--live') ? 'BASCULE COMPLÈTE : site public sur ' + site + ' ET Worker en mode réel (LIVE_MODE 1)'
+    : 'SITE PUBLIC SEULEMENT : site public sur ' + site + ' ; le Worker reste en mode test (ajoute --live pour la vraie bascule)';
+  console.log('Mode : ' + mode + '\nFichiers concernés : data/shop-settings.json (site) et checkout-worker/wrangler.toml (Worker). Rien n\'est envoyé en ligne par cet outil.\n');
   for (const k of Object.keys(files)) {
     const a = cur[k].replace(/\r\n/g, '\n').split('\n'), b = next[k].split('\n');
     const diff = b.map((l, i) => (a[i] !== l ? `  - ${a[i]}\n  + ${l}` : '')).filter(Boolean);
     console.log(path.relative(root, files[k]) + (diff.length ? '' : ' : inchangé'));
     diff.forEach((d) => console.log(d));
   }
-  if (!args.includes('--apply')) { console.log('\nAperçu : rien n\'est écrit (ajoute --apply).'); return; }
+  if (!args.includes('--apply')) { console.log('\nAperçu : rien n\'est écrit. Si c\'est bien ce que tu veux, relance la même commande avec --apply à la fin.'); return; }
   for (const k of Object.keys(files)) fs.writeFileSync(files[k], eol === '\r\n' ? next[k].replace(/\n/g, '\r\n') : next[k]);
-  console.log('\nÉcrit en local. Rien n\'est poussé ni déployé.');
+  console.log('\nÉcrit en local (rien n\'est poussé ni déployé). Suite : npm run build, npm test, puis déploiement avec ton OK. Pour annuler avant de déployer : même outil avec --retour --apply.');
 }
 
 if (process.argv[1] && fileURLToPath(import.meta.url) === path.resolve(process.argv[1])) { try { main(); } catch (e) { console.error('Erreur : ' + e.message); process.exit(1); } }
