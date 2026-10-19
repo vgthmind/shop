@@ -18,7 +18,7 @@
   }
   var STATUS = {
     nouvelle: ['Received', 'Reçue'], discussion: ['In discussion', 'En discussion'], devis: ['Quote sent', 'Devis envoyé'], acompte: ['Deposit paid', 'Acompte payé'],
-    fabrication: ['Being made', 'En fabrication'], validation: ['Waiting for your approval', 'En attente de ta validation'], solde: ['Balance paid', 'Solde payé'],
+    fabrication: ['In progress', 'En cours'], validation: ['Waiting for your approval', 'En attente de ta validation'], solde: ['Balance paid', 'Solde payé'],
     envoyee: ['Shipped', 'Envoyée'], terminee: ['Completed', 'Terminée'], refusee: ['Closed', 'Close'], brouillon: ['Sending', 'Envoi en cours'],
   };
   var PIECE = { tshirt: ['T-shirt', 'T-shirt'], hoodie: ['Sweatshirt / hoodie', 'Sweat / hoodie'], veste: ['Jacket', 'Veste'], autre: ['Another piece', 'Autre pièce'], short: ['Shorts', 'Short'], pantalon: ['Trousers', 'Pantalon'], haut: ['Top', 'Haut'] };
@@ -37,11 +37,17 @@
     }).catch(function () { body.innerHTML = '<p class="err">' + esc(L('Connection failed, try again.', 'Connexion impossible, réessaie.')) + '</p>'; });
   }
 
+  function pdfUrl() { return EP + '/requests/quote.pdf?id=' + encodeURIComponent(id) + '&k=' + encodeURIComponent(k); }
+  function dayFmt(ms) { return new Date(ms).toLocaleDateString(L('en-GB', 'fr-FR'), { day: 'numeric', month: 'long', year: 'numeric' }); }
   function quoteTable(q) {
-    return '<table><tr class="big"><td>' + esc(L('Total price', 'Prix total')) + '</td><td class="n">' + eur(q.total) + '</td></tr>'
-      + '<tr><td>' + esc(L('Deposit (' + q.depositPct + '%)', 'Acompte (' + q.depositPct + ' %)')) + '</td><td class="n">' + eur(q.deposit) + '</td></tr>'
-      + '<tr><td>' + esc(L('Balance, after approval on photos (+ shipping)', 'Solde, après validation sur photos (+ port)')) + '</td><td class="n">' + eur(q.balance) + '</td></tr>'
-      + '<tr><td>' + esc(L('Making time', 'Délai de fabrication')) + '</td><td class="n">' + esc(q.delay) + '</td></tr></table>';
+    var ref = q.number ? q.number + (q.version > 1 ? ' v' + q.version : '') : '';
+    var lines = (q.lines || []).map(function (l) { return '<tr><td>' + esc(l.label) + (l.qty > 1 ? ' <span class="muted">× ' + l.qty + '</span>' : '') + '</td><td class="n">' + eur(l.amount) + '</td></tr>'; }).join('');
+    return (ref ? '<p class="muted" style="margin:0 0 8px">' + esc(L('Quote ', 'Devis ') + ref) + (q.validUntil ? ' · ' + esc(L('valid until ', 'valable jusqu’au ') + dayFmt(q.validUntil)) : '') + '</p>' : '')
+      + '<table>' + lines + '<tr class="big"><td>' + esc(L('Total price', 'Prix total')) + '</td><td class="n">' + eur(q.total) + '</td></tr>'
+      + (q.deposit ? '<tr><td>' + esc(q.optionalDeposit ? L('Optional deposit (' + q.depositPct + '%)', 'Acompte facultatif (' + q.depositPct + ' %)') : L('Deposit (' + q.depositPct + '%)', 'Acompte (' + q.depositPct + ' %)')) + '</td><td class="n">' + eur(q.deposit) + '</td></tr>' : '')
+      + (q.deposit && !q.optionalDeposit ? '<tr><td>' + esc(L('Balance, after approval on photos (+ shipping)', 'Solde, après validation sur photos (+ port)')) + '</td><td class="n">' + eur(q.balance) + '</td></tr>' : '')
+      + '<tr><td>' + esc(q.optionalDeposit ? L('Lead time', 'Délai') : L('Making time', 'Délai de fabrication')) + '</td><td class="n">' + esc(q.delay) + '</td></tr></table>'
+      + '<p style="margin-top:10px"><a class="btn ghost" href="' + esc(pdfUrl()) + '" target="_blank" rel="noopener">' + esc(L('Download the quote (PDF)', 'Télécharger le devis (PDF)')) + '</a></p>';
   }
 
   function draw(note) {
@@ -50,22 +56,37 @@
     h += '<h1>' + esc((q && q.title) || (t2(TYPE[r.type]) + piece)) + '</h1><p class="tag">' + esc(r.id + ' · ' + t2(STATUS[r.status])) + '</p>';
     if (note) h += '<p class="box">' + esc(note) + '</p>';
     var paid = r.type === 'custom' || r.type === 'surmesure';
+    var cgvLink = ' <a href="' + esc(CGV) + '" target="_blank" rel="noopener">' + esc(L('Terms of sale', 'Conditions générales de vente')) + '</a>';
 
-    if (!paid) {
-      h += '<div class="box"><p>' + esc(L('I reply to visual productions and collabs directly by email (quote, deposit cheque, contract depending on the project). Just reply to my emails.', 'Je réponds aux productions visuelles et aux collabs directement par mail (devis, caution par chèque, contrat selon le projet). Réponds simplement à mes mails.')) + '</p></div>';
+    if (!q && !paid) {
+      h += '<div class="box"><p>' + esc(L('I reply to visual productions and collabs directly by email. When we agree, I send you a quote here: you accept it online, with an optional deposit.', 'Je réponds aux productions visuelles et aux collabs directement par mail. Quand on est d’accord, je t’envoie un devis ici : tu l’acceptes en ligne, avec un acompte facultatif.')) + '</p></div>';
     } else if (!q && (r.status === 'nouvelle' || r.status === 'discussion')) {
       h += '<div class="box"><p>' + esc(L('Your request is received. I’ll get back to you by email with questions or a quote.', 'Ta demande est bien reçue. Je reviens vers toi par mail avec des questions ou un devis.')) + '</p></div>';
     }
 
-    // Devis + acompte
-    if (paid && q && !r.depositPaid && r.status === 'devis') {
-      h += '<h2>' + esc(L('Your quote', 'Ton devis')) + '</h2><div class="box">' + quoteTable(q) + (q.message ? '<p style="white-space:pre-wrap;margin-top:12px">' + esc(q.message) + '</p>' : '') + '</div>'
-        + '<div class="box" id="acompte"><label class="check"><input type="checkbox" id="vgr-accept"><span>' + esc(r.consent) + ' <a href="' + esc(CGV) + '" target="_blank" rel="noopener">' + esc(L('Terms of sale', 'Conditions générales de vente')) + '</a></span></label>'
-        + '<div class="row"><button type="button" class="btn" id="vgr-pay" disabled>' + esc(L('Pay the deposit', 'Payer l’acompte') + ' · ' + eur(q.deposit)) + '</button></div><p class="err" id="vgr-err"></p></div>';
+    // Devis : à accepter (avec les CGV), puis acompte (obligatoire pour une pièce, facultatif pour une location / collab)
+    var accepted = !!(q && q.acceptedAt);
+    if (q && !r.depositPaid && r.status === 'devis') {
+      h += '<h2>' + esc(L('Your quote', 'Ton devis')) + '</h2><div class="box">' + quoteTable(q) + (q.message ? '<p style="white-space:pre-wrap;margin-top:12px">' + esc(q.message) + '</p>' : '') + '</div>';
+      if (q.expired) {
+        h += '<div class="box"><p>' + esc(L('This quote has expired. Write to me and I’ll send you an updated one.', 'Ce devis a expiré. Écris-moi et je t’en envoie un à jour.')) + '</p><div class="row"><a class="btn ghost" href="mailto:contact@vgthmind.org">contact@vgthmind.org</a></div></div>';
+      } else if (paid) {
+        h += '<div class="box" id="acompte"><label class="check"><input type="checkbox" id="vgr-accept"><span>' + esc(r.consent) + cgvLink + '</span></label>'
+          + '<div class="row"><button type="button" class="btn" id="vgr-pay" disabled>' + esc(L('Accept the quote and pay the deposit', 'Accepter le devis et payer l’acompte') + ' · ' + eur(q.deposit)) + '</button></div><p class="err" id="vgr-err"></p></div>';
+      } else {
+        h += '<div class="box" id="acompte"><label class="check"><input type="checkbox" id="vgr-accept"><span>' + esc(r.consent) + cgvLink + '</span></label><div class="row">'
+          + (q.deposit ? '<button type="button" class="btn" id="vgr-pay" disabled>' + esc(L('Accept and pay the optional deposit', 'Accepter et payer l’acompte facultatif') + ' · ' + eur(q.deposit)) + '</button><button type="button" class="btn ghost" id="vgr-acc" disabled>' + esc(L('Accept without paying the deposit now', 'Accepter sans payer l’acompte maintenant')) + '</button>'
+            : '<button type="button" class="btn" id="vgr-acc" disabled>' + esc(L('Accept the quote', 'Accepter le devis')) + '</button>')
+          + '</div><p class="err" id="vgr-err"></p></div>';
+      }
+    } else if (q && (r.depositPaid || accepted || (r.status !== 'devis' && r.status !== 'nouvelle' && r.status !== 'discussion'))) {
+      h += '<h2>' + esc(L('Your quote', 'Ton devis')) + '</h2><div class="box">' + quoteTable(q) + (accepted ? '<p class="okmsg" style="margin-top:10px">' + esc(L('Accepted on ', 'Accepté le ') + dayFmt(q.acceptedAt)) + '</p>' : '') + '</div>';
     }
-    if (paid && r.depositPaid) {
-      h += '<div class="box"><p>' + esc(L('Deposit received: your order is firm and the piece is being made.', 'Acompte reçu : ta commande est ferme et ta pièce est en fabrication.')) + (q ? ' ' + esc(L('Making time: ', 'Délai : ') + q.delay) : '') + '</p>'
+    if (r.depositPaid) {
+      h += '<div class="box"><p>' + esc(paid ? L('Deposit received: your order is firm and the piece is being made.', 'Acompte reçu : ta commande est ferme et ta pièce est en fabrication.') : L('Deposit received: thank you, the project is in progress.', 'Acompte reçu : merci, le projet est en cours.')) + (q ? ' ' + esc(L('Lead time: ', 'Délai : ') + q.delay) : '') + '</p>'
         + '<div class="row"><button type="button" class="btn ghost" data-inv="deposit">' + esc(L('Deposit invoice', 'Facture d’acompte')) + '</button>' + (r.balancePaid ? '<button type="button" class="btn ghost" data-inv="balance">' + esc(L('Invoice', 'Facture')) + '</button>' : '') + '</div></div>';
+    } else if (!paid && accepted && r.status !== 'devis') {
+      h += '<div class="box"><p>' + esc(L('Quote accepted, thank you! The project is in progress. I’ll write to you for the next steps.', 'Devis accepté, merci ! Le projet est en cours. Je t’écris pour la suite.')) + '</p></div>';
     }
 
     // Photos + validation
@@ -108,7 +129,19 @@
         api('/requests/deposit', { accept: acc.checked === true }).then(function (j) {
           if (j.url) { location.href = j.url; return; }
           pay.disabled = false;
-          document.getElementById('vgr-err').textContent = j.error === 'payments_off' ? L('Online payment is not open yet.', 'Le paiement en ligne n’est pas encore ouvert.') : L('Payment could not start, try again.', 'Le paiement n’a pas pu démarrer, réessaie.');
+          document.getElementById('vgr-err').textContent = j.error === 'quote_expired' ? L('This quote has expired.', 'Ce devis a expiré.') : j.error === 'payments_off' ? L('Online payment is not open yet.', 'Le paiement en ligne n’est pas encore ouvert.') : L('Payment could not start, try again.', 'Le paiement n’a pas pu démarrer, réessaie.');
+        });
+      });
+    }
+    var accBtn = document.getElementById('vgr-acc');
+    if (acc && accBtn) {
+      acc.addEventListener('change', function () { accBtn.disabled = !acc.checked; });
+      accBtn.addEventListener('click', function () {
+        accBtn.disabled = true;
+        api('/requests/accept', { accept: acc.checked === true }).then(function (j) {
+          if (j.ok) { data = j.request; draw(L('Quote accepted, thank you!', 'Devis accepté, merci !')); return; }
+          accBtn.disabled = false;
+          document.getElementById('vgr-err').textContent = j.error === 'quote_expired' ? L('This quote has expired.', 'Ce devis a expiré.') : L('Could not send, try again.', 'Envoi impossible, réessaie.');
         });
       });
     }

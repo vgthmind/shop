@@ -15,11 +15,12 @@
 import { DurableObject } from 'cloudflare:workers';
 import {
   applyAction, parseSubmission, newRequest, mergeSettings, checkSettings, priceFloors, dueStep, retention, clientView, fileKind,
-  FILE_LIMITS, DRAFT_GRACE_MS, PAID_TYPES, CARD_KEYS, TYPE_LABELS, answerLines, type Settings, type Effect,
+  FILE_LIMITS, DRAFT_GRACE_MS, DAY, PAID_TYPES, CARD_KEYS, TYPE_LABELS, answerLines, type Settings, type Effect,
 } from './requests-core';
-import { receivedEmail, newRequestAlert, quoteEmail, depositPaidEmail, validationEmail, replyEmail, type ReqMailCtx } from './request-emails';
+import { receivedEmail, newRequestAlert, quoteEmail, quoteAcceptedEmail, depositPaidEmail, validationEmail, replyEmail, type ReqMailCtx } from './request-emails';
 import { CONTACT_EMAIL } from './emails';
 import { checkTurnstile } from './turnstile';
+import { quotePdf, toBase64, type QuotePdfInput } from './quote-pdf';
 
 type JsonFn = (data: unknown, status?: number) => Response;
 export interface ReqEnv {
@@ -37,7 +38,7 @@ export interface ReqEnv {
 export interface ReqDeps {
   stripeKey: () => string | null;
   stripe: (key: string, method: string, path: string, params?: URLSearchParams) => Promise<{ ok: boolean; data: any }>;
-  send: (from: string, to: string, subject: string, html: string, text: string, replyTo?: string) => Promise<boolean>;
+  send: (from: string, to: string, subject: string, html: string, text: string, replyTo?: string, attachments?: { filename: string; content: string }[]) => Promise<boolean>;
   alert: (kind: string, subject: string, detail: string) => Promise<void>;
   shipping: (product: any, country: string) => Promise<any>;
   invoice: (sessionId: string) => Promise<{ ok: boolean; invoice?: any; error?: string; status?: number }>;
@@ -55,6 +56,13 @@ export class RequestsDO extends DurableObject {
   async get(id: string) { return (await this.st().get('r:' + id)) || null; }
   async list() { return [...(await this.st().list({ prefix: 'r:' })).values()]; }
   async remove(id: string) { await this.st().delete('r:' + id); }
+  // Numéro de devis DEV-AAAA-NNN (compteur de l'année civile de Paris, jamais réutilisé).
+  async nextQuote(now: number) {
+    const y = new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/Paris', year: 'numeric' }).format(new Date(now));
+    const n = ((await this.st().get('qseq:' + y)) || 0) + 1;
+    await this.st().put('qseq:' + y, n);
+    return `DEV-${y}-${String(n).padStart(3, '0')}`;
+  }
   // Restauration : ne recrée que les demandes absentes (jamais d'écrasement d'une demande existante).
   async restoreMissing(recs: any[]) { let n = 0; for (const r of recs) { if (r && typeof r.id === 'string' && /^[A-Za-z0-9_-]{3,40}$/.test(r.id) && !(await this.st().get('r:' + r.id))) { await this.st().put('r:' + r.id, r); n++; } } return n; }
   async settings(): Promise<Settings> { return mergeSettings(await this.st().get('settings')); }
@@ -62,6 +70,7 @@ export class RequestsDO extends DurableObject {
   async act(id: string, action: string, data: any, now: number) {
     const rec = await this.st().get('r:' + id);
     if (!rec) return { ok: false, error: 'not_found', status: 404 };
+    if (action === 'quote' && !rec.quoteNumber) data = { ...(data || {}), number: await this.nextQuote(now) };
     const r = applyAction(rec, action, data || {}, await this.settings(), now);
     if (r.ok) await this.st().put('r:' + id, r.rec);
     return r;
@@ -86,6 +95,21 @@ export function mailCtx(env: ReqEnv, rec: any, wb: string): ReqMailCtx {
   };
 }
 
+// Devis en PDF (joint au mail, téléchargeable par le client et dans l'admin).
+export async function quotePdfFor(env: ReqEnv, rec: any): Promise<Uint8Array | null> {
+  const q = rec.quote;
+  if (!q) return null;
+  const settings: any = await stub(env).settings();
+  const input: QuotePdfInput = {
+    lang: rec.lang === 'fr' ? 'fr' : 'en', number: q.number || rec.id, version: q.version || 1, issuedAt: q.sentAt, validUntil: q.validUntil || q.sentAt + 30 * DAY,
+    seller: { address: String(settings.sellerAddress || '').trim() }, client: { name: rec.client.name, email: rec.client.email, country: rec.client.country },
+    requestId: rec.id, title: q.title, lines: q.lines || [{ label: q.title, qty: 1, unit: q.total, amount: q.total }], total: q.total, deposit: q.deposit, depositPct: q.depositPct,
+    optionalDeposit: !!q.optionalDeposit, delay: q.delay, message: q.message || '', acceptedAt: q.acceptedAt || 0, pageUrl: mailCtx(env, rec, '').pageUrl, test: isTest(env),
+  };
+  return quotePdf(input);
+}
+const pdfName = (rec: any) => `Devis-${rec.quote.number}${rec.quote.version > 1 ? '-v' + rec.quote.version : ''}.pdf`;
+
 // Mails et alertes produits par une action (après l'enregistrement de la demande).
 export async function runEffects(env: ReqEnv, deps: ReqDeps, rec: any, effects: Effect[], wb: string) {
   const from = (env.MAIL_FROM || '').trim();
@@ -95,10 +119,14 @@ export async function runEffects(env: ReqEnv, deps: ReqDeps, rec: any, effects: 
     try {
       let m: { subject: string; html: string; text: string } | null = null;
       let to = rec.client.email;
+      let attachments: { filename: string; content: string }[] | undefined;
       if (e.kind === 'mail:received') m = receivedEmail(rec, ctx);
       else if (e.kind === 'mail:new') { m = newRequestAlert(rec, ctx); to = (env.ALERT_EMAIL || '').trim(); }
-      else if (e.kind === 'mail:quote') m = quoteEmail(rec, ctx);
-      else if (e.kind === 'mail:quoteReminder') m = quoteEmail(rec, ctx, true);
+      else if (e.kind === 'mail:quote' || e.kind === 'mail:quoteReminder') {
+        m = quoteEmail(rec, ctx, e.kind === 'mail:quoteReminder');
+        const pdf = await quotePdfFor(env, rec);
+        if (pdf) attachments = [{ filename: pdfName(rec), content: toBase64(pdf) }];
+      } else if (e.kind === 'mail:quoteAccepted') m = quoteAcceptedEmail(rec, ctx);
       else if (e.kind === 'mail:depositPaid') m = depositPaidEmail(rec, ctx);
       else if (e.kind === 'mail:validation' || e.kind === 'mail:validationReminder') {
         const left = Math.max(0, settings.retouchesIncluded - (rec.validation?.retouchesUsed || 0));
@@ -108,7 +136,7 @@ export async function runEffects(env: ReqEnv, deps: ReqDeps, rec: any, effects: 
       else if (e.kind === 'deleteFile') { if (env.FILES) await env.FILES.delete(e.data.key); continue; }
       if (!m) continue;
       if (!env.RESEND_API_KEY || !from || !to) continue;
-      const ok = await deps.send(from, to, m.subject, m.html, m.text, CONTACT_EMAIL);
+      const ok = await deps.send(from, to, m.subject, m.html, m.text, CONTACT_EMAIL, attachments);
       if (!ok) await deps.alert(`req-mail:${rec.id}:${e.kind}`, `Un mail de demande n'est pas parti (${rec.id})`, `Type : ${e.kind}\nDestinataire : ${to}\nResend a refusé l'envoi.`);
     } catch (err: any) {
       await deps.alert(`req-fx:${rec.id}:${e.kind}`, `Erreur sur la demande ${rec.id}`, String(err && err.stack ? err.stack : err).slice(0, 1200));
@@ -166,9 +194,9 @@ async function depositCheckout(env: ReqEnv, deps: ReqDeps, rec: any, key: string
   p.set('line_items[0][price_data][currency]', 'eur');
   p.set('line_items[0][price_data][unit_amount]', String(Math.round(q.deposit * 100)));
   p.set('line_items[0][price_data][product_data][name]', (fr ? `Acompte ${q.depositPct} % · ` : `Deposit ${q.depositPct}% · `) + q.title);
-  p.set('line_items[0][price_data][product_data][description]', fr ? `Demande ${rec.id} · prix total ${q.total} € · pièce personnalisée` : `Request ${rec.id} · total price €${q.total} · personalised piece`);
-  p.set('custom_text[submit][message]', fr ? 'Acompte (et non arrhes) : commande ferme. Pièce personnalisée : pas de droit de rétractation.' : 'Deposit ("acompte", not "arrhes"): firm order. Personalised piece: no right of withdrawal.');
-  const meta: Record<string, string> = { kind: 'deposit', request: rec.id, total: String(q.total), pct: String(q.depositPct), title: q.title.slice(0, 400) };
+  p.set('line_items[0][price_data][product_data][description]', fr ? `Demande ${rec.id} · devis ${q.number || ''} · prix total ${q.total} €` : `Request ${rec.id} · quote ${q.number || ''} · total price €${q.total}`);
+  p.set('custom_text[submit][message]', q.optionalDeposit ? (fr ? 'Acompte facultatif, non remboursable une fois le travail commencé (sauf refus ou abandon par vgthmind).' : 'Optional deposit, non-refundable once work has started (unless vgthmind declines or abandons the order).') : (fr ? 'Acompte (et non arrhes) : commande ferme. Pièce personnalisée : pas de droit de rétractation.' : 'Deposit ("acompte", not "arrhes"): firm order. Personalised piece: no right of withdrawal.'));
+  const meta: Record<string, string> = { kind: 'deposit', request: rec.id, total: String(q.total), pct: String(q.depositPct), title: q.title.slice(0, 400), quote: String(q.number || '') };
   for (const [k, v] of Object.entries(meta)) { p.set(`metadata[${k}]`, v); p.set(`payment_intent_data[metadata][${k}]`, v); }
   const r = await deps.stripe(key, 'POST', '/v1/checkout/sessions', p);
   if (!r.ok) return { error: r.data.error?.message || 'Erreur Stripe' };
@@ -301,7 +329,7 @@ export async function requestRoutes(request: Request, env: ReqEnv, deps: ReqDeps
     }
     if (path === '/admin/requests/backup' && request.method === 'GET') {
       const k = q('key') || 'rbackup:latest';
-      if (!/^rbackup:[w-]+$/.test(k)) return json({ error: 'Clé invalide.' }, 400);
+      if (!/^rbackup:[\w-]+$/.test(k)) return json({ error: 'Clé invalide.' }, 400);
       const v = await env.HOLDS.get(k);
       return v ? new Response(v, { headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' } }) : json({ error: 'Introuvable.' }, 404);
     }
@@ -319,12 +347,17 @@ export async function requestRoutes(request: Request, env: ReqEnv, deps: ReqDeps
     }
     if (path === '/admin/requests/act' && request.method === 'POST') {
       const b = await body();
-      const allowed = ['status', 'notes', 'quote', 'sendValidation', 'reply', 'removeFinal'];
+      const allowed = ['status', 'notes', 'quote', 'cancelQuote', 'sendValidation', 'reply', 'removeFinal'];
       if (!isId(String(b.id || '')) || !allowed.includes(b.action)) return json({ error: 'Requête invalide.' }, 400);
       if (b.action === 'reply' && (!env.RESEND_API_KEY || !env.MAIL_FROM)) return json({ error: "Envoi d'email non configuré." }, 503);
       const r = await act(env, deps, b.id, b.action, b, wb);
       if (r.ok) Object.assign(r.rec, { typeLabel: TYPE_LABELS[r.rec.type] || r.rec.type, answers: answerLines(r.rec, 'fr'), pageUrl: mailCtx(env, r.rec, wb).pageUrl });
       return r.ok ? json({ ok: true, request: r.rec }) : json({ error: r.error }, r.status || 400);
+    }
+    if (path === '/admin/requests/quote.pdf' && request.method === 'GET') {
+      const rec = isId(q('id')) ? await S.get(q('id')) : null;
+      const pdf = rec ? await quotePdfFor(env, rec) : null;
+      return pdf ? new Response(pdf, { headers: { 'Content-Type': 'application/pdf', 'Content-Disposition': `inline; filename="${pdfName(rec)}"`, 'Cache-Control': 'private, no-store' } }) : json({ error: 'Aucun devis.' }, 404);
     }
     if (path === '/admin/requests/final' && request.method === 'PUT') {
       if (!env.FILES) return json({ error: 'Stockage des fichiers (R2) pas encore activé.' }, 503);
@@ -431,6 +464,11 @@ export async function requestRoutes(request: Request, env: ReqEnv, deps: ReqDeps
     if (!obj) return new Response('Not found', { status: 404 });
     return new Response(obj.body, { headers: { 'Content-Type': f.type || 'image/jpeg', 'Cache-Control': 'private, max-age=3600', 'Access-Control-Allow-Origin': '*' } });
   }
+  if (path === '/requests/quote.pdf' && request.method === 'GET') {
+    const rec = await own(env, q('id'), q('k'));
+    const pdf = rec ? await quotePdfFor(env, rec) : null;
+    return pdf ? new Response(pdf, { headers: { 'Content-Type': 'application/pdf', 'Content-Disposition': `inline; filename="${pdfName(rec)}"`, 'Cache-Control': 'private, no-store', 'Access-Control-Allow-Origin': '*' } }) : new Response('Not found', { status: 404 });
+  }
   if (!path.startsWith('/requests/') || request.method !== 'POST') return null;
   const b = await body();
   const rec = await own(env, String(b.id || ''), String(b.k || ''));
@@ -452,8 +490,11 @@ export async function requestRoutes(request: Request, env: ReqEnv, deps: ReqDeps
     }
     return json({ ok: true, request: clientView(cur, settings), payments: !!key });
   }
+  if (path === '/requests/accept') { // location / collab : le client accepte le devis (l'acompte facultatif se paie ensuite via /requests/deposit)
+    const r = await act(env, deps, rec.id, 'acceptQuote', { accept: b.accept === true, ip }, wb);
+    return r.ok ? json({ ok: true, request: clientView(r.rec, settings) }) : json({ error: r.error }, r.status || 400);
+  }
   if (path === '/requests/deposit') {
-    if (!PAID_TYPES.includes(rec.type)) return json({ error: 'not_payable' }, 409);
     if (!key) return json({ error: 'payments_off' }, 503);
     const r = await stub(env).act(rec.id, 'acceptDeposit', { accept: b.accept === true, ip }, Date.now());
     if (!r.ok) return json({ error: r.error }, r.status || 400);
