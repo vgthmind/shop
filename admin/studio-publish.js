@@ -55,7 +55,7 @@
       var r;
       try {
         r = await fetch(API + '/repos/' + REPO + path, {
-          method: method,
+          method: method, cache: 'no-store',
           headers: { Authorization: 'Bearer ' + token, Accept: 'application/vnd.github+json', 'Content-Type': 'application/json' },
           body: payload
         });
