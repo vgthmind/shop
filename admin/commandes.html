@@ -66,8 +66,7 @@
 </head>
 <body>
 <main>
-  <nav class="vg-legacy-nav"><a href="menu.html">← Tableau de bord</a> <a href="stock.html">Stock</a> <a href="export.html">Export compta</a> <a href="demandes.html">Demandes</a></nav>
-  <div class="vg-head"><div><h1>Commandes</h1><p class="vg-sub">Paiements reçus via Stripe (100 derniers).</p></div><button type="button" class="vg-btn ghost" id="more" aria-expanded="false">⋯ Sauvegardes</button></div>
+  <div class="vg-head"><div><h1>Commandes</h1><p class="vg-sub">Paiements reçus via Stripe (100 derniers).</p></div></div>
 
   <div class="bar" id="login" hidden>
     <button type="button" id="login-btn">Se connecter avec GitHub</button>
@@ -78,19 +77,12 @@
     <button type="button" data-f="done" aria-pressed="false">Expédiées</button>
     <button type="button" data-f="refunded" aria-pressed="false">Remboursées</button>
     <button type="button" data-f="all" aria-pressed="false">Toutes</button>
-    <button type="button" data-f="stats" aria-pressed="false">Stats</button>
     <input type="text" id="q" placeholder="Rechercher : VG-…, nom, e-mail" aria-label="Rechercher une commande" autocomplete="off">
     <button type="button" id="refresh">Actualiser</button>
   </div>
 
   <p id="msg" role="status" aria-live="polite"></p>
   <div id="orders"></div>
-  <section class="order" id="backups" hidden>
-    <header><strong>Sauvegarde des commandes</strong></header>
-    <p class="muted">Chaque nuit, l'état de tes commandes (expédiée, en préparation, numéros VG-…) est sauvegardé automatiquement et gardé 180 jours. Les paiements eux-mêmes restent dans Stripe.</p>
-    <div class="actions"><button type="button" id="b-now">Sauvegarder maintenant</button><button type="button" id="b-dl">Télécharger la dernière</button><label class="btn">Restaurer depuis un fichier…<input type="file" id="b-restore" accept="application/json,.json" hidden></label></div>
-    <p class="muted" id="bmsg" role="status"></p>
-  </section>
 </main>
 <script src="vg-admin-auth.js"></script>
 <script src="vg-admin-ui.js"></script>
@@ -141,39 +133,6 @@
     });
   }
 
-  // Stats de ventes (comme l'onglet Stats de l'ancienne plateforme) : calculées sur les
-  // commandes payées listées, en séparant test et réel. Les visites sont
-  // dans Cloudflare Web Analytics.
-  function drawStats() {
-    var live = orders.filter(function (o) { return o.livemode; });
-    var set = live.length ? live : orders;
-    var label = live.length ? 'Ventes réelles' : 'Ventes de TEST (aucune vente réelle pour l\'instant)';
-    var sum = function (arr, f) { return arr.reduce(function (s, o) { return s + f(o); }, 0); };
-    var total = sum(set, function (o) { return o.total; });
-    var ship = sum(set, function (o) { return o.shipping; });
-    var months = {};
-    var pieces = {};
-    set.forEach(function (o) {
-      var m = new Date(o.created * 1000).toLocaleDateString('fr-FR', { year: 'numeric', month: 'long' });
-      months[m] = months[m] || { n: 0, total: 0 };
-      months[m].n++; months[m].total += o.total;
-      o.items.forEach(function (it) { pieces[it.name] = (pieces[it.name] || 0) + it.amount; });
-    });
-    var top = Object.keys(pieces).sort(function (a, b) { return pieces[b] - pieces[a]; }).slice(0, 10);
-    $('orders').innerHTML = '<article class="order"><header><strong>' + esc(label) + '</strong></header><ul>'
-      + '<li>Commandes : <strong>' + set.length + '</strong></li>'
-      + '<li>Chiffre d\'affaires (port compris) : <strong>' + money(total) + '</strong></li>'
-      + '<li>Dont livraison : ' + money(ship) + ' · Panier moyen : ' + money(set.length ? total / set.length : 0) + '</li>'
-      + '<li>À expédier : ' + set.filter(function (o) { return !o.shipped; }).length + '</li></ul></article>'
-      + '<article class="order"><header><strong>Par mois</strong></header><ul>'
-      + Object.keys(months).map(function (m) { return '<li>' + esc(m) + ' — ' + months[m].n + ' commande(s), ' + money(months[m].total) + '</li>'; }).join('')
-      + '</ul></article>'
-      + '<article class="order"><header><strong>Pièces qui rapportent le plus</strong></header><ul>'
-      + top.map(function (p) { return '<li>' + esc(p) + ' — ' + money(pieces[p]) + '</li>'; }).join('')
-      + '</ul></article>'
-      + '<p class="muted">Sur les 100 derniers paiements. Détail complet : tableau de bord Stripe (Paiements, Rapports). Visites : Cloudflare Web Analytics.</p>';
-  }
-
   function counts() {
     var real = orders.filter(function (o) { return o.kind !== 'deposit'; });
     var todo = real.filter(function (o) { return !o.shipped && !(o.refunded && o.refunded.full); }).length, ref = real.filter(function (o) { return !!o.refunded; }).length;
@@ -182,7 +141,6 @@
   }
   function draw() {
     counts();
-    if (filter === 'stats') { drawStats(); return; }
     var needle = (($('q') && $('q').value) || '').trim().toLowerCase().replace(/^vg[\s-]*/, '');
     var list = orders.filter(function (o) {
       if (o.kind === 'deposit') return false; // acompte d'une pièce sur demande : rien à expédier (onglet Demandes ; compté dans l'export compta)
@@ -321,33 +279,8 @@
     w.document.close();
   }
 
-  // Sauvegarde de l'état des commandes (expédiée / en préparation / numéros). Le détail des commandes reste chez Stripe.
-  function backupMsg(t) { $('bmsg').textContent = t; }
-  $('b-now').addEventListener('click', function () {
-    api('/admin/obackup', { method: 'POST' }).then(function (d) { backupMsg('Sauvegarde faite (' + d.shipped + ' expédiées, ' + d.refs + ' numéros).'); }).catch(function (e) { backupMsg('Erreur : ' + e.message); });
-  });
-  $('b-dl').addEventListener('click', function () {
-    fetch(window.VG_ENDPOINT + '/admin/obackup', { headers: { Authorization: 'Bearer ' + window.vgAdminToken() } })
-      .then(function (r) { if (!r.ok) throw new Error(r.status === 404 ? 'Pas encore de sauvegarde (la première se fait cette nuit, ou clique « Sauvegarder maintenant »).' : 'Erreur ' + r.status); return r.blob(); })
-      .then(function (b) { var a = document.createElement('a'); a.href = URL.createObjectURL(b); a.download = 'commandes-derniere.json'; a.click(); })
-      .catch(function (e) { backupMsg(e.message); });
-  });
-  $('b-restore').addEventListener('change', function () {
-    var f = this.files[0]; if (!f) return;
-    if (!window.confirm("Remettre l'état des commandes (expédiée, préparation, numéros) depuis ce fichier ? Les entrées du fichier remplacent celles du site.")) { this.value = ''; return; }
-    f.text().then(function (t) { return api('/admin/obackup-restore', { method: 'POST', body: t }); })
-      .then(function (d) { backupMsg(d.restored + ' entrées restaurées.'); load(); })
-      .catch(function (e) { backupMsg('Erreur : ' + e.message); });
-    this.value = '';
-  });
-
   $('orders').addEventListener('keydown', function (e) {
     if ((e.key === 'Enter' || e.key === ' ') && e.target.classList && e.target.classList.contains('sum')) { e.preventDefault(); e.target.click(); }
-  });
-  $('more').addEventListener('click', function () {
-    var h = $('backups').hidden = !$('backups').hidden;
-    this.setAttribute('aria-expanded', String(!h));
-    if (!h) $('backups').scrollIntoView({ behavior: 'smooth', block: 'start' });
   });
   $('q').addEventListener('input', draw);
 

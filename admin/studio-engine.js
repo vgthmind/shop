@@ -13,7 +13,7 @@
   var DEFAULT_URL = 'http://localhost:7860', KEY = 'vg-detourage-url';
   var SERVER_URL = DEFAULT_URL;
   try { SERVER_URL = (localStorage.getItem(KEY) || DEFAULT_URL).replace(/[/]$/, ''); } catch (x) {}
-  // Lien du lanceur « iPhone » : ...studio-photo.html#srv=<adresse du tunnel>&k=<mot de passe>.
+  // Lien du lanceur « iPhone » : ...nouvelle-piece.html#srv=<adresse du tunnel>&k=<mot de passe>.
   // Le fragment (#...) ne part jamais vers un serveur ; on le range dans ce navigateur puis on l'efface de la barre d'adresse.
   var TOKEN_KEY = 'vg-detourage-token', TOKEN = '';
   try {

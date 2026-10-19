@@ -1,0 +1,135 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="robots" content="noindex, nofollow">
+  <meta name="theme-color" content="#171717">
+  <title>Sauvegardes — admin vgthmind</title>
+  <style>
+    * { box-sizing: border-box; }
+    [hidden] { display: none !important; }
+    body { margin: 0; background: #f4f2ec; color: #171717; font: 16px/1.45 system-ui, -apple-system, "Segoe UI", sans-serif; -webkit-text-size-adjust: 100%; }
+    .vg-card { margin-bottom: 14px; }
+    .vg-card h2 { margin: 0 0 8px; }
+    .muted { color: var(--muted); font-size: 13px; }
+    .actions { display: flex; gap: 8px; flex-wrap: wrap; margin: 12px 0 6px; }
+    .actions .vg-btn { min-height: 44px; }
+    #msg { min-height: 1.4em; margin: 10px 2px; }
+  </style>
+<link rel="icon" href="../assets/theme/admin/favicon.svg?v=3" type="image/svg+xml">
+<link rel="icon" href="../assets/theme/admin/favicon-32.png?v=3" type="image/png" sizes="32x32">
+<link rel="icon" href="../assets/theme/admin/favicon-16.png?v=3" type="image/png" sizes="16x16">
+<link rel="shortcut icon" href="../assets/theme/admin/favicon.ico?v=3">
+<link rel="apple-touch-icon" sizes="180x180" href="../assets/theme/admin/apple-touch-icon.png?v=3">
+</head>
+<body>
+<main class="vg-page">
+  <nav class="vg-back"><a href="reglages.html">← Réglages</a></nav>
+  <div class="vg-head"><div><h1>Sauvegardes</h1><p class="vg-sub">Un seul endroit pour sauvegarder, télécharger et restaurer le stock et l'état des commandes.</p></div></div>
+
+  <section class="vg-card" id="stock-card">
+    <h2>Stock des pièces</h2>
+    <p class="muted">Le stock est sauvegardé automatiquement chaque nuit (gardé 180 jours). Dernière sauvegarde : <strong id="last">—</strong></p>
+    <div class="actions">
+      <button type="button" class="vg-btn ghost" id="backup-now">Sauvegarder maintenant</button>
+      <button type="button" class="vg-btn ghost" id="download">Télécharger la dernière</button>
+      <label class="vg-btn ghost" style="cursor:pointer">Restaurer depuis un fichier…<input type="file" id="restore" accept="application/json,.json" hidden></label>
+    </div>
+    <p class="muted" id="backups"></p>
+    <p class="muted" id="smsg" role="status"></p>
+  </section>
+
+  <section class="vg-card" id="orders-card">
+    <h2>Commandes</h2>
+    <p class="muted">Chaque nuit, l'état de tes commandes (expédiée, en préparation, numéros VG-…) est sauvegardé automatiquement et gardé 180 jours. Les paiements eux-mêmes restent dans Stripe.</p>
+    <div class="actions">
+      <button type="button" class="vg-btn ghost" id="b-now">Sauvegarder maintenant</button>
+      <button type="button" class="vg-btn ghost" id="b-dl">Télécharger la dernière</button>
+      <label class="vg-btn ghost" style="cursor:pointer">Restaurer depuis un fichier…<input type="file" id="b-restore" accept="application/json,.json" hidden></label>
+    </div>
+    <p class="muted" id="bmsg" role="status"></p>
+  </section>
+  <p id="msg" role="status" aria-live="polite"></p>
+</main>
+<script src="vg-admin-auth.js"></script>
+<script src="vg-admin-ui.js"></script>
+<script>
+(function () {
+  'use strict';
+  var $ = function (id) { return document.getElementById(id); };
+  var api = window.vgAdminApi, data = null;
+
+  function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+  function sSay(t) { $('smsg').textContent = t || ''; }
+  function oSay(t) { $('bmsg').textContent = t || ''; }
+  function save(blobPromise, name, say) {
+    return blobPromise.then(function (b) { var a = document.createElement('a'); a.href = URL.createObjectURL(b); a.download = name; document.body.appendChild(a); a.click(); a.remove(); }).catch(function (e) { say(e.message); });
+  }
+
+  // ---------- stock ----------
+  function loadStock() {
+    api('/admin/stock').then(function (d) {
+      data = d; $('last').textContent = d.lastBackup || 'aucune pour l\'instant';
+      return api('/admin/backups');
+    }).then(function (b) {
+      var list = (b.backups || []).filter(function (k) { return k !== 'backup:latest'; }).slice(0, 7);
+      $('backups').innerHTML = list.length ? 'Dernières : ' + list.map(function (k) { return '<a href="#" data-key="' + esc(k) + '">' + esc(k.slice(7)) + '</a>'; }).join(' · ') : '';
+    }).catch(function (e) { if (e.status !== 401) sSay('Erreur : ' + e.message); });
+  }
+  $('backup-now').addEventListener('click', function () {
+    sSay('Sauvegarde…');
+    api('/admin/backup', { method: 'POST' }).then(function (d) { $('last').textContent = d.date; sSay('Sauvegardé (' + d.count + ' pièces).'); }).catch(function (e) { sSay('Erreur : ' + e.message); });
+  });
+  function downloadStock(key) {
+    save(fetch(window.VG_ENDPOINT + '/admin/backup?key=' + encodeURIComponent(key), { headers: { Authorization: 'Bearer ' + window.vgAdminToken() } })
+      .then(function (r) { if (!r.ok) throw new Error('Téléchargement impossible : ' + r.status); return r.blob(); }),
+      'stock-' + (key === 'backup:latest' ? 'derniere' : key.slice(7)) + '.json', sSay);
+  }
+  $('download').addEventListener('click', function () { downloadStock('backup:latest'); });
+  $('backups').addEventListener('click', function (e) { var k = e.target.getAttribute('data-key'); if (k) { e.preventDefault(); downloadStock(k); } });
+  // Restauration : fichier { date, stock: { slug: n } } -> seules les quantités différentes du stock actuel sont rétablies, après confirmation.
+  $('restore').addEventListener('change', function () {
+    var file = this.files && this.files[0]; this.value = '';
+    if (!file || !data) return;
+    file.text().then(function (text) {
+      var j = JSON.parse(text), stock = j && j.stock;
+      if (!stock || typeof stock !== 'object') throw new Error('fichier non reconnu');
+      var edits = {};
+      Object.keys(stock).forEach(function (s) {
+        var n = Math.max(0, Math.floor(Number(stock[s])));
+        if (!isFinite(n)) return;
+        var cur = data.stock[s] ? data.stock[s].stock : null;
+        if (cur === null || n !== cur) edits[s] = n;
+      });
+      var n = Object.keys(edits).length;
+      if (!n) { sSay('Rien à restaurer : le stock actuel est déjà identique à la sauvegarde du ' + (j.date || '?') + '.'); return; }
+      if (!window.confirm('Rétablir ' + n + ' quantité(s) de stock depuis la sauvegarde du ' + (j.date || '?') + ' ?')) return;
+      sSay('Restauration…');
+      return api('/admin/stock', { method: 'POST', body: JSON.stringify({ stock: edits }) }).then(function (d) { data = d; sSay(n + ' quantité(s) rétablie(s). Le site affiche le nouveau stock sous 15 secondes.'); });
+    }).catch(function (e) { sSay('Restauration impossible : ' + e.message); });
+  });
+
+  // ---------- commandes (état expédiée / préparation / numéros ; le détail des commandes reste chez Stripe) ----------
+  $('b-now').addEventListener('click', function () {
+    api('/admin/obackup', { method: 'POST' }).then(function (d) { oSay('Sauvegarde faite (' + d.shipped + ' expédiées, ' + d.refs + ' numéros).'); }).catch(function (e) { oSay('Erreur : ' + e.message); });
+  });
+  $('b-dl').addEventListener('click', function () {
+    save(fetch(window.VG_ENDPOINT + '/admin/obackup', { headers: { Authorization: 'Bearer ' + window.vgAdminToken() } })
+      .then(function (r) { if (!r.ok) throw new Error(r.status === 404 ? 'Pas encore de sauvegarde (la première se fait cette nuit, ou clique « Sauvegarder maintenant »).' : 'Erreur ' + r.status); return r.blob(); }),
+      'commandes-derniere.json', oSay);
+  });
+  $('b-restore').addEventListener('change', function () {
+    var f = this.files[0]; this.value = ''; if (!f) return;
+    if (!window.confirm("Remettre l'état des commandes (expédiée, préparation, numéros) depuis ce fichier ? Les entrées du fichier remplacent celles du site.")) return;
+    f.text().then(function (t) { return api('/admin/obackup-restore', { method: 'POST', body: t }); })
+      .then(function (d) { oSay(d.restored + ' entrées restaurées.'); })
+      .catch(function (e) { oSay('Erreur : ' + e.message); });
+  });
+
+  loadStock();
+})();
+</script>
+<script src="vg-admin-cursor.js"></script>
+</body>
+</html>

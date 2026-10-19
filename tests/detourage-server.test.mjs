@@ -87,7 +87,7 @@ test('lanceur : mot de passe créé puis conservé, lien et adresse du tunnel', 
   assert.equal(tunnel.findTunnelUrl('INF |  https://quiet-owl-1234.trycloudflare.com  |'), 'https://quiet-owl-1234.trycloudflare.com');
   assert.equal(tunnel.findTunnelUrl('POST https://api.trycloudflare.com/tunnel'), null);
   assert.equal(tunnel.findTunnelUrl('POST https://api.trycloudflare.com/tunnel\nINF https://calm-fox-9.trycloudflare.com'), 'https://calm-fox-9.trycloudflare.com');
-  const link = tunnel.buildLink('https://vgthmind.github.io/shop/admin/studio-photo.html', 'https://quiet-owl-1234.trycloudflare.com', t1);
+  const link = tunnel.buildLink('https://vgthmind.github.io/shop/admin/nouvelle-piece.html', 'https://quiet-owl-1234.trycloudflare.com', t1);
   assert.ok(link.includes('#srv=https%3A%2F%2Fquiet-owl-1234.trycloudflare.com&k=' + t1));
   assert.ok(!tunnel.linkPage('a"<b').includes('a"<b'));
 });

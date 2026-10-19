@@ -81,14 +81,11 @@
 </head>
 <body>
 <main class="vg-page">
-  <nav class="vg-legacy-nav"><a href="menu.html">← Tableau de bord</a> <a href="commandes.html">Commandes</a> <a href="aide.html#demandes">Aide</a></nav>
   <div class="vg-head"><div><h1>Demandes</h1><p class="vg-sub">Pièces sur demande (custom, sur-mesure), productions visuelles et collabs envoyées depuis la page « Proposer un projet ».</p></div></div>
 
   <div class="bar" id="login" hidden><button type="button" id="login-btn">Se connecter avec GitHub</button></div>
 
-  <div class="bar tabs" id="tabs" hidden>
-    <button type="button" data-tab="list" aria-pressed="true">Demandes</button>
-    <button type="button" data-tab="settings" aria-pressed="false">Réglages</button>
+  <div class="bar" id="tabs" hidden>
     <button type="button" id="refresh">Actualiser</button>
   </div>
 
@@ -100,54 +97,11 @@
     <div id="requests"></div>
   </section>
 
-  <section id="settings-view" hidden>
-    <div class="set">
-    <h3>Prix « à partir de » (affichés sur la page)</h3>
-    <p class="muted">Jamais en dessous du prix boutique équivalent (la pièce la moins chère de la même famille, indiquée à côté) : l'enregistrement est refusé sinon.</p>
-    <div class="form" id="prices"></div>
-    </div>
-    <div class="set">
-    <h3>Acompte, relances, retouches</h3>
-    <div class="form">
-      <label>Acompte (% du prix total)<input type="number" id="s-depositPct" min="1" max="100"></label>
-      <label>Relance du client après (jours)<input type="number" id="s-remindDays" min="1"></label>
-      <label>Alerte pour moi après (jours)<input type="number" id="s-alertDays" min="1"></label>
-      <label>Acompte conservé après (jours, CGV)<input type="number" id="s-forfeitDays" min="1"></label>
-      <label>Retouches incluses après les photos<input type="number" id="s-retouchesIncluded" min="0" max="10"></label>
-    </div>
-    <p class="muted">Si tu changes « acompte conservé » ou « retouches incluses », mets aussi à jour les CGV.</p>
-    </div>
-    <div class="set">
-    <h3>Facturation</h3>
-    <div class="form">
-      <label style="grid-column:1/-1">Adresse (imprimée sur les factures et avoirs, nulle part ailleurs)<input type="text" id="s-sellerAddress" maxlength="200" autocomplete="off" placeholder="numéro, rue, code postal"></label>
-    </div>
-    <p class="muted">La facture affiche « vgthmind », cette adresse, Vitry-sur-Seine, le SIRET et contact@vgthmind.org. Jamais de nom ni de prénom. Reste vide tant que tu ne l'as pas remplie : remplis-la AVANT la première facture réelle. Elle est gardée dans les données du site, pas dans le code.</p>
-    </div>
-    <div class="set">
-    <h3>Délais affichés sur la page « Proposer un projet »</h3>
-    <p class="muted">En semaines. Le minimum est aussi la date la plus proche que le client peut choisir ; le maximum sert au délai indicatif affiché (identique au minimum = « 2 semaines »).</p>
-    <div class="form">
-      <label>Location · minimum<input type="number" id="s-lead-location-min" min="1" max="52"></label>
-      <label>Location · maximum<input type="number" id="s-lead-location-max" min="1" max="52"></label>
-      <label>Custom · minimum<input type="number" id="s-lead-custom-min" min="1" max="52"></label>
-      <label>Custom · maximum<input type="number" id="s-lead-custom-max" min="1" max="52"></label>
-      <label>Sur-mesure · minimum<input type="number" id="s-lead-surmesure-min" min="1" max="52"></label>
-      <label>Sur-mesure · maximum<input type="number" id="s-lead-surmesure-max" min="1" max="52"></label>
-    </div>
-    </div>
-    <div class="set">
-    <h3>Photos des cartes du parcours</h3>
-    <p class="muted">Chaque choix de la page « Proposer un projet » montre une photo. Change-la avec un fichier (JPEG / PNG / WebP, 3 Mo max, format portrait 4:5 conseillé) ou une photo de la boutique.</p>
-    <div class="cards" id="cards"></div>
-    </div>
-    <div class="actions savebar"><button type="button" class="main" id="save-settings">Enregistrer les réglages</button><span id="smsg" class="muted" role="status"></span></div>
-  </section>
 </main>
 <input type="file" id="final-input" accept="image/jpeg,image/png,image/webp,image/heic" multiple hidden>
-<input type="file" id="card-input" accept="image/jpeg,image/png,image/webp" hidden>
 <script src="vg-admin-auth.js"></script>
 <script src="vg-admin-ui.js"></script>
+<script src="../assets/vg-invoice.js"></script>
 <script>
 (function () {
   'use strict';
@@ -173,14 +127,9 @@
     api('/admin/requests').then(function (d) {
       list = d.requests || []; settings = d.settings; uploads = d.uploads;
       $('login').hidden = true; $('tabs').hidden = false; $('r2').hidden = uploads;
-      showTab(location.hash === '#reglages' ? 'settings' : 'list');
+      $('list-view').hidden = false;
       say(''); draw();
     }).catch(function (e) { if (e.status === 401) { $('login').hidden = false; say('Connexion expirée : reconnecte-toi.'); } else say('Erreur : ' + e.message); });
-  }
-  function showTab(t) {
-    document.querySelectorAll('[data-tab]').forEach(function (b) { b.setAttribute('aria-pressed', String(b.getAttribute('data-tab') === t)); });
-    $('list-view').hidden = t !== 'list'; $('settings-view').hidden = t !== 'settings';
-    if (t === 'settings') loadSettings();
   }
 
   // --- Liste ---------------------------------------------------------------------------------
@@ -232,7 +181,7 @@
     if (paid) {
       var locked = r.deposit && r.deposit.paidAt;
       h += '<h3>1. Devis et acompte</h3>' + (q ? '<p>Devis du ' + esc(date(q.sentAt)) + ' : <b>' + money(q.total) + '</b>, acompte ' + q.depositPct + ' % = <b>' + money(q.deposit) + '</b>, solde ' + money(q.total - q.deposit) + ' + port, délai ' + esc(q.delay) + ', poids ' + q.weight_g + ' g.</p>' : '')
-        + (r.deposit && r.deposit.paidAt ? '<p><span class="tag ok">Acompte payé le ' + esc(date(r.deposit.paidAt)) + ' : ' + money(r.deposit.amount) + '</span></p>' : r.deposit && r.deposit.acceptedAt ? '<p class="muted">Mention acceptée le ' + esc(date(r.deposit.acceptedAt)) + ', paiement pas encore reçu.</p>' : '')
+        + (r.deposit && r.deposit.paidAt ? '<p><span class="tag ok">Acompte payé le ' + esc(date(r.deposit.paidAt)) + ' : ' + money(r.deposit.amount) + '</span> ' + (r.deposit.session ? '<button type="button" data-inv="' + esc(r.deposit.session) + '">Facture d’acompte</button>' : '') + '</p>' : r.deposit && r.deposit.acceptedAt ? '<p class="muted">Mention acceptée le ' + esc(date(r.deposit.acceptedAt)) + ', paiement pas encore reçu.</p>' : '')
         + (locked ? '' : '<div class="form"><label>Titre de la pièce<input type="text" data-q="title" value="' + esc(q ? q.title : '') + '" placeholder="ex. Hoodie custom océan"></label><label>Prix total (€)<input type="number" step="0.01" data-q="total" value="' + (q ? q.total : '') + '"></label>'
           + '<label>Délai<input type="text" data-q="delay" value="' + esc(q ? q.delay : '') + '" placeholder="ex. 3 semaines"></label><label>Acompte (%)<input type="number" data-q="depositPct" value="' + (q ? q.depositPct : (settings ? settings.depositPct : 30)) + '"></label>'
           + '<label>Poids emballé (g, pour le port)<input type="number" data-q="weight_g" value="' + (q ? q.weight_g : '') + '" placeholder="auto"></label></div><label class="lbl" style="margin-top:8px">Message dans le devis (facultatif)<textarea data-q="message">' + esc(q ? q.message : '') + '</textarea></label>'
@@ -244,7 +193,7 @@
         h += '<p class="muted">Envoi n° ' + v.round + ' le ' + esc(date(v.sentAt)) + ' · retouches utilisées : ' + v.retouchesUsed + ' / ' + (settings ? settings.retouchesIncluded : 1) + (v.validatedAt ? ' · <b>validée le ' + esc(date(v.validatedAt)) + '</b>' : '') + '</p>'
           + (v.retouches.length ? '<ul>' + v.retouches.map(function (x) { return '<li>' + esc(date(x.at)) + (x.extra ? ' <span class="tag warn">sur devis</span>' : '') + ' : ' + esc(x.text) + '</li>'; }).join('') + '</ul>' : '');
       }
-      h += '<h3>3. Solde et envoi</h3>' + (r.balance && r.balance.paidAt ? '<p><span class="tag ok">Solde payé le ' + esc(date(r.balance.paidAt)) + ' : ' + money(r.balance.amount) + ' (dont port ' + money(r.balance.shipping) + ')</span> → onglet <a href="commandes.html">Commandes</a> (suivi, mail « partie », facture).</p>' : '<p class="muted">Le client paie le solde depuis sa page après avoir validé. La commande arrive ensuite dans l’onglet Commandes.</p>');
+      h += '<h3>3. Solde et envoi</h3>' + (r.balance && r.balance.paidAt ? '<p><span class="tag ok">Solde payé le ' + esc(date(r.balance.paidAt)) + ' : ' + money(r.balance.amount) + ' (dont port ' + money(r.balance.shipping) + ')</span> ' + (r.balance.session ? '<button type="button" data-inv="' + esc(r.balance.session) + '">Facture de solde</button> ' : '') + '→ suivi et mail « partie » : onglet <a href="commandes.html">Commandes</a>.</p>' : '<p class="muted">Le client paie le solde depuis sa page après avoir validé. La commande arrive ensuite dans l’onglet Commandes.</p>');
     } else {
       h += '<p class="muted" style="margin-top:14px">Production visuelle / collab : pas de paiement automatique. Réponds par mail (devis, caution par chèque, contrat) et suis le statut à la main.</p>';
     }
@@ -294,6 +243,7 @@
       if (confirm('Envoyer ce mail à ' + r.client.email + ' ?')) act(r, 'reply', { subject: su, message: me }, 'Mail envoyé.');
     }
     if (t.hasAttribute('data-rmfinal')) { if (confirm('Retirer cette photo ?')) act(r, 'removeFinal', { key: t.getAttribute('data-rmfinal') }); }
+    if (t.hasAttribute('data-inv')) { window.VGInvoice.openAsync(api('/admin/invoice?id=' + encodeURIComponent(t.getAttribute('data-inv'))).then(function (d) { return d.invoice; }), 'fr'); return; }
     if (t.hasAttribute('data-addfinal')) { $('final-input').setAttribute('data-id', r.id); $('final-input').click(); }
     if (t.hasAttribute('data-video')) blob(t.getAttribute('data-video'), r.id).then(function (u) { window.open(u, '_blank'); }).catch(function () { say('Vidéo effacée ou introuvable.'); });
     if (t.hasAttribute('data-copy')) { try { navigator.clipboard.writeText(t.getAttribute('data-copy')); say('Lien copié.'); } catch (err) { prompt('Lien client :', t.getAttribute('data-copy')); } }
@@ -316,86 +266,8 @@
   });
   $('chips').addEventListener('click', function (e) { var b = e.target.closest('[data-f]'); if (b) { filter = b.getAttribute('data-f'); draw(); } });
   $('q').addEventListener('input', draw);
-  $('tabs').addEventListener('click', function (e) { var b = e.target.closest('[data-tab]'); if (b) showTab(b.getAttribute('data-tab')); });
   $('refresh').addEventListener('click', load);
   $('login-btn').addEventListener('click', function () { window.vgAdminLogin().then(load).catch(function (e) { say(e.message); }); });
-
-  // --- Réglages ------------------------------------------------------------------------------
-  var cards = {};
-  function loadSettings() {
-    $('smsg').textContent = 'Chargement…';
-    api('/admin/requests/settings').then(function (d) {
-      settings = d.settings; floors = d.floors || {}; cards = Object.assign({}, settings.cards || {});
-      var h = '';
-      ['custom', 'surmesure'].forEach(function (t) {
-        PIECES[t].forEach(function (p) {
-          var fl = floors[t + '.' + p[0]];
-          h += '<label>' + (t === 'custom' ? 'Custom' : 'Sur-mesure') + ' · ' + esc(p[1]) + ' (€)<input type="number" step="1" data-price="' + t + '.' + p[0] + '" value="' + settings.prices[t][p[0]] + '"><small>' + (fl ? 'boutique : dès ' + fl.price + ' € (' + esc(fl.name) + ')' : 'pas d’équivalent en boutique') + '</small></label>';
-        });
-      });
-      h += '<label>Peinture en plus (sur-mesure, €)<input type="number" step="1" data-price="paintFrom" value="' + settings.prices.paintFrom + '"><small>« à partir de », prix final dans le devis</small></label>';
-      $('prices').innerHTML = h;
-      ['depositPct', 'remindDays', 'alertDays', 'forfeitDays', 'retouchesIncluded'].forEach(function (k) { $('s-' + k).value = settings[k]; });
-      $('s-sellerAddress').value = settings.sellerAddress || '';
-      ['location', 'custom', 'surmesure'].forEach(function (t) { var l = (settings.leadWeeks || {})[t] || { min: 2, max: 2 }; $('s-lead-' + t + '-min').value = l.min; $('s-lead-' + t + '-max').value = l.max; });
-      drawCards(); $('smsg').textContent = '';
-    }).catch(function (e) { $('smsg').textContent = 'Erreur : ' + e.message; });
-  }
-  function cardSrc(k) {
-    var v = cards[k];
-    if (v && v.indexOf('card:') === 0) return EP + '/requests/card?f=' + encodeURIComponent(v.slice(5));
-    if (v && v.charAt(0) === '/') return BASE + v;
-    if (v) return v;
-    return NO_DEFAULT[k] ? '' : '../assets/demande/' + k.replace('.', '-') + '-400.webp';
-  }
-  function drawCards() {
-    $('cards').innerHTML = CARDS.map(function (c) {
-      var src = cardSrc(c[0]);
-      return '<div class="cardset">' + (src ? '<img src="' + esc(src) + '" alt="">' : '<div style="aspect-ratio:4/5;display:flex;align-items:center;justify-content:center;background:var(--bg);border-radius:8px" class="muted">texte seul</div>')
-        + '<b>' + esc(c[1]) + '</b>' + (cards[c[0]] ? ' <span class="tag warn">modifiée</span>' : '')
-        + '<div class="actions"><button type="button" data-cfile="' + c[0] + '" ' + (uploads ? '' : 'disabled title="R2 pas encore activé"') + '>Fichier…</button><button type="button" data-cshop="' + c[0] + '">Boutique…</button>' + (cards[c[0]] ? '<button type="button" data-creset="' + c[0] + '">Origine</button>' : '') + '</div></div>';
-    }).join('');
-  }
-  $('cards').addEventListener('click', function (e) {
-    var t = e.target.closest('button'); if (!t) return;
-    if (t.hasAttribute('data-cfile')) { $('card-input').setAttribute('data-c', t.getAttribute('data-cfile')); $('card-input').click(); }
-    if (t.hasAttribute('data-creset')) { delete cards[t.getAttribute('data-creset')]; drawCards(); $('smsg').textContent = 'Pense à enregistrer.'; }
-    if (t.hasAttribute('data-cshop')) pickShop(t.getAttribute('data-cshop'));
-  });
-  $('card-input').addEventListener('change', function () {
-    var c = this.getAttribute('data-c'), f = this.files && this.files[0]; this.value = '';
-    if (!f) return;
-    $('smsg').textContent = 'Envoi de la photo…';
-    fetch(EP + '/admin/requests/card?c=' + encodeURIComponent(c), { method: 'PUT', headers: { Authorization: 'Bearer ' + token(), 'Content-Type': f.type }, body: f })
-      .then(function (r) { return r.json().then(function (d) { if (!r.ok) throw new Error(d.error || r.status); cards[c] = d.value; drawCards(); $('smsg').textContent = 'Photo envoyée : clique « Enregistrer les réglages ».'; }); })
-      .catch(function (e) { $('smsg').textContent = 'Erreur : ' + e.message; });
-  });
-  function pickShop(c) {
-    fetch('../products.json').then(function (r) { return r.json(); }).then(function (ps) {
-      var imgs = [];
-      ps.forEach(function (p) { (p.images || []).slice(0, 3).forEach(function (im) { if (im.url) imgs.push([im.url, p.name]); }); });
-      var box = document.createElement('div'); box.className = 'picker';
-      box.innerHTML = '<div><div class="actions" style="justify-content:space-between;margin:0 0 10px"><b>Choisir une photo de la boutique</b><button type="button" data-close>Fermer</button></div><div class="grid">'
-        + imgs.map(function (x) { return '<div class="thumb"><img src="' + esc(x[0]) + '" data-pick="' + esc(x[0]) + '" alt="" loading="lazy"><span>' + esc(x[1]) + '</span></div>'; }).join('') + '</div></div>';
-      box.addEventListener('click', function (e) {
-        var p = e.target.getAttribute('data-pick');
-        if (p) { cards[c] = p.indexOf(BASE + '/') === 0 ? p.slice(BASE.length) : p; drawCards(); $('smsg').textContent = 'Pense à enregistrer.'; }
-        if (p || e.target.hasAttribute('data-close') || e.target === box) box.remove();
-      });
-      document.body.appendChild(box);
-    });
-  }
-  $('save-settings').addEventListener('click', function () {
-    var s = JSON.parse(JSON.stringify(settings));
-    document.querySelectorAll('[data-price]').forEach(function (i) { var k = i.getAttribute('data-price'); if (k === 'paintFrom') s.prices.paintFrom = Number(i.value); else { var p = k.split('.'); s.prices[p[0]][p[1]] = Number(i.value); } });
-    ['depositPct', 'remindDays', 'alertDays', 'forfeitDays', 'retouchesIncluded'].forEach(function (k) { s[k] = Number($('s-' + k).value); });
-    s.leadWeeks = {}; ['location', 'custom', 'surmesure'].forEach(function (t) { s.leadWeeks[t] = { min: Number($('s-lead-' + t + '-min').value), max: Number($('s-lead-' + t + '-max').value) }; });
-    s.cards = cards;
-    s.sellerAddress = $('s-sellerAddress').value;
-    $('smsg').textContent = 'Enregistrement…';
-    api('/admin/requests/settings', { method: 'POST', body: JSON.stringify({ settings: s }) }).then(function (d) { settings = d.settings; $('smsg').textContent = 'Réglages enregistrés (la page publique se met à jour en 1 minute environ).'; })
-      .catch(function (e) { $('smsg').textContent = 'Refusé : ' + e.message; });
-  });
 
   load();
 })();

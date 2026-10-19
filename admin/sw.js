@@ -1,8 +1,8 @@
 /* Service worker de l'admin installable : garde les pages de l'admin en mémoire pour qu'elles s'ouvrent même
    avec une mauvaise connexion. Réseau d'abord (toujours la dernière version quand il y a du réseau).
    Ne touche jamais aux appels vers le Worker ou GitHub (commandes, stock...) : seulement les fichiers de /admin/. */
-var CACHE = 'vg-admin-v14';
-var SHELL = ['menu.html', 'plus.html', 'menu-stats.js', 'vg-admin-ui.js', 'vg-admin-cursor.js', 'vg-admin-ui.css', 'aide.html', 'commandes.html', 'demandes.html', 'catalogue.html', 'drop.html', 'rapide.html', 'fiche-core.js', 'img-retry.js', 'fiche-save.js', 'photo-encode.js', 'catalogue-core.js', 'pieces-save.js', 'pieces-view.js', 'piece-form.js', 'shipping-calc.js', 'stock.html', 'pieces.html', 'export.html', 'trafic.html', 'expedition.html', 'promos.html', 'vg-admin-auth.js', 'icon-192.png'];
+var CACHE = 'vg-admin-v15';
+var SHELL = ['menu.html', 'commandes.html', 'demandes.html', 'catalogue.html', 'nouvelle-piece.html', 'reglages.html', 'reglages-promos.html', 'reglages-livraison.html', 'reglages-demandes.html', 'reglages-videos.html', 'reglages-compta.html', 'reglages-sauvegardes.html', 'reglages-visites.html', 'reglages-sante.html', 'reglages-aide.html', 'menu-stats.js', 'vg-admin-ui.js', 'vg-admin-cursor.js', 'vg-admin-ui.css', 'fiche-core.js', 'img-retry.js', 'fiche-save.js', 'photo-encode.js', 'catalogue-core.js', 'pieces-save.js', 'pieces-view.js', 'piece-form.js', 'shipping-calc.js', 'vg-admin-auth.js', 'icon-192.png'];
 
 self.addEventListener('install', function (e) {
   e.waitUntil(caches.open(CACHE).then(function (c) { return Promise.all(SHELL.map(function (u) { return fetch(u).then(function (r) { if (r.ok && !r.redirected) return c.put(u, r); }).catch(function () {}); })); }));

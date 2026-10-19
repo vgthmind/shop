@@ -30,8 +30,8 @@ test('pièce sans poids : état « missing », aucun port affiché, badge SANS P
     const d = V.describe(calc, config, p);
     assert.equal(d.state, 'missing'); assert.deepEqual(d.zones, []); assert.equal(d.advice, null);
   }
-  const html = readFileSync(new URL('../admin/pieces.html', import.meta.url), 'utf8');
-  assert.match(html, /SANS POIDS/); assert.match(html, /tr\.nowt/);
+  const html = readFileSync(new URL('../admin/catalogue.html', import.meta.url), 'utf8');
+  assert.match(html, /Sans poids/); assert.match(html, /noweight/);
 });
 test('ports par zone : France, zone A, reste du monde, outre-mer (coût réel, payé, écart)', () => {
   const d = V.describe(calc, config, { slug: 'x', weight_g: 420, mode: 'colis' });

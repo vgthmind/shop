@@ -248,8 +248,8 @@ test('lettre : poids max réglable (enveloppe comprise) et client paie le forfai
   assert.equal(q([w('a', 81, { mode: 'lettre' })], 'FR', {}, small).parcels[0].kind, 'colis');  // 101 g : trop lourd
   assert.equal(q([w('a', 48, { mode: 'lettre' })], 'FR').totalCents, 400);
 });
-test('admin Expédition : réglages lettre (activée, pays, poids max, pièces max) présents dans la page', () => {
-  const html = readFileSync(new URL('../admin/expedition.html', import.meta.url), 'utf8');
+test('admin Livraison (Réglages) : réglages lettre (activée, pays, poids max, pièces max) présents dans la page', () => {
+  const html = readFileSync(new URL('../admin/reglages-livraison.html', import.meta.url), 'utf8');
   for (const p of ['lettre.enabled', 'lettre.countries', 'lettre.max_weight_g', 'lettre.max_pieces']) assert.ok(html.includes('data-path="' + p + '"') || html.includes("'" + p + "'"), p);
 });
 

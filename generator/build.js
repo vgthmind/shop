@@ -846,9 +846,7 @@ async function main() {
   write('robots.txt', SHOP_SETTINGS.public
     ? `User-agent: *\nDisallow: ${BASE_PATH}/admin/\nSitemap: ${SHOP_SETTINGS.site_url}/sitemap.xml\n`
     : read(rel(ROOT, 'robots.txt')));
-  // Admin (Sveltia CMS) : servi tel quel sous /shop/admin/ (page + config +
-  // pages maison), jamais passé par le préfixe /shop (Sveltia lit
-  // config.yml à côté de la page).
+  // Admin (pages maison) : servi tel quel sous /admin/, jamais passé par le préfixe /shop.
   fs.cpSync(rel(ROOT, 'admin'), rel(OUT_DIR, 'admin'), { recursive: true });
   {
     // Adresse du site (réglage central) dans le script de connexion : page de connexion après « Se déconnecter », et renvoi
@@ -856,13 +854,8 @@ async function main() {
     const authPath = rel(OUT_DIR, 'admin', 'vg-admin-auth.js');
     fs.writeFileSync(authPath, fs.readFileSync(authPath, 'utf8').split('__VG_SITE_URL__').join(SHOP_SETTINGS.site_url.replace(/\/$/, '')));
   }
-  // Adresse du site pour le Worker (/site-config.json) et pour le lien « voir le site » de Sveltia.
+  // Adresse du site pour le Worker (/site-config.json).
   write('site-config.json', JSON.stringify({ site_url: SHOP_SETTINGS.site_url.replace(/\/$/, '') }) + '\n');
-  {
-    const cfgPath = rel(OUT_DIR, 'admin', 'config.yml');
-    const su = SHOP_SETTINGS.site_url.replace(/\/$/, '');
-    fs.writeFileSync(cfgPath, fs.readFileSync(cfgPath, 'utf8').replace(/^(site_url|display_url):.*\r?\n/gm, '').replace(/\s*$/, '\n') + `site_url: ${su}\ndisplay_url: ${su}\n`);
-  }
   // Catégories pour l'assistant « nouvelle pièce » (le dépôt devient privé : plus de lecture directe sur GitHub).
   fs.copyFileSync(rel(DATA_DIR, 'categories.json'), rel(OUT_DIR, 'admin', 'categories.json'));
 

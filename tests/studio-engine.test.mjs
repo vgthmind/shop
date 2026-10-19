@@ -9,7 +9,7 @@ function boot({ hash = '', stored = {}, fetch, hostname = 'vgthmind.github.io' }
   const ls = { ...stored };
   const localStorage = { getItem: (k) => (k in ls ? ls[k] : null), setItem: (k, v) => { ls[k] = String(v); }, removeItem: (k) => { delete ls[k]; } };
   const hist = { url: null };
-  const location = { hash, search: '', pathname: '/shop/admin/studio-photo.html', hostname };
+  const location = { hash, search: '', pathname: '/shop/admin/nouvelle-piece.html', hostname };
   const win = { localStorage, location, history: { replaceState: (a, b, u) => { hist.url = u; location.hash = ''; } }, navigator: { userAgent: 'iPhone', platform: 'iPhone', maxTouchPoints: 5 }, document: {} };
   const ctx = vm.createContext({ window: win, localStorage, location, history: win.history, navigator: win.navigator, URLSearchParams, AbortController, fetch, setTimeout, clearTimeout, Date, document: win.document });
   vm.runInContext(SRC, ctx);
@@ -23,7 +23,7 @@ test('lien du lanceur : adresse et mot de passe rangés, effacés de la barre d�
   const { E, ls, hist } = boot({ hash: `#srv=${encodeURIComponent('https://calm-fox-9.trycloudflare.com')}&k=${TOKEN}`, fetch: async () => json(200, {}) });
   assert.equal(E.getUrl(), 'https://calm-fox-9.trycloudflare.com');
   assert.equal(ls['vg-detourage-url'], 'https://calm-fox-9.trycloudflare.com'); assert.equal(ls['vg-detourage-token'], TOKEN);
-  assert.equal(hist.url, '/shop/admin/studio-photo.html');
+  assert.equal(hist.url, '/shop/admin/nouvelle-piece.html');
 });
 
 test('adresse non https ou bizarre dans le lien : ignorée', () => {
