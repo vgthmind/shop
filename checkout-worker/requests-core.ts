@@ -408,9 +408,10 @@ export function applyAction(input: any, action: string, d: any, s: Settings, now
       rec.reminders = {};
       return done(rec, now, `Devis ${number}${version > 1 ? ' v' + version : ''} envoyé : ${total} €${rec.quote.deposit ? `, acompte ${rawPct} % (${rec.quote.deposit} €)` : ', sans acompte'}, délai ${delay}, valable ${validDays} jours`, [{ kind: 'mail:quote' }]);
     }
-    case 'cancelQuote': { // devis non accepté : annulé (le numéro reste réservé, le prochain sera v+1)
+    case 'cancelQuote': { // devis annulé tant que l'acompte n'est pas payé (même accepté) ; ni modification ni v2 d'un devis accepté (le numéro reste réservé, le prochain sera v+1)
       if (!rec.quote) return fail('Aucun devis à annuler.');
-      if (rec.quote.acceptedAt || (rec.deposit && (rec.deposit.acceptedAt || rec.deposit.paidAt))) return fail('Devis accepté : il ne peut plus être annulé ni modifié.');
+      if ((rec.deposit && rec.deposit.paidAt) || rec.status !== 'devis') return fail('Acompte payé ou projet en cours : le devis ne peut plus être annulé.');
+      rec.deposit = null; // acceptation sans paiement : effacée avec le devis (la mention reste dans le journal)
       rec.quoteHistory = [...(rec.quoteHistory || []), { ...rec.quote, cancelledAt: now }].slice(-20);
       const label = `${rec.quote.number}${rec.quote.version > 1 ? ' v' + rec.quote.version : ''}`;
       rec.quote = null; rec.status = 'discussion'; rec.reminders = {};

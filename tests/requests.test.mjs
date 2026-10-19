@@ -485,7 +485,14 @@ test('devis pro : annulation d’un devis non accepté, puis v2 ; devis accepté
   // Le client accepte (case + clic sur « payer ») : plus aucune modification.
   await call('/requests/deposit', { id, k, accept: true });
   assert.equal((await admin('/admin/requests/act', { id, action: 'quote', total: 10, delay: 'x' })).status, 400);
-  assert.match((await admin('/admin/requests/act', { id, action: 'cancelQuote' })).error, /accepté/);
+  // Accepté mais acompte non payé : seule l'annulation est permise, puis un nouveau devis.
+  const cc = await admin('/admin/requests/act', { id, action: 'cancelQuote' });
+  assert.equal(cc.ok, true); assert.equal(cc.request.quote, null); assert.equal(cc.request.deposit, null); assert.equal(cc.request.status, 'discussion');
+  const q3 = await admin('/admin/requests/act', { id, action: 'quote', total: 90, delay: '2 semaines' });
+  assert.equal(q3.request.quote.version, 3);
+  const dp = await J(await call('/requests/deposit', { id, k, accept: true }));
+  await webhook('checkout.session.completed', pay(dp.url.split('/').pop()));
+  assert.match((await admin('/admin/requests/act', { id, action: 'cancelQuote' })).error, /ne peut plus/, 'acompte payé : plus d’annulation');
   // Expiré : refus côté serveur.
   const e = await submit(); await call('/requests/confirm', { id: e.id, k: e.k });
   await admin('/admin/requests/act', { id: e.id, action: 'quote', total: 100, delay: '2 semaines', validDays: 1 });
