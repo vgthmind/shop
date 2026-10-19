@@ -334,7 +334,7 @@
       + '<label><input type="radio" name="color" value="autre"' + (f.color === 'autre' ? ' checked' : '') + '>Autre…</label><label><input type="radio" name="color" value=""' + (!f.color ? ' checked' : '') + '>Aucune</label>';
     var p = cur.base;
     return '<div class="fhead"><a class="vg-btn ghost" href="#" id="back">← Pièces</a><h1 id="ftitle">' + esc(isNew ? 'Nouvelle pièce' : (p.name || p.slug)) + '</h1>'
-      + (isNew ? '' : '<a class="vg-btn ghost" target="_blank" rel="noopener" href="../product/' + encodeURIComponent(p.slug) + '">Voir sur le site ↗</a>')
+      + (isNew || (p.hidden && !p.publish_at) ? '' : '<a class="vg-btn ghost" target="_blank" rel="noopener" href="../product/' + encodeURIComponent(p.slug) + '">Voir sur le site ↗</a>')
       + (isNew ? '' : '<button type="button" class="vg-btn ghost" id="f-dup">Dupliquer</button>') + '</div>'
 
       + '<section class="vg-card sect"><h2>Photos</h2><div class="photos" id="photos"></div>'

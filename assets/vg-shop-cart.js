@@ -456,7 +456,7 @@
         catalog.forEach(function (p) { live[p.permalink] = p; });
         var left = function (slug) { return stock && stock[slug] !== undefined ? stock[slug] : null; };
         var gone = items.filter(function (it) {
-          return !live[it.slug] || left(it.slug) === 0;
+          return !live[it.slug] || live[it.slug].status === 'coming-soon' || live[it.slug].hidden === true || left(it.slug) === 0;
         });
         // Petite série : quantité ramenée au stock restant.
         items.forEach(function (it) {

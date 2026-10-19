@@ -682,7 +682,10 @@ async function main() {
       products: { current: filtered },
     }));
   }
+  // Pièce masquée (sans date) : pas de fiche du tout (/product/<nom> renvoie vers /products). Programmée : fiche « Coming soon », non listée.
+  const noPage = (p) => p.hidden && !p.scheduled;
   for (const p of catalog.products) {
+    if (noPage(p)) continue;
     page(`product/${p.permalink}/index.html`, src.product, Object.assign({}, base, {
       page: { name: p.name, permalink: p.permalink, category: 'product', full_url: `/product/${p.permalink}` },
       product: p,
@@ -724,7 +727,7 @@ async function main() {
   const localized = catalog.products.map((p) => localizeProduct(p, imageMap));
   // Pièces masquées (aperçu) : pas dans products.json (recherche, panier, pièces similaires) ; leur fiche et product/<slug>.js restent.
   write('products.json', JSON.stringify(localized.filter((p) => !p.hidden)));
-  for (const p of localized) write(`product/${p.permalink}.js`, JSON.stringify(p));
+  for (const p of localized) { if (p.hidden && !p.scheduled) continue; write(`product/${p.permalink}.js`, JSON.stringify(p)); }
   write('cart.js', JSON.stringify({ item_count: 0, items: [], price: 0, total: 0, shipping: null, discount: null }));
 
   // Assets: theme.css is a Liquid template too (theme.* colours/fonts).
@@ -795,6 +798,7 @@ async function main() {
         const a = slug(n);
         forms.add(a); forms.add(a.replace(/_/g, '-')); forms.add(a.replace(/-/g, '_'));
       }
+      if (p.hidden && !p.scheduled) continue; // pas de fiche : rien vers quoi rediriger
       for (const f of forms) {
         if (!f || real.has(f) || seen.has(f)) continue;
         seen.add(f);
