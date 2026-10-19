@@ -60,3 +60,11 @@ test('fromQuote : prix du Worker affiché, états de blocage', () => {
   const net = V.fromQuote({ ok: false, error: 'network' }, 20, 'CA', 'fr');
   assert.deepEqual([net.state, net.blocked], ['error', true]);
 });
+
+test('panier : le sélecteur de pays formate les montants dans la langue de la page (régression « €84.00 » en français)', async () => {
+  const { readFileSync } = await import('node:fs');
+  const src = readFileSync(new URL('../assets/vg-shipping-picker.js', import.meta.url), 'utf8');
+  const calls = src.match(/V\.money\([^)]*\)/g) || [];
+  assert.ok(calls.length >= 4);
+  for (const c of calls) assert.match(c, /,\s*lang\)/, c + ' sans langue');
+});
