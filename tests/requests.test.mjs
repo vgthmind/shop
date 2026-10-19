@@ -180,8 +180,20 @@ test('mesures : cache-cou et accessoire sans taille ni taille portée ; accessoi
   const acc = await submit({ ...FORM, type: 'surmesure', piece: 'haut', mcat: 'acc', mv: { aw: '20', ah: '12' } });
   assert.equal(acc.ok, true);
   const ra = await getReq(acc.id) || (await call('/requests/confirm', { id: acc.id, k: acc.k }), await getReq(acc.id));
-  assert.match(ra.fields.measures, /Largeur : 20 cm/);
-  assert.match(ra.fields.measures, /Hauteur : 12 cm/);
+  assert.match(ra.fields.measures, /Largeur souhaitée : 20 cm/);
+  assert.match(ra.fields.measures, /Hauteur souhaitée : 12 cm/);
+});
+
+test('mesures : haut = longueur souhaitée obligatoire + tour de bras facultatif ; bas = hauteur facultative ; noms clairs (Tour de taille, Taille habituelle, Hauteur)', async () => {
+  const H = { ...FORM, type: 'surmesure', piece: 'haut', mcat: 'haut', mv: { height: '178', usual: 'M', chest: '95', waist: '80', hips: '98', arm: '62' } };
+  assert.deepEqual((await submit(H)).fields, ['measures'], 'longueur souhaitée manquante');
+  const ok = await submit({ ...H, mv: { ...H.mv, len: '68', armc: '31' } });
+  assert.equal(ok.ok, true);
+  const r = await getReq(ok.id) || (await call('/requests/confirm', { id: ok.id, k: ok.k }), await getReq(ok.id));
+  for (const re of [/Hauteur : 178 cm/, /Taille habituelle : M/, /Tour de taille : 80 cm/, /Longueur souhaitée : 68 cm/, /Tour de bras : 31 cm/]) assert.match(r.fields.measures, re);
+  assert.doesNotMatch(r.fields.measures, /ceinture/i);
+  const B = { ...FORM, type: 'surmesure', piece: 'pantalon', mcat: 'bas', mv: { usual: 'M', waist: '80', hips: '98', inseam: '80', floor: '104' } };
+  assert.equal((await submit(B)).ok, true, 'bas : la hauteur n’est plus obligatoire');
 });
 
 test('formulaire : robots ignorés, champs obligatoires par branche, champs d’une autre branche jetés', async () => {

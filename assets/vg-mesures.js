@@ -8,10 +8,10 @@
   var CATS = [['haut', 'Hoodie / jacket / top', 'Hoodie / veste / haut'], ['bas', 'Trousers / shorts', 'Pantalon / short'], ['cou', 'Neck gaiter', 'Cache-cou'], ['acc', 'Accessory', 'Accessoire']];
   // clé : [en, fr, aide en, aide fr, type] ; type : cm (nombre) ou txt
   var DEFS = {
-    height: ['Height', 'Taille (cm)', 'Standing, feet together, from the floor to the top of the head.', 'Debout, pieds joints, du sol au sommet de la tête.', 'cm'],
-    usual: ['Size you usually wear', 'Taille portée d’habitude', 'S, M, L… in the clothes that fit you well.', 'S, M, L… dans les vêtements qui te vont bien.', 'txt'],
+    height: ['Height (cm)', 'Hauteur (cm)', 'Standing, feet together, from the floor to the top of the head.', 'Debout, pieds joints, du sol au sommet de la tête.', 'cm'],
+    usual: ['Usual size (S, M, L…)', 'Taille habituelle (S, M, L…)', 'S, M, L… in the clothes that fit you well.', 'S, M, L… dans les vêtements qui te vont bien.', 'txt'],
     chest: ['Chest', 'Tour de poitrine', 'Around the chest at its fullest, tape flat under the arms.', 'Autour du torse, à l’endroit le plus fort, mètre bien à plat sous les bras.', 'cm'],
-    waist: ['Waist', 'Tour de ceinture', 'Around the waist, at the narrowest point.', 'Autour de la taille, à l’endroit le plus creux.', 'cm'],
+    waist: ['Waist', 'Tour de taille', 'Around the waist, at the narrowest point.', 'Autour de la taille, à l’endroit le plus creux.', 'cm'],
     hips: ['Hips', 'Tour de bassin', 'Around the hips at their fullest, tape flat.', 'Autour des hanches, à l’endroit le plus fort, mètre bien à plat.', 'cm'],
     arm: ['Arm length', 'Longueur de bras', 'From the shoulder tip down to the wrist, arm relaxed.', 'Du bout de l’épaule jusqu’au poignet, bras le long du corps.', 'cm'],
     shoulders: ['Back width', 'Carrure dos', 'Across the back, from one armhole crease to the other.', 'Dans le dos, d’un creux de bras à l’autre.', 'cm'],
@@ -19,31 +19,33 @@
     back: ['Back waist length', 'Longueur taille dos', 'From the base of the neck (bony bump) down to the waist.', 'De la base du cou (l’os qui dépasse) jusqu’à la taille.', 'cm'],
     wrist: ['Wrist', 'Tour de poignet', 'Around the wrist, without squeezing.', 'Autour du poignet, sans serrer.', 'cm'],
     inseam: ['Inside leg', 'Longueur d’entrejambe', 'From the crotch down to the ankle, inside the leg.', 'De l’entrejambe jusqu’à la cheville, à l’intérieur de la jambe.', 'cm'],
-    floor: ['Waist to floor', 'Hauteur taille à terre', 'From the waist down to the floor, along the side, feet flat.', 'De la taille jusqu’au sol, sur le côté, pieds à plat.', 'cm'],
+    floor: ['Waist to floor', 'Longueur taille–sol', 'From the waist down to the floor, along the side, feet flat.', 'De la taille jusqu’au sol, sur le côté, pieds à plat.', 'cm'],
     rise: ['Crotch depth', 'Hauteur de montant', 'From the waist down to the crotch, along the side.', 'De la taille jusqu’à l’entrejambe, sur le côté.', 'cm'],
     thigh: ['Thigh', 'Tour de cuisse', 'Around the top of the thigh, at its fullest.', 'Autour du haut de la cuisse, à l’endroit le plus fort.', 'cm'],
     calf: ['Calf', 'Tour de mollet', 'Around the calf, at its fullest.', 'Autour du mollet, à l’endroit le plus fort.', 'cm'],
-    knee: ['Waist to knee', 'Hauteur taille au genou', 'From the waist down to the middle of the knee (useful for shorts).', 'De la taille jusqu’au milieu du genou (utile pour un short).', 'cm'],
+    knee: ['Waist to knee', 'Longueur taille–genou', 'From the waist down to the middle of the knee (useful for shorts).', 'De la taille jusqu’au milieu du genou (utile pour un short).', 'cm'],
     hem: ['Leg opening (wanted)', 'Largeur du bas souhaitée', 'Width of the hem, laid flat, in cm.', 'Largeur de l’ourlet à plat, en cm.', 'cm'],
+    len: ['Wanted length', 'Longueur souhaitée', 'From the base of the neck down to the bottom of the piece.', 'De la base du cou jusqu’en bas de la pièce.', 'cm'],
+    armc: ['Upper arm', 'Tour de bras', 'Around the upper arm at its fullest, relaxed.', 'Autour du haut du bras, à l’endroit le plus fort, bras détendu.', 'cm'],
     head: ['Head', 'Tour de tête', 'All around the head, above the eyebrows and ears.', 'Tout autour de la tête, au-dessus des sourcils et des oreilles.', 'cm'],
     neck: ['Neck', 'Tour d’encolure', 'Around the base of the neck, without squeezing.', 'Autour de la base du cou, sans serrer.', 'cm'],
     hh: ['Head height', 'Hauteur de tête', 'From the chin to the top of the head.', 'Du menton jusqu’au sommet de la tête.', 'cm'],
     nh: ['Wanted height', 'Hauteur souhaitée', 'From the base of the neck up to where you want it to end (chin, nose…).', 'De la base du cou jusqu’où tu veux que ça monte (menton, nez…).', 'cm'],
-    aw: ['Width (cm)', 'Largeur (cm)', 'The width you want, in cm.', 'La largeur souhaitée, en cm.', 'cm'],
-    ah: ['Height (cm)', 'Hauteur (cm)', 'The height you want, in cm.', 'La hauteur souhaitée, en cm.', 'cm'],
+    aw: ['Wanted width (cm)', 'Largeur souhaitée (cm)', 'The width you want, in cm.', 'La largeur souhaitée, en cm.', 'cm'],
+    ah: ['Wanted height (cm)', 'Hauteur souhaitée (cm)', 'The height you want, in cm.', 'La hauteur souhaitée, en cm.', 'cm'],
   };
   // Deux niveaux : essentielles (obligatoires en sur-mesure, avec « Je ne sais pas ») et « si tu peux » (toujours facultatives).
-  var ESS = { haut: ['chest', 'waist', 'hips', 'arm'], bas: ['waist', 'hips', 'inseam', 'floor'], cou: ['head', 'neck'], acc: ['aw', 'ah'] };
-  var OPT = { haut: ['shoulders', 'shl', 'back', 'wrist'], bas: ['rise', 'thigh', 'calf', 'knee', 'hem'], cou: ['hh', 'nh'], acc: [] };
-  var UNIVERSAL = ['height', 'usual']; // seulement pour les pièces qui s’habillent (haut, bas)
+  var ESS = { haut: ['chest', 'waist', 'hips', 'arm', 'len'], bas: ['waist', 'hips', 'inseam', 'floor'], cou: ['head', 'neck'], acc: ['aw', 'ah'] };
+  var OPT = { haut: ['shoulders', 'shl', 'back', 'wrist', 'armc'], bas: ['height', 'rise', 'thigh', 'calf', 'knee', 'hem'], cou: ['hh', 'nh'], acc: [] };
+  var UNIVERSAL = { haut: ['height', 'usual'], bas: ['usual'] }; // en tête des essentielles, pour les pièces qui s’habillent (haut, bas) ; « Hauteur (cm) » est facultative pour le bas
   var SIZES = ['usual']; // « tailles habituelles » : se demandent mais ne se mesurent pas : pas de numéro, pas sur le schéma
   // Textes propres à une catégorie (remplacent ceux de DEFS) : clé -> catégorie -> [en, fr, aide en, aide fr]
   var CATDEF = {
     usual: {
-      haut: ['Size you usually wear', 'Taille portée d’habitude', 'In hoodies, jackets or tops that fit you well (S, M, L…).', 'Dans les hoodies, vestes ou hauts qui te vont bien (S, M, L…).'],
-      bas: ['Size you usually wear', 'Taille portée d’habitude', 'In trousers or shorts that fit you well (e.g. 38, M).', 'Dans les pantalons ou shorts qui te vont bien (ex. 38, M).']
+      haut: ['Usual size (S, M, L…)', 'Taille habituelle (S, M, L…)', 'In hoodies, jackets or tops that fit you well (S, M, L…).', 'Dans les hoodies, vestes ou hauts qui te vont bien (S, M, L…).'],
+      bas: ['Usual size (S, M, L…)', 'Taille habituelle (S, M, L…)', 'In trousers or shorts that fit you well (e.g. 38, M).', 'Dans les pantalons ou shorts qui te vont bien (ex. 38, M).']
     },
-    waist: { bas: ['Waist', 'Tour de ceinture', 'Around the waist, where you wear your trousers or shorts.', 'Autour de la taille, là où tu portes ton pantalon ou ton short.'] }
+    waist: { bas: ['Waist', 'Tour de taille', 'Around the waist, where you wear your trousers or shorts.', 'Autour de la taille, là où tu portes ton pantalon ou ton short.'] }
   };
   var NOTES = {
     haut: ['Measure yourself in a thin T-shirt, tape flat, and ask someone to help with your back and arms.', 'Mesure-toi en t-shirt fin, mètre bien à plat, et fais-toi aider pour le dos et les bras.'],
@@ -56,7 +58,7 @@
   function isSize(k) { return SIZES.indexOf(k) >= 0; }
   function sizes(cat) { return list(cat).filter(isSize); }
   function numbered(cat) { return list(cat).filter(function (k) { return !isSize(k); }); }
-  function ess(cat) { return cat && ESS[cat] ? (cat === 'haut' || cat === 'bas' ? UNIVERSAL : []).concat(ESS[cat]) : []; }
+  function ess(cat) { return cat && ESS[cat] ? (UNIVERSAL[cat] || []).concat(ESS[cat]) : []; }
   function opt(cat) { return cat && OPT[cat] ? OPT[cat] : []; }
   function list(cat) { return ess(cat).concat(opt(cat)); }
   function catFor(kind, piece) { return piece === 'autre' ? '' : /^(short|pantalon)$/.test(piece) ? 'bas' : 'haut'; }
@@ -90,7 +92,7 @@
     var ARM = 'M141,76 L146,128 L147,184';
     if (cat === 'haut') {
       v = view(0, T.f, front() + hgt + g('chest', ring(N.chest, 100, 99, 32, 5)) + g('waist', ring(N.waist, 100, 136, 29, 4.5)) + g('hips', ring(N.hips, 100, 183, 32, 5))
-        + g('arm', parrow(ARM) + bd(N.arm, 152, 130)) + g('wrist', ring(N.wrist, 139, 183, 5, 2, 170, 183)))
+        + g('arm', parrow(ARM) + bd(N.arm, 152, 130)) + g('armc', ring(N.armc, 142, 98, 6, 2.5, 172, 98)) + g('len', ext(36, 66, 62, 66) + ext(36, 168, 50, 168) + arrow(36, 66, 36, 168) + bd(N.len, 36, 117)) + g('wrist', ring(N.wrist, 139, 183, 5, 2, 170, 183)))
         + view(230, T.b, back() + g('shoulders', arrow(77, 99, 123, 99) + bd(N.shoulders, 100, 99)) + g('shl', arrow(94, 63, 60, 78) + bd(N.shl, 70, 58)) + g('back', arrow(100, 66, 100, 138) + bd(N.back, 100, 120)));
     } else if (cat === 'bas') {
       v = view(0, T.f, front() + hgt + g('waist', ring(N.waist, 100, 136, 29, 4.5)) + g('hips', ring(N.hips, 100, 183, 32, 5)) + g('thigh', ring(N.thigh, 87, 219, 12, 3.5, 44, 226))
@@ -125,7 +127,7 @@
     if (!l.length) return '';
     if (st.mapprox) out.push(fr ? '⚠ Mesures approximatives' : '⚠ Approximate measurements');
     l.forEach(function (k) {
-      var d = DEFS[k], val = String(v[k] || '').trim(), name = d[fr ? 1 : 0].replace(' (cm)', '');
+      var d = DEFS[k], val = String(v[k] || '').trim(), name = d[fr ? 1 : 0].replace(/ \([^)]*\)$/, '');
       if (u[k]) out.push('⚠ ' + name + ' : ' + (fr ? 'je ne sais pas' : 'don’t know'));
       else if (val) out.push(name + ' : ' + val + (d[4] === 'cm' ? ' cm' : ''));
     });
