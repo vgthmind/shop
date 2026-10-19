@@ -177,10 +177,10 @@
         + (q.deposit ? ', acompte ' + q.depositPct + ' % = <b>' + money(q.deposit) + '</b>' + (q.optionalDeposit ? ' (facultatif)' : ', solde ' + money(q.total - q.deposit) + ' + port') : ', sans acompte')
         + ', délai ' + esc(q.delay) + (q.weight_g ? ', poids ' + q.weight_g + ' g' : '') + (q.validUntil ? ', valable jusqu’au ' + esc(new Date(q.validUntil).toLocaleDateString('fr-FR')) : '') + '.</p>'
         + '<ul class="muted">' + (q.lines || []).map(function (l) { return '<li>' + esc(l.label) + ' : ' + l.qty + ' × ' + money(l.unit) + ' = ' + money(l.amount) + '</li>'; }).join('') + '</ul>'
-        + '<div class="actions"><button type="button" data-qpdf>Télécharger le PDF</button>' + (!locked ? '<button type="button" data-act="cancelQuote" style="color:var(--err)">Annuler ce devis</button>' : '') + '</div>';
+        + '<div class="actions"><button type="button" data-qpdf>Télécharger le PDF</button>' + ((!(r.deposit && r.deposit.paidAt) && r.status === 'devis') ? '<button type="button" data-act="cancelQuote" style="color:var(--err)">Annuler ce devis</button>' : '') + '</div>';
     }
     if (r.deposit && r.deposit.paidAt) h += '<p><span class="tag ok">Acompte payé le ' + esc(date(r.deposit.paidAt)) + ' : ' + money(r.deposit.amount) + '</span> ' + (r.deposit.session ? '<button type="button" data-inv="' + esc(r.deposit.session) + '">Facture d’acompte</button>' : '') + '</p>';
-    else if (q && q.acceptedAt) h += '<p class="muted"><span class="tag ok">Devis accepté le ' + esc(date(q.acceptedAt)) + '</span> (case « j’accepte le devis et les CGV » cochée' + (r.deposit && r.deposit.acceptIp ? ', IP ' + esc(r.deposit.acceptIp) : '') + ')' + (paid ? ', paiement de l’acompte pas encore reçu' : '') + '. Il ne peut plus être modifié.</p>';
+    else if (q && q.acceptedAt) h += '<p class="muted"><span class="tag ok">Devis accepté le ' + esc(date(q.acceptedAt)) + '</span> (case « j’accepte le devis et les CGV » cochée' + (r.deposit && r.deposit.acceptIp ? ', IP ' + esc(r.deposit.acceptIp) : '') + ')' + (paid ? ', paiement de l’acompte pas encore reçu' : '') + '. Il ne peut plus être modifié : tu peux seulement l’annuler, puis en refaire un.</p>';
     if (locked) return h;
     var rows = (q && q.lines && q.lines.length ? q.lines : []).slice(0, 12), n = Math.max(rows.length, 3), lines = '';
     for (var i = 0; i < n; i++) {
