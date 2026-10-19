@@ -45,7 +45,7 @@
   }
 
   async function addFiles(list) {
-    draftOff = false;
+    savedOnline = false; draftOff = false;
     var files = Array.prototype.slice.call(list).filter(function (f) { return /^image\//.test(f.type) || /\.(heic|heif|jpe?g|png|webp)$/i.test(f.name); });
     for (var i = 0; i < files.length; i++) {
       try {
@@ -440,7 +440,10 @@
   ['dragenter', 'dragover'].forEach(function (n) { drop.addEventListener(n, function (e) { e.preventDefault(); drop.classList.add('over'); }); });
   ['dragleave', 'drop'].forEach(function (n) { drop.addEventListener(n, function (e) { e.preventDefault(); drop.classList.remove('over'); }); });
   drop.addEventListener('drop', function (e) { addFiles(e.dataTransfer.files); });
-  window.addEventListener('beforeunload', function (e) { if (photos.length) { e.preventDefault(); e.returnValue = ''; } });
+  // L'alerte « Quitter sans enregistrer ? » : seulement s'il y a des photos non encore enregistrées (brouillon ou publication) ; toute modification ensuite la réarme.
+  var savedOnline = false;
+  window.addEventListener('beforeunload', function (e) { if (photos.length && !savedOnline) { e.preventDefault(); e.returnValue = ''; } });
+  document.addEventListener('input', function () { savedOnline = false; }); document.addEventListener('change', function () { savedOnline = false; });
 
   // ---------- export ----------
   function exportable() { return photos.filter(function (p) { return p.status === 'valid' || p.status === 'original'; }); }
@@ -549,7 +552,7 @@
       var rv = reelFile ? { data: new Uint8Array(await reelFile.arrayBuffer()) } : null;
       var isNew = !(await window.VGStudioPublish.exists(piece.product.slug));
       await window.VGStudioPublish.publish({ slug: piece.product.slug, piece: piece.product, isNew: isNew, files: r.files, reelVideo: rv, replace: $('replace').checked, onStatus: pubSay });
-      draftOff = true; Draft.clear(); // publié : plus besoin du brouillon (et on n'en refait pas un à la fermeture)
+      savedOnline = true; draftOff = true; Draft.clear(); // publié : plus besoin du brouillon (et on n'en refait pas un à la fermeture)
     } catch (e) { pubSay('Échec : ' + (e.message || e)); }
     $('bPublish').disabled = !window.VGStudioPublish.connected();
   };
@@ -571,7 +574,7 @@
       var r = await buildFiles();
       var rv = reelFile ? { data: new Uint8Array(await reelFile.arrayBuffer()) } : null;
       await window.VGStudioPublish.publish({ slug: piece.product.slug, piece: piece.product, isNew: true, files: r.files, reelVideo: rv, replace: false, onStatus: say });
-      draftOff = true; Draft.clear();
+      savedOnline = true; draftOff = true; Draft.clear();
       say('Brouillon enregistré : « ' + piece.product.name + ' » est masquée. Complète-la dans Pièces, puis publie-la ou programme-la.');
       out.innerHTML = '<strong>Brouillon enregistré</strong> : « ' + piece.product.name.replace(/[<>&]/g, '') + ' » est masquée (rien n\'est visible sur le site). <a href="catalogue.html#/p/' + encodeURIComponent(piece.product.slug) + '">Ouvrir sa fiche pour la compléter</a>';
     } catch (e) { say('Échec : ' + (e.message || e)); }
