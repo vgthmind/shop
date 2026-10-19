@@ -410,7 +410,9 @@ function stripGenericMeta(html, names) {
 function injectAround(html, parts, product, relPath) {
   // Head: noindex + Custom CSS + Head code, right before </head> (where
   // BigCartel puts them). The shim goes first in <head>, before any script.
-  const shim = `<script>window.__VG_BASE = ${JSON.stringify(BASE_PATH)};\n${parts.shim}</script>`;
+  const tsKey = String(SHOP_SETTINGS.turnstile_site_key || '').trim();
+  const tsShim = /^[\w-]{10,60}$/.test(tsKey) ? ` window.VG_TURNSTILE_KEY = ${JSON.stringify(tsKey)};` : '';
+  const shim = `<script>window.__VG_BASE = ${JSON.stringify(BASE_PATH)};${tsShim}\n${parts.shim}</script>`;
   html = html.replace(/<head>/i, (m) => `${m}\n${shim}`);
   // Favicon : les memes fichiers que vgthmind.bigcartel.com (copies dans
   // assets/theme/ ; BigCartel les sert hors gabarit).
@@ -783,7 +785,7 @@ async function main() {
   fs.copyFileSync(rel(ROOT, 'assets', 'vg-shipping-view.js'), rel(OUT_DIR, 'assets', 'vg-shipping-view.js'));
   fs.copyFileSync(rel(ROOT, 'assets', 'vg-shipping-picker.js'), rel(OUT_DIR, 'assets', 'vg-shipping-picker.js'));
   fs.copyFileSync(rel(ROOT, 'assets', 'vg-theme.js'), rel(OUT_DIR, 'assets', 'vg-theme.js'));
-  for (const f of ['vg-invoice.js', 'vg-traffic.js', 'vg-lang.js', 'vg-demande.js', 'vg-mesures.js', 'vg-ma-demande.js']) { if (fs.existsSync(rel(ROOT, 'assets', f))) fs.copyFileSync(rel(ROOT, 'assets', f), rel(OUT_DIR, 'assets', f)); }
+  for (const f of ['vg-invoice.js', 'vg-traffic.js', 'vg-lang.js', 'vg-demande.js', 'vg-turnstile.js', 'vg-mesures.js', 'vg-ma-demande.js']) { if (fs.existsSync(rel(ROOT, 'assets', f))) fs.copyFileSync(rel(ROOT, 'assets', f), rel(OUT_DIR, 'assets', f)); }
   if (fs.existsSync(rel(ROOT, 'assets', 'mesures'))) { fs.mkdirSync(rel(OUT_DIR, 'assets', 'mesures'), { recursive: true }); for (const f of fs.readdirSync(rel(ROOT, 'assets', 'mesures'))) fs.copyFileSync(rel(ROOT, 'assets', 'mesures', f), rel(OUT_DIR, 'assets', 'mesures', f)); } // silhouettes du guide de mesure
   fs.cpSync(rel(ROOT, 'assets', 'vendor'), rel(OUT_DIR, 'assets', 'vendor'), { recursive: true });
   fs.cpSync(rel(ROOT, 'assets', 'fonts'), rel(OUT_DIR, 'assets', 'fonts'), { recursive: true });

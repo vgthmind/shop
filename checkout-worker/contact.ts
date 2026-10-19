@@ -19,8 +19,8 @@ export interface ContactDeps {
 
 export async function handleContact(body: any, d: ContactDeps): Promise<{ status: number; data: any }> {
   if (!body || typeof body !== 'object') return { status: 400, data: { error: 'invalid' } };
-  // Champ piege rempli ou formulaire envoye en moins de 3 s : un robot. On répond « ok » sans rien envoyer.
-  if (clean(body.website, 50) || (Number.isFinite(Number(body.t)) && Number(body.t) < 3000)) return { status: 200, data: { ok: true } };
+  // Champ piege rempli ou formulaire envoye en moins de 3 s (ou sans chronometre : un robot qui appelle directement l'API) : un robot. On répond « ok » sans rien envoyer.
+  if (clean(body.website, 50) || !Number.isFinite(Number(body.t)) || Number(body.t) < 3000) return { status: 200, data: { ok: true } };
 
   const name = clean(body.name, MAX.name), email = clean(body.email, MAX.email), subject = clean(body.subject, MAX.subject);
   const message = String(body.message == null ? '' : body.message).replace(/\r\n/g, '\n').trim().slice(0, MAX.message);

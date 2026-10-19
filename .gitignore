@@ -37,3 +37,6 @@ docs/assets/media/
 # Relevé DNS (copie locale seulement)
 chantier/DNS-ACTUEL.md
 assets/products-og/
+
+# Etat local de wrangler (jamais dans le depot)
+.wrangler/

@@ -449,9 +449,10 @@
     for (var k in st) if (k !== 'what' && k !== 'kind') body[k] = typeof st[k] === 'string' ? st[k].trim() : st[k];
     if (st.kind !== 'surmesure') body.mu = {};
     body.name = (st.firstName + ' ' + st.lastName).trim(); // ancien Worker (avant le déploiement) : champ unique
-    fetch(EP + '/requests', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
+    (window.vgTurnstile ? window.vgTurnstile.token() : Promise.resolve('')).then(function (tok) { body.cf = tok; return fetch(EP + '/requests', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) }); })
       .then(function (r) { return r.json().catch(function () { return {}; }).then(function (j) { return { s: r.status, j: j }; }); })
       .then(function (x) {
+        if (x.s === 403) throw new Error(L('Anti-bot check failed: reload the page or email contact@vgthmind.org.', 'Vérification anti-robot refusée : recharge la page ou écris à contact@vgthmind.org.'));
         if (x.s === 429) throw new Error(L('Too many requests for now, try again later or email contact@vgthmind.org.', 'Trop d’envois pour le moment : réessaie plus tard ou écris à contact@vgthmind.org.'));
         if (x.s === 400 && x.j.fields) { sending = false; var p = path(); for (var i = 0; i < p.length; i++) if (STEPS[p[i]].ok()) { go(i, 'back', true); return null; } throw new Error(L('Please check your answers.', 'Vérifie tes réponses.')); }
         if (!(x.s === 200 && x.j.ok)) throw new Error(L('Could not send. Please email contact@vgthmind.org.', 'La demande n’a pas pu partir. Écris à contact@vgthmind.org.'));

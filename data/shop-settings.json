@@ -1,5 +1,6 @@
 {
   "public": false,
   "site_url": "https://vgthmind-shop.pages.dev",
-  "cf_analytics_token": "ebb350ea66ad43c6a539b75d16af75d1"
+  "cf_analytics_token": "ebb350ea66ad43c6a539b75d16af75d1",
+  "turnstile_site_key": "0x4AAAAAAFbvPohZm7OhvSE9"
 }

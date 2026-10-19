@@ -1,5 +1,5 @@
 {
-  "fetched_at": "2026-10-19T15:16:47.162Z",
+  "fetched_at": "2026-10-19T15:33:46.944Z",
   "source": "data/products/*.json (admin)",
   "store": {
     "name": "vgthmind",
@@ -8,74 +8,6 @@
     }
   },
   "products": [
-    {
-      "id": 1786097119,
-      "name": "testttjaheh",
-      "permalink": "testttjaheh",
-      "position": 0,
-      "url": "/product/testttjaheh",
-      "status": "active",
-      "created_at": "2026-10-19T13:10:04.621Z",
-      "has_password_protection": false,
-      "images": [
-        {
-          "url": "/assets/products/testttjaheh/vmvf9urit-0.webp",
-          "width": 1000,
-          "height": 1250
-        }
-      ],
-      "price": 50,
-      "default_price": 50,
-      "tax": 0,
-      "on_sale": false,
-      "description": "",
-      "has_option_groups": false,
-      "options": [
-        {
-          "id": 17879216,
-          "name": "testttjaheh",
-          "price": 50,
-          "sold_out": false,
-          "has_custom_price": false,
-          "option_group_values": [],
-          "isLowInventory": true,
-          "isAlmostSoldOut": false
-        }
-      ],
-      "artists": [],
-      "categories": [],
-      "hidden": true,
-      "option_groups": [],
-      "shipping": [
-        {
-          "amount_alone": 0,
-          "amount_with_others": 0,
-          "country": {
-            "id": 15,
-            "name": "France",
-            "code": "FR"
-          }
-        },
-        {
-          "amount_alone": 0,
-          "amount_with_others": 0
-        }
-      ],
-      "stripe_payment_link": "",
-      "quantity": 1,
-      "unique": true,
-      "color_hex": "#3d5a75",
-      "color_name": "bleu",
-      "reel_url": "",
-      "reel_video": "",
-      "search_keywords": [],
-      "image": {
-        "url": "/assets/products/testttjaheh/vmvf9urit-0.webp",
-        "width": 1000,
-        "height": 1250
-      },
-      "css_class": ""
-    },
     {
       "id": 922712793,
       "name": "CH_0002",
@@ -2845,162 +2777,6 @@
         "height": 1000
       },
       "css_class": ""
-    },
-    {
-      "id": 718592632,
-      "name": "t’est masquée",
-      "permalink": "t-est-masquee",
-      "position": 30,
-      "url": "/product/t-est-masquee",
-      "status": "active",
-      "created_at": "2026-10-19T11:11:25.263Z",
-      "has_password_protection": false,
-      "images": [
-        {
-          "url": "/assets/products/t-est-masquee/vmvf5m5kl-0.webp",
-          "width": 738,
-          "height": 1600
-        }
-      ],
-      "price": 5,
-      "default_price": 5,
-      "tax": 0,
-      "on_sale": false,
-      "description": "test",
-      "has_option_groups": false,
-      "options": [
-        {
-          "id": 577221499,
-          "name": "t’est masquée",
-          "price": 5,
-          "sold_out": false,
-          "has_custom_price": false,
-          "option_group_values": [],
-          "isLowInventory": true,
-          "isAlmostSoldOut": false
-        }
-      ],
-      "artists": [],
-      "categories": [],
-      "hidden": true,
-      "option_groups": [],
-      "shipping": [
-        {
-          "amount_alone": 10,
-          "amount_with_others": 0,
-          "country": {
-            "id": 15,
-            "name": "France",
-            "code": "FR"
-          }
-        },
-        {
-          "amount_alone": 39,
-          "amount_with_others": 0
-        }
-      ],
-      "weight_g": 500,
-      "mode": "colis",
-      "alone": false,
-      "shipping_derived": true,
-      "stripe_payment_link": "",
-      "quantity": 1,
-      "unique": true,
-      "color_hex": "#f2f2f2",
-      "color_name": "blanc",
-      "reel_url": "",
-      "reel_video": "",
-      "search_keywords": [],
-      "image": {
-        "url": "/assets/products/t-est-masquee/vmvf5m5kl-0.webp",
-        "width": 738,
-        "height": 1600
-      },
-      "css_class": ""
-    },
-    {
-      "id": 809526379,
-      "name": "testtt",
-      "permalink": "testtt",
-      "position": 31,
-      "url": "/product/testtt",
-      "status": "active",
-      "created_at": "2026-10-19T11:17:59.390Z",
-      "has_password_protection": false,
-      "images": [
-        {
-          "url": "/assets/products/testtt/vmvf5ula8-0.webp",
-          "width": 738,
-          "height": 1600
-        }
-      ],
-      "price": 5,
-      "default_price": 5,
-      "tax": 0,
-      "on_sale": false,
-      "description": "test",
-      "has_option_groups": false,
-      "options": [
-        {
-          "id": 1417848340,
-          "name": "testtt",
-          "price": 5,
-          "sold_out": false,
-          "has_custom_price": false,
-          "option_group_values": [],
-          "isLowInventory": true,
-          "isAlmostSoldOut": false
-        }
-      ],
-      "artists": [],
-      "categories": [
-        {
-          "id": 1420455576,
-          "name": "Tops",
-          "permalink": "tops",
-          "url": "/category/tops"
-        },
-        {
-          "id": 1420475163,
-          "name": "All",
-          "permalink": "all",
-          "url": "/category/all"
-        }
-      ],
-      "option_groups": [],
-      "shipping": [
-        {
-          "amount_alone": 10,
-          "amount_with_others": 0,
-          "country": {
-            "id": 15,
-            "name": "France",
-            "code": "FR"
-          }
-        },
-        {
-          "amount_alone": 39,
-          "amount_with_others": 0
-        }
-      ],
-      "weight_g": 500,
-      "mode": "colis",
-      "alone": false,
-      "shipping_derived": true,
-      "stripe_payment_link": "",
-      "quantity": 1,
-      "unique": true,
-      "color_hex": "#f2f2f2",
-      "color_name": "blanc",
-      "reel_url": "",
-      "reel_video": "",
-      "search_keywords": [],
-      "image": {
-        "url": "/assets/products/testtt/vmvf5ula8-0.webp",
-        "width": 738,
-        "height": 1600
-      },
-      "css_class": ""
     }
   ],
   "categories": [
@@ -3140,9 +2916,6 @@
     "/assets/products/sma_0003/0.png": "/assets/products/sma_0003/0.png",
     "/assets/products/sma_0003/1.png": "/assets/products/sma_0003/1.png",
     "/assets/products/sma_0004/0.png": "/assets/products/sma_0004/0.png",
-    "/assets/products/sma_0004/1.png": "/assets/products/sma_0004/1.png",
-    "/assets/products/t-est-masquee/vmvf5m5kl-0.webp": "/assets/products/t-est-masquee/vmvf5m5kl-0.webp",
-    "/assets/products/testtt/vmvf5ula8-0.webp": "/assets/products/testtt/vmvf5ula8-0.webp",
-    "/assets/products/testttjaheh/vmvf9urit-0.webp": "/assets/products/testttjaheh/vmvf9urit-0.webp"
+    "/assets/products/sma_0004/1.png": "/assets/products/sma_0004/1.png"
   }
 }
