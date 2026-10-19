@@ -4,9 +4,13 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 const { transform } = await import('../outils/preparer-bascule.mjs');
 
-const settings = readFileSync(new URL('../data/shop-settings.json', import.meta.url), 'utf8').replace(/\r\n/g, '\n');
-const toml = readFileSync(new URL('../checkout-worker/wrangler.toml', import.meta.url), 'utf8').replace(/\r\n/g, '\n');
 const SITE = 'https://www.vgthmind.org';
+// Les fichiers peuvent déjà être en état « bascule » (outil appliqué) : on repart toujours de l'état de TEST.
+const raw = {
+  settings: readFileSync(new URL('../data/shop-settings.json', import.meta.url), 'utf8').replace(/\r\n/g, '\n'),
+  toml: readFileSync(new URL('../checkout-worker/wrangler.toml', import.meta.url), 'utf8').replace(/\r\n/g, '\n'),
+};
+const { settings, toml } = transform(raw, { site: SITE, retour: true });
 
 test('aller : site public, adresse définitive, SITE_BASE ; LIVE_MODE seulement avec --live', () => {
   const a = transform({ settings, toml }, { site: SITE });
