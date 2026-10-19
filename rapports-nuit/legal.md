@@ -30,7 +30,7 @@ Sources : [LCEN, art. 6-III (Légifrance, loi 2004-575)](https://www.legifrance.
 | **Nom et prénom** de l'éditeur (personne physique) | **ABSENT** : seule la marque « vgthmind » figure. LCEN 6-III-1 exige le nom/prénom de la personne physique. | OBLIG |
 | **Adresse postale complète** (pas seulement « Vitry-sur-Seine ») | **ABSENT** (ETAT.md : adresse d'activité CCI en attente) | OBLIG |
 | **Téléphone** (LCEN 6-III-1 ; L111-1 « coordonnées téléphoniques ») | **ABSENT**. La CJUE (C-298/07) admet une alternative au téléphone si elle permet un contact rapide et direct, mais la DGCCRF attend un numéro : à valider (Q1). | OBLIG |
-| Email | PRÉSENT (vgthm66@gmail.com) | — |
+| Email | PRÉSENT (contact@vgthmind.org) | — |
 | « ou formulaire de contact » | **À CORRIGER** : la page contact n'a pas de formulaire (mailto + Instagram). Mention obsolète. | OBLIG (cohérence) |
 | **Directeur de la publication** | **ABSENT** (LCEN 6-III-1) : pour une EI, c'est l'éditeur lui-même | OBLIG |
 | Immatriculation : RM (répertoire des métiers) si activité artisanale, ou RCS si commerciale ; code APE optionnel | **ABSENT** : un fabricant de vêtements est en principe artisan → « RM [dépt] » (Q2) | OBLIG |
@@ -48,7 +48,7 @@ Sources : [LCEN, art. 6-III (Légifrance, loi 2004-575)](https://www.legifrance.
 <p>Site &eacute;dit&eacute; par [NOM PR&Eacute;NOM &mdash; tels qu'au r&eacute;pertoire SIRENE], entrepreneur individuel, exer&ccedil;ant sous le nom commercial &laquo;&nbsp;vgthmind&nbsp;&raquo;.<br>
 SIRET : 952 025 369 00028 &mdash; [RM [d&eacute;partement] / mention d'immatriculation si applicable]<br>
 Adresse : [ADRESSE POSTALE COMPL&Egrave;TE], 94400 Vitry-sur-Seine, France<br>
-T&eacute;l&eacute;phone : [NUM&Eacute;RO] &mdash; Email : vgthm66@gmail.com<br>
+T&eacute;l&eacute;phone : [NUM&Eacute;RO] &mdash; Email : contact@vgthmind.org<br>
 Directeur de la publication : [NOM PR&Eacute;NOM].<br>
 TVA non applicable, article 293 B du CGI.</p>
 <p><strong><span class="h3-fs">H&Eacute;BERGEMENT</span></strong></p>
@@ -66,7 +66,7 @@ TVA non applicable, article 293 B du CGI.</p>
 <p>Site published by [FIRST NAME LAST NAME &mdash; as registered], sole proprietor (entrepreneur individuel), trading as &ldquo;vgthmind&rdquo;.<br>
 SIRET: 952 025 369 00028 &mdash; [trades register (RM) number if applicable]<br>
 Address: [FULL POSTAL ADDRESS], 94400 Vitry-sur-Seine, France<br>
-Phone: [NUMBER] &mdash; Email: vgthm66@gmail.com<br>
+Phone: [NUMBER] &mdash; Email: contact@vgthmind.org<br>
 Publication director: [FIRST NAME LAST NAME].<br>
 VAT not applicable, article 293 B of the French Tax Code (CGI).</p>
 <p><strong><span class="h3-fs">HOSTING</span></strong></p>
@@ -93,14 +93,14 @@ Sources : [Code de la consommation L612-1 (droit au médiateur), L616-1 et R616-
 
 ```html
 <p><strong><span class="h3-fs">M&Eacute;DIATION DE LA CONSOMMATION</span></strong></p>
-<p>En cas de litige, vous pouvez d'abord me contacter par &eacute;crit &agrave; vgthm66@gmail.com pour trouver une solution amiable. Si la r&eacute;clamation n'aboutit pas, vous avez le droit de recourir gratuitement au m&eacute;diateur de la consommation : [NOM DU M&Eacute;DIATEUR], [ADRESSE POSTALE], [SITE WEB], [EMAIL / FORMULAIRE EN LIGNE]. Le m&eacute;diateur ne peut &ecirc;tre saisi qu'apr&egrave;s une r&eacute;clamation &eacute;crite pr&eacute;alable aupr&egrave;s du vendeur.</p>
+<p>En cas de litige, vous pouvez d'abord me contacter par &eacute;crit &agrave; contact@vgthmind.org pour trouver une solution amiable. Si la r&eacute;clamation n'aboutit pas, vous avez le droit de recourir gratuitement au m&eacute;diateur de la consommation : [NOM DU M&Eacute;DIATEUR], [ADRESSE POSTALE], [SITE WEB], [EMAIL / FORMULAIRE EN LIGNE]. Le m&eacute;diateur ne peut &ecirc;tre saisi qu'apr&egrave;s une r&eacute;clamation &eacute;crite pr&eacute;alable aupr&egrave;s du vendeur.</p>
 ```
 
 **Texte EN**
 
 ```html
 <p><strong><span class="h3-fs">CONSUMER MEDIATION</span></strong></p>
-<p>If a dispute arises, please first contact me in writing at vgthm66@gmail.com so we can find an amicable solution. If this does not resolve your complaint, you have the right to use, free of charge, the consumer mediator: [MEDIATOR NAME], [POSTAL ADDRESS], [WEBSITE], [EMAIL / ONLINE FORM]. The mediator can only be contacted after a prior written complaint to the seller.</p>
+<p>If a dispute arises, please first contact me in writing at contact@vgthmind.org so we can find an amicable solution. If this does not resolve your complaint, you have the right to use, free of charge, the consumer mediator: [MEDIATOR NAME], [POSTAL ADDRESS], [WEBSITE], [EMAIL / ONLINE FORM]. The mediator can only be contacted after a prior written complaint to the seller.</p>
 ```
 
 ---
@@ -136,7 +136,7 @@ Les fiches `custom-hoodie`, `custom-tee-shirt-col-en-v` sont des pièces **déj�
 
 <p><strong><span class="h3-fs">DROIT DE R&Eacute;TRACTATION</span></strong></p>
 <p>Vous avez le droit de vous r&eacute;tracter de votre commande, sans donner de motif, dans un d&eacute;lai de 14 jours &agrave; compter du jour o&ugrave; vous (ou un tiers autre que le transporteur, que vous avez d&eacute;sign&eacute;) recevez la pi&egrave;ce ; en cas de commande de plusieurs pi&egrave;ces livr&eacute;es s&eacute;par&eacute;ment, &agrave; compter de la r&eacute;ception de la derni&egrave;re.</p>
-<p>Pour exercer ce droit, notifiez-moi votre d&eacute;cision par une d&eacute;claration non &eacute;quivoque, par email &agrave; vgthm66@gmail.com ou par courrier &agrave; [ADRESSE POSTALE]. Vous pouvez utiliser le formulaire ci-dessous, sans que ce soit obligatoire. Il suffit d'envoyer votre communication avant la fin du d&eacute;lai de 14 jours.</p>
+<p>Pour exercer ce droit, notifiez-moi votre d&eacute;cision par une d&eacute;claration non &eacute;quivoque, par email &agrave; contact@vgthmind.org ou par courrier &agrave; [ADRESSE POSTALE]. Vous pouvez utiliser le formulaire ci-dessous, sans que ce soit obligatoire. Il suffit d'envoyer votre communication avant la fin du d&eacute;lai de 14 jours.</p>
 <p><strong>Retour de la pi&egrave;ce</strong> : renvoyez-la-moi sans retard excessif, au plus tard 14 jours apr&egrave;s m'avoir communiqu&eacute; votre d&eacute;cision, &agrave; l'adresse indiqu&eacute;e ci-dessus, propre, non port&eacute;e, avec ses &eacute;tiquettes. <strong>Les frais directs de renvoi sont &agrave; votre charge</strong> [OU : sont pris en charge par moi &mdash; &agrave; choisir]. Votre responsabilit&eacute; n'est engag&eacute;e qu'&agrave; l'&eacute;gard de la d&eacute;pr&eacute;ciation r&eacute;sultant de manipulations autres que celles n&eacute;cessaires pour &eacute;tablir la nature, les caract&eacute;ristiques et le bon fonctionnement du bien.</p>
 <p><strong>Remboursement</strong> : je vous rembourse tous les paiements re&ccedil;us, y compris les frais de livraison standard (hors suppl&eacute;ment si vous avez choisi un mode de livraison plus co&ucirc;teux), sans retard excessif et au plus tard 14 jours apr&egrave;s avoir &eacute;t&eacute; inform&eacute; de votre d&eacute;cision. Je peux diff&eacute;rer le remboursement jusqu'&agrave; la r&eacute;cup&eacute;ration de la pi&egrave;ce ou jusqu'&agrave; ce que vous ayez fourni une preuve d'exp&eacute;dition. Le remboursement est effectu&eacute; par le m&ecirc;me moyen de paiement que celui utilis&eacute; pour la commande.</p>
 <p><strong>Formulaire type de r&eacute;tractation</strong> (&agrave; compl&eacute;ter et renvoyer uniquement si vous souhaitez vous r&eacute;tracter)&nbsp;:<br>
@@ -157,7 +157,7 @@ Date :</p>
 
 <p><strong><span class="h3-fs">RIGHT OF WITHDRAWAL</span></strong></p>
 <p>You have the right to withdraw from your order, without giving any reason, within 14 days from the day you (or a third party other than the carrier, indicated by you) receive the piece; if several pieces are delivered separately, from the day you receive the last one.</p>
-<p>To exercise this right, notify me of your decision by an unequivocal statement, by email to vgthm66@gmail.com or by post to [POSTAL ADDRESS]. You may use the model form below, but it is not mandatory. It is enough to send your communication before the 14-day period expires.</p>
+<p>To exercise this right, notify me of your decision by an unequivocal statement, by email to contact@vgthmind.org or by post to [POSTAL ADDRESS]. You may use the model form below, but it is not mandatory. It is enough to send your communication before the 14-day period expires.</p>
 <p><strong>Returning the piece</strong>: send it back to me without undue delay and no later than 14 days after telling me of your decision, at the address above, clean, unworn, with its tags. <strong>You bear the direct cost of returning the piece</strong> [OR: I bear the cost &mdash; choose one]. You are only liable for any diminished value resulting from handling other than what is necessary to establish the nature, characteristics and functioning of the item.</p>
 <p><strong>Refund</strong>: I will reimburse all payments received from you, including standard delivery costs (excluding any extra cost if you chose a more expensive delivery method), without undue delay and no later than 14 days after being informed of your decision. I may withhold the refund until I have received the piece back or you have provided proof of shipment. The refund uses the same payment method as the original order.</p>
 <p><strong>Model withdrawal form</strong> (complete and return only if you wish to withdraw):<br>
@@ -199,7 +199,7 @@ Sources : [Code de la consommation, garantie légale de conformité, L217-3 à L
 <p>Je reste tenu des d&eacute;fauts de conformit&eacute; du bien au contrat et des vices cach&eacute;s, dans les conditions suivantes. <em>Cette garantie s'applique &eacute;galement aux pi&egrave;ces r&eacute;alis&eacute;es sur commande personnalis&eacute;e.</em></p>
 <p><strong>Garantie l&eacute;gale de conformit&eacute;</strong> (articles L217-3 &agrave; L217-20 du Code de la consommation) : vous disposez de 2 ans &agrave; compter de la d&eacute;livrance du bien pour agir ; pendant 24 mois, le d&eacute;faut est pr&eacute;sum&eacute; exister au moment de la d&eacute;livrance. Vous pouvez choisir entre la r&eacute;paration et le remplacement du bien, sans frais ; si ces solutions sont impossibles, disproportionn&eacute;es ou non r&eacute;alis&eacute;es dans un d&eacute;lai de 30 jours, vous pouvez obtenir une r&eacute;duction du prix ou la r&eacute;solution du contrat. Vous n'avez pas &agrave; prouver que le d&eacute;faut existait lors de la d&eacute;livrance. Cette garantie ne vous emp&ecirc;che pas d'invoquer la garantie des vices cach&eacute;s.</p>
 <p><strong>Garantie des vices cach&eacute;s</strong> (articles 1641 &agrave; 1649 du Code civil) : vous pouvez agir dans les 2 ans suivant la d&eacute;couverte du vice, et choisir entre l'annulation de la vente (avec remboursement) ou la r&eacute;duction du prix.</p>
-<p>Pour toute demande, &eacute;crivez-moi &agrave; vgthm66@gmail.com (ou en DM Instagram) avec photos et num&eacute;ro de commande.</p>
+<p>Pour toute demande, &eacute;crivez-moi &agrave; contact@vgthmind.org (ou en DM Instagram) avec photos et num&eacute;ro de commande.</p>
 ```
 
 **Texte EN**
@@ -209,7 +209,7 @@ Sources : [Code de la consommation, garantie légale de conformité, L217-3 à L
 <p>I remain liable for lack of conformity and for hidden defects under the following conditions. <em>These warranties also apply to pieces made to custom order.</em></p>
 <p><strong>Legal warranty of conformity</strong> (articles L217-3 to L217-20 of the French Consumer Code): you have 2 years from delivery to act; during 24 months, the defect is presumed to have existed at delivery. You may choose between repair and replacement, free of charge; if these are impossible, disproportionate or not carried out within 30 days, you may obtain a price reduction or terminate the contract. You do not have to prove that the defect existed at delivery. This warranty does not prevent you from relying on the warranty against hidden defects.</p>
 <p><strong>Warranty against hidden defects</strong> (articles 1641 to 1649 of the French Civil Code): you may act within 2 years of discovering the defect, and choose between cancelling the sale (with a refund) or a price reduction.</p>
-<p>For any claim, email me at vgthm66@gmail.com (or DM on Instagram) with photos and your order number.</p>
+<p>For any claim, email me at contact@vgthmind.org (or DM on Instagram) with photos and your order number.</p>
 ```
 
 (Q7 : vérifier avec le juriste l'articulation avec les pièces d'occasion/upcyclées : la durée de présomption de L217-7 est de 12 mois pour les biens d'occasion.)
@@ -238,7 +238,7 @@ Sources : [CGI art. 293 B](https://www.legifrance.gouv.fr/codes/article_lc/LEGIA
 <p><strong><span class="h3-fs">PRIX</span></strong></p>
 <p>Les prix sont indiqu&eacute;s en euros, nets de TVA : TVA non applicable, article 293 B du CGI. Les frais de livraison sont affich&eacute;s avant la validation du paiement.</p>
 <p><strong><span class="h3-fs">COMMANDE ET PAIEMENT</span></strong></p>
-<p>La commande est form&eacute;e lorsque vous validez le paiement. Paiement s&eacute;curis&eacute; par carte bancaire, Apple Pay ou Google Pay via Stripe ; je n'ai jamais acc&egrave;s &agrave; vos donn&eacute;es bancaires. Un email de confirmation vous est envoy&eacute;. Une facture est disponible sur simple demande &agrave; vgthm66@gmail.com. Si une pi&egrave;ce devenait indisponible apr&egrave;s votre commande, vous en seriez inform&eacute; et rembours&eacute; sans retard.</p>
+<p>La commande est form&eacute;e lorsque vous validez le paiement. Paiement s&eacute;curis&eacute; par carte bancaire, Apple Pay ou Google Pay via Stripe ; je n'ai jamais acc&egrave;s &agrave; vos donn&eacute;es bancaires. Un email de confirmation vous est envoy&eacute;. Une facture est disponible sur simple demande &agrave; contact@vgthmind.org. Si une pi&egrave;ce devenait indisponible apr&egrave;s votre commande, vous en seriez inform&eacute; et rembours&eacute; sans retard.</p>
 <p><strong><span class="h3-fs">LIVRAISON</span></strong></p>
 <p>Chaque pi&egrave;ce &eacute;tant faite &agrave; la main, le d&eacute;lai de pr&eacute;paration est de [X] jours ouvr&eacute;s, auquel s'ajoute le d&eacute;lai d'acheminement Colissimo ([X] jours en France, [X] jours &agrave; l'international). La date limite de livraison est [X] jours maximum apr&egrave;s la commande. Frais de livraison : France [X] &euro; ; international [X] &euro; (selon le poids et la destination, affich&eacute;s avant paiement). Si la livraison n'a pas lieu dans le d&eacute;lai indiqu&eacute;, vous pouvez me mettre en demeure par &eacute;crit puis, &agrave; d&eacute;faut d'ex&eacute;cution sous 7 jours, r&eacute;soudre le contrat (articles L216-2 &agrave; L216-6).</p>
 <p><strong>Livraisons hors Union europ&eacute;enne (Canada compris)</strong> : les droits de douane, taxes &agrave; l'importation et frais locaux &eacute;ventuels sont &agrave; votre charge ; ils ne sont inclus ni dans le prix ni dans les frais de livraison et peuvent &ecirc;tre exig&eacute;s &agrave; la livraison par le transporteur ou l'administration locale.</p>
@@ -250,7 +250,7 @@ Sources : [CGI art. 293 B](https://www.legifrance.gouv.fr/codes/article_lc/LEGIA
 <p><strong><span class="h3-fs">PRICES</span></strong></p>
 <p>Prices are in euros, without VAT: VAT not applicable, article 293 B of the French Tax Code (CGI). Shipping costs are shown before you confirm payment.</p>
 <p><strong><span class="h3-fs">ORDER AND PAYMENT</span></strong></p>
-<p>The order is formed when you confirm payment. Secure payment by credit card, Apple Pay or Google Pay through Stripe; I never have access to your card details. You will receive a confirmation email. An invoice is available on request at vgthm66@gmail.com. If a piece became unavailable after your order, you would be informed and refunded without delay.</p>
+<p>The order is formed when you confirm payment. Secure payment by credit card, Apple Pay or Google Pay through Stripe; I never have access to your card details. You will receive a confirmation email. An invoice is available on request at contact@vgthmind.org. If a piece became unavailable after your order, you would be informed and refunded without delay.</p>
 <p><strong><span class="h3-fs">SHIPPING</span></strong></p>
 <p>As each piece is handmade, preparation takes [X] business days, plus Colissimo transit ([X] days in France, [X] days internationally). The latest delivery date is [X] days after the order. Shipping costs: France &euro;[X]; international &euro;[X] (depending on weight and destination, shown before payment). If delivery does not take place within that period, you may put me on notice in writing and, if I do not deliver within 7 days, terminate the contract (articles L216-2 to L216-6 of the French Consumer Code).</p>
 <p><strong>Deliveries outside the European Union (including Canada)</strong>: import duties, taxes and any local fees are your responsibility; they are not included in the price or shipping costs and may be charged on delivery by the carrier or local authorities.</p>
@@ -284,28 +284,28 @@ Sources : [CNIL — mentions d'information (art. 13 RGPD)](https://www.cnil.fr/f
 
 ```html
 <p><strong><span class="h3-fs">POLITIQUE DE CONFIDENTIALIT&Eacute;</span></strong></p>
-<p><strong>Responsable du traitement</strong> : [NOM PR&Eacute;NOM], entrepreneur individuel (vgthmind), [ADRESSE], vgthm66@gmail.com (voir <a href="/mentions-legales">Mentions l&eacute;gales</a>).</p>
+<p><strong>Responsable du traitement</strong> : [NOM PR&Eacute;NOM], entrepreneur individuel (vgthmind), [ADRESSE], contact@vgthmind.org (voir <a href="/mentions-legales">Mentions l&eacute;gales</a>).</p>
 <p><strong>Donn&eacute;es collect&eacute;es</strong> lors d'une commande : nom, adresse de livraison, email, t&eacute;l&eacute;phone (pour la livraison), contenu de la commande, donn&eacute;es de paiement (trait&eacute;es exclusivement par Stripe : je ne vois pas votre num&eacute;ro de carte), num&eacute;ro de suivi. Lors de la visite du site : donn&eacute;es techniques (adresse IP, navigateur) enregistr&eacute;es par l'h&eacute;bergeur, et statistiques de visite anonymes.</p>
 <p><strong>Finalit&eacute;s et bases l&eacute;gales</strong> : traiter, payer, exp&eacute;dier et suivre votre commande, g&eacute;rer r&eacute;tractation et garanties (ex&eacute;cution du contrat) ; tenir la comptabilit&eacute; et la facturation (obligation l&eacute;gale) ; pr&eacute;venir la fraude et s&eacute;curiser le site, mesurer la fr&eacute;quentation sans vous identifier (int&eacute;r&ecirc;t l&eacute;gitime). Les champs de commande sont n&eacute;cessaires : sans eux, la commande n'est pas possible.</p>
 <p><strong>Destinataires</strong> : Stripe Payments Europe (paiement, lutte contre la fraude), Resend (envoi des emails de commande), Cloudflare (service de commande, stockage des donn&eacute;es de commande, mesure d'audience), GitHub (h&eacute;bergement du site), La Poste / Colissimo (livraison). Aucune donn&eacute;e n'est vendue.</p>
 <p><strong>Transferts hors Union europ&eacute;enne</strong> : certains prestataires (Stripe, Resend, Cloudflare, GitHub) peuvent traiter des donn&eacute;es aux &Eacute;tats-Unis, encadr&eacute;s par le Data Privacy Framework ou des clauses contractuelles types de la Commission europ&eacute;enne [&Agrave; V&Eacute;RIFIER prestataire par prestataire].</p>
 <p><strong>Dur&eacute;es de conservation</strong> : donn&eacute;es de commande et de livraison : [X] ans apr&egrave;s la derni&egrave;re commande ; pi&egrave;ces comptables et factures : 10 ans (obligation l&eacute;gale) ; donn&eacute;es de contact (messages) : [X] ans ; sauvegardes techniques : 180 jours.</p>
 <p><strong>Cookies et traceurs</strong> : le site n'utilise aucun cookie publicitaire. Un cookie fonctionnel m&eacute;morise la fermeture du bandeau d'annonce (8 heures). Les visites sont mesur&eacute;es par Cloudflare Web Analytics, sans cookie et sans vous identifier. Sur la page de paiement, Stripe applique sa propre politique.</p>
-<p><strong>Vos droits</strong> : acc&egrave;s, rectification, effacement, limitation, opposition, portabilit&eacute;, et d&eacute;finition de directives sur le sort de vos donn&eacute;es apr&egrave;s votre d&eacute;c&egrave;s. Pour les exercer : vgthm66@gmail.com (r&eacute;ponse sous un mois ; justificatif d'identit&eacute; possible). Vous pouvez aussi saisir la CNIL : cnil.fr/plaintes (3 place de Fontenoy, TSA 80715, 75334 Paris Cedex 07).</p>
+<p><strong>Vos droits</strong> : acc&egrave;s, rectification, effacement, limitation, opposition, portabilit&eacute;, et d&eacute;finition de directives sur le sort de vos donn&eacute;es apr&egrave;s votre d&eacute;c&egrave;s. Pour les exercer : contact@vgthmind.org (r&eacute;ponse sous un mois ; justificatif d'identit&eacute; possible). Vous pouvez aussi saisir la CNIL : cnil.fr/plaintes (3 place de Fontenoy, TSA 80715, 75334 Paris Cedex 07).</p>
 ```
 
 **Texte EN**
 
 ```html
 <p><strong><span class="h3-fs">PRIVACY POLICY</span></strong></p>
-<p><strong>Data controller</strong>: [FIRST NAME LAST NAME], sole proprietor (vgthmind), [ADDRESS], vgthm66@gmail.com (see <a href="/mentions-legales">Legal notice</a>).</p>
+<p><strong>Data controller</strong>: [FIRST NAME LAST NAME], sole proprietor (vgthmind), [ADDRESS], contact@vgthmind.org (see <a href="/mentions-legales">Legal notice</a>).</p>
 <p><strong>Data collected</strong> when you order: name, delivery address, email, phone number (for delivery), order contents, payment data (handled solely by Stripe: I never see your card number), tracking number. When you visit the site: technical data (IP address, browser) logged by the host, and anonymous visit statistics.</p>
 <p><strong>Purposes and legal bases</strong>: processing, paying, shipping and following up your order, handling withdrawal and warranties (performance of the contract); bookkeeping and invoicing (legal obligation); fraud prevention and site security, and measuring traffic without identifying you (legitimate interest). The order fields are necessary: without them the order cannot be processed.</p>
 <p><strong>Recipients</strong>: Stripe Payments Europe (payment, fraud prevention), Resend (order emails), Cloudflare (order service, order data storage, analytics), GitHub (website hosting), La Poste / Colissimo (delivery). No data is sold.</p>
 <p><strong>Transfers outside the EU</strong>: some providers (Stripe, Resend, Cloudflare, GitHub) may process data in the United States, under the EU&ndash;US Data Privacy Framework or the European Commission's standard contractual clauses [TO BE CONFIRMED provider by provider].</p>
 <p><strong>Retention</strong>: order and delivery data: [X] years after your last order; accounting records and invoices: 10 years (legal obligation); contact messages: [X] years; technical backups: 180 days.</p>
 <p><strong>Cookies and trackers</strong>: the site uses no advertising cookies. A functional cookie remembers that you closed the announcement banner (8 hours). Visits are measured by Cloudflare Web Analytics, without cookies and without identifying you. On the payment page, Stripe applies its own policy.</p>
-<p><strong>Your rights</strong>: access, rectification, erasure, restriction, objection, portability, and the right to set instructions for your data after your death. To exercise them: vgthm66@gmail.com (reply within one month; proof of identity may be requested). You may also lodge a complaint with the CNIL: cnil.fr/plaintes (3 place de Fontenoy, TSA 80715, 75334 Paris Cedex 07, France) or with your local data protection authority.</p>
+<p><strong>Your rights</strong>: access, rectification, erasure, restriction, objection, portability, and the right to set instructions for your data after your death. To exercise them: contact@vgthmind.org (reply within one month; proof of identity may be requested). You may also lodge a complaint with the CNIL: cnil.fr/plaintes (3 place de Fontenoy, TSA 80715, 75334 Paris Cedex 07, France) or with your local data protection authority.</p>
 ```
 
 ---

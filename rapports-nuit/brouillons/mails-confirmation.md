@@ -22,13 +22,13 @@ Remplacent les clés `withdrawal` et `cgv` de l'objet `T` (FR et EN) et le pied 
 ```
 INFORMATIONS À CONSERVER
 
-Vendeur : [À REMPLIR : nom et prénom d'état civil], entrepreneur individuel (vgthmind) — SIRET 952 025 369 00028 — [À REMPLIR : adresse] — [À REMPLIR : téléphone] — vgthm66@gmail.com.
+Vendeur : [À REMPLIR : nom et prénom d'état civil], entrepreneur individuel (vgthmind) — SIRET 952 025 369 00028 — [À REMPLIR : adresse] — [À REMPLIR : téléphone] — contact@vgthmind.org.
 
 Prix : toutes taxes comprises (TVA non applicable, art. 293 B du CGI), frais de livraison inclus dans le total ci-dessus. Livraison hors Union européenne : droits de douane et taxes locales à votre charge.
 
 Livraison : au plus tard [À REMPLIR : nombre] jours après la commande (délai de préparation de [À REMPLIR] jours ouvrés puis acheminement Colissimo). En cas de retard, vous pouvez me mettre en demeure puis résoudre le contrat (art. L216-2 et L216-3 du Code de la consommation).
 
-Droit de rétractation (pièces déjà réalisées) : vous pouvez vous rétracter sans motif dans les 14 jours suivant la réception de la pièce (de la dernière pièce si livraisons séparées). Écrivez-moi à vgthm66@gmail.com ou utilisez le formulaire type joint. Renvoyez la pièce dans les 14 jours suivant votre notification, non portée, avec ses étiquettes ; les frais de renvoi sont [À REMPLIR : à votre charge / à ma charge]. Je vous rembourse (frais de livraison standard inclus) au plus tard 14 jours après avoir été informé de votre décision, par le même moyen de paiement.
+Droit de rétractation (pièces déjà réalisées) : vous pouvez vous rétracter sans motif dans les 14 jours suivant la réception de la pièce (de la dernière pièce si livraisons séparées). Écrivez-moi à contact@vgthmind.org ou utilisez le formulaire type joint. Renvoyez la pièce dans les 14 jours suivant votre notification, non portée, avec ses étiquettes ; les frais de renvoi sont [À REMPLIR : à votre charge / à ma charge]. Je vous rembourse (frais de livraison standard inclus) au plus tard 14 jours après avoir été informé de votre décision, par le même moyen de paiement.
 Exception : les commandes sur-mesure, faites selon vos demandes, ne sont pas concernées (art. L221-28, 3° du Code de la consommation).
 
 Garanties légales : garantie de conformité (2 ans à compter de la délivrance, art. L217-3 et suivants du Code de la consommation) et garantie des vices cachés (2 ans à compter de la découverte, art. 1641 et suivants du Code civil), pour toutes les pièces.
@@ -43,13 +43,13 @@ Conditions générales de vente complètes et formulaire type de rétractation :
 ```
 INFORMATION TO KEEP
 
-Seller: [À REMPLIR : nom et prénom d'état civil], sole proprietor (vgthmind) — SIRET 952 025 369 00028 — [À REMPLIR : adresse] — [À REMPLIR : téléphone] — vgthm66@gmail.com.
+Seller: [À REMPLIR : nom et prénom d'état civil], sole proprietor (vgthmind) — SIRET 952 025 369 00028 — [À REMPLIR : adresse] — [À REMPLIR : téléphone] — contact@vgthmind.org.
 
 Price: all taxes included (VAT not applicable, art. 293 B of the French Tax Code); shipping is included in the total above. Delivery outside the European Union: customs duties and local taxes are paid by you.
 
 Delivery: at the latest [À REMPLIR : number] days after the order ([À REMPLIR] business days of preparation, then Colissimo transit). If delivery is late, you may put me on notice and then terminate the contract (art. L216-2 and L216-3 of the French Consumer Code).
 
-Right of withdrawal (pieces already made): you may withdraw without giving a reason within 14 days of receiving the piece (the last piece if delivered separately). Write to vgthm66@gmail.com or use the attached model form. Send the piece back within 14 days of notifying me, unworn, with its tags; return shipping is [À REMPLIR : at your expense / at my expense]. I will refund you (standard shipping included) no later than 14 days after being informed of your decision, by the same means of payment.
+Right of withdrawal (pieces already made): you may withdraw without giving a reason within 14 days of receiving the piece (the last piece if delivered separately). Write to contact@vgthmind.org or use the attached model form. Send the piece back within 14 days of notifying me, unworn, with its tags; return shipping is [À REMPLIR : at your expense / at my expense]. I will refund you (standard shipping included) no later than 14 days after being informed of your decision, by the same means of payment.
 Exception: made-to-measure orders, made to your own requests, are not covered (art. L221-28 3° of the French Consumer Code).
 
 Legal warranties: warranty of conformity (2 years from delivery, art. L217-3 et seq. of the French Consumer Code) and warranty against hidden defects (2 years from discovery, art. 1641 et seq. of the French Civil Code), for all pieces.
@@ -65,7 +65,7 @@ FR :
 ```
 FORMULAIRE TYPE DE RÉTRACTATION
 (à compléter et renvoyer uniquement si vous souhaitez vous rétracter du contrat)
-À l'attention de [À REMPLIR : nom et prénom d'état civil, adresse, vgthm66@gmail.com] :
+À l'attention de [À REMPLIR : nom et prénom d'état civil, adresse, contact@vgthmind.org] :
 Je vous notifie par la présente ma rétractation du contrat portant sur la vente du bien ci-dessous :
 Commandé le / reçu le :
 Numéro de commande :
@@ -78,7 +78,7 @@ EN :
 ```
 MODEL WITHDRAWAL FORM
 (complete and return only if you wish to withdraw from the contract)
-To [À REMPLIR : nom et prénom d'état civil, adresse, vgthm66@gmail.com]:
+To [À REMPLIR : nom et prénom d'état civil, adresse, contact@vgthmind.org]:
 I hereby give notice that I withdraw from my contract of sale of the following goods:
 Ordered on / received on:
 Order number:
