@@ -37,6 +37,7 @@ import { handleContact } from './contact';
 import { checkTurnstile } from './turnstile';
 import { trafficRoutes } from './traffic';
 import { promoRoutes } from './promos';
+import { accessRoutes } from './access';
 import { buildInvoice, parisYear } from './invoice';
 export { TrafficDO } from './traffic';
 import { requestRoutes, requestsCron, backupRequests, onRequestPaid, onShipped, requestInvoiceParts, type ReqDeps } from './requests';
@@ -305,6 +306,7 @@ export default {
         if (!(await isAdmin(request, env))) return json({ error: 'Non autorisé.' }, 401);
         return await status(env, cors);
       }
+      if (path === '/access' || path === '/access/enter') { const ar = await accessRoutes(request, env, path, json); if (ar) return ar; }
       if (path === '/stock' && request.method === 'GET') return await publicStock(env, cors);
       if (path === '/t') { const r = await trafficRoutes(request, env, path, json); if (r) return r; }
       // Connexions : seules les ÉCHECS comptent (compte refusé, code refusé, session expirée), 12 par IP et 15 min ; une connexion réussie ne compte jamais.
@@ -321,6 +323,7 @@ export default {
           if (sig) await env.HOLDS.put('rv:' + sig[1], '1', { expirationTtl: SESSION_TTL + 3600 });
           return json({ ok: true });
         }
+        if (path === '/admin/access') { const ar = await accessRoutes(request, env, path, json); if (ar) return ar; }
         if (path === '/admin/stock' && request.method === 'GET') return json(await adminStock(env));
         if (path === '/admin/stock' && request.method === 'POST') {
           const body: any = await request.json().catch(() => ({}));

@@ -1124,3 +1124,13 @@ video.ig-reel-video::-webkit-media-controls-start-playback-button{display:none !
   0%{transform:scale(1);opacity:1;}
   100%{transform:scale(0.55);opacity:0;}
 }
+
+/* === MODE D'ACCÈS : écran « Entrer » fermé ou sous code (voir functions/_middleware.js) === */
+.vg-splash .vg-enter.vg-enter-off{ opacity:.45 !important; cursor:default !important; pointer-events:none !important; filter:grayscale(1) !important; transform:none !important; }
+.vg-splash .vg-gate-msg{ text-transform:none !important; letter-spacing:.04em !important; line-height:1.5 !important; font-size:13px !important; text-align:center !important; max-width:min(86vw,440px) !important; margin:22px 24px 0 !important; color:#9c9284 !important; }
+.vg-splash .vg-gate-form{ display:flex !important; gap:8px !important; margin-top:18px !important; cursor:auto !important; }
+.vg-splash .vg-gate-form[hidden]{ display:none !important; }
+.vg-splash .vg-gate-form input{ font:500 16px 'IBM Plex Mono',monospace !important; letter-spacing:.08em !important; width:min(52vw,220px) !important; padding:12px 14px !important; border-radius:12px !important; border:1px solid #3d4045 !important; background:#17171a !important; color:#f5f5f5 !important; outline:none !important; cursor:text !important; text-align:center !important; }
+.vg-splash .vg-gate-form input:focus{ border-color:#c7cbd0 !important; }
+.vg-splash .vg-gate-form button{ font:700 14px 'IBM Plex Mono',monospace !important; letter-spacing:.08em !important; padding:12px 18px !important; border-radius:12px !important; border:none !important; cursor:pointer !important; color:#3d4045 !important; background:linear-gradient(155deg,#eef0f2 0%,#c7cbd0 24%,#8f939a 50%,#d8dbde 68%,#6f7379 100%) !important; box-shadow:0 3px 0 #6f7379 !important; }
+.vg-splash .vg-gate-err{ min-height:18px !important; margin-top:12px !important; font:12px 'IBM Plex Mono',monospace !important; letter-spacing:.06em !important; color:#b88a82 !important; }
