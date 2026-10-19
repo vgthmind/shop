@@ -22,7 +22,8 @@
         return new Promise(function (ok, ko) {
           if (!box) { box = document.createElement('div'); box.style.cssText = 'position:fixed;left:-9999px;top:0'; document.body.appendChild(box); }
           var opts = { sitekey: key, execution: 'execute', appearance: 'interaction-only', callback: ok, 'error-callback': function () { ko(new Error('turnstile')); }, 'timeout-callback': function () { ko(new Error('turnstile')); } };
-          if (wid === null) wid = window.turnstile.render(box, opts); else window.turnstile.reset(wid);
+          if (wid !== null) { try { window.turnstile.remove(wid); } catch (e) {} } // un nouvel essai (après une erreur) repart d'un widget neuf
+          wid = window.turnstile.render(box, opts);
           window.turnstile.execute(wid);
         });
       });
