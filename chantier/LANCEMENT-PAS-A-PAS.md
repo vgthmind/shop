@@ -7,6 +7,28 @@ Règle : Claude ne déploie le Worker et ne pousse le site qu'après ton « OK �
 - **Secret du Worker** : une clé que Cloudflare garde cachée ; tu la poses dans le tableau de bord Cloudflare (partie B, étape 6), sans terminal.
 - **Cloudflare est déjà connecté sur ce PC** (compte vgthm66@gmail.com) : tu n'as PAS à refaire `wrangler login`. Si un jour une commande répond « not authenticated » : tape `npx wrangler@4 login`, une page s'ouvre, clique « Allow ».
 
+## ORDRE EXACT DU JOUR J (mis à jour le 2026-10-19 ; le détail de chaque étape est plus bas)
+Rien n'a été basculé : site et Worker restent en test (LIVE_MODE 0). Chaque déploiement / `git push` = ton « OK » écrit dans le chat, à chaque fois.
+
+| # | Qui | Quoi |
+|---|---|---|
+| 0 | **Toi** (la veille ou le matin) | IONOS : ligne `www`, TTL = **300 s** (le TTL n'a PAS encore été changé : Claude n'était pas connecté à IONOS). 5 min avant la bascule au moins. Capture d'écran de toute la liste DNS avant. |
+| 1 | **Toi** | Partie B Stripe : clé restreinte `rk_live_…` (avec Refunds) + webhook `whsec_…`, posés **toi-même** dans Cloudflare (Variables et secrets du Worker `vgthmind-shop-checkout`). Puis tu écris « clés live posées ». ⚠ Le compte Stripe affiché est « Site vgthmind » **relié à Big Cartel** : si Développeurs > Clés API ne te laisse pas créer de clé restreinte, dis-le-moi avant d'aller plus loin. |
+| 2 | **Toi** | Ménage des données de test : Stripe > « Mode test » > Développeurs > « Supprimer toutes les données de test ». Moi (si tu es connecté à l'admin dans le navigateur) : `node outils/menage-donnees-test.mjs --avant=<date> --kv` (aperçu SUPPRIMÉ / GARDÉ, puis `--apply` sur ton OK). |
+| 3 | **Claude** | `node outils/preparer-bascule.mjs --live-seul --apply`, `npm test`, puis **je te demande l'OK** et je déploie le Worker. Le site reste en test. |
+| 4 | **Toi** | Essai à 1 € sur `vgthmind-shop.pages.dev` avec ta vraie carte (puis Apple Pay iPhone), puis remboursement dans l'admin (Commandes > « Rembourser… »). Tu me dis « essai fait ». **Claude** : je vérifie stock, mails, remboursement. |
+| 5 | **Toi** | Cloudflare > Pages > vgthmind-shop > Custom domains > `www.vgthmind.org`, puis IONOS : `www` CNAME `vgthmind-shop.pages.dev`. Attendre « Active ». Tu me dis « domaine actif ». |
+| 6 | **Claude** | `node outils/preparer-bascule.mjs --live --apply`, `npm run build`, `npm test` (321 tests OK avec la bascule appliquée, vérifié le 2026-10-19), puis **OK de Jules** : Worker, puis `git push` du site (**chacun après ton OK**). |
+| 7 | **Claude** | `node outils/verifier-site.mjs https://www.vgthmind.org` (doit finir par « Tout est bon »). |
+| 8 | **Toi** | Mails de test vers `contact@` et `commande@`, test iPhone (lien Instagram compris), reconnexion à l'admin sur `www.vgthmind.org`. |
+| 9 | **Toi** puis **Claude** | Search Console (`www.vgthmind.org` + `sitemap.xml`) ; IONOS : TTL `www` remis à 1 h ; je supprime la branche distante `bascule-prete` (sur ton OK). |
+
+Notes techniques (2026-10-19) :
+- On applique l'outil **sur `main`** (étape 3 puis 6). La branche locale `bascule-prete-v2` (commit 4f4dc41 = `main` + `preparer-bascule.mjs --apply` + build, LIVE_MODE 0) sert de contrôle : elle construit sans erreur, 321 tests OK. L'ancienne branche distante `bascule-prete` est périmée (101 commits de retard) : ne pas l'utiliser.
+- Correctif : `tests/bascule.test.mjs` échouait dès que l'outil était appliqué (il lisait les vrais fichiers) ; il repart maintenant toujours de l'état de test.
+- Une fois l'outil appliqué, `verifier-site.mjs` sur pages.dev doit s'utiliser avec `--prive`.
+- Retour arrière avant poussée : `node outils/preparer-bascule.mjs --retour --apply`.
+
 ## A. Avant de lancer (tout est faisable aujourd'hui)
 1. **Ménage des données de test** (je le fais, j'ai besoin de ta connexion) : ouvre le panneau « Browser » de l'application Claude, va sur `https://vgthmind-shop.pages.dev/admin/connexion`, touche « Se connecter avec GitHub » (ton compte), puis dis-moi « connecté ». Je lance l'aperçu, je te montre la liste « SUPPRIMÉ / GARDÉ », puis j'applique.
    Ensuite, **toi** : Stripe, bouton « Mode test » en haut, Développeurs, « Supprimer toutes les données de test » (je n'ai pas accès à ton Stripe).
