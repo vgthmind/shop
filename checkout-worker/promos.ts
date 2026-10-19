@@ -62,11 +62,15 @@ export function planPromo(input: PromoInput, now = Date.now()): { error: string 
   return { coupon, promo, label };
 }
 
-// Une ligne de la liste admin.
-export function promoRow(p: any) {
+// Une ligne de la liste admin. status : on (utilisable), off (désactivé à la main), expired (date de fin passée), exhausted (limite atteinte).
+// Stripe passe « active » à false tout seul dans les deux derniers cas : sans ce statut, la liste afficherait « désactivé ».
+export function promoRow(p: any, now = Date.now()) {
   const c = p.coupon || {};
+  const expired = !!p.expires_at && p.expires_at * 1000 <= now;
+  const exhausted = !!p.max_redemptions && (p.times_redeemed || 0) >= p.max_redemptions;
+  const active = !!p.active && c.valid !== false && !expired && !exhausted;
   return {
-    id: p.id, code: p.code, active: !!p.active && c.valid !== false,
+    id: p.id, code: p.code, active, status: active ? 'on' : expired ? 'expired' : exhausted ? 'exhausted' : 'off',
     off: c.percent_off != null ? `-${c.percent_off} %` : c.amount_off != null ? `-${(c.amount_off / 100).toFixed(2).replace('.', ',')} €` : '',
     used: p.times_redeemed || 0, max: p.max_redemptions || null,
     expires: p.expires_at ? new Date(p.expires_at * 1000).toISOString() : null,
@@ -84,7 +88,7 @@ export async function promoRoutes(request: Request, path: string, call: StripeCa
   if (path === '/admin/promos' && request.method === 'GET') {
     const r = await call('GET', '/v1/promotion_codes?limit=100&expand[]=data.coupon');
     if (!r.ok) return json({ error: stripeMsg(r.data, 'Stripe a refusé la lecture des codes (droits « Promotion Codes » en lecture ?).') }, 502);
-    return json({ promos: (r.data.data || []).map(promoRow) });
+    return json({ promos: (r.data.data || []).map((x: any) => promoRow(x, now)) });
   }
   if (path === '/admin/promos' && request.method === 'POST') {
     const body: any = await request.json().catch(() => null);
@@ -96,9 +100,10 @@ export async function promoRoutes(request: Request, path: string, call: StripeCa
     const p = await call('POST', '/v1/promotion_codes', plan.promo(String(c.data.id)));
     if (!p.ok) {
       await call('DELETE', '/v1/coupons/' + encodeURIComponent(String(c.data.id))).catch(() => null); // pas de coupon orphelin
+      if (/already exists/i.test(String(p.data && p.data.error && p.data.error.message || ''))) return json({ error: 'Ce code existe déjà et il est actif : désactive-le d’abord (ou choisis un autre nom).' }, 409);
       return json({ error: stripeMsg(p.data, 'Stripe a refusé le code (déjà utilisé ? droit Écriture « Promotion Codes » ?).') }, 502);
     }
-    return json({ ok: true, promo: promoRow({ ...p.data, coupon: c.data }), label: plan.label });
+    return json({ ok: true, promo: promoRow({ ...p.data, coupon: c.data }, now), label: plan.label });
   }
   if (path === '/admin/promos/toggle' && request.method === 'POST') {
     const body: any = await request.json().catch(() => null);
