@@ -803,7 +803,9 @@ async function main() {
   if (fs.existsSync(ogSrc)) fs.cpSync(ogSrc, rel(OUT_DIR, 'assets', 'products-og'), { recursive: true });
   if (LOCAL_MEDIA) fs.cpSync(rel(ROOT, 'assets', 'media'), rel(OUT_DIR, 'assets', 'media'), { recursive: true });
   // Boutique pas encore publique : aucun moteur de recherche ne doit garder une page (en plus du noindex et de robots.txt).
-  fs.writeFileSync(rel(OUT_DIR, '_headers'), fs.readFileSync(rel(ROOT, 'generator', '_headers'), 'utf8') + (SHOP_SETTINGS.public ? '' : '\n/*\n  X-Robots-Tag: noindex, nofollow\n'));
+  // Cloudflare Pages ne garde qu'UN bloc par adresse (un second « /* » écrase le premier : les en-têtes de sécurité
+  // disparaissaient) : le noindex est donc ajouté DANS le bloc « /* » du fichier, jamais dans un second bloc.
+  fs.writeFileSync(rel(OUT_DIR, '_headers'), fs.readFileSync(rel(ROOT, 'generator', '_headers'), 'utf8').replace(/\r\n/g, '\n').replace(/^\/\*\n/m, SHOP_SETTINGS.public ? '/*\n' : '/*\n  X-Robots-Tag: noindex, nofollow\n'));
   // Anciennes adresses BigCartel : /product/<ancien nom> -> /product/<permalink> (301). Les 27 adresses de l'ancienne
   // boutique existent à l'identique ; on ajoute les variantes que l'ancien site acceptait ou que d'anciens liens
   // (Instagram, mails) peuvent contenir : nom de la pièce, sans accents, tirets/underscores échangés.
