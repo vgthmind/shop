@@ -342,7 +342,7 @@ export async function requestRoutes(request: Request, env: ReqEnv, deps: ReqDeps
     if (path === '/admin/requests' && request.method === 'GET') {
       const list = (await S.list()).filter((r: any) => r.status !== 'brouillon' || Date.now() - r.created > 5 * 60 * 1000);
       list.sort((a: any, b: any) => b.updated - a.updated);
-      for (const r of list) { r.typeLabel = TYPE_LABELS[r.type] || r.type; r.answers = answerLines(r, 'fr'); r.pageUrl = mailCtx(env, r, wb).pageUrl; }
+      for (const r of list) { r.typeLabel = TYPE_LABELS[r.type] || r.type; r.answers = answerLines(r, 'fr'); r.pageUrl = mailCtx(env, r, wb).pageUrl; if (r.balance && r.balance.session) r.orderRef = (await env.HOLDS.get('sref:' + r.balance.session)) || ''; }
       return json({ requests: list, settings: await S.settings(), uploads: !!env.FILES, siteBase: env.SITE_BASE });
     }
     if (path === '/admin/requests/act' && request.method === 'POST') {

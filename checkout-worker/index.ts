@@ -977,6 +977,7 @@ async function buildOrder(env: Env, o: any, forSeller = false): Promise<OrderDat
   const ref = await assignRef(env, String(o.id));
   return {
     ref,
+    requestId: /^D-[A-Z0-9]{6}$/.test(String(o.metadata?.request || '')) ? String(o.metadata.request) : '',
     name: ship.name || o.customer_details?.name || '',
     email: o.customer_details?.email || '',
     phone: o.customer_details?.phone || '',

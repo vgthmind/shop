@@ -20,6 +20,7 @@ export type MailItem = {
 
 export type OrderData = {
   ref: string;
+  requestId?: string; // pièce sur demande : numéro de la demande (D-XXXXXX), affiché avec la référence de commande
   name: string;
   email: string;
   phone?: string;
@@ -75,7 +76,7 @@ const T = {
     duties: '',
     help: 'Un souci, une question ? Réponds simplement à ce mail.',
     view: 'Voir ma commande',
-    ref: 'Commande',
+    ref: 'Commande', request: 'Demande',
     withdrawal: "Les pièces de la boutique, y compris customisées, bénéficient du droit de rétractation de 14 jours. Les créations sur-mesure ou sur demande personnalisée (commande passée par message) ne sont ni reprises ni échangées, sauf défaut de fabrication (art. L221-28 3° du Code de la consommation). TVA non applicable, art. 293 B du CGI.",
     cgv: 'Conditions générales de vente',
     thanksEnd: 'Merci pour ton soutien,',
@@ -103,7 +104,7 @@ const T = {
     duties: "Orders outside the EU: import duties, taxes and local fees, if any, are paid by you and aren't included in the price or shipping.",
     help: 'Questions? Just reply to this email.',
     view: 'View my order',
-    ref: 'Order',
+    ref: 'Order', request: 'Request',
     withdrawal: 'Pieces from the shop, including customised ones, have a 14-day right of withdrawal. Creations made to measure or to personal request (orders placed by message) are neither taken back nor exchanged, except in case of a manufacturing defect (art. L221-28 3° of the French Consumer Code). VAT not applicable, art. 293 B of the French Tax Code.',
     cgv: 'Terms of sale',
     thanksEnd: 'Thank you for your support,',
@@ -172,7 +173,7 @@ export function customerEmail(o: OrderData) {
   const subject = t.subject(o.ref);
   const html = shell(l, subject,
     para(esc(t.hi(first))) + para(t.thanks)
-    + `<p style="margin:0 0 4px;font:13px ${FONT};color:${MUTED}">${t.ref} ${esc(o.ref)}</p>`
+    + `<p style="margin:0 0 4px;font:13px ${FONT};color:${MUTED}">${t.ref} ${esc(o.ref)}${o.requestId ? ` — ${t.request} ${esc(o.requestId)}` : ''}</p>`
     + heading(t.order) + itemsTable(o, t, true)
     + heading(t.shipTo) + para(o.address.map(esc).join('<br>'))
     + heading(t.next) + para(esc(t.nextText)) + (t.duties ? para(esc(t.duties), `color:${MUTED}`) : '')
@@ -180,7 +181,7 @@ export function customerEmail(o: OrderData) {
     + para(esc(t.help), 'margin-top:16px')
     + para(esc(t.bye), 'margin:22px 0 0') + signature(t).replace('margin:22px 0 4px', 'margin:0 0 4px') + legalFooter(o, t));
   const text = [
-    t.hi(first), '', t.thanks, '', `${t.ref} ${o.ref}`, '',
+    t.hi(first), '', t.thanks, '', `${t.ref} ${o.ref}${o.requestId ? ` — ${t.request} ${o.requestId}` : ''}`, '',
     t.order.toUpperCase(), ...itemLines(o, t),
     ...(o.discount ? [`${t.discount} : - ${o.discount}`] : []), `${t.shipping} : ${o.shipping}`, `${t.total} : ${o.total}`, '',
     t.shipTo.toUpperCase(), ...o.address, '',
@@ -202,7 +203,7 @@ export function shippedEmail(o: OrderData, tracking: string) {
   const html = shell(l, subject,
     para(esc(t.hi(first))) + para(t.shippedLead)
     + (tracking ? para(`${t.tracking} : <b>${esc(tracking)}</b>`) + button(url, t.track) : '')
-    + `<p style="margin:18px 0 4px;font:13px ${FONT};color:${MUTED}">${t.ref} ${esc(o.ref)}</p>`
+    + `<p style="margin:18px 0 4px;font:13px ${FONT};color:${MUTED}">${t.ref} ${esc(o.ref)}${o.requestId ? ` — ${t.request} ${esc(o.requestId)}` : ''}</p>`
     + heading(t.order) + itemsTable(o, t, false)
     + heading(t.shipTo) + para(o.address.map(esc).join('<br>'))
     + para(esc(t.invoiceNote), 'margin-top:8px') + button(o.orderUrl, t.view)
@@ -212,7 +213,7 @@ export function shippedEmail(o: OrderData, tracking: string) {
   const text = [
     t.hi(first), '', t.shippedLead,
     ...(tracking ? ['', `${t.tracking} : ${tracking}`, `${t.track} : ${url}`] : []), '',
-    `${t.ref} ${o.ref}`, ...itemLines(o, t), '',
+    `${t.ref} ${o.ref}${o.requestId ? ` — ${t.request} ${o.requestId}` : ''}`, ...itemLines(o, t), '',
     t.shipTo.toUpperCase(), ...o.address, '',
     `${t.invoiceNote} ${o.orderUrl}`, '', t.help, '', t.thanksEnd, 'vgthmind', `Instagram : ${INSTAGRAM_URL}`, CONTACT_EMAIL,
   ].join('\n');
