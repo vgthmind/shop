@@ -37,7 +37,7 @@ import { handleContact } from './contact';
 import { checkTurnstile } from './turnstile';
 import { trafficRoutes } from './traffic';
 import { promoRoutes } from './promos';
-import { accessRoutes } from './access';
+import { accessRoutes, closedRefusal } from './access';
 import { buildInvoice, parisYear } from './invoice';
 export { TrafficDO } from './traffic';
 import { requestRoutes, requestsCron, backupRequests, onRequestPaid, onShipped, requestInvoiceParts, type ReqDeps } from './requests';
@@ -405,6 +405,9 @@ export default {
       if (path === '/shipping/quote' && request.method === 'POST') return await shippingQuote(request, env, json);
 
       // Formulaire de contact (sans cle Stripe).
+      // Site « Fermé » (Réglages > Accès au site) : plus de nouveau paiement panier ni de nouvelle demande. Restent ouverts : le webhook Stripe,
+      // l'acompte, le solde et le suivi des demandes déjà en cours (liens secrets). « Accès par code » ne bloque rien ici.
+      if ((path === '/checkout' || path === '/requests') && request.method === 'POST') { const cl = await closedRefusal(env); if (cl) return json(cl, 503); }
       if (path === '/contact' && request.method === 'POST') {
         if (!env.RESEND_API_KEY || !env.MAIL_FROM) return json({ error: 'unavailable' }, 503);
         const body: any = await request.json().catch(() => null);

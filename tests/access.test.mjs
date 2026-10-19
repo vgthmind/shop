@@ -175,3 +175,37 @@ test('écran « Entrer » (assets/vg-src) : bouton grisé fermé, champ du code,
   assert.match(js, /if \(!GATE\) markSeen\(\);/);
   for (const s of ['.vg-enter-off', '.vg-gate-form', '.vg-gate-msg', '.vg-gate-err']) assert.ok(css.includes(s), s);
 });
+
+test('Worker, site fermé : plus de nouveau paiement panier ni de nouvelle demande (message FR/EN) ; webhook, acompte, solde et suivi en cours continuent', async () => {
+  reset();
+  const post = (path, body = {}) => wcall(path, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+  const closedBody = async (r) => { const j = await r.json().catch(() => ({})); return j.code === 'closed' ? j : null; };
+  const NEW = ['/checkout', '/requests'];
+  const RUNNING = ['/requests/deposit', '/requests/balance', '/requests/balance-quote', '/requests/accept', '/requests/view', '/requests/validate', '/requests/retouch', '/requests/invoice', '/requests/confirm'];
+  // Ouvert et sous code : rien n'est bloqué côté Worker.
+  for (const mode of ['open', 'code']) {
+    if (mode === 'code') await setMode('code', { code: 'sesame1' });
+    for (const p of [...NEW, ...RUNNING]) assert.equal(await closedBody(await post(p, { id: 'D-ABC123', k: 'x'.repeat(32) })), null, mode + ' ' + p);
+  }
+  await setMode('closed', { msg_fr: 'Retour lundi.', msg_en: 'Back Monday.' });
+  for (const p of NEW) {
+    const r = await post(p, { items: [{ slug: 'x', qty: 1 }] });
+    assert.equal(r.status, 503, p);
+    const j = await r.json();
+    assert.equal(j.code, 'closed'); assert.match(j.message_fr, /fermée.*Retour lundi/); assert.match(j.message_en, /closed.*Back Monday/);
+  }
+  for (const p of RUNNING) assert.equal(await closedBody(await post(p, { id: 'D-ABC123', k: 'x'.repeat(32) })), null, 'reste ouvert : ' + p);
+  assert.equal(await closedBody(await wcall('/requests/settings')), null, 'lecture des réglages de demande');
+  assert.equal(await closedBody(await wcall('/requests/quote.pdf?id=D-ABC123&k=x')), null);
+  assert.notEqual((await wcall('/webhook', { method: 'POST', body: '{}' })).status, 503, 'le webhook Stripe reste accepté (signature vérifiée comme avant)');
+  assert.equal(await closedBody(await post('/contact', {})), null, 'le formulaire de contact n\'est pas concerné');
+  await setMode('open');
+  assert.equal(await closedBody(await post('/checkout', {})), null, 'rouvert : les paiements repartent');
+});
+
+test('formulaires du site : le message « fermé » du Worker est affiché (panier et demande)', () => {
+  const cart = readFileSync(new URL('../assets/vg-shop-cart.js', import.meta.url), 'utf8');
+  const dem = readFileSync(new URL('../assets/vg-demande.js', import.meta.url), 'utf8');
+  assert.match(cart, /res\.data\.code === 'closed'[\s\S]{0,160}message_en[\s\S]{0,60}message_fr/);
+  assert.match(dem, /x\.j\.code === 'closed'[\s\S]{0,160}message_en[\s\S]{0,60}message_fr/);
+});

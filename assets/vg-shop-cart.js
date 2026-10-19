@@ -411,6 +411,8 @@
                   ? L('Fewer left than requested, quantity updated.', 'Il en reste moins que demandé, quantité ajustée.')
                   : L('Some pieces ship to France only.', 'Livraison en France uniquement pour certaines pièces.');
             if (items.length === 0) { root.remove(); location.reload(); return; }
+          } else if (res.data.code === 'closed') {
+            message = L(res.data.message_en || 'The shop is closed for now.', res.data.message_fr || 'La boutique est fermée pour le moment.');
           } else if (res.data.code === 'country_not_served') {
             message = L('We do not deliver to this country yet.', 'Pays non livré pour le moment.');
           } else if (res.data.code === 'country_required') {

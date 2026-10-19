@@ -452,6 +452,7 @@
     (window.vgTurnstile ? window.vgTurnstile.token() : Promise.resolve('')).then(function (tok) { body.cf = tok; return fetch(EP + '/requests', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) }); })
       .then(function (r) { return r.json().catch(function () { return {}; }).then(function (j) { return { s: r.status, j: j }; }); })
       .then(function (x) {
+        if (x.s === 503 && x.j.code === 'closed') throw new Error(L(x.j.message_en || 'The shop is closed for now.', x.j.message_fr || 'La boutique est fermée pour le moment.'));
         if (x.s === 403) throw new Error(L('Anti-bot check failed: reload the page or email contact@vgthmind.org.', 'Vérification anti-robot refusée : recharge la page ou écris à contact@vgthmind.org.'));
         if (x.s === 429) throw new Error(L('Too many requests for now, try again later or email contact@vgthmind.org.', 'Trop d’envois pour le moment : réessaie plus tard ou écris à contact@vgthmind.org.'));
         if (x.s === 400 && x.j.fields) { sending = false; var p = path(); for (var i = 0; i < p.length; i++) if (STEPS[p[i]].ok()) { go(i, 'back', true); return null; } throw new Error(L('Please check your answers.', 'Vérifie tes réponses.')); }
