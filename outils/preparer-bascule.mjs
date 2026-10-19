@@ -1,7 +1,8 @@
 // Prépare (ou annule) les réglages du jour J, sans rien pousser ni déployer : modifie seulement 2 fichiers en local.
 //   node outils/preparer-bascule.mjs                         aperçu des changements (n'écrit rien)
 //   node outils/preparer-bascule.mjs --apply                 site public : shop-settings.json (public true, site_url) + SITE_BASE du Worker
-//   node outils/preparer-bascule.mjs --apply --live          idem + LIVE_MODE = "1" (clés Stripe live acceptées ; mails sans [TEST])
+//   node outils/preparer-bascule.mjs --apply --live-seul     SEULEMENT LIVE_MODE = "1" (essai à 1 € avec la vraie carte, site encore en test)
+//   node outils/preparer-bascule.mjs --apply --live          site public + LIVE_MODE = "1" (clés Stripe live acceptées ; mails sans [TEST])
 //   node outils/preparer-bascule.mjs --apply --retour        remet les valeurs de TEST (retour arrière avant poussée)
 //   --site=https://www.vgthmind.org   adresse définitive (défaut)
 // Ensuite : npm run build, npm test, (toi) Deployer-worker.bat puis git push. Rien de cela n'est fait ici.
@@ -12,7 +13,8 @@ import { fileURLToPath } from 'node:url';
 const TEST_SITE = 'https://vgthmind-shop.pages.dev';
 
 // Pur : renvoie les nouveaux contenus des deux fichiers. Testé dans tests/bascule.test.mjs.
-export function transform({ settings, toml }, { site, live, retour }) {
+export function transform({ settings, toml }, { site, live, liveSeul, retour }) {
+  if (liveSeul && !retour) return { settings, toml: toml.replace(/^(LIVE_MODE\s*=\s*)"[^"]*"/m, '$1"1"') };
   if (!/^https:\/\/[a-z0-9.-]+$/i.test(site)) throw new Error('--site doit ressembler à https://www.vgthmind.org (sans / final)');
   const s = JSON.parse(settings);
   const target = retour ? TEST_SITE : site;
@@ -33,7 +35,7 @@ function main() {
   const files = { settings: path.join(root, 'data', 'shop-settings.json'), toml: path.join(root, 'checkout-worker', 'wrangler.toml') };
   const cur = { settings: fs.readFileSync(files.settings, 'utf8'), toml: fs.readFileSync(files.toml, 'utf8') };
   const eol = cur.settings.includes('\r\n') ? '\r\n' : '\n';
-  const next = transform({ settings: cur.settings.replace(/\r\n/g, '\n'), toml: cur.toml.replace(/\r\n/g, '\n') }, { site, live: args.includes('--live'), retour: args.includes('--retour') });
+  const next = transform({ settings: cur.settings.replace(/\r\n/g, '\n'), toml: cur.toml.replace(/\r\n/g, '\n') }, { site, live: args.includes('--live'), liveSeul: args.includes('--live-seul'), retour: args.includes('--retour') });
   for (const k of Object.keys(files)) {
     const a = cur[k].replace(/\r\n/g, '\n').split('\n'), b = next[k].split('\n');
     const diff = b.map((l, i) => (a[i] !== l ? `  - ${a[i]}\n  + ${l}` : '')).filter(Boolean);

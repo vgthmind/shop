@@ -30,3 +30,11 @@ test('refus : adresse mal écrite, ou origine absente de ALLOWED_ORIGIN', () => 
   assert.throws(() => transform({ settings, toml }, { site: 'www.vgthmind.org' }), /--site/);
   assert.throws(() => transform({ settings, toml }, { site: 'https://autre.example.org' }), /ALLOWED_ORIGIN/);
 });
+
+test('--live-seul : seul LIVE_MODE change (essai à 1 € sur le site encore en test)', () => {
+  const a = transform({ settings, toml }, { site: SITE, liveSeul: true });
+  assert.equal(a.settings, settings);
+  assert.match(a.toml, /^LIVE_MODE = "1"/m);
+  assert.match(a.toml, /^SITE_BASE = "https:\/\/vgthmind-shop\.pages\.dev"/m);
+  assert.equal(transform({ settings: a.settings, toml: a.toml }, { site: SITE, retour: true }).toml, toml);
+});
