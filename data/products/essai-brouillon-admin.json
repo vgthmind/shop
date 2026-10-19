@@ -6,7 +6,9 @@
   "images": [
     "/assets/products/essai-brouillon-admin/vmvf9rck1-0.webp"
   ],
-  "categories": [],
+  "categories": [
+    "tops"
+  ],
   "latest_drop": false,
   "unique": true,
   "in_stock": true,
