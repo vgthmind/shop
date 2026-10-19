@@ -5,8 +5,15 @@ Règle : chaque étape « toi » est faite par vgthmind, chaque étape « moi »
 
 ## Phase 1 : dimanche, validation et déploiement de TEST
 1. `npm test` (tout vert) ; toi : `checkout-worker/Deployer-worker.bat` (Worker d'abord), puis `git push` ; attendre 2 min la reconstruction Cloudflare.
+   **Le Worker a changé en local depuis le dernier déploiement** : `requests-core.ts` et `index.ts` (adresse de l'émetteur des factures lue dans les Réglages) et `wrangler.toml` (variable `INVOICE_SELLER_ADDRESS` retirée). Le déploiement du Worker est donc indispensable avant de tester le champ « Adresse » (un ancien Worker ignorerait l'adresse sans message d'erreur).
 2. Suivre la « CHECKLIST DE TESTS POUR DIMANCHE » d'ETAT-DETAIL.md (PC puis iPhone), uniquement sur des commandes de TEST.
-3. En plus, à regarder : Codes promo (un code expiré s'affiche « expiré », un code épuisé « épuisé », sans bouton Réactiver) ; panier : sous-total, livraison et total au même format « 84,00 € » en français.
+3. **Remplir l'adresse dans Réglages avant la première facture** : Demandes > Réglages > Facturation > Adresse, Enregistrer. Elle n'apparaît que sur les factures et avoirs (vérifier en ouvrant « Facture » d'une commande de TEST : « vgthmind, <adresse>, Vitry-sur-Seine, SIRET, contact@ », jamais de nom ni de prénom). Elle est gardée dans les données du site, pas dans le dépôt, et reste vide tant qu'elle n'est pas remplie.
+4. Pièces masquées et programmées (nouveau comportement) : une pièce masquée n'a plus de fiche (son adresse renvoie vers /products, elle n'est ni listée, ni cherchable, ni dans le sitemap) ; une pièce programmée a une fiche « Bientôt disponible » sans bouton panier, et devient achetable à l'heure prévue (le site est reconstruit ~75 s avant). Une telle pièce restée dans un panier en est retirée (« Désolé, plus disponible : … »). Les pièces masquées n'ont donc plus d'aperçu public : à regarder une fois (Pièces > une pièce masquée > pas de lien « Voir sur le site »).
+5. Codes promo : les codes désactivés, expirés ou épuisés sont dans une section repliée « Désactivés, expirés ou épuisés » sous les codes actifs.
+6. En plus, à regarder : Codes promo (un code expiré s'affiche « expiré », un code épuisé « épuisé », sans bouton Réactiver) ; panier : sous-total, livraison et total au même format « 84,00 € » en français.
+
+## Test local du Worker (sans rien déployer, déjà fait le 2026-10-19)
+`node outils/worker-local.mjs` lance le vrai Worker en mémoire (faux Stripe test, faux Resend) ; fait le 2026-10-19 : panier > port > paiement (carte et Bancontact proposés) > webhook > mails (vendeur et client, réponses vers contact@) > page « Merci » > pièce unique « Vendu » et panier vidé ; formulaire « Proposer un projet » avec 2 photos > fichiers enregistrés > mails de confirmation et d'alerte. Pas testé : la page Stripe réelle (Bancontact, Apple Pay, Google Pay), faute de clé de test sur ce PC ; à voir à l'essai à 1 € de la phase 4.
 
 ## Phase 2 : ménage des données de test (après le dernier essai, AVANT Stripe live)
 Outil : `node outils/menage-donnees-test.mjs` (aperçu par défaut : ne supprime rien tant que `--apply` n'est pas ajouté).
@@ -63,5 +70,6 @@ Quand : paiement qui échoue, mails qui ne partent pas, anciennes adresses en 40
 ## Phase 6 : après la bascule
 - 48 h : surveiller Stripe (paiements, webhooks en erreur) et contact@ ; relire les 3 pages légales en ligne.
 - Remettre le TTL de `www` à 1 h. Quelques semaines plus tard : DMARC `_dmarc` en TXT `v=DMARC1; p=none; rua=mailto:contact@vgthmind.org`, puis `p=quarantine`, puis `p=reject`.
+- **Supprimer la branche distante `bascule-prete`** (périmée, remplacée par `outils/preparer-bascule.mjs`) : `git push origin --delete bascule-prete` (OK explicite).
 - BigCartel : exporter clients et commandes, garder une copie des factures, fermer avant avril 2027.
 - Facturation : mention de TVA selon le CIBS à partir du 2027-01-01 (voir CGV-A-VERIFIER.md).
