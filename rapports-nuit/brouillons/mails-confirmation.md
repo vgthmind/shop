@@ -22,7 +22,7 @@ Remplacent les clés `withdrawal` et `cgv` de l'objet `T` (FR et EN) et le pied 
 ```
 INFORMATIONS À CONSERVER
 
-Vendeur : [À REMPLIR : nom et prénom d'état civil], entrepreneur individuel (vgthmind) — SIRET 952 025 369 00028 — [À REMPLIR : adresse] — [À REMPLIR : téléphone] — contact@vgthmind.org.
+Vendeur : vgthmind, entrepreneur individuel (vgthmind) — SIRET 952 025 369 00028 — Vitry-sur-Seine — contact@vgthmind.org.
 
 Prix : toutes taxes comprises (TVA non applicable, art. 293 B du CGI), frais de livraison inclus dans le total ci-dessus. Livraison hors Union européenne : droits de douane et taxes locales à votre charge.
 
@@ -43,7 +43,7 @@ Conditions générales de vente complètes et formulaire type de rétractation :
 ```
 INFORMATION TO KEEP
 
-Seller: [À REMPLIR : nom et prénom d'état civil], sole proprietor (vgthmind) — SIRET 952 025 369 00028 — [À REMPLIR : adresse] — [À REMPLIR : téléphone] — contact@vgthmind.org.
+Seller: vgthmind, sole proprietor (vgthmind) — SIRET 952 025 369 00028 — Vitry-sur-Seine — contact@vgthmind.org.
 
 Price: all taxes included (VAT not applicable, art. 293 B of the French Tax Code); shipping is included in the total above. Delivery outside the European Union: customs duties and local taxes are paid by you.
 
@@ -65,7 +65,7 @@ FR :
 ```
 FORMULAIRE TYPE DE RÉTRACTATION
 (à compléter et renvoyer uniquement si vous souhaitez vous rétracter du contrat)
-À l'attention de [À REMPLIR : nom et prénom d'état civil, adresse, contact@vgthmind.org] :
+À l'attention de vgthmind, Vitry-sur-Seine, contact@vgthmind.org :
 Je vous notifie par la présente ma rétractation du contrat portant sur la vente du bien ci-dessous :
 Commandé le / reçu le :
 Numéro de commande :
@@ -78,7 +78,7 @@ EN :
 ```
 MODEL WITHDRAWAL FORM
 (complete and return only if you wish to withdraw from the contract)
-To [À REMPLIR : nom et prénom d'état civil, adresse, contact@vgthmind.org]:
+To vgthmind, Vitry-sur-Seine, contact@vgthmind.org:
 I hereby give notice that I withdraw from my contract of sale of the following goods:
 Ordered on / received on:
 Order number:

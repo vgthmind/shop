@@ -69,7 +69,6 @@ interface Env {
   HOLDS: KV; // commandes expediees, sauvegardes du stock, etats OAuth
   STOCK: any; // DurableObjectNamespace<StockDO>
   TRAFFIC: any; // DurableObjectNamespace<TrafficDO>
-  INVOICE_SELLER_ADDRESS?: string; // adresse de l'émetteur sur les factures (à remplir par vgthmind ; vide = non affichée)
   REQUESTS?: any; // DurableObjectNamespace<RequestsDO> (pièces sur demande)
   FILES?: any; // R2 : fichiers joints des demandes (absent tant que R2 n'est pas activé)
   WORKER_BASE?: string; // adresse publique de ce Worker (liens des photos dans les mails)
@@ -1509,7 +1508,10 @@ async function invoiceData(env: Env, key: string, sessionId: string, loaded?: an
   }
   if (s.payment_status !== 'paid') return { ok: false, error: 'Commande non payée.', status: 400 };
   const kind = s.metadata?.kind;
-  const seller = { sellerAddress: (env.INVOICE_SELLER_ADDRESS || '').trim() };
+  // Adresse de l'émetteur : saisie par vgthmind dans Réglages (données du Worker, jamais dans le dépôt) ; vide = non affichée.
+  let sellerAddress = '';
+  try { sellerAddress = String((await env.REQUESTS.get(env.REQUESTS.idFromName('main')).settings()).sellerAddress || '').trim(); } catch (e) {}
+  const seller = { sellerAddress };
   const num = async (id: string, created: number, testRef: string) => (s.livemode ? await stockStub(env).invoiceNumber(id, parisYear(created)) : 'TEST-' + testRef);
   if (kind === 'deposit' || kind === 'balance') {
     const req = String(s.metadata.request || '');

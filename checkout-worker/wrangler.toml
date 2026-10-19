@@ -22,8 +22,7 @@ ADMIN_GITHUB_LOGIN = "vgthmind"
 MAIL_FROM = "vgthmind <commande@vgthmind.org>"
 # Identifiant (public) de l'OAuth App GitHub de l'admin ; son secret est un
 # secret Cloudflare (GITHUB_CLIENT_SECRET).
-# Adresse de l'émetteur imprimée sur les factures (vide = seulement « vgthmind, Vitry-sur-Seine »). À remplir par vgthmind.
-INVOICE_SELLER_ADDRESS = ""
+# Adresse de l'émetteur des factures : saisie dans l'admin (Demandes > Réglages > Facturation), jamais dans ce fichier.
 GITHUB_CLIENT_ID = "Ov23liAh57fi8Xa7RNNg"
 # Adresse publique de ce Worker (photos de la pièce finie dans les mails « valide ta pièce »).
 WORKER_BASE = "https://vgthmind-shop-checkout.vgthm66.workers.dev"
