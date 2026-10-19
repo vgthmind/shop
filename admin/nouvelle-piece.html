@@ -93,7 +93,7 @@
   <section data-step="1">
   <h2>1 · Photos de la pièce</h2>
   <div class="drop" id="drop">
-    <p style="margin:0 0 10px">Glisse les photos ici, ou choisis-les (plusieurs à la fois, la 1re = photo principale).</p>
+    <p style="margin:0 0 10px">Glisse les photos ici, ou choisis-les (plusieurs à la fois, la 1re = photo principale). Rien ne se lance tout seul : pour chaque photo tu choisis « Détourer » ou « Garder telle quelle » (étape 2), et tu peux toujours revenir à l'original.</p>
     <label class="btn primary">Choisir des photos<input id="files" type="file" accept="image/*" multiple hidden></label>
     <div class="bar" style="justify-content:center">
       <label class="muted">Moteur de détourage
@@ -105,6 +105,7 @@
     </div>
     <div class="muted" id="status" aria-live="polite"></div>
     <div class="bar" style="justify-content:center"><label class="muted">Serveur de détourage <input id="srvUrl" type="text" inputmode="url" autocapitalize="off" spellcheck="false" style="width:260px" placeholder="http://localhost:7860"></label></div>
+    <div class="bar" style="justify-content:center"><button id="bCutAll" type="button" hidden>✂ Détourer toutes les photos à choisir</button> <button id="bKeepAll" type="button" hidden>Garder toutes telles quelles</button></div>
     <button id="bRedoAll" hidden>↻ Tout relancer (nouveau détourage de toutes les photos)</button>
     <button id="bRetry" hidden>↻ Relancer le détourage des photos « à détourer »</button>
   </div>

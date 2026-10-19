@@ -50,13 +50,14 @@
     for (var i = 0; i < files.length; i++) {
       try {
         var src = await decode(files[i]);
-        photos.push({ id: nextId++, file: files[i], name: files[i].name, src: src, w: src.width, h: src.height, status: 'queued', raw: null, ref: null, mode: null, cov: null, undo: [], cut: null, box: null, thumb: null, msg: '' });
+        photos.push({ id: nextId++, file: files[i], name: files[i].name, src: src, w: src.width, h: src.height, status: 'new', raw: null, ref: null, mode: null, cov: null, undo: [], cut: null, box: null, thumb: null, msg: '' });
       } catch (e) {
         notice('Photo illisible : ' + files[i].name + ' (les HEIC se lisent sur iPhone/Safari ; sinon exporte en JPEG).', true);
       }
     }
     renderStrip();
-    runQueue();
+    // Rien ne se lance tout seul : pour chaque photo, « Détourer » ou « Garder telle quelle » (au choix de vgthmind).
+    if (sel < 0 && photos.length) select(0);
   }
 
   // ---------- détourage (file d'attente) ----------
@@ -127,11 +128,12 @@
   }
 
   // ---------- liste des photos ----------
-  var STATUS = { queued: 'En attente…', processing: 'Détourage…', review: 'À valider', valid: '✓ Validée', original: 'Original gardé', error: 'Erreur', todo: 'À détourer' };
+  var STATUS = { new: 'À choisir', queued: 'En attente…', processing: 'Détourage…', review: 'À valider', valid: '✓ Validée', original: 'Original gardé', error: 'Erreur', todo: 'À détourer' };
   function renderStrip() {
     scheduleDraft();
     var strip = $('strip'); strip.textContent = '';
     $('bRetry').hidden = !waitingCount(); $('bRedoAll').hidden = !photos.length;
+    var nw = photos.filter(function (p) { return p.status === 'new'; }).length; $('bCutAll').hidden = !nw; $('bKeepAll').hidden = !nw;
     photos.forEach(function (p, i) {
       var c = document.createElement('div'); c.className = 'card' + (i === sel ? ' sel' : '');
       var cv = document.createElement('canvas'); cv.width = 112; cv.height = 96;
@@ -158,6 +160,9 @@
   }
   function pendingCount() { return photos.filter(function (p) { return p.status !== 'valid' && p.status !== 'original'; }).length; }
   function waitingCount() { return photos.filter(function (p) { return p.status === 'todo' || p.status === 'error'; }).length; }
+  // Choix pour toutes les photos encore « à choisir » (facultatif : sinon photo par photo).
+  $('bCutAll').onclick = function () { photos.forEach(function (p) { if (p.status === 'new') { p.status = 'queued'; p.msg = ''; } }); renderStrip(); runQueue(); };
+  $('bKeepAll').onclick = function () { photos.forEach(function (p) { if (p.status === 'new') p.status = 'original'; }); renderStrip(); if (photos[sel]) updateButtons(photos[sel]); };
   $('bRetry').onclick = function () {
     photos.forEach(function (p) { if (p.status === 'todo' || p.status === 'error') { p.status = 'queued'; p.msg = ''; } });
     renderStrip(); runQueue();
@@ -219,7 +224,9 @@
   function clearCut() { var p = photos[sel]; cutEl.width = p ? p.w : 4; cutEl.height = p ? p.h : 4; }
   function updateButtons(p) {
     var ok = !!(p && p.raw);
-    ['bValid', 'bOrig', 'bRedo'].forEach(function (id) { $(id).disabled = !p || p.status === 'processing' || (!ok && id !== 'bRedo'); });
+    ['bValid', 'bOrig', 'bRedo'].forEach(function (id) { $(id).disabled = !p || p.status === 'processing' || (!ok && id === 'bValid'); });
+    // « Garder telle quelle » avant le détourage, « Revenir à l'original » après (le détourage reste disponible : on peut y retourner).
+    $('bOrig').textContent = ok ? "↩ Revenir à l'original" : 'Garder telle quelle'; $('bRedo').textContent = ok ? '↻ Relancer' : '✂ Détourer';
     $('bUndo').disabled = !p || !p.undo.length;
   }
   function refreshSelected() {
@@ -232,7 +239,7 @@
   function deferRefresh() { clearTimeout(timer); timer = setTimeout(refreshSelected, 120); }
 
   function nextToReview(from) {
-    for (var k = 1; k <= photos.length; k++) { var j = (from + k) % photos.length; if (photos[j].status === 'review') return j; }
+    for (var k = 1; k <= photos.length; k++) { var j = (from + k) % photos.length; if (photos[j].status === 'review' || photos[j].status === 'new') return j; }
     return -1;
   }
   function setStatusOf(p, st) {

@@ -1,11 +1,10 @@
 # Lancement de vgthmind : ce que TU fais, étape par étape (débutant)
 
 Écrit le 2026-10-19. Rien de ce document n'est exécuté : le site reste en **mode test** jusqu'à ton feu vert. Détail technique et retour arrière : `CHECKLIST-BASCULE.md`, `BASCULE.md` §1, `BASCULE-JOUR-J.md`.
-Règle : Claude ne déploie le Worker et ne pousse le site qu'après ton « OK » écrit dans le chat, à chaque fois. **Tu ne me donnes jamais une clé** : tu les colles toi-même dans le terminal.
+Règle : Claude ne déploie le Worker et ne pousse le site qu'après ton « OK » écrit dans le chat, à chaque fois. **Tu ne me donnes jamais une clé** : tu les colles toi-même dans le tableau de bord Cloudflare.
 
 ## Les mots à connaître
-- **Terminal** : dans l'Explorateur Windows, ouvre le dossier `SITE\vgthmind-shop`, clic droit dans le vide > « Ouvrir dans le Terminal ». Tu tapes une ligne, Entrée.
-- **Secret du Worker** : une clé que Cloudflare garde cachée. Tu la poses avec `npx wrangler@4 secret put NOM` (le terminal te demande la valeur : tu la colles, Entrée, rien ne s'affiche, c'est normal).
+- **Secret du Worker** : une clé que Cloudflare garde cachée ; tu la poses dans le tableau de bord Cloudflare (partie B, étape 6), sans terminal.
 - **Cloudflare est déjà connecté sur ce PC** (compte vgthm66@gmail.com) : tu n'as PAS à refaire `wrangler login`. Si un jour une commande répond « not authenticated » : tape `npx wrangler@4 login`, une page s'ouvre, clique « Allow ».
 
 ## A. Avant de lancer (tout est faisable aujourd'hui)
@@ -25,13 +24,16 @@ Règle : Claude ne déploie le Worker et ne pousse le site qu'après ton « OK �
 3. Paramètres > Moyens de paiement : **Cartes, Apple Pay, Google Pay, Bancontact activés** (le Worker demande toujours carte + Bancontact : si Bancontact est coupé, la page de paiement ne s'ouvre pas).
 4. Passe en **mode live** (désactive « Mode test » en haut à gauche), puis Développeurs > Clés API > « Créer une clé restreinte » : nom `vgthmind-worker-live`. Permissions : **Écriture** sur *Checkout Sessions*, *Coupons*, *Promotion Codes* ; **Lecture** sur *PaymentIntents*, *Charges*, *Products*, *Customers*. Copie la clé `rk_live_…` (elle ne s'affiche qu'une fois).
 5. Développeurs > Webhooks > « Ajouter un endpoint » : adresse `https://vgthmind-shop-checkout.vgthm66.workers.dev/webhook`, les 5 événements `checkout.session.completed`, `checkout.session.async_payment_succeeded`, `checkout.session.expired`, `payment_intent.payment_failed`, `checkout.session.async_payment_failed`. Copie le « secret de signature » `whsec_…`.
-6. Dis-moi seulement **« clés live créées »**. Je prépare, tu poses :
-   ```bash
-   cd checkout-worker
-   npx wrangler@4 secret put STRIPE_SECRET_KEY
-   npx wrangler@4 secret put STRIPE_WEBHOOK_SECRET
-   ```
-   (colle `rk_live_…` puis `whsec_…` quand le terminal les demande).
+6. **Pose les deux clés dans Cloudflare (sans terminal)** :
+   1. Va sur dash.cloudflare.com et connecte-toi.
+   2. Menu de gauche : **Workers & Pages** (ou « Compute > Workers & Pages »). Clique sur le Worker **vgthmind-shop-checkout** (pas « vgthmind-shop », qui est le site).
+   3. Onglet **Settings** (Paramètres), puis la section **Variables and Secrets** (Variables et secrets).
+   4. Bouton **+ Add** (Ajouter). Type : choisis **Secret** (pas « Text »).
+   5. **Variable name** : `STRIPE_SECRET_KEY` (exactement, majuscules et tiret bas). **Value** : colle la clé `rk_live_…`. Ne coche rien d'autre.
+   6. Clique **Add** / **Save**, puis refais le bouton **+ Add** pour le 2e secret : nom `STRIPE_WEBHOOK_SECRET`, valeur = le `whsec_…` du webhook live.
+   7. Clique **Deploy** (en haut ou en bas de la page) pour enregistrer. Les deux lignes doivent apparaître avec la mention « Secret » (valeur cachée).
+   8. Écris-moi **« clés live posées »** (sans me les envoyer). Si tu avais déjà des secrets de test avec ces noms : clique le crayon à droite de la ligne et remplace la valeur ; ne crée pas de doublon.
+   Les clés de test d'avant sont remplacées : jusqu'au passage en réel (étape D) le Worker refuse une clé live tant que `LIVE_MODE` vaut 0, donc rien ne bouge pour tes proches.
 
 ## C. Le nom de domaine (le matin du jour J, toi 30 minutes)
 La veille : IONOS > Domaines > vgthmind.org > DNS > ligne `www` > TTL **300 secondes**. Ne touche jamais aux lignes MX, SPF, DKIM, `_dmarc`, `send`, `resend`, ni à la ligne `@`.
@@ -41,9 +43,9 @@ La veille : IONOS > Domaines > vgthmind.org > DNS > ligne `www` > TTL **300 seco
 4. Resend (resend.com) > Domains : `vgthmind.org` doit être « **Verified** ».
 
 ## D. Le jour J avec Claude (dans cet ordre, je te guide)
-1. Toi : tu me dis **« essai réel »** quand B est fait. Moi : `node outils/preparer-bascule.mjs --live-seul --apply` (le Worker passe en réel, le site reste de test), `npm test`. Toi : double-clic sur `checkout-worker/Deployer-worker.bat` après mon OK demandé dans le chat.
+1. Toi : tu me dis **« essai réel »** quand B est fait. Moi : `node outils/preparer-bascule.mjs --live-seul --apply` (le Worker passe en réel, le site reste de test), `npm test`. Moi : je déploie le Worker (ton OK écrit dans le chat d'abord).
 2. Toi : essai à 1 € sur `vgthmind-shop.pages.dev` avec ta vraie carte (puis Apple Pay sur iPhone), puis remboursement dans l'admin (Commandes > la commande > « Rembourser… »). Je vérifie stock, mails, facture.
-3. Toi : tu fais C (domaine). Moi : `node outils/preparer-bascule.mjs --live --apply` (site public, adresse www.vgthmind.org), `npm run build`, `npm test` ; puis Worker + `git push` **chacun après ton OK**.
+3. Toi : tu fais C (domaine). Moi : `node outils/preparer-bascule.mjs --live --apply` (site public, adresse www.vgthmind.org), `npm run build`, `npm test` ; puis Worker puis publication du site (`git push`), **chacun après ton OK**.
 4. Moi : `node outils/verifier-site.mjs https://www.vgthmind.org` (doit finir par « Tout est bon »). Toi : test iPhone, lien Instagram compris.
 5. Toi : te reconnecter à l'admin sur `www.vgthmind.org` (nouvelle adresse = nouvelle connexion).
 
@@ -58,4 +60,4 @@ La veille : IONOS > Domaines > vgthmind.org > DNS > ligne `www` > TTL **300 seco
 - **Après le lancement** : pastille de notification sur l'icône de l'appli iPhone (nécessite des notifications push, iOS 16.4+) : proposée une fois le site lancé.
 
 ## Retour arrière
-Niveau 1 : clés de test remises + `LIVE_MODE = "0"` + `Deployer-worker.bat`. Niveau 2 : IONOS, ligne `www` : remets `vgthmind.bigcartel.com` (BigCartel revient en 5 minutes). Niveau 3 : Cloudflare > Pages > Deployments > déploiement précédent > « Rollback ». Détail : `CHECKLIST-BASCULE.md`, phase 5.
+Niveau 1 : clés de test remises + `LIVE_MODE = "0"` (je redéploie le Worker sur ton OK). Niveau 2 : IONOS, ligne `www` : remets `vgthmind.bigcartel.com` (BigCartel revient en 5 minutes). Niveau 3 : Cloudflare > Pages > Deployments > déploiement précédent > « Rollback ». Détail : `CHECKLIST-BASCULE.md`, phase 5.
