@@ -34,11 +34,12 @@ import { DurableObject } from 'cloudflare:workers';
 import { checkoutShipping } from './shipping-worker';
 import { recordSale, replayPending, accountingConfigured } from './accounting';
 import { handleContact } from './contact';
+import { checkTurnstile } from './turnstile';
 import { trafficRoutes } from './traffic';
 import { promoRoutes } from './promos';
 import { buildInvoice, parisYear } from './invoice';
 export { TrafficDO } from './traffic';
-import { requestRoutes, requestsCron, onRequestPaid, onShipped, requestInvoiceParts, type ReqDeps } from './requests';
+import { requestRoutes, requestsCron, backupRequests, onRequestPaid, onShipped, requestInvoiceParts, type ReqDeps } from './requests';
 export { RequestsDO } from './requests';
 import { customerEmail, sellerEmail, shippedEmail, REPLY_TO, CONTACT_EMAIL, FONT, esc, langFor, countryName, type MailItem, type OrderData } from './emails';
 
@@ -56,6 +57,7 @@ interface Env {
   GITHUB_CLIENT_SECRET?: string; // OAuth App (secret)
   SESSION_SECRET?: string; // signe les sessions admin (30 jours)
   RESEND_API_KEY?: string; // secret : cle Resend
+  TURNSTILE_SECRET?: string; // secret : clé secrète Cloudflare Turnstile (absent = anti-robot désactivé)
   ALERT_EMAIL?: string; // secret : adresse qui recoit l'alerte de commande
   MAIL_FROM?: string; // expediteur sur domaine verifie ; vide = pas d'email client
   GITHUB_TOKEN?: string; // ancien systeme : n'est plus utilise, a supprimer
@@ -291,7 +293,7 @@ export default {
       Vary: 'Origin',
     };
     const json: JsonFn = (data, status = 200) =>
-      new Response(JSON.stringify(data), { status, headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store', ...cors } });
+      new Response(JSON.stringify(data), { status, headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff', ...cors } });
 
     if (request.method === 'OPTIONS') return new Response(null, { headers: cors });
     const path = new URL(request.url).pathname;
@@ -403,6 +405,7 @@ export default {
       if (path === '/contact' && request.method === 'POST') {
         if (!env.RESEND_API_KEY || !env.MAIL_FROM) return json({ error: 'unavailable' }, 503);
         const body: any = await request.json().catch(() => null);
+        if (!(await checkTurnstile(env.TURNSTILE_SECRET, body && body.cf, request.headers.get('CF-Connecting-IP') || 'x'))) return json({ error: 'captcha' }, 403);
         const r = await handleContact(body, { kv: env.HOLDS, from: env.MAIL_FROM, ip: request.headers.get('CF-Connecting-IP') || 'x', send: (f, t, su, h, tx, rt) => resendSend(env, f, t, su, h, tx, rt) });
         return json(r.data, r.status);
       }
@@ -426,7 +429,7 @@ export default {
       if (path === '/orders/shipped-mail' && request.method === 'POST') return await sendShippedMail(request, env, key.value, json);
     } catch (e: any) {
       await alertAdmin(env, 'worker-' + path, `Le Worker a planté sur ${path}`, String(e && e.stack ? e.stack : e).slice(0, 1500));
-      return json({ error: 'Erreur interne : ' + (e && e.message ? e.message : e) }, 500);
+      return json({ error: 'Erreur interne. Réessaie dans un instant ; si ça continue, écris à contact@vgthmind.org.' }, 500); // le détail part par mail d'alerte, jamais au navigateur
     }
     return json({ error: 'Not found' }, 404);
   },
@@ -442,9 +445,10 @@ export default {
     }
     if (!event || !event.cron || event.cron === '30 3 * * *') {
       // Pièces de test oubliées dans le stock (2026-10-12) : retirées une fois pour toutes.
-      ctx.waitUntil(Promise.resolve().then(() => stockStub(env).deleteStock(['zz-test-fictif', 'zz-test-live-k7q4x2m9'])).catch(() => {}));
+      ctx.waitUntil(Promise.resolve().then(() => stockStub(env).deleteStock(['zz-test-fictif', 'zz-test-live-k7q4x2m9', 'testtt', 'testttjaheh', 'test', 'test-2', 't-est-masquee'])).catch(() => {}));
       ctx.waitUntil(backupStock(env));
       ctx.waitUntil(backupOrders(env));
+      ctx.waitUntil(backupRequests(env as any).catch((e) => alertAdmin(env, 'req-backup', 'Sauvegarde des demandes en erreur', String(e && e.stack ? e.stack : e))));
       if (accountingConfigured(env as any)) ctx.waitUntil(replayPending(env as any, 100).catch(() => {})); // ventes restées en file (script Google injoignable)
     }
     ctx.waitUntil(requestsCron(env as any, reqDeps(env)).catch((e) => alertAdmin(env, 'req-cron', 'Cron des demandes en erreur', String(e && e.stack ? e.stack : e))));
@@ -945,7 +949,7 @@ async function mailItems(env: Env, lineItems: any[], money: (c: number) => strin
     const prod = typeof li.price?.product === 'object' ? li.price.product : null;
     const p = catalog.find((c) => c.permalink === prod?.metadata?.slug) || (prod ? undefined : catalog.find((c) => c.name === li.description));
     const size = /\b(?:[Ss]ize|[Tt]aille|SIZE|TAILLE)\s+([A-Z]{1,4}|\d{1,3}(?:[./-]\d{1,3})?)\b/.exec(p?.description || '');
-    const catImg = !prod && p && p.images && p.images[0] ? new URL(env.CATALOG_BASE || env.SITE_BASE).origin + encodeURI(p.images[0].url) : '';
+    const catImg = !prod && p && p.images && p.images[0] ? new URL(env.SITE_BASE).origin + encodeURI(p.images[0].url) : '';
     return {
       name: String(li.description),
       size: size ? size[1] : '',

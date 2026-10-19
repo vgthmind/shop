@@ -19,6 +19,7 @@ import {
 } from './requests-core';
 import { receivedEmail, newRequestAlert, quoteEmail, depositPaidEmail, validationEmail, replyEmail, type ReqMailCtx } from './request-emails';
 import { CONTACT_EMAIL } from './emails';
+import { checkTurnstile } from './turnstile';
 
 type JsonFn = (data: unknown, status?: number) => Response;
 export interface ReqEnv {
@@ -30,6 +31,7 @@ export interface ReqEnv {
   MAIL_FROM?: string;
   ALERT_EMAIL?: string;
   RESEND_API_KEY?: string;
+  TURNSTILE_SECRET?: string;
   LIVE_MODE?: string;
 }
 export interface ReqDeps {
@@ -53,6 +55,8 @@ export class RequestsDO extends DurableObject {
   async get(id: string) { return (await this.st().get('r:' + id)) || null; }
   async list() { return [...(await this.st().list({ prefix: 'r:' })).values()]; }
   async remove(id: string) { await this.st().delete('r:' + id); }
+  // Restauration : ne recrée que les demandes absentes (jamais d'écrasement d'une demande existante).
+  async restoreMissing(recs: any[]) { let n = 0; for (const r of recs) { if (r && typeof r.id === 'string' && /^[A-Za-z0-9_-]{3,40}$/.test(r.id) && !(await this.st().get('r:' + r.id))) { await this.st().put('r:' + r.id, r); n++; } } return n; }
   async settings(): Promise<Settings> { return mergeSettings(await this.st().get('settings')); }
   async setSettings(v: Settings) { await this.st().put('settings', v); }
   async act(id: string, action: string, data: any, now: number) {
@@ -264,6 +268,18 @@ export function requestInvoiceParts(s: any, depositInvoiceNumber: string) {
   };
 }
 
+// --- Sauvegarde nocturne des demandes (KV « rbackup:<date> », 30 jours : même durée que le plus court délai de conservation, pas de données gardées au-delà) ---
+const RBACKUP_DAYS = 30;
+export async function backupRequests(env: ReqEnv) {
+  if (!env.REQUESTS) return { ok: false, count: 0 };
+  const S = stub(env), date = new Date().toISOString().slice(0, 10);
+  const list = (await S.list()).filter((r: any) => r.status !== 'brouillon');
+  const value = JSON.stringify({ date, requests: list, settings: await S.settings() });
+  await env.HOLDS.put(`rbackup:${date}`, value, { expirationTtl: RBACKUP_DAYS * 86400 });
+  await env.HOLDS.put('rbackup:latest', value, { expirationTtl: RBACKUP_DAYS * 86400 });
+  return { ok: true, date, count: list.length };
+}
+
 // --- Routes ---------------------------------------------------------------------------------------
 export async function requestRoutes(request: Request, env: ReqEnv, deps: ReqDeps, path: string, json: JsonFn, isAdmin: boolean): Promise<Response | null> {
   const isPublic = path === '/requests' || path.startsWith('/requests/');
@@ -279,6 +295,22 @@ export async function requestRoutes(request: Request, env: ReqEnv, deps: ReqDeps
   if (isAdm) {
     if (!isAdmin) return json({ error: 'Non autorisé.' }, 401);
     const S = stub(env);
+    if (path === '/admin/requests/backups' && request.method === 'GET') {
+      const l = await (env.HOLDS as any).list({ prefix: 'rbackup:' });
+      return json({ backups: l.keys.map((k: any) => k.name).sort().reverse() });
+    }
+    if (path === '/admin/requests/backup' && request.method === 'GET') {
+      const k = q('key') || 'rbackup:latest';
+      if (!/^rbackup:[w-]+$/.test(k)) return json({ error: 'Clé invalide.' }, 400);
+      const v = await env.HOLDS.get(k);
+      return v ? new Response(v, { headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' } }) : json({ error: 'Introuvable.' }, 404);
+    }
+    if (path === '/admin/requests/backup' && request.method === 'POST') return json(await backupRequests(env));
+    if (path === '/admin/requests/restore' && request.method === 'POST') {
+      const b = await body();
+      if (!b || !Array.isArray(b.requests)) return json({ error: 'Fichier invalide.' }, 400);
+      return json({ ok: true, restored: await S.restoreMissing(b.requests) });
+    }
     if (path === '/admin/requests' && request.method === 'GET') {
       const list = (await S.list()).filter((r: any) => r.status !== 'brouillon' || Date.now() - r.created > 5 * 60 * 1000);
       list.sort((a: any, b: any) => b.updated - a.updated);
@@ -365,7 +397,8 @@ export async function requestRoutes(request: Request, env: ReqEnv, deps: ReqDeps
   if (path === '/requests' && request.method === 'POST') {
     const b = await body();
     // Robots : champ piège rempli ou formulaire rempli en moins de 3 s -> « ok » sans rien enregistrer.
-    if (String(b.website || '').trim() || (Number.isFinite(Number(b.t)) && Number(b.t) < 3000)) return json({ ok: true, id: 'D-000000', k: '0'.repeat(32), uploads: false });
+    if (String(b.website || '').trim() || !Number.isFinite(Number(b.t)) || Number(b.t) < 3000) return json({ ok: true, id: 'D-000000', k: '0'.repeat(32), uploads: false });
+    if (!(await checkTurnstile(env.TURNSTILE_SECRET, b.cf, ip))) return json({ error: 'captcha' }, 403);
     const v = parseSubmission(b, (await S.settings()).leadWeeks);
     if (!v.ok) return json({ error: 'invalid', fields: v.fields }, 400);
     const hour = Math.floor(Date.now() / 3600000), day = Math.floor(Date.now() / 86400000);

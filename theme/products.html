@@ -58,7 +58,7 @@
               <a class="product-list-link" href="{{ product.url }}" title="{{ product.name | escape }}">
                 <div class="product-list-image-container product-list-image-container-{{ theme.grid_image_style }}">
                   <img
-                    alt=""
+                    alt="{{ product.name | escape }}"
                     class="blur-up product-list-image lazyload grid-{{ theme.grid_image_style }}"
                     src="{{ product.image | product_image_url | constrain: 20 }}"
                     {% unless theme.grid_image_style == 'default' %}data-aspectratio="{{ aspect_ratio }}"{% endunless %}
@@ -188,7 +188,7 @@
 
                 <div class="product-list-image-container product-list-image-container-{{ theme.grid_image_style }}">
                   <img
-                    alt=""
+                    alt="{{ category.name | escape }}"
                     class="blur-up product-list-image lazyload grid-{{ theme.grid_image_style }}"
                     src="{{ product.image | product_image_url | constrain: 20 }}"
                     {% unless theme.grid_image_style == 'default' %}data-aspectratio="{{ aspect_ratio }}"{% endunless %}

@@ -26,6 +26,7 @@
 .vg-cf-status{margin:0;font-size:15px}
 .vg-cf-status.ok{color:#1b5e20}.vg-cf-status.err{color:#b3261e}
 </style>
+<script src="/assets/vg-turnstile.js" defer></script>
 <script>
 (function(){
   var f=document.getElementById('vg-contact-form'); if(!f) return;
@@ -40,10 +41,11 @@
     ['name','email','subject','message'].forEach(function(k){var el=f.elements[k],v=el.value.trim();if(!v||(k==='email'&&!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(v))||(k==='message'&&v.length<5)){el.setAttribute('aria-invalid','true');if(!bad)bad=el;}});
     if(bad){say('err',L('Please fill in the highlighted fields.','Merci de compléter les champs en rouge.'));bad.focus();return;}
     btn.disabled=true;say('',L('Sending…','Envoi…'));
-    fetch(EP+'/contact',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(d)})
+    (window.vgTurnstile?window.vgTurnstile.token():Promise.resolve('')).then(function(tok){d.cf=tok;return fetch(EP+'/contact',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(d)});})
       .then(function(r){return r.json().catch(function(){return {};}).then(function(j){return {s:r.status,j:j};});})
       .then(function(x){
         if(x.s===200&&x.j.ok){f.reset();say('ok',L('Message sent, thank you! I will reply soon.','Message envoyé, merci ! Je te réponds vite.'));}
+        else if(x.s===403){say('err',L('Anti-bot check failed. Reload the page or email contact@vgthmind.org.','Vérification anti-robot refusée. Recharge la page ou écris à contact@vgthmind.org.'));}
         else if(x.s===429){say('err',L('Too many messages, please try later or email contact@vgthmind.org.','Trop d’envois pour le moment, réessaie plus tard ou écris à contact@vgthmind.org.'));}
         else{say('err',L('Could not send. Please email contact@vgthmind.org directly.','Le message n’a pas pu partir. Écris directement à contact@vgthmind.org.'));}
       })

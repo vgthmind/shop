@@ -7,7 +7,7 @@
 
 {% comment %} Handle special page cases {% endcomment %}
 {% if page.name == 'Home' %}
-  {% assign page_title = "Home / Accueil | vgthmind" %}
+  {% assign page_title = "vgthmind | Pièces uniques cousues et peintes à la main" %}
 {% elsif page.full_url contains '/products' %}
   {% if page.full_url contains 'search=' %}
     {% assign page_title = t['products.search_results'] | append: title_suffix %}
