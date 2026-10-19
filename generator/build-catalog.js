@@ -74,6 +74,8 @@ function buildProduct(admin, imageMap) {
   const publishAt = admin.publish_at ? Date.parse(admin.publish_at) : NaN;
   const goLive = admin.hidden === true && Number.isFinite(publishAt) && publishAt <= Date.now() + PUBLISH_LEAD_MS && realCats.length > 0;
   const isHidden = admin.hidden === true && !goLive;
+  // Programmée (masquée avec une date à venir) : sa fiche existe en « Coming soon » (sans panier) mais elle n'est listée nulle part ; masquée sans date : aucune fiche (le build n'en écrit pas, /product/… renvoie vers /products).
+  const scheduled = isHidden && Number.isFinite(publishAt);
   // hidden: true = page + paiement OK, mais ni liste, ni categorie, ni sitemap
   // (produit test du passage en live).
   if (realCats.length === 0 && !isHidden) throw new Error(`Produit "${admin.name}": aucune categorie (data/products/${admin.slug}.json)`);
@@ -111,7 +113,7 @@ function buildProduct(admin, imageMap) {
     // permalink is unencoded, its url is /product/short-coupe-%C3%A9vas%C3%A9e)
     url: `/product/${encodeURIComponent(admin.slug)}`,
     // coming_soon (admin « Bientôt disponible ») : visible et listée, mais pas achetable (thème : libellé « Coming soon »).
-    status: admin.coming_soon === true ? 'coming-soon' : inStock ? 'active' : 'sold-out',
+    status: admin.coming_soon === true || scheduled ? 'coming-soon' : inStock ? 'active' : 'sold-out',
     created_at: admin.created_at || new Date().toISOString(),
     has_password_protection: false,
     images,
@@ -136,6 +138,7 @@ function buildProduct(admin, imageMap) {
     artists: [],
     categories,
     ...(isHidden ? { hidden: true } : {}),
+    ...(scheduled ? { scheduled: true } : {}),
     option_groups: [],
     // ships_intl:false = France only (no "everywhere else" line, as on
     // BigCartel for SC_0008/SC_0009): the cart and the checkout Worker
