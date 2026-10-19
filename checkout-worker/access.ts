@@ -49,6 +49,17 @@ async function tokenValid(env: AccessEnv, cfg: AccessCfg, token: string): Promis
   return same(m[2], await signEpoch(env, cfg.epoch));
 }
 
+// Site fermé : réponse 503 pour les nouveaux paiements panier et les nouvelles demandes (null = ouvert ou sous code).
+export async function closedRefusal(env: AccessEnv): Promise<Record<string, string> | null> {
+  const cfg = await readAccess(env);
+  if (cfg.mode !== 'closed') return null;
+  return {
+    error: 'closed', code: 'closed',
+    message_fr: 'La boutique est fermée pour le moment : pas de nouvelle commande ni de nouvelle demande. ' + cfg.msg_fr,
+    message_en: 'The shop is closed for now: no new orders or requests. ' + cfg.msg_en,
+  };
+}
+
 export async function accessRoutes(request: Request, env: AccessEnv, path: string, json: JsonFn): Promise<Response | null> {
   const url = new URL(request.url);
   if (path === '/access' && request.method === 'GET') {
