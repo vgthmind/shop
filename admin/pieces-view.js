@@ -28,7 +28,7 @@
   }
 
   function toItem(p) {
-    return { slug: p.slug, qty: 1, weight_g: weightOf(p) || undefined, mode: p.mode === 'lettre' ? 'lettre' : 'colis', alone: p.alone === true };
+    return { slug: p.slug, qty: 1, weight_g: weightOf(p) || undefined, mode: p.mode === 'lettre' ? 'lettre' : 'colis', alone: p.alone === true, price: Number(p.price) || 0 };
   }
 
   // Ce que la page affiche pour une pièce : état du poids, ports par zone (France, zone A, reste du monde, outre-mer), conseil de mode.

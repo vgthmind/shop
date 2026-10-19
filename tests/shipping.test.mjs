@@ -21,8 +21,8 @@ test('tranche appliquée telle quelle (carton compris) : 250 / 251 / 500 / 501 g
   assert.equal(q([w('a', 362)], 'FR').costCents, 759);  // 500 g
   assert.equal(q([w('a', 363)], 'FR').costCents, 929);  // 501 g
 });
-test('1 short de 420 g en France : coût 9,29 €, offert au client, perte 9,29 €', () => {
-  const r = q([w('short', 420)], 'FR'); // 558 g -> tranche 750 g
+test('1 short de 420 g en France : coût 9,29 €, offert au client dès 60 € de pièces, perte 9,29 €', () => {
+  const r = q([w('short', 420)], 'FR', { subtotal: 100 }); // 558 g -> tranche 750 g
   assert.equal(r.parcels.length, 1); assert.equal(r.parcels[0].weight_g, 558);
   assert.equal(r.costCents, 929); assert.equal(r.totalCents, 0); assert.equal(r.gapCents, -929); assert.equal(r.tier, 'FR');
 });
@@ -83,8 +83,8 @@ test('Canada / États-Unis : 1 pièce seule 30 € (à la charge du vendeur : 9,
   assert.equal(q(n(1), 'CA').gapCents, -919);
 });
 
-test('France : colis offerts quel que soit le nombre de colis', () => {
-  const r = q([{ slug: 'a', qty: 3, weight_g: 400, alone: true }], 'FR');
+test('France dès 60 € : colis offerts quel que soit le nombre de colis', () => {
+  const r = q([{ slug: 'a', qty: 3, weight_g: 400, alone: true }], 'FR', { subtotal: 300 });
   assert.equal(r.parcels.length, 3); assert.equal(r.totalCents, 0); assert.ok(r.costCents > 0);
 });
 test('plus de colis si le poids max de la zone est dépassé (pièces qui partagent)', () => {
@@ -121,7 +121,7 @@ test('lettre : 1 pièce max -> 2 pièces lettre partent en colis (un seul colis)
   assert.equal(q([w('a', 100, { mode: 'lettre' }), w('b', 100, { mode: 'lettre' })], 'FR', {}, c).parcels[0].kind, 'lettre');
 });
 test('panier mixte lettre + colis : tout en colis, un seul carton', () => {
-  const r = q([w('cache-cou', 48, { mode: 'lettre' }), w('short', 420)], 'FR'); // 468 + 138 = 606 g
+  const r = q([w('cache-cou', 48, { mode: 'lettre' }), w('short', 420)], 'FR', { subtotal: 100 }); // 468 + 138 = 606 g
   assert.equal(r.parcels.length, 1); assert.equal(r.parcels[0].kind, 'colis'); assert.equal(r.parcels[0].weight_g, 606);
   assert.equal(r.costCents, 929); assert.equal(r.totalCents, 0);
 });
@@ -149,7 +149,7 @@ test('Royaume-Uni = zone A + 4 € sur chaque tranche', () => {
   a.forEach((b, i) => { assert.equal(b.max_g, uk[i].max_g); assert.equal(Math.round((uk[i].price - b.price) * 100), 400); });
 });
 test('Monaco et Andorre : tarif et palier France', () => {
-  const r = q([w('a', 100)], 'MC'); assert.equal(r.zone, 'FR'); assert.equal(r.tier, 'FR'); assert.equal(r.totalCents, 0);
+  const r = q([w('a', 100)], 'MC', { subtotal: 100 }); assert.equal(r.zone, 'FR'); assert.equal(r.tier, 'FR'); assert.equal(r.totalCents, 0);
 });
 test('poids lu dans config.items si absent du panier ; « part seule » aussi', () => {
   const c = cfg((x) => { x.items = { p: { weight_g: 300, alone: true } }; });
@@ -184,9 +184,13 @@ test('quoteByZone : une pièce seule, une ligne par zone livrée, coût / client
   const z = quoteByZone(base, { slug: 'a', weight_g: 400 }); // 538 g
   assert.deepEqual(z.map((x) => x.zone), ['FR', 'A', 'UK', 'B', 'C', 'OM1', 'OM2']);
   assert.deepEqual(z.map((x) => x.cost), [9.29, 19.39, 23.39, 28.39, 39.19, 19, 18.95]);
-  assert.deepEqual(z.map((x) => x.total), [0, 20, 24, 39, 30, 19, 19]); // zone C (échantillon : États-Unis) : pièce seule 30 €
-  assert.deepEqual(z.map((x) => x.gap), [-9.29, 0.61, 0.61, 10.61, -9.19, 0, 0.05]);
+  assert.deepEqual(z.map((x) => x.total), [10, 20, 24, 39, 30, 19, 19]); // France sans prix : vrai tarif arrondi (9,29 -> 10 €) // zone C (échantillon : États-Unis) : pièce seule 30 €
+  assert.deepEqual(z.map((x) => x.gap), [0.71, 0.61, 0.61, 10.61, -9.19, 0, 0.05]);
   assert.equal(quoteByZone(base, { slug: 'a', weight_g: 48, mode: 'lettre' })[0].kind, 'lettre');
+  // Avec le prix de la pièce : la livraison offerte de la grille s'applique (France seulement).
+  const p = quoteByZone(base, { slug: 'a', weight_g: 400, price: 100 }), p2 = quoteByZone(base, { slug: 'a', weight_g: 400, price: 59.99 });
+  assert.deepEqual(p.map((x) => x.total), [0, 20, 24, 39, 30, 19, 19]);
+  assert.equal(p2[0].total, 10);
 });
 
 test('centimes entiers', () => {
@@ -201,7 +205,7 @@ test('la grille porte ses sources et n\'est plus un exemple', () => {
   assert.ok(base._sources.colissimo.startsWith('https://www.laposte.fr/'));
   assert.ok(base._sources.lettre_verte_suivie.startsWith('https://www.laposte.fr/'));
   assert.equal(JSON.stringify(base).includes('REMPLACER'), false);
-  assert.equal(base.free_shipping.enabled, false);
+  assert.deepEqual(base.free_shipping, { enabled: true, threshold: 60, zones: ['FR'], _note: base.free_shipping._note });
   assert.equal(base.customer_pricing.basis, 'per_order');
   assert.deepEqual(base.customer_pricing.tiers.map((t) => t.id), ['FR', 'A', 'OM', 'UK', 'CAUS', 'MONDE']);
   assert.deepEqual(base.customer_pricing.tiers.map((t) => t.first_flat ?? t.lettre_flat ?? 'réel'), [4, 18, 'réel', 18, 39, 39]);
@@ -262,4 +266,22 @@ test('Belgique ≠ États-Unis : zone A (18 €, relevé au vrai coût) contre z
   assert.equal(q([w('a', 40)], 'BE').totalCents, 1800); // forfait 18 €
   assert.equal(q([w('a', 40)], 'US').costCents, 3519);  // 178 g -> tranche 500 g, zone C
   assert.equal(q([w('a', 40)], 'US').totalCents, 3000); // pièce seule : 30 €
+});
+
+test('France : livraison offerte dès 60 € de pièces (sous-total panier), colis comme lettre ; dessous, tarif calculé', () => {
+  const colis = (sub) => q([w('pantalon', 550)], 'FR', { subtotal: sub });
+  assert.equal(colis(60).totalCents, 0); assert.equal(colis(60).free, true);
+  assert.equal(colis(210).totalCents, 0);
+  assert.equal(colis(59.99).free, false); assert.equal(colis(59.99).totalCents, 1000); // colis 688 g : 9,29 € -> 10 €
+  assert.equal(q([w('sacoche', 300)], 'FR', { subtotal: 65 }).totalCents, 0);
+  const lettre = (sub) => q([w('cd', 50, { mode: 'lettre' })], 'FR', { subtotal: sub });
+  assert.equal(lettre(8).parcels[0].kind, 'lettre'); assert.equal(lettre(8).totalCents, 400); // CD seul : lettre 4 €
+  assert.equal(lettre(60).totalCents, 0); // une lettre aussi est offerte dès 60 €
+  assert.equal(q([w('cd', 50, { mode: 'lettre' }), w('cd2', 50, { mode: 'lettre' })], 'FR', { subtotal: 16 }).totalCents, 600); // 2 CD : un colis au vrai tarif arrondi (5,49 -> 6 €)
+});
+test('UE, Royaume-Uni, reste du monde et outre-mer : jamais offerts par le seuil de 60 € de la France', () => {
+  const big = { subtotal: 500 };
+  assert.equal(q([w('a', 550)], 'DE', big).free, false); assert.equal(q([w('a', 550)], 'DE', big).totalCents, 2000);
+  assert.equal(q([w('a', 550)], 'CA', big).free, false); assert.equal(q([w('a', 550)], 'CA', big).totalCents, 3000);
+  assert.equal(q([w('a', 550)], 'RE', big).free, false);
 });

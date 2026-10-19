@@ -27,6 +27,7 @@
       franceOnly: 'Une pièce de ton panier part uniquement en France. Retire-la pour livrer à l’étranger.',
       error: 'Frais de livraison indisponibles pour le moment, réessaie dans un instant.',
       note: 'Le montant définitif est confirmé au paiement.',
+      freeFr: 'Livraison offerte en France dès 60 €.',
       customs: 'Des taxes locales (octroi de mer) peuvent être demandées à la réception du colis.'
     },
     en: {
@@ -36,6 +37,7 @@
       franceOnly: 'One piece in your cart ships to France only. Remove it to ship abroad.',
       error: 'Shipping cost unavailable right now, please try again in a moment.',
       note: 'The final amount is confirmed at payment.',
+      freeFr: 'Free shipping in France from €60.',
       customs: 'Local taxes (octroi de mer) may be charged on delivery.'
     }
   };
@@ -43,7 +45,9 @@
   // Phrase sous le prix de livraison ; pour l'outre-mer, la mention de l'octroi de mer s'y ajoute.
   function noteFor(country, lang) {
     var t = text(lang);
-    return OUTRE_MER.indexOf(String(country || '').toUpperCase()) !== -1 ? t.note + ' ' + t.customs : t.note;
+    var cc = String(country || '').toUpperCase();
+    if (cc === 'FR') return t.note + ' ' + t.freeFr;
+    return OUTRE_MER.indexOf(cc) !== -1 ? t.note + ' ' + t.customs : t.note;
   }
 
   function langOf(l) { return /^fr/i.test(String(l || '')) ? 'fr' : 'en'; }

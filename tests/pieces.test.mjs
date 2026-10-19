@@ -34,7 +34,8 @@ test('pièce sans poids : état « missing », aucun port affiché, badge SANS P
   assert.match(html, /Sans poids/); assert.match(html, /noweight/);
 });
 test('ports par zone : France, zone A, reste du monde, outre-mer (coût réel, payé, écart)', () => {
-  const d = V.describe(calc, config, { slug: 'x', weight_g: 420, mode: 'colis' });
+  const d = V.describe(calc, config, { slug: 'x', weight_g: 420, mode: 'colis', price: 100 });
+  assert.deepEqual(V.describe(calc, config, { slug: 'x', weight_g: 420, mode: 'colis', price: 40 }).zones[0].total, 10); // sous 60 € : vrai tarif arrondi (9,29 -> 10 €)
   assert.deepEqual(d.zones.map((z) => z.label), ['France', 'Zone A (UE, Suisse)', 'Reste du monde', 'Outre-mer 1', 'Outre-mer 2']);
   const [fr, ue, monde, om1, om2] = d.zones;
   assert.deepEqual([fr.cost, fr.total, fr.gap], [9.29, 0, -9.29]);

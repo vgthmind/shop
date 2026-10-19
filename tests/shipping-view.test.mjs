@@ -7,13 +7,15 @@ const calc = require('../admin/shipping-calc.js');
 const V = require('../assets/vg-shipping-view.js');
 const config = JSON.parse(readFileSync(new URL('../admin/shipping-config.json', import.meta.url), 'utf8'));
 config.items = { a: { weight_g: 150 } };
-const cart = [{ slug: 'a', price: 20, qty: 1 }];
+const cart = [{ slug: 'a', price: 70, qty: 1 }];
 
 test('pays choisi : prix de livraison et total', () => {
   const v = V.buildView(calc, config, cart, 'FR', 'fr');
   assert.equal(v.state, 'ok'); assert.equal(v.blocked, false);
-  assert.equal(v.shipping, 0); assert.equal(v.total, 20);
+  assert.equal(v.shipping, 0); assert.equal(v.total, 70);
   assert.equal(v.summary, 'Livraison : offerte');
+  const small = V.buildView(calc, config, [{ slug: 'a', price: 20, qty: 1 }], 'FR', 'fr'); // sous 60 € : livraison payante
+  assert.ok(small.shipping > 0); assert.equal(small.free, false); assert.match(small.note, /dès 60 €/);
   assert.equal(V.buildView(calc, config, cart, 'CA', 'en').summary, 'Shipping : €30.00'); // 1 pièce vers le Canada : 30 €
 });
 test('plusieurs colis annoncés', () => {
@@ -24,7 +26,7 @@ test('plusieurs colis annoncés', () => {
 test('livraison offerte', () => {
   const c = structuredClone(config); c.free_shipping = { enabled: true, threshold: 15, zones: [] };
   const v = V.buildView(calc, c, cart, 'FR', 'fr');
-  assert.equal(v.free, true); assert.equal(v.total, 20); assert.equal(v.summary, 'Livraison : offerte');
+  assert.equal(v.free, true); assert.equal(v.total, 70); assert.equal(v.summary, 'Livraison : offerte');
 });
 test('pays non livré : texte clair FR et EN, bouton bloqué', () => {
   const c = structuredClone(config); c.blocked_countries = ['JP'];

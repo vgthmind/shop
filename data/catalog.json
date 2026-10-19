@@ -1,5 +1,5 @@
 {
-  "fetched_at": "2026-10-13T14:54:06.397Z",
+  "fetched_at": "2026-10-19T15:16:47.162Z",
   "source": "data/products/*.json (admin)",
   "store": {
     "name": "vgthmind",
@@ -8,6 +8,74 @@
     }
   },
   "products": [
+    {
+      "id": 1786097119,
+      "name": "testttjaheh",
+      "permalink": "testttjaheh",
+      "position": 0,
+      "url": "/product/testttjaheh",
+      "status": "active",
+      "created_at": "2026-10-19T13:10:04.621Z",
+      "has_password_protection": false,
+      "images": [
+        {
+          "url": "/assets/products/testttjaheh/vmvf9urit-0.webp",
+          "width": 1000,
+          "height": 1250
+        }
+      ],
+      "price": 50,
+      "default_price": 50,
+      "tax": 0,
+      "on_sale": false,
+      "description": "",
+      "has_option_groups": false,
+      "options": [
+        {
+          "id": 17879216,
+          "name": "testttjaheh",
+          "price": 50,
+          "sold_out": false,
+          "has_custom_price": false,
+          "option_group_values": [],
+          "isLowInventory": true,
+          "isAlmostSoldOut": false
+        }
+      ],
+      "artists": [],
+      "categories": [],
+      "hidden": true,
+      "option_groups": [],
+      "shipping": [
+        {
+          "amount_alone": 0,
+          "amount_with_others": 0,
+          "country": {
+            "id": 15,
+            "name": "France",
+            "code": "FR"
+          }
+        },
+        {
+          "amount_alone": 0,
+          "amount_with_others": 0
+        }
+      ],
+      "stripe_payment_link": "",
+      "quantity": 1,
+      "unique": true,
+      "color_hex": "#3d5a75",
+      "color_name": "bleu",
+      "reel_url": "",
+      "reel_video": "",
+      "search_keywords": [],
+      "image": {
+        "url": "/assets/products/testttjaheh/vmvf9urit-0.webp",
+        "width": 1000,
+        "height": 1250
+      },
+      "css_class": ""
+    },
     {
       "id": 922712793,
       "name": "CH_0002",
@@ -29,8 +97,8 @@
           "height": 1000
         }
       ],
-      "price": 84,
-      "default_price": 84,
+      "price": 100,
+      "default_price": 100,
       "tax": 0,
       "on_sale": false,
       "description": "Airbrushed Custom Hoodie\r\nBlack\r\n50% cotton, 50% polyester\r\nSize M\r\n\r\nHoodie customisé à l'aérographe\r\nNoir\r\n50% coton 50% polyester\r\nTaille M",
@@ -39,7 +107,7 @@
         {
           "id": 1913628664,
           "name": "CH_0002",
-          "price": 84,
+          "price": 100,
           "sold_out": false,
           "has_custom_price": false,
           "option_group_values": [],
@@ -124,8 +192,8 @@
           "height": 1000
         }
       ],
-      "price": 104,
-      "default_price": 104,
+      "price": 115,
+      "default_price": 115,
       "tax": 0,
       "on_sale": false,
       "description": "Airbrushed Custom Hoodie\r\nBlack\r\n50% cotton, 50% polyester\r\nSize L\r\n\r\nHoodie customisé à l'aérographe\r\nNoir\r\n50% coton 50% polyester\r\nTaille L",
@@ -134,7 +202,7 @@
         {
           "id": 717636810,
           "name": "CH_0004",
-          "price": 104,
+          "price": 115,
           "sold_out": false,
           "has_custom_price": false,
           "option_group_values": [],
@@ -225,8 +293,8 @@
           "height": 1000
         }
       ],
-      "price": 114,
-      "default_price": 114,
+      "price": 125,
+      "default_price": 125,
       "tax": 0,
       "on_sale": false,
       "description": "Airbrushed Custom Hoodie\r\nGrey\r\n50% cotton, 50% polyester\r\nSize S\r\n\r\nHoodie customisé à l'aérographe\r\nGris\r\n50% coton 50% polyester\r\nTaille S",
@@ -235,7 +303,7 @@
         {
           "id": 140044265,
           "name": "CH_0005",
-          "price": 114,
+          "price": 125,
           "sold_out": false,
           "has_custom_price": false,
           "option_group_values": [],
@@ -326,8 +394,8 @@
           "height": 1000
         }
       ],
-      "price": 114,
-      "default_price": 114,
+      "price": 125,
+      "default_price": 125,
       "tax": 0,
       "on_sale": false,
       "description": "Airbrushed Custom Hoodie\r\nWhite\r\n100% cotton\r\nSize L\r\n\r\nHoodie customisé à l'aérographe\r\nBlanc\r\n100% coton\r\nTaille L",
@@ -336,7 +404,7 @@
         {
           "id": 783518140,
           "name": "CH_0006",
-          "price": 114,
+          "price": 125,
           "sold_out": false,
           "has_custom_price": false,
           "option_group_values": [],
@@ -427,8 +495,8 @@
           "height": 1000
         }
       ],
-      "price": 84,
-      "default_price": 84,
+      "price": 100,
+      "default_price": 100,
       "tax": 0,
       "on_sale": false,
       "description": "Airbrushed Custom Hoodie\r\nHand-dyed khaki using natural pigments\r\n50% cotton, 50% polyester\r\nSize S\r\n\r\nHoodie customisé à l'aérographe\r\nTeinture kaki à la main aux pigments naturels\r\n50% coton 50% polyester\r\nTaille S",
@@ -437,7 +505,7 @@
         {
           "id": 834468445,
           "name": "CH_0003",
-          "price": 84,
+          "price": 100,
           "sold_out": false,
           "has_custom_price": false,
           "option_group_values": [],
@@ -623,8 +691,8 @@
           "height": 802
         }
       ],
-      "price": 130,
-      "default_price": 130,
+      "price": 150,
+      "default_price": 150,
       "tax": 0,
       "on_sale": false,
       "description": "Shorts sewn and then customized with an airbrush\r\n97% cotton, 3% spandex\r\nHeather gray\r\nSizes M/L/XL (Waist circumference approximately 78 to 106 cm)\r\n\r\nShort cousu puis customisé à l'aérographe\r\n97% coton 3% Elasthanne\r\nGris chiné\r\nTaille M/L/XL (Tour de taille de 78 à 106cm environ)",
@@ -633,7 +701,7 @@
         {
           "id": 1401021253,
           "name": "SMA_0003",
-          "price": 130,
+          "price": 150,
           "sold_out": false,
           "has_custom_price": false,
           "option_group_values": [],
@@ -718,8 +786,8 @@
           "height": 810
         }
       ],
-      "price": 130,
-      "default_price": 130,
+      "price": 150,
+      "default_price": 150,
       "tax": 0,
       "on_sale": false,
       "description": "Shorts sewn and then customized with an airbrush\r\n97% cotton, 3% spandex\r\nWhite\r\nSizes S/M/L (Waist circumference approximately 74 to 102 cm)\r\n\r\nShort cousu puis customisé à l'aérographe\r\n97% coton 3% Elasthanne\r\nBlanc\r\nTaille S/M/L (Tour de taille de 74 à 102cm environ)",
@@ -728,7 +796,7 @@
         {
           "id": 1616242012,
           "name": "SMA_0004",
-          "price": 130,
+          "price": 150,
           "sold_out": false,
           "has_custom_price": false,
           "option_group_values": [],
@@ -828,8 +896,8 @@
           "height": 1000
         }
       ],
-      "price": 180,
-      "default_price": 180,
+      "price": 240,
+      "default_price": 240,
       "tax": 0,
       "on_sale": false,
       "description": "Sweatpants sewn and then customized with an airbrush\r\n97% cotton, 3% spandex\r\nOff-white\r\nSizes S/M/L elastic waist (waist circumference approximately 72 to 102 cm)\r\n\r\nJogging cousu puis customisé à l'aérographe\r\n97% coton 3% Elasthanne\r\nBlanc cassé\r\nTaille S/M/L élastique (tour de taille entre 72 et 102cm environ)",
@@ -838,7 +906,7 @@
         {
           "id": 515331845,
           "name": "JA_0001",
-          "price": 180,
+          "price": 240,
           "sold_out": false,
           "has_custom_price": false,
           "option_group_values": [],
@@ -928,8 +996,8 @@
           "height": 1000
         }
       ],
-      "price": 65,
-      "default_price": 65,
+      "price": 75,
+      "default_price": 75,
       "tax": 0,
       "on_sale": false,
       "description": "Airbrushed custom v-neck t-shirt\r\nBeige/Camel/Sand\r\nSize XS\r\n100% cotton\r\n\r\nTee-shirt customisé à l'aérographe\r\nBeige/Camel/Sable\r\nTaille XS\r\n100% coton",
@@ -938,7 +1006,7 @@
         {
           "id": 521124661,
           "name": "Custom Tee-shirt col en v",
-          "price": 65,
+          "price": 75,
           "sold_out": false,
           "has_custom_price": false,
           "option_group_values": [],
@@ -1044,8 +1112,8 @@
           "height": 965
         }
       ],
-      "price": 200,
-      "default_price": 200,
+      "price": 210,
+      "default_price": 210,
       "tax": 0,
       "on_sale": false,
       "description": "Jean-style pants\r\nStraight cut\r\n100% cotton\r\nSize EU42/43\r\nRaspberry Red\r\n\r\nPantalon type jeans\r\nCoupe droite\r\n100% coton\r\nTaille 42/43EU\r\nRouge Framboise",
@@ -1054,7 +1122,7 @@
         {
           "id": 321970427,
           "name": "Pantalon rouge framboise",
-          "price": 200,
+          "price": 210,
           "sold_out": false,
           "has_custom_price": false,
           "option_group_values": [],
@@ -1154,8 +1222,8 @@
           "height": 1000
         }
       ],
-      "price": 170,
-      "default_price": 170,
+      "price": 210,
+      "default_price": 210,
       "tax": 0,
       "on_sale": false,
       "description": "Thick Blue Denim\r\n100% cotton\r\nStraight cut\r\nSize EU42\r\n\r\nDenim Bleu Épais\r\n100% coton\r\nCoupe droite\r\nTaille 42EU",
@@ -1164,7 +1232,7 @@
         {
           "id": 1019937038,
           "name": "Pantalon Denim Bleu",
-          "price": 170,
+          "price": 210,
           "sold_out": false,
           "has_custom_price": false,
           "option_group_values": [],
@@ -1364,8 +1432,8 @@
           "height": 1000
         }
       ],
-      "price": 170,
-      "default_price": 170,
+      "price": 210,
+      "default_price": 210,
       "tax": 0,
       "on_sale": false,
       "description": "100% Polyester\r\nPockets in 100% white silk satin\r\nSize EU42/45 (≈90cm waist circumference)\r\nThe model is approximately 6'0\" (1.83m) tall\r\nThick\r\n\r\n100% Polyester\r\nPoches 100% satin de soie blanc\r\nTaille EU42/45 (≈90cm de tour de ceinture)\r\nLe mannequin fait environ 1m83\r\nÉpais",
@@ -1374,7 +1442,7 @@
         {
           "id": 686672641,
           "name": "Pantalon FF001",
-          "price": 170,
+          "price": 210,
           "sold_out": false,
           "has_custom_price": false,
           "option_group_values": [],
@@ -1469,8 +1537,8 @@
           "height": 1000
         }
       ],
-      "price": 170,
-      "default_price": 170,
+      "price": 210,
+      "default_price": 210,
       "tax": 0,
       "on_sale": false,
       "description": "100% Cotton velvet\r\nPockets in 100% white silk satin\r\nSize EU42/45 (≈90cm waist circumference)\r\nThe model is approximately 6'0\" (1.83m) tall\r\nThick\r\n\r\n100% Velour de coton\r\nPoches 100% satin de soie blanc\r\nTaille EU42/45 (≈90cm de tour de ceinture)\r\nLe mannequin fait environ 1m83\r\nÉpais",
@@ -1479,7 +1547,7 @@
         {
           "id": 570574806,
           "name": "Pantalon VC001",
-          "price": 170,
+          "price": 210,
           "sold_out": false,
           "has_custom_price": false,
           "option_group_values": [],
@@ -1574,8 +1642,8 @@
           "height": 1000
         }
       ],
-      "price": 210.7,
-      "default_price": 210.7,
+      "price": 210,
+      "default_price": 210,
       "tax": 0,
       "on_sale": false,
       "description": "50% Wool, 50% Cotton\r\nPockets in 100% white silk satin\r\nSize EU44/46 (≈93cm waist circumference)\r\nThe model is approximately 6'0\" (1.83m) tall\r\nThick\r\n\r\n50% Laine 50% Coton\r\nPoches 100% satin de soie blanc\r\nTaille EU44/46 (≈93cm de tour de ceinture)\r\nLe mannequin fait environ 1m83\r\nÉpais",
@@ -1584,7 +1652,7 @@
         {
           "id": 1078241417,
           "name": "Pantalon DD001",
-          "price": 210.7,
+          "price": 210,
           "sold_out": false,
           "has_custom_price": false,
           "option_group_values": [],
@@ -1679,8 +1747,8 @@
           "height": 1000
         }
       ],
-      "price": 115,
-      "default_price": 115,
+      "price": 130,
+      "default_price": 130,
       "tax": 0,
       "on_sale": false,
       "description": "Cotton poplin topstitched with black fabric scraps for a Ghillie effect\r\nSize EU42 (≈84cm waist circumference)\r\n58cm length from waistband to hem\r\n80cm leg opening\r\nThick\r\n\r\nPopeline de Coton Surpiquées de chutes de tissus noirs pour un effet Ghillie.\r\nTaille EU42 (≈84cm de tour de ceinture)\r\n58cm de longueur du haut de la ceinture au bas de la jambe.\r\n80cm d'ouverture de jambe.\r\nÉpais",
@@ -1689,7 +1757,7 @@
         {
           "id": 1145039598,
           "name": "Short GE001",
-          "price": 115,
+          "price": 130,
           "sold_out": false,
           "has_custom_price": false,
           "option_group_values": [],
@@ -1774,8 +1842,8 @@
           "height": 821
         }
       ],
-      "price": 85,
-      "default_price": 85,
+      "price": 100,
+      "default_price": 100,
       "tax": 0,
       "on_sale": false,
       "description": "100% Textured Blue-Grey Silk\r\nSize EU42 (≈84cm waist circumference)\r\n58cm length from waistband to hem\r\n82cm leg opening\r\nLightweight\r\n\r\n100% Soie Gaufrée Bleu gris\r\nTaille EU42 (≈84cm de tour de ceinture)\r\n58cm de longueur du haut de la ceinture au bas de la jambe.\r\n82cm d'ouverture de jambe.\r\nLéger",
@@ -1784,7 +1852,7 @@
         {
           "id": 193740040,
           "name": "Short SG001",
-          "price": 85,
+          "price": 100,
           "sold_out": false,
           "has_custom_price": false,
           "option_group_values": [],
@@ -1989,8 +2057,8 @@
           "width": 800
         }
       ],
-      "price": 55,
-      "default_price": 55,
+      "price": 65,
+      "default_price": 65,
       "tax": 0,
       "on_sale": false,
       "description": "Pik shoulder bag.\r\nFabric: 100% blue cotton coated with a burnt white reflective PVC layer.\r\nFully lined.\r\nOne-of-a-kind size and shape (slight variations depending on fabric thickness).\r\nThe illustration model is approximately 5'11\" (1.80m) tall.\r\n\r\nSacoche à Pik.\r\nTissu : Coton bleu 100% recouvert d'une couche plastique PVC réflective blanche brûlée.\r\nEntièrement doublée.\r\nTaille et modèle unique (légères variations selon l'épaisseur du tissu).\r\nLe mannequin d'illustration fait environ 1m80.",
@@ -1999,7 +2067,7 @@
         {
           "id": 489517118,
           "name": "SC_0009",
-          "price": 55,
+          "price": 65,
           "sold_out": false,
           "has_custom_price": false,
           "option_group_values": [],
@@ -2750,7 +2818,7 @@
       "option_groups": [],
       "shipping": [
         {
-          "amount_alone": 0,
+          "amount_alone": 8,
           "amount_with_others": 0,
           "country": {
             "id": 15,
@@ -2775,6 +2843,162 @@
         "url": "/assets/products/sc_0008/0.png",
         "width": 824,
         "height": 1000
+      },
+      "css_class": ""
+    },
+    {
+      "id": 718592632,
+      "name": "t’est masquée",
+      "permalink": "t-est-masquee",
+      "position": 30,
+      "url": "/product/t-est-masquee",
+      "status": "active",
+      "created_at": "2026-10-19T11:11:25.263Z",
+      "has_password_protection": false,
+      "images": [
+        {
+          "url": "/assets/products/t-est-masquee/vmvf5m5kl-0.webp",
+          "width": 738,
+          "height": 1600
+        }
+      ],
+      "price": 5,
+      "default_price": 5,
+      "tax": 0,
+      "on_sale": false,
+      "description": "test",
+      "has_option_groups": false,
+      "options": [
+        {
+          "id": 577221499,
+          "name": "t’est masquée",
+          "price": 5,
+          "sold_out": false,
+          "has_custom_price": false,
+          "option_group_values": [],
+          "isLowInventory": true,
+          "isAlmostSoldOut": false
+        }
+      ],
+      "artists": [],
+      "categories": [],
+      "hidden": true,
+      "option_groups": [],
+      "shipping": [
+        {
+          "amount_alone": 10,
+          "amount_with_others": 0,
+          "country": {
+            "id": 15,
+            "name": "France",
+            "code": "FR"
+          }
+        },
+        {
+          "amount_alone": 39,
+          "amount_with_others": 0
+        }
+      ],
+      "weight_g": 500,
+      "mode": "colis",
+      "alone": false,
+      "shipping_derived": true,
+      "stripe_payment_link": "",
+      "quantity": 1,
+      "unique": true,
+      "color_hex": "#f2f2f2",
+      "color_name": "blanc",
+      "reel_url": "",
+      "reel_video": "",
+      "search_keywords": [],
+      "image": {
+        "url": "/assets/products/t-est-masquee/vmvf5m5kl-0.webp",
+        "width": 738,
+        "height": 1600
+      },
+      "css_class": ""
+    },
+    {
+      "id": 809526379,
+      "name": "testtt",
+      "permalink": "testtt",
+      "position": 31,
+      "url": "/product/testtt",
+      "status": "active",
+      "created_at": "2026-10-19T11:17:59.390Z",
+      "has_password_protection": false,
+      "images": [
+        {
+          "url": "/assets/products/testtt/vmvf5ula8-0.webp",
+          "width": 738,
+          "height": 1600
+        }
+      ],
+      "price": 5,
+      "default_price": 5,
+      "tax": 0,
+      "on_sale": false,
+      "description": "test",
+      "has_option_groups": false,
+      "options": [
+        {
+          "id": 1417848340,
+          "name": "testtt",
+          "price": 5,
+          "sold_out": false,
+          "has_custom_price": false,
+          "option_group_values": [],
+          "isLowInventory": true,
+          "isAlmostSoldOut": false
+        }
+      ],
+      "artists": [],
+      "categories": [
+        {
+          "id": 1420455576,
+          "name": "Tops",
+          "permalink": "tops",
+          "url": "/category/tops"
+        },
+        {
+          "id": 1420475163,
+          "name": "All",
+          "permalink": "all",
+          "url": "/category/all"
+        }
+      ],
+      "option_groups": [],
+      "shipping": [
+        {
+          "amount_alone": 10,
+          "amount_with_others": 0,
+          "country": {
+            "id": 15,
+            "name": "France",
+            "code": "FR"
+          }
+        },
+        {
+          "amount_alone": 39,
+          "amount_with_others": 0
+        }
+      ],
+      "weight_g": 500,
+      "mode": "colis",
+      "alone": false,
+      "shipping_derived": true,
+      "stripe_payment_link": "",
+      "quantity": 1,
+      "unique": true,
+      "color_hex": "#f2f2f2",
+      "color_name": "blanc",
+      "reel_url": "",
+      "reel_video": "",
+      "search_keywords": [],
+      "image": {
+        "url": "/assets/products/testtt/vmvf5ula8-0.webp",
+        "width": 738,
+        "height": 1600
       },
       "css_class": ""
     }
@@ -2916,6 +3140,9 @@
     "/assets/products/sma_0003/0.png": "/assets/products/sma_0003/0.png",
     "/assets/products/sma_0003/1.png": "/assets/products/sma_0003/1.png",
     "/assets/products/sma_0004/0.png": "/assets/products/sma_0004/0.png",
-    "/assets/products/sma_0004/1.png": "/assets/products/sma_0004/1.png"
+    "/assets/products/sma_0004/1.png": "/assets/products/sma_0004/1.png",
+    "/assets/products/t-est-masquee/vmvf5m5kl-0.webp": "/assets/products/t-est-masquee/vmvf5m5kl-0.webp",
+    "/assets/products/testtt/vmvf5ula8-0.webp": "/assets/products/testtt/vmvf5ula8-0.webp",
+    "/assets/products/testttjaheh/vmvf9urit-0.webp": "/assets/products/testttjaheh/vmvf9urit-0.webp"
   }
 }

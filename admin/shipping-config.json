@@ -1,5 +1,5 @@
 {
-  "version": 7,
+  "version": 8,
   "currency": "EUR",
   "_sources": {
     "verifie_le": "2026-10-07",
@@ -7,7 +7,7 @@
     "colissimo_outre_mer": "https://www.laposte.fr/professionnel/tarif-colissimo  (tarifs Colissimo Outre-mer au 1er janvier 2026, releves a l'identique le 2026-10-13 : OM 1 = Guadeloupe, Martinique, Guyane, Reunion, Mayotte, Saint-Pierre-et-Miquelon, Saint-Martin, Saint-Barthelemy ; OM 2 = Nouvelle-Caledonie, Polynesie, Wallis-et-Futuna, TAAF). Des taxes locales (octroi de mer) peuvent etre demandees a la reception.",
     "lettre_verte_suivie": "https://www.laposte.fr/tarif-lettre-suivie  (France, affranchissement en ligne ; version timbre physique dans lettre.brackets_timbre)",
     "pays_suspendus": "https://aide.laposte.fr/contenu/quelles-sont-les-destinations-internationales-suspendues-et-pourquoi  (+ Russie et Bielorussie : choix du vendeur)",
-    "prix_client": "Forfaits et regles : decisions du vendeur, 2026-10-13 (France offerte ; zone A et Royaume-Uni 18 EUR par colis ; reste du monde 39 EUR + 8 EUR par piece en plus ; outre-mer au vrai tarif La Poste). « floor_real » : jamais moins que le vrai tarif La Poste du colis, « floor_round_eur » : ce plancher est arrondi a l'euro superieur. Canada / Etats-Unis : 1 piece seule = 30 EUR (decision du 2026-10-13, le vendeur prend le reste a sa charge)."
+    "prix_client": "Forfaits et regles : decisions du vendeur, 2026-10-13 (France offerte des 60 EUR de pieces (2026-10-19), en dessous Colissimo au vrai tarif arrondi / lettre 4 EUR ; zone A et Royaume-Uni 18 EUR par colis ; reste du monde 39 EUR + 8 EUR par piece en plus ; outre-mer au vrai tarif La Poste). « floor_real » : jamais moins que le vrai tarif La Poste du colis, « floor_round_eur » : ce plancher est arrondi a l'euro superieur. Canada / Etats-Unis : 1 piece seule = 30 EUR (decision du 2026-10-13, le vendeur prend le reste a sa charge)."
   },
   "packaging": {
     "carton_g": 138,
@@ -20,14 +20,15 @@
     "tiers": [
       {
         "id": "FR",
-        "name": "France metropolitaine (Colissimo offert, port integre au prix des pieces)",
+        "name": "France metropolitaine : livraison offerte des 60 EUR de pieces (colis ou lettre) ; en dessous, vrai tarif Colissimo arrondi a l'euro superieur, ou 4 EUR en lettre",
         "countries": [
           "FR",
           "MC",
           "AD"
         ],
-        "colis_free": true,
-        "lettre_flat": 4
+        "lettre_flat": 4,
+        "real": true,
+        "round_eur": true
       },
       {
         "id": "A",
@@ -127,10 +128,12 @@
     ]
   },
   "free_shipping": {
-    "enabled": false,
-    "threshold": null,
-    "zones": [],
-    "_note": "Livraison offerte des ce montant de pieces (avant remise). Desactivee. zones vide = partout."
+    "enabled": true,
+    "threshold": 60,
+    "zones": [
+      "FR"
+    ],
+    "_note": "Livraison offerte en France des 60 EUR de pieces (sous-total panier avant remise), colis ou lettre. Decision du vendeur 2026-10-19. zones vide = partout."
   },
   "blocked_countries": [
     "RU",

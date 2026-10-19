@@ -8,7 +8,7 @@ const calc = createRequire(import.meta.url)('../admin/shipping-calc.js');
 const config = JSON.parse(readFileSync(new URL('../admin/shipping-config.json', import.meta.url), 'utf8'));
 const env = (cfg = config) => ({ HOLDS: { get: async () => JSON.stringify(cfg), put: async () => {} }, SITE_BASE: 'http://x.invalid' });
 const line = (fr, intl) => [{ amount_alone: fr, country: { code: 'FR' } }, ...(intl == null ? [] : [{ amount_alone: intl }])];
-const piece = (slug, extra = {}) => ({ permalink: slug, price: 50, weight_g: 500, mode: 'colis', alone: false, shipping_derived: true, shipping: line(9, 20), ...extra });
+const piece = (slug, extra = {}) => ({ permalink: slug, price: 100, weight_g: 500, mode: 'colis', alone: false, shipping_derived: true, shipping: line(9, 20), ...extra });
 const w = (...s) => new Map(s.map((x) => [x, 1]));
 const grid = (items, country) => calc.quoteShipping(config, { items, subtotal: 100 }, country).totalCents;
 
@@ -22,6 +22,14 @@ test('toutes les pièces passent par la grille : le port dépend du pays choisi 
     got[c] = r.cents;
   }
   assert.deepEqual(got, { FR: 0, BE: 2000, DE: 2000, CA: 3000, US: 3000, CH: 2000, GB: 2400, RE: 1900 });
+});
+
+test('France : livraison offerte dès 60 € de pièces, payante en dessous (59,99 €), les autres pays ne changent pas', async () => {
+  const cheap = piece('c', { price: 59.99 }), ok = piece('o', { price: 60 });
+  assert.equal((await checkoutShipping(env(), [ok], w('o'), 'fr', 'FR')).cents, 0);
+  const r = await checkoutShipping(env(), [cheap], w('c'), 'fr', 'FR');
+  assert.equal(r.cents, 1000); // 638 g : 9,29 € -> 10 €
+  assert.equal((await checkoutShipping(env(), [cheap], w('c'), 'intl', 'CA')).cents, 3000);
 });
 
 test('ports fixes hérités de BigCartel : ignorés (la grille décide), même avec un port fixe énorme sur la fiche', async () => {
@@ -47,8 +55,9 @@ test('pays refusé reste refusé ; international sans pays : refusé (jamais un 
 });
 
 test('lettre seule : 4 € en France ; à l’étranger lettre suivie internationale au vrai tarif arrondi (8 €) ; avec une autre pièce ou vers l’outre-mer : colis', async () => {
-  const l = piece('l', { weight_g: 50, mode: 'lettre' });
+  const l = piece('l', { weight_g: 50, mode: 'lettre', price: 8 }); // un CD à 8 €
   assert.equal((await checkoutShipping(env(), [l], w('l'), 'fr', 'FR')).cents, 400);
+  assert.equal((await checkoutShipping(env(), [piece('l2', { weight_g: 50, mode: 'lettre', price: 60 })], w('l2'), 'fr', 'FR')).cents, 0); // lettre offerte dès 60 €
   for (const c of ['BE', 'GB', 'NO', 'CA', 'US', 'JP']) assert.equal((await checkoutShipping(env(), [l], w('l'), 'intl', c)).cents, 800, c); // 70 g -> 100 g = 7,65 €
   const other = piece('o', { weight_g: 500, mode: 'colis' });
   assert.equal((await checkoutShipping(env(), [l, other], w('l', 'o'), 'intl', 'BE')).cents, 2000); // avec une autre pièce : un seul colis
@@ -101,7 +110,7 @@ test('code pays en minuscules accepté', async () => {
 });
 
 test('panier mixte lettre + colis en France : un seul colis, port offert ; lettre seule 4 €', async () => {
-  const l = piece('l', { weight_g: 50, mode: 'lettre' }), c = piece('c', { weight_g: 500, mode: 'colis' });
+  const l = piece('l', { weight_g: 50, mode: 'lettre', price: 8 }), c = piece('c', { weight_g: 500, mode: 'colis' });
   assert.equal((await checkoutShipping(env(), [l, c], w('l', 'c'), 'fr', 'FR')).cents, 0);
   assert.equal((await checkoutShipping(env(), [l], w('l'), 'fr', 'FR')).cents, 400);
 });
