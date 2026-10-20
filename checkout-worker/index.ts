@@ -60,6 +60,7 @@ interface Env {
   RESEND_API_KEY?: string; // secret : cle Resend
   TURNSTILE_SECRET?: string; // secret : clé secrète Cloudflare Turnstile (absent = anti-robot désactivé)
   ALERT_EMAIL?: string; // secret : adresse qui recoit l'alerte de commande
+  VAT_MENTION_2027?: string; // texte de la mention de TVA a partir du 01/01/2027 (defaut : art. L. 233-3 du CIBS)
   MAIL_FROM?: string; // expediteur sur domaine verifie ; vide = pas d'email client
   GITHUB_TOKEN?: string; // ancien systeme : n'est plus utilise, a supprimer
   ALLOWED_ORIGIN: string; // https://vgthmind.github.io
@@ -1542,14 +1543,14 @@ async function invoiceData(env: Env, key: string, sessionId: string, loaded?: an
     const number = await num(sessionId, s.created, kind === 'deposit' ? req + '-A' : ref);
     const depNumber = kind === 'balance' ? String(s.metadata.deposit_invoice || '') || (s.livemode && isSessionId(String(s.metadata.deposit_session || '')) ? await stockStub(env).invoiceNumber(s.metadata.deposit_session, parisYear(Number(s.metadata.deposit_date) || s.created)) : 'TEST-' + req + '-A') : '';
     const parts = requestInvoiceParts(s, depNumber);
-    const inv: any = buildInvoice(s, parts.lines as any, { number, ref, ...seller });
+    const inv: any = buildInvoice(s, parts.lines as any, { number, ref, ...seller, vatAfter: env.VAT_MENTION_2027 });
     inv.title = parts.title; inv.titleEn = parts.titleEn; inv.deductions = parts.deductions; inv.notes = parts.notes; inv.kind = kind;
     return { ok: true, invoice: inv };
   }
   const ref = await assignRef(env, sessionId);
   const number = await num(sessionId, s.created, ref);
   const lines = (await mailItems(env, s.line_items?.data || [], (c) => String(c / 100))).map((i) => ({ name: i.name, size: i.size, qty: i.qty || 1, unit: i.unit ? Number(i.unit) : 0, amount: Number(i.amount) }));
-  const inv: any = buildInvoice(s, lines as any, { number, ref, ...seller });
+  const inv: any = buildInvoice(s, lines as any, { number, ref, ...seller, vatAfter: env.VAT_MENTION_2027 });
   // Commande remboursée (webhook charge.refunded) : avoir lié à la facture, total ou partiel.
   const rf = await env.HOLDS.get('refunded:' + sessionId);
   if (rf) {

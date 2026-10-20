@@ -53,6 +53,7 @@
   </div>
 
   <div id="app">
+    <div class="alert" id="vat-reminder" hidden><span>Mention de TVA 2027 à vérifier : à partir du 01/01/2027 les factures utilisent « art. L. 233-3 du CIBS ». Le texte définitif dépend d’un décret pas encore paru. Pour le changer sans redéploiement : variable <code>VAT_MENTION_2027</code> du Worker, et réglage « TVA » du Facturier.</span> <a href="#" id="vat-reminder-ok">J’ai vérifié</a></div>
     <div class="alert" id="health" hidden><span id="health-t"></span><a href="reglages-sante.html">Voir la santé du site</a></div>
 
     <section class="vg-card" aria-labelledby="t-today">
@@ -99,6 +100,13 @@
 
   $('day').textContent = new Date().toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' });
   // Ligne discrète tant que l'admin n'est pas installé (l'explication complète est dans Réglages > Installer l'appli).
+  // Rappel mention de TVA (à partir du 1er décembre 2026, jusqu’à ce qu’on le confirme).
+  (function () {
+    var t = new Date().toISOString().slice(0, 10), done = false;
+    try { done = localStorage.getItem('vg_tva_2027_ok') === '1'; } catch (e) {}
+    if (t >= '2026-12-01' && t < '2027-07-01' && !done) $('vat-reminder').hidden = false;
+    $('vat-reminder-ok').onclick = function (e) { e.preventDefault(); try { localStorage.setItem('vg_tva_2027_ok', '1'); } catch (x) {} $('vat-reminder').hidden = true; };
+  })();
   var standalone = window.matchMedia('(display-mode: standalone)').matches || navigator.standalone;
   if (!standalone) $('inst').hidden = false;
 
