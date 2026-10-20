@@ -6,10 +6,12 @@ const origin = (process.argv[2] || '').replace(/\/$/, '');
 const priv = process.argv.includes('--prive');
 const worker = process.env.WORKER || 'https://vgthmind-shop-checkout.vgthm66.workers.dev';
 if (!/^https?:\/\//.test(origin)) { console.error('Usage : node outils/verifier-site.mjs https://www.vgthmind.org [--prive]'); process.exit(2); }
+// Site fermé ou par code : VG_ACCES=<valeur du cookie vg-acces, validé dans ton navigateur> pour tester derrière l'écran d'accès.
+const acces = process.env.VG_ACCES ? { Cookie: 'vg-acces=' + process.env.VG_ACCES } : {};
 const bad = [];
 const ok = (m) => console.log('  ok  ' + m);
 const ko = (m) => { bad.push(m); console.log('  KO  ' + m); };
-const get = async (p, opt = {}) => { try { const r = await fetch(origin + p, { redirect: 'manual', ...opt }); return r; } catch (e) { return { status: 0, error: String(e.cause && e.cause.code || e.message), text: async () => '', headers: new Headers() }; } };
+const get = async (p, opt = {}) => { try { const r = await fetch(origin + p, { redirect: 'manual', headers: acces, ...opt }); return r; } catch (e) { return { status: 0, error: String(e.cause && e.cause.code || e.message), text: async () => '', headers: new Headers() }; } };
 
 const products = await (async () => { const r = await get('/products.json'); if (r.status !== 200) { ko('/products.json : ' + (r.status || r.error)); return []; } ok('/products.json'); return r.json(); })();
 
@@ -32,13 +34,13 @@ try {
   for (const o of oldList) {
     const p = '/product/' + encodeURIComponent(o.permalink);
     try {
-      const r = await fetch(origin + p, { redirect: 'follow' });
+      const r = await fetch(origin + p, { redirect: 'follow', headers: acces });
       const u = new URL(r.url);
       if (r.status === 200 && u.pathname.startsWith('/product/')) { if (!process.env.QUIET) ok(p + (u.pathname.replace(/\/$/, '') === p ? '' : ' -> ' + decodeURIComponent(u.pathname))); }
       else ko(`${p} -> ${r.url} (${r.status}) : l'ancien lien n'arrive pas sur une fiche`);
     } catch (e) { ko(p + ' : ' + e.message); }
   }
-  const inconnue = await fetch(origin + '/product/adresse-qui-nexiste-pas', { redirect: 'manual' });
+  const inconnue = await fetch(origin + '/product/adresse-qui-nexiste-pas', { redirect: 'manual', headers: acces });
   if ([301, 302, 307, 308].includes(inconnue.status) && /\/products\/?$/.test(inconnue.headers.get('location') || '')) ok('pièce inconnue -> /products'); else ko('pièce inconnue : attendu une redirection vers /products, reçu ' + inconnue.status);
 } catch (e) { ko('liste des anciennes adresses illisible : ' + e.message); }
 
