@@ -1,6 +1,6 @@
 // Devis en PDF, fabriqué sans bibliothèque (Helvetica standard du PDF, encodage WinAnsi) : le même fichier est joint au mail
 // du devis et téléchargeable depuis la page du client et l'admin. Aucune donnée n'est gardée : il est recalculé à chaque demande.
-import { SELLER, VAT_MENTION } from './invoice';
+import { SELLER, vatMention } from './invoice';
 
 // Largeurs Helvetica (millièmes d'em) pour les caractères 32 à 126.
 const W = [278, 278, 355, 556, 556, 889, 667, 191, 333, 333, 389, 584, 278, 333, 278, 278, 556, 556, 556, 556, 556, 556, 556, 556, 556, 556, 278, 278, 584, 584, 584, 556,
@@ -23,6 +23,7 @@ export interface QuotePdfInput {
   lang: 'fr' | 'en';
   number: string; version: number;
   issuedAt: number; validUntil: number;
+  vatAfter?: string; // texte de la mention de TVA a partir de 2027 (variable VAT_MENTION_2027)
   seller: { address: string };
   client: { name: string; email: string; country: string };
   requestId: string;
@@ -129,7 +130,7 @@ export function quotePdf(q: QuotePdfInput): Uint8Array {
     wrap(q.optionalDeposit ? t.balanceOpt : t.balance, 8, 170).forEach((l, i) => { text(l, 330, y, 8, false, 0.4); if (i === 0) right(eur(q.total - q.deposit, q.lang), cA, y, 10); y -= 11; });
     y -= 3;
   }
-  text(VAT_MENTION, 330, y, 8, true, 0.3); y -= 22;
+  text(vatMention(q.issuedAt, q.vatAfter), 330, y, 8, true, 0.3); y -= 22;
 
   need(40);
   text(t.delay.toUpperCase(), M, y, 8, true, 0.45); y -= 13; para(q.delay, 10, false, 0, 13); y -= 8;

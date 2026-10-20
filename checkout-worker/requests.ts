@@ -104,7 +104,7 @@ export async function quotePdfFor(env: ReqEnv, rec: any): Promise<Uint8Array | n
     lang: rec.lang === 'fr' ? 'fr' : 'en', number: q.number || rec.id, version: q.version || 1, issuedAt: q.sentAt, validUntil: q.validUntil || q.sentAt + 30 * DAY,
     seller: { address: String(settings.sellerAddress || '').trim() }, client: { name: rec.client.name, email: rec.client.email, country: rec.client.country },
     requestId: rec.id, title: q.title, lines: q.lines || [{ label: q.title, qty: 1, unit: q.total, amount: q.total }], total: q.total, deposit: q.deposit, depositPct: q.depositPct,
-    optionalDeposit: !!q.optionalDeposit, delay: q.delay, message: q.message || '', acceptedAt: q.acceptedAt || 0, pageUrl: mailCtx(env, rec, '').pageUrl, test: isTest(env),
+    vatAfter: (env as any).VAT_MENTION_2027, optionalDeposit: !!q.optionalDeposit, delay: q.delay, message: q.message || '', acceptedAt: q.acceptedAt || 0, pageUrl: mailCtx(env, rec, '').pageUrl, test: isTest(env),
   };
   return quotePdf(input);
 }
