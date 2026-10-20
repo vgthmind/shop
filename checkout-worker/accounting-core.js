@@ -65,7 +65,8 @@ export async function sign(secret, ts, payload) {
 // Corps de requete vers Apps Script : { ts, sig, payload } ; payload est une CHAINE JSON.
 // Le secret n'est jamais envoye, seulement la signature.
 export async function buildEnvelope(secret, record, now = Date.now()) {
-  const payload = JSON.stringify({ v: 1, type: record.type, key: record.key, row: record.row });
+  // Charge utile 100 % ASCII (accents en \uXXXX) : Apps Script ne relit pas les accents octet pour octet, la signature ne correspondrait plus.
+  const payload = JSON.stringify({ v: 1, type: record.type, key: record.key, row: record.row }).replace(/[\u007f-\uffff]/g, (c) => '\\u' + c.charCodeAt(0).toString(16).padStart(4, '0'));
   const ts = String(Math.floor(now / 1000));
   return JSON.stringify({ ts, sig: await sign(secret, ts, payload), payload });
 }
