@@ -76,7 +76,7 @@ test('facture : commande de test = numéro TEST-<ref> (aucun numéro légal cons
 
 test('alerte : paiement Stripe échoué = mail d’alerte à ALERT_EMAIL', async () => {
   reset();
-  const payload = JSON.stringify({ type: 'payment_intent.payment_failed', livemode: false, data: { object: { id: 'pi_1', amount: 4000, currency: 'eur', last_payment_error: { message: 'Carte refusée' } } } });
+  const payload = JSON.stringify({ type: 'payment_intent.payment_failed', livemode: false, data: { object: { id: 'pi_1', metadata: { vg: '1' }, amount: 4000, currency: 'eur', last_payment_error: { message: 'Carte refusée' } } } });
   const r = await post('/webhook', JSON.parse(payload) && undefined, {});
   assert.ok(r.status >= 400);
   const req = new Request('http://w.invalid/webhook', { method: 'POST', body: payload, headers: { 'stripe-signature': await signed(payload) } });
@@ -87,7 +87,7 @@ test('alerte : paiement Stripe échoué = mail d’alerte à ALERT_EMAIL', async
 
 test('alerte : la même alerte n’est pas renvoyée avant 10 min', async () => {
   reset();
-  const payload = JSON.stringify({ type: 'payment_intent.payment_failed', data: { object: { id: 'pi_2', amount: 100, currency: 'eur' } } });
+  const payload = JSON.stringify({ type: 'payment_intent.payment_failed', data: { object: { id: 'pi_2', metadata: { vg: '1' }, amount: 100, currency: 'eur' } } });
   for (let i = 0; i < 2; i++) await worker.fetch(new Request('http://w.invalid/webhook', { method: 'POST', body: payload, headers: { 'stripe-signature': await signed(payload) } }), env(), {});
   assert.equal(mails.length, 1);
 });

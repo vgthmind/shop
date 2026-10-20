@@ -368,3 +368,26 @@ test('avoir : une commande remboursée donne une facture avec un avoir lié (tot
   const t = await (await call('/track', { ref, email: 'client@example.com' })).json();
   assert.equal(t.refunded, true);
 });
+
+test('compte Stripe partagé (Big Cartel) : objets étrangers ignorés (200, rien d’autre) ; nos sessions portent la marque vg=1 et restent traitées', async () => {
+  const a = await checkout('cart-aaaaaaaa');
+  assert.equal(stripeCreated[0].get('metadata[vg]'), '1');
+  assert.equal(stripeCreated[0].get('payment_intent_data[metadata][vg]'), '1');
+  // session payée étrangère : ni stock, ni mail, ni alerte
+  mails = [];
+  const foreign = { ...pay(a.id), id: 'cs_test_bigcartel', metadata: {} };
+  assert.equal((await webhook('checkout.session.completed', foreign)).status, 200);
+  assert.equal((await stock()).uniq, 1); assert.equal(mails.length, 0);
+  // paiement échoué étranger : pas d'alerte
+  assert.equal((await webhook('payment_intent.payment_failed', { id: 'pi_bc', amount: 500, currency: 'eur', metadata: {} })).status, 200);
+  assert.equal(mails.length, 0);
+  // remboursement étranger (session inconnue, ou session étrangère) : rien
+  assert.equal((await webhook('charge.refunded', { id: 'ch_bc', payment_intent: 'pi_inconnu', amount: 500, amount_refunded: 500, currency: 'eur' })).status, 200);
+  sessions.set('cs_test_bc2', { id: 'cs_test_bc2', payment_intent: 'pi_bc2', metadata: {} });
+  assert.equal((await webhook('charge.refunded', { id: 'ch_bc2', payment_intent: 'pi_bc2', amount: 500, amount_refunded: 500, currency: 'eur' })).status, 200);
+  assert.equal(await env.HOLDS.get('refunded:cs_test_bc2'), null); assert.equal(mails.length, 0);
+  // notre session : toujours traitée (stock décompté)
+  await webhook('checkout.session.completed', sessions.get(a.id).full || pay(a.id));
+  assert.equal((await stock()).uniq, 0);
+  assert.ok(mails.length > 0);
+});
