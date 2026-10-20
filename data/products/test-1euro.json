@@ -20,5 +20,6 @@
   "color_hex": "#f2f2f2",
   "weight_g": 1,
   "mode": "colis",
-  "alone": false
+  "alone": false,
+  "archived": true
 }
