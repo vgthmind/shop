@@ -42,7 +42,7 @@ import { buildInvoice, parisYear } from './invoice';
 export { TrafficDO } from './traffic';
 import { requestRoutes, requestsCron, backupRequests, onRequestPaid, onShipped, requestInvoiceParts, type ReqDeps } from './requests';
 export { RequestsDO } from './requests';
-import { customerEmail, sellerEmail, shippedEmail, REPLY_TO, CONTACT_EMAIL, FONT, esc, langFor, countryName, type MailItem, type OrderData } from './emails';
+import { customerEmail, sellerEmail, shippedEmail, REPLY_TO, CONTACT_EMAIL, FONT, esc, langFor, countryName, isNameIncomplete, type MailItem, type OrderData } from './emails';
 
 interface KV {
   get(key: string): Promise<string | null>;
@@ -998,6 +998,7 @@ async function buildOrder(env: Env, o: any, forSeller = false): Promise<OrderDat
     ref,
     requestId: /^D-[A-Z0-9]{6}$/.test(String(o.metadata?.request || '')) ? String(o.metadata.request) : '',
     name: ship.name || o.customer_details?.name || '',
+    nameIncomplete: o.metadata?.kind !== 'deposit' && isNameIncomplete(ship.name || o.customer_details?.name || ''),
     email: o.customer_details?.email || '',
     phone: o.customer_details?.phone || '',
     country: a.country || o.customer_details?.address?.country || '',
@@ -1306,6 +1307,7 @@ async function listOrders(request: Request, env: Env, key: string, json: JsonFn)
       email: s.customer_details?.email || '',
       phone: s.customer_details?.phone || '',
       name: ship.name || s.customer_details?.name || '',
+      name_incomplete: s.metadata?.kind !== 'deposit' && isNameIncomplete(ship.name || s.customer_details?.name || ''),
       address: ship.address || null,
       items: (await mailItems(env, s.line_items?.data || [], (c) => String(c / 100), catalog)).map((i) => ({ ...i, amount: Number(i.amount), unit: i.unit ? Number(i.unit) : 0 })),
       shipped: shipped ? JSON.parse(shipped) : null,
