@@ -92,7 +92,7 @@ test('routes admin : statut et resynchronisation', async () => {
     const r = await accountingRoutes(new Request('http://x/admin/compta/resync', { method: 'POST' }), env, '/admin/compta/resync', json, helpers);
     assert.deepEqual(await r.json(), { sent: 2, queued: 0, skipped: 0 });
     const st = await accountingRoutes(new Request('http://x/admin/compta/status'), env, '/admin/compta/status', json, helpers);
-    assert.deepEqual(await st.json(), { configured: true, pending: 0, done: 2 });
+    assert.deepEqual(await st.json(), { configured: true, pending: 0, done: 2, lastError: null });
     assert.equal(await accountingRoutes(new Request('http://x/orders'), env, '/orders', json, helpers), null);
   });
 });
