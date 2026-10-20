@@ -31,7 +31,7 @@ export function gateScript(cfg) {
   const LS = new RegExp(String.fromCharCode(0x2028), 'g'), PS = new RegExp(String.fromCharCode(0x2029), 'g'); // séparateurs de ligne : interdits dans un script en ligne
   const json = JSON.stringify(data).replace(/</g, String.fromCharCode(92) + 'u003c').replace(LS, String.fromCharCode(92) + 'u2028').replace(PS, String.fromCharCode(92) + 'u2029');
   return '<meta name="robots" content="noindex, nofollow, noarchive">'
-    + '<style>html{overflow:hidden!important}body>*:not(.vg-splash):not(script):not(style):not(link){visibility:hidden!important}</style>'
+    + '<style>html{overflow:hidden!important}body>*:not(.vg-splash):not(.vg-trail-node):not(.vg-trail-streak):not(.vg-cursor-spark):not(script):not(style):not(link){visibility:hidden!important}</style>'
     + '<script>window.VG_GATE=' + json + ';</script>';
 }
 

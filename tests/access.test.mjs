@@ -167,6 +167,11 @@ test('exceptions : liste exacte (pure)', () => {
   assert.equal(gate.decide({ pathname: '/', search: '', method: 'GET', mode: 'code', ok: true }), 'pass');
 });
 
+test('verrou : le curseur personnalisé (traînée d'étoiles) n'est pas masqué', () => {
+  const g = readFileSync(new URL('../shared/access-gate.js', import.meta.url), 'utf8');
+  for (const c of ['.vg-trail-node', '.vg-trail-streak', '.vg-cursor-spark']) assert.ok(g.includes(':not(' + c + ')'), c);
+});
+
 test('écran « Entrer » (assets/vg-src) : bouton grisé fermé, champ du code, entrée directe après le bon code', () => {
   const js = readFileSync(new URL('../assets/vg-src/vg-transitions-dev.js', import.meta.url), 'utf8');
   const css = readFileSync(new URL('../assets/vg-src/vg-transitions-dev.css', import.meta.url), 'utf8');

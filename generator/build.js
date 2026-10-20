@@ -64,6 +64,7 @@ const LOCAL_DEV_JS = '/assets/vg/vg-transitions-dev.js';
 const DEV_CSS_SRC = path.join(__dirname, '..', 'assets', 'vg-src', 'vg-transitions-dev.css');
 const LOCAL_DEV_CSS = '/assets/vg/vg-transitions-dev.css';
 let DEV_CSS_VERSION = '0'; // content hash, set in main()
+let DEV_JS_VERSION = '0'; // idem pour le JS : un navigateur ne garde pas une ancienne copie
 
 // Comportement du thème : notre propre code (assets/vg-theme.js) + Splide
 // (assets/vendor/, MIT). Plus rien n'est chargé depuis assets.bigcartel.com ni
@@ -515,14 +516,14 @@ function injectAround(html, parts, product, relPath) {
   // and price jumped.
   html = html.replace(
     /(<link rel="preload" as="script" href=")https:\/\/vgthmind\.github\.io\/assets\/bigcartel\/vg-transitions-dev\.js[^"]*(")/,
-    (m, a, b) => `${a}${LOCAL_DEV_JS}${b}`);
+    (m, a, b) => `${a}${LOCAL_DEV_JS}?v=${DEV_JS_VERSION}${b}`);
   html = html.replace(
     /https:\/\/vgthmind\.github\.io\/assets\/bigcartel\/vg-transitions-dev\.css\?v=[^"]*/g,
     () => `${LOCAL_DEV_CSS}?v=${DEV_CSS_VERSION}`);
   // Body code before </body>, its dev-JS <script src> pointed at our wrapped copy.
   const body = wrapInlineScripts(parts.bodyCode).replace(
     /<script src="https:\/\/vgthmind\.github\.io\/assets\/bigcartel\/vg-transitions-dev\.js[^"]*"><\/script>/,
-    `<script src="${LOCAL_DEV_JS}"></script>`);
+    `<script src="${LOCAL_DEV_JS}?v=${DEV_JS_VERSION}"></script>`);
   // Front-end cart, after the Body/dev-JS scripts (step 3, see
   // assets/vg-shop-cart.js - not part of the real draft).
   // + the country picker of the cart (vg-shipping-picker.js: price from the Worker, same calculation as the payment).
@@ -620,6 +621,7 @@ async function main() {
 
   const devJs = read(DEV_JS_SRC);
   const devCss = read(DEV_CSS_SRC);
+  DEV_JS_VERSION = require('crypto').createHash('sha1').update(devJs).digest('hex').slice(0, 10);
   DEV_CSS_VERSION = require('crypto').createHash('sha1').update(devCss).digest('hex').slice(0, 10);
   const keywords = read(DEV_KEYWORDS_SRC);
 
