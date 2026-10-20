@@ -132,12 +132,14 @@ test('assistant : plus d\'alerte « Quitter sans enregistrer ? » une fois le br
   assert.ok(/async function addFiles[\s\S]{0,60}savedOnline = false/.test(js));
 });
 
-test('admin : la CSP globale du site est retirée des pages admin (sinon GitHub est bloqué et la page Pièces reste sur Chargement)', async () => {
+test('admin : CSP propre de l\'admin (remplace celle du site ; autorise GitHub, le Worker, le détourage)', async () => {
   const { onRequest } = await import('../functions/admin/_middleware.js');
   const exp = Math.floor(Date.now() / 1000) + 600, tok = 'vgs.' + exp + '.' + 'A'.repeat(43);
   const realFetch = globalThis.fetch; globalThis.fetch = async () => new Response('{}', { status: 200 });
   try {
     const r = await onRequest({ request: new Request('https://site.test/admin/catalogue.html', { headers: { Cookie: 'vg-admin=' + tok } }), next: async () => new Response('page', { headers: { 'Content-Security-Policy': "default-src 'self'" } }) });
-    assert.equal(r.status, 200); assert.equal(r.headers.get('Content-Security-Policy'), null); assert.equal(r.headers.get('X-Frame-Options'), 'DENY');
+    assert.equal(r.status, 200); const csp = r.headers.get('Content-Security-Policy');
+    assert.ok(csp && csp !== "default-src 'self'" && /connect-src[^;]*https:\/\/api\.github\.com/.test(csp) && /connect-src[^;]*vgthmind-shop-checkout\.vgthm66\.workers\.dev/.test(csp) && /localhost:7860/.test(csp) && /frame-ancestors 'none'/.test(csp));
+    assert.equal(r.headers.get('X-Frame-Options'), 'DENY');
   } finally { globalThis.fetch = realFetch; }
 });

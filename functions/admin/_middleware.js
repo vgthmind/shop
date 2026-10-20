@@ -19,6 +19,12 @@ function movedTo(pathname) {
   return m && Object.prototype.hasOwnProperty.call(MOVED, m[1]) ? '/admin/' + MOVED[m[1]] : null;
 }
 
+// CSP de l'admin : le site lui-même, l'API GitHub (publication), le Worker (connexion GitHub, commandes), le serveur de détourage
+// (PC local ou tunnel trycloudflare). Scripts/styles en ligne et WebAssembly (encodeur WebP) autorisés ; rien d'autre.
+const ADMIN_CSP = "default-src 'self'; script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; media-src 'self' blob:; font-src 'self' data:; "
+  + 'connect-src \'self\' https://api.github.com ' + WORKER + ' http://localhost:7860 http://127.0.0.1:7860 https://*.trycloudflare.com blob: data:; '
+  + "worker-src 'self' blob:; frame-ancestors 'none'; base-uri 'self'; form-action 'self'; object-src 'none'";
+
 function cookie(request, name) {
   const m = new RegExp('(?:^|; )' + name + '=([^;]*)').exec(request.headers.get('Cookie') || '');
   try { return m ? decodeURIComponent(m[1]) : ''; } catch (e) { return ''; }
@@ -54,9 +60,9 @@ export async function onRequest(context) {
   const res = await next();
   const out = new Response(res.body, res);
   out.headers.set('Cache-Control', 'private, no-store');
-  // Les en-têtes de _headers ne s'appliquent pas aux réponses d'une Function : on les pose ici (la CSP reste absente, voir generator/_headers).
-  // La CSP globale de _headers (« ! Content-Security-Policy » ne la retire pas ici) bloquait l'API GitHub : page Pièces bloquée sur « Chargement… ».
-  out.headers.delete('Content-Security-Policy');
+  // Les en-têtes de _headers ne s'appliquent pas aux réponses d'une Function : on les pose ici.
+  // La CSP globale du site bloquait l'API GitHub (page Pièces bloquée sur « Chargement… ») : l'admin a la sienne, limitée à ses besoins.
+  out.headers.set('Content-Security-Policy', ADMIN_CSP);
   out.headers.set('X-Frame-Options', 'DENY'); out.headers.set('X-Content-Type-Options', 'nosniff'); out.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');
   return out;
 }
