@@ -167,7 +167,7 @@ test('exceptions : liste exacte (pure)', () => {
   assert.equal(gate.decide({ pathname: '/', search: '', method: 'GET', mode: 'code', ok: true }), 'pass');
 });
 
-test('verrou : le curseur personnalisé (traînée d'étoiles) n'est pas masqué', () => {
+test('verrou : le curseur personnalisé (traînée d étoiles) reste visible', () => {
   const g = readFileSync(new URL('../shared/access-gate.js', import.meta.url), 'utf8');
   for (const c of ['.vg-trail-node', '.vg-trail-streak', '.vg-cursor-spark']) assert.ok(g.includes(':not(' + c + ')'), c);
 });
