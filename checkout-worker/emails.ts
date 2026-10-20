@@ -22,6 +22,7 @@ export type OrderData = {
   ref: string;
   requestId?: string; // pièce sur demande : numéro de la demande (D-XXXXXX), affiché avec la référence de commande
   name: string;
+  nameIncomplete?: boolean; // alerte vendeur : le nom de livraison ne tient qu'en un mot
   email: string;
   phone?: string;
   country: string; // code ISO a 2 lettres (ex. FR, CA)
@@ -220,6 +221,10 @@ export function shippedEmail(o: OrderData, tracking: string) {
   return { subject, html, text };
 }
 
+// Nom de livraison à un seul mot (ou vide) : il manque le prénom ou le nom pour l'envoi.
+export const isNameIncomplete = (name: string) => String(name || '').trim().split(/\s+/).filter(Boolean).length < 2;
+const NAME_WARNING = '⚠ Nom incomplet : demander nom et prénom au client avant l\'envoi';
+
 export function sellerEmail(o: OrderData) {
   const t = T.fr;
   const pays = countryName(o.country, 'fr');
@@ -229,6 +234,7 @@ export function sellerEmail(o: OrderData) {
     `<p style="margin:0 0 6px;font:bold 12px ${FONT};letter-spacing:2px;text-transform:uppercase;color:${MUTED}">Nouvelle commande payée${o.test ? ' · mode TEST' : ''}</p>`
     + `<p style="margin:0 0 6px;font:bold 22px ${FONT};color:${INK}">${esc(o.total)}</p>`
     + `<p style="margin:0 0 4px;font:13px ${FONT};color:${MUTED}">Réf. ${esc(o.ref)}</p>`
+    + (o.nameIncomplete ? `<p style="margin:10px 0 0;padding:8px 12px;background:#fdecea;border-left:4px solid #b3261e;font:bold 14px ${FONT};color:#b3261e">${esc(NAME_WARNING)}</p>` : '')
     + heading('Articles') + itemsTable(o, t, true)
     + heading('Client et livraison')
     + `<table role="presentation" cellpadding="0" cellspacing="0">`
@@ -240,6 +246,7 @@ export function sellerEmail(o: OrderData) {
     + `</table><div style="margin-top:20px">${button(o.stripeUrl, 'Ouvrir la commande dans Stripe')}</div>`);
   const text = [
     `Nouvelle commande payée${o.test ? ' (mode TEST)' : ''} - ${o.total} - réf. ${o.ref}`, '',
+    ...(o.nameIncomplete ? [NAME_WARNING, ''] : []),
     'Articles :', ...itemLines(o, t),
     ...(o.discount ? [`Remise : - ${o.discount}`] : []), `Frais de port : ${o.shipping}`, `Total : ${o.total}`, '',
     `Client : ${o.name} / ${o.email}${o.phone ? ' / ' + o.phone : ''}`,

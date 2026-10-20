@@ -16,7 +16,7 @@ SITE_BASE = "https://vgthmind-shop.pages.dev"
 CATALOG_BASE = "https://vgthmind-shop.pages.dev"
 # "1" seulement le jour du passage en live (voir README) : tant que c'est "0",
 # toute cle sk_live_ est refusee.
-LIVE_MODE = "0"
+LIVE_MODE = "1"
 ADMIN_GITHUB_LOGIN = "vgthmind"
 # Expediteur des emails (domaine verifie dans Resend). Public, pas un secret.
 MAIL_FROM = "vgthmind <commande@vgthmind.org>"
