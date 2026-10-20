@@ -32,7 +32,7 @@
 
 import { DurableObject } from 'cloudflare:workers';
 import { checkoutShipping } from './shipping-worker';
-import { recordSale, replayPending, accountingConfigured } from './accounting';
+import { recordSale, recordRefund, replayPending, accountingConfigured } from './accounting';
 import { handleContact } from './contact';
 import { checkTurnstile } from './turnstile';
 import { trafficRoutes } from './traffic';
@@ -918,6 +918,17 @@ async function processRefund(env: Env, charge: any) {
   await alertAdmin(env, 'refund:' + session.id + ':' + charge.amount_refunded, full ? 'Commande remboursée' : 'Commande remboursée en partie', `Montant remboursé : ${amount.toFixed(2)} ${String(charge.currency || 'eur').toUpperCase()}
 Objet Stripe : ${session.id}
 La pièce n'est pas remise en vente automatiquement : page Stock de l'admin.`);
+  // Compta : une ligne par remboursement dans l'onglet « Remboursements » du Sheet (clé = id du remboursement Stripe : rejouable sans doublon).
+  if (accountingConfigured(env as any)) {
+    try {
+      const rl = await stripeCall(k.value, 'GET', `/v1/refunds?charge=${encodeURIComponent(String(charge.id))}&limit=20`);
+      const ref = await assignRef(env, String(session.id));
+      for (const r of (rl.ok && rl.data.data) || []) {
+        if (r.status === 'failed' || r.status === 'canceled') continue;
+        await recordRefund(env as any, r, ref);
+      }
+    } catch (e) { await alertAdmin(env, 'compta-refund-' + session.id, "Un remboursement n'est pas parti vers la compta", `Commande ${session.id} : ${String(e && (e as any).message ? (e as any).message : e)}`); }
+  }
 }
 
 // Commande payee -> stock decompte (une seule fois par session, que l'appel
