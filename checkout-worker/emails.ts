@@ -63,7 +63,6 @@ const T = {
     shippedLead: 'Bonne nouvelle : ta commande est partie.',
     deliveredSubject: (ref: string) => `Ta commande vgthmind est livrée (réf. ${ref})`,
     deliveredLead: 'Ton colis vient d’être livré. J’espère que ta pièce te plaît ! Si quelque chose ne va pas, écris-moi en répondant à ce mail.',
-    invoiceNote: 'Ta facture est disponible à tout moment sur la page de suivi de ta commande.',
     tracking: 'Numéro de suivi',
     track: 'Suivre mon colis',
     order: 'Ta commande',
@@ -93,7 +92,6 @@ const T = {
     shippedLead: 'Good news: your order has shipped.',
     deliveredSubject: (ref: string) => `Your vgthmind order has been delivered (ref. ${ref})`,
     deliveredLead: 'Your parcel has just been delivered. I hope you love your piece! If anything is wrong, just reply to this email.',
-    invoiceNote: 'Your invoice is available at any time on your order tracking page.',
     tracking: 'Tracking number',
     track: 'Track my parcel',
     order: 'Your order',
@@ -211,7 +209,7 @@ export function shippedEmail(o: OrderData, tracking: string) {
     + `<p style="margin:18px 0 4px;font:13px ${FONT};color:${MUTED}">${t.ref} ${esc(o.ref)}${o.requestId ? ` — ${t.request} ${esc(o.requestId)}` : ''}</p>`
     + heading(t.order) + itemsTable(o, t, false)
     + heading(t.shipTo) + para(o.address.map(esc).join('<br>'))
-    + para(esc(t.invoiceNote), 'margin-top:8px') + button(o.orderUrl, t.view)
+    + button(o.orderUrl, t.view)
     + para(esc(t.help), 'margin-top:8px')
     + para(esc(t.thanksEnd), 'margin:18px 0 0')
     + signature(t));
@@ -220,7 +218,7 @@ export function shippedEmail(o: OrderData, tracking: string) {
     ...(tracking ? ['', `${t.tracking} : ${tracking}`, `${t.track} : ${url}`] : []), '',
     `${t.ref} ${o.ref}${o.requestId ? ` — ${t.request} ${o.requestId}` : ''}`, ...itemLines(o, t), '',
     t.shipTo.toUpperCase(), ...o.address, '',
-    `${t.invoiceNote} ${o.orderUrl}`, '', t.help, '', t.thanksEnd, 'vgthmind', `Instagram : ${INSTAGRAM_URL}`, CONTACT_EMAIL,
+    `${t.view} : ${o.orderUrl}`, '', t.help, '', t.thanksEnd, 'vgthmind', `Instagram : ${INSTAGRAM_URL}`, CONTACT_EMAIL,
   ].join('\n');
   return { subject, html, text };
 }

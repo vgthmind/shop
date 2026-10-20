@@ -610,9 +610,10 @@
         if (i === 2 && d.track && d.track.state === 'delivered') label = t.delivered;
         return '<li class="' + cls + '"' + (i === idx ? ' aria-current="step"' : '') + '>' + esc(label) + sub + '</li>';
       }).join('');
+      var colon = lang === 'fr' ? ' :' : ':';
       var items = (d.items || []).map(function (it) {
-        return '<li class="cart-item">'
-          + '<div class="cart-item-image-holder"><span class="cart-item-image-link">' + (it.image ? '<img src="' + esc(it.image) + '" alt="' + esc(nameOf(it)) + '" decoding="async">' : '') + '</span></div>'
+        return '<li class="cart-item' + (it.image ? '' : ' vg-noimg') + '">'
+          + (it.image ? '<div class="cart-item-image-holder"><span class="cart-item-image-link"><img src="' + esc(it.image) + '" alt="' + esc(nameOf(it)) + '" decoding="async"></span></div>' : '')
           + '<div class="cart-item-detail"><div class="product-name">' + esc(nameOf(it)) + '</div>'
           + '<div class="option-name">' + (it.size ? esc(t.size) + ' ' + esc(it.size) + ' · ' : '') + esc(t.qty) + ' ' + esc(it.qty || 1) + '</div>'
           + (it.unit ? '<div class="vg-track-unit">' + money(it.unit) + ' ' + esc(t.each) + '</div>' : '') + '</div>'
@@ -637,13 +638,12 @@
         + '<h2 class="vg-track-h">' + esc(t.items) + '</h2>'
         + '<ul class="cart-items">' + items + '</ul>'
         + '<div class="cart-footer">'
-        + (d.discount ? '<div class="cart-subtotal vg-cart-line"><span class="cart-subtotal__label">' + esc(t.discount) + ':</span><span class="cart-subtotal__amount">- ' + money(d.discount) + '</span></div>' : '')
-        + '<div class="cart-subtotal vg-cart-line"><span class="cart-subtotal__label">' + esc(t.shipping) + ':</span><span class="cart-subtotal__amount">' + money(d.shipping) + '</span></div>'
-        + '<div class="cart-subtotal vg-cart-line vg-cart-total"><span class="cart-subtotal__label">' + esc(t.total) + ':</span><span class="cart-subtotal__amount">' + money(d.total) + '</span></div></div>'
+        + (d.discount ? '<div class="cart-subtotal vg-cart-line"><span class="cart-subtotal__label">' + esc(t.discount) + colon + '</span><span class="cart-subtotal__amount">- ' + money(d.discount) + '</span></div>' : '')
+        + '<div class="cart-subtotal vg-cart-line"><span class="cart-subtotal__label">' + esc(t.shipping) + colon + '</span><span class="cart-subtotal__amount">' + money(d.shipping) + '</span></div>'
+        + '<div class="cart-subtotal vg-cart-line vg-cart-total"><span class="cart-subtotal__label">' + esc(t.total) + colon + '</span><span class="cart-subtotal__amount">' + money(d.total) + '</span></div></div>'
         + '<h2 class="vg-track-h">' + esc(t.address) + '</h2>'
         + '<p class="vg-track-address">' + esc((d.address || []).concat(countryLabel(d.country)).filter(Boolean).join('\n')) + '</p>'
         + parcel
-        + '<p class="vg-track-invoice"><button type="button" class="button vg-track-invoice-btn">' + esc(t.invoice) + '</button>' + (d.refunded ? ' <button type="button" class="button vg-track-invoice-btn" data-mode="credit">' + esc(t.credit) + '</button>' : '') + '</p>'
         + '<p class="vg-track-again"><button type="button" class="button button--checkout vg-track-back">' + esc(t.again) + '</button></p>';
       lookup.hidden = true; result.hidden = false;
     }
