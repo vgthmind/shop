@@ -61,6 +61,8 @@ const T = {
     thanks: "Merci pour ta commande ! 🖤 Elle est bien reçue et je m'en occupe avec soin.",
     bye: 'À très vite,',
     shippedLead: 'Bonne nouvelle : ta commande est partie.',
+    deliveredSubject: (ref: string) => `Ta commande vgthmind est livrée (réf. ${ref})`,
+    deliveredLead: 'Ton colis vient d’être livré. J’espère que ta pièce te plaît ! Si quelque chose ne va pas, écris-moi en répondant à ce mail.',
     invoiceNote: 'Ta facture est disponible à tout moment sur la page de suivi de ta commande.',
     tracking: 'Numéro de suivi',
     track: 'Suivre mon colis',
@@ -89,6 +91,8 @@ const T = {
     thanks: "Thank you for your order! 🖤 It's been received and I'll take good care of it.",
     bye: 'See you soon,',
     shippedLead: 'Good news: your order has shipped.',
+    deliveredSubject: (ref: string) => `Your vgthmind order has been delivered (ref. ${ref})`,
+    deliveredLead: 'Your parcel has just been delivered. I hope you love your piece! If anything is wrong, just reply to this email.',
     invoiceNote: 'Your invoice is available at any time on your order tracking page.',
     tracking: 'Tracking number',
     track: 'Track my parcel',
@@ -218,6 +222,35 @@ export function shippedEmail(o: OrderData, tracking: string) {
     t.shipTo.toUpperCase(), ...o.address, '',
     `${t.invoiceNote} ${o.orderUrl}`, '', t.help, '', t.thanksEnd, 'vgthmind', `Instagram : ${INSTAGRAM_URL}`, CONTACT_EMAIL,
   ].join('\n');
+  return { subject, html, text };
+}
+
+// Mail court « livrée » (envoyé une fois, quand La Poste annonce la livraison).
+export function deliveredEmail(o: OrderData) {
+  const l = o.lang || langFor(o.country);
+  const t = T[l];
+  const first = (o.name || '').trim().split(/\s+/)[0] || '';
+  const subject = t.deliveredSubject(o.ref);
+  const html = shell(l, subject,
+    para(esc(t.hi(first))) + para(esc(t.deliveredLead))
+    + `<p style="margin:18px 0 4px;font:13px ${FONT};color:${MUTED}">${t.ref} ${esc(o.ref)}</p>`
+    + para(esc(t.thanksEnd), 'margin:18px 0 0')
+    + signature(t));
+  const text = [t.hi(first), '', t.deliveredLead, '', `${t.ref} ${o.ref}`, '', t.thanksEnd, 'vgthmind', `Instagram : ${INSTAGRAM_URL}`, CONTACT_EMAIL].join('\n');
+  return { subject, html, text };
+}
+
+// Alerte vendeur : colis en difficulté (retour, adresse incorrecte, colis bloqué).
+export function parcelProblemEmail(ref: string, name: string, tracking: string, label: string, events: { date: string; label: string }[]) {
+  const subject = `Colis en difficulté : ${ref}`;
+  const lines = events.slice(0, 6).map((e) => `${String(e.date).slice(0, 10)} : ${e.label}`);
+  const html = shell('fr', subject,
+    `<p style="margin:0 0 6px;font:bold 12px ${FONT};letter-spacing:2px;text-transform:uppercase;color:#b3261e">Colis en difficulté</p>`
+    + para(`<b>${esc(label)}</b>`)
+    + para(`Commande ${esc(ref)} · ${esc(name)}<br>Numéro de suivi : <b>${esc(tracking)}</b>`)
+    + (lines.length ? para(lines.map(esc).join('<br>')) : '')
+    + button(TRACKING_URL + encodeURIComponent(tracking), 'Voir le suivi La Poste'));
+  const text = [subject, '', label, `Commande ${ref} — ${name}`, `Suivi : ${tracking}`, '', ...lines, '', TRACKING_URL + tracking].join('\n');
   return { subject, html, text };
 }
 

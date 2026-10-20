@@ -548,7 +548,7 @@
       order: 'Commande', placed: 'passée le', steps: ['Reçue', 'En préparation', 'Expédiée'],
       s_received: 'Ta commande est bien reçue.', s_preparing: 'Ta commande est en cours de préparation.', s_shipped: 'Ta commande est partie.',
       items: 'Articles', size: 'Taille', qty: 'Qté', each: 'l\'unité', shipping: 'Livraison', discount: 'Remise', total: 'Total', address: 'Adresse de livraison',
-      parcel: 'Numéro de suivi', invoice: 'Télécharger ma facture', credit: 'Télécharger mon avoir', trackBtn: 'Suivre mon colis', noTracking: 'Le numéro de suivi n\'est pas encore disponible.', again: 'Suivre une autre commande',
+      parcel: 'Numéro de suivi', invoice: 'Télécharger ma facture', credit: 'Télécharger mon avoir', trackBtn: 'Suivre mon colis', noTracking: 'Le numéro de suivi n\'est pas encore disponible.', histo: 'Historique du colis', delivered: 'Livrée', st_transit: 'Ton colis est en transit.', st_pickup: 'Ton colis t\'attend en point retrait.', st_delivered: 'Ton colis a été livré.', st_problem: 'Un souci est survenu avec la livraison : je m\'en occupe, écris-moi si besoin.', again: 'Suivre une autre commande',
     },
     en: {
       title: 'Track my order', intro: 'Enter your order number (in your confirmation email) and the email address used for the order.',
@@ -559,7 +559,7 @@
       order: 'Order', placed: 'placed on', steps: ['Received', 'Being prepared', 'Shipped'],
       s_received: 'Your order has been received.', s_preparing: 'Your order is being prepared.', s_shipped: 'Your order is on its way.',
       items: 'Items', size: 'Size', qty: 'Qty', each: 'each', shipping: 'Shipping', discount: 'Discount', total: 'Total', address: 'Delivery address',
-      parcel: 'Tracking number', invoice: 'Download my invoice', credit: 'Download my credit note', trackBtn: 'Track my parcel', noTracking: 'The tracking number isn\'t available yet.', again: 'Track another order',
+      parcel: 'Tracking number', invoice: 'Download my invoice', credit: 'Download my credit note', trackBtn: 'Track my parcel', noTracking: 'The tracking number isn\'t available yet.', histo: 'Parcel history', delivered: 'Delivered', st_transit: 'Your parcel is in transit.', st_pickup: 'Your parcel is waiting at a pickup point.', st_delivered: 'Your parcel has been delivered.', st_problem: 'There is a problem with the delivery: I\'m on it, write to me if needed.', again: 'Track another order',
     },
   };
 
@@ -607,6 +607,7 @@
       var steps = t.steps.map(function (label, i) {
         var cls = i < idx ? 'is-done' : i === idx ? 'is-done is-current' : '';
         var sub = i === 2 && d.shippedAt ? '<small>' + esc(fmtDate(d.shippedAt)) + '</small>' : (i === 0 && d.created ? '<small>' + esc(fmtDate(d.created)) + '</small>' : '');
+        if (i === 2 && d.track && d.track.state === 'delivered') label = t.delivered;
         return '<li class="' + cls + '"' + (i === idx ? ' aria-current="step"' : '') + '>' + esc(label) + sub + '</li>';
       }).join('');
       var items = (d.items || []).map(function (it) {
@@ -623,12 +624,16 @@
         parcel = '<div class="vg-track-parcel">'
           + (d.tracking ? '<p>' + esc(t.parcel) + '<br><strong>' + esc(d.tracking) + '</strong></p>' : '<p>' + esc(t.noTracking) + '</p>')
           + (okUrl ? '<a class="button view-all-products" href="' + esc(d.trackUrl) + '" target="_blank" rel="noopener noreferrer">' + esc(t.trackBtn) + '</a>' : '')
+          + (d.track && d.track.events && d.track.events.length ? '<h3 class="vg-track-histo-h">' + esc(t.histo) + '</h3><ol class="vg-track-histo">' + d.track.events.map(function (e) {
+            var when = ''; try { when = new Date(e.date).toLocaleString(lang === 'fr' ? 'fr-FR' : 'en-GB', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }); } catch (x) {}
+            return '<li><small>' + esc(when === 'Invalid Date' ? '' : when) + '</small>' + esc(e.label) + '</li>';
+          }).join('') + '</ol>' : '')
           + '</div>';
       }
       result.innerHTML =
         '<div class="vg-track-head"><span class="vg-track-ref">' + esc(d.ref) + '</span>' + (d.created ? '<span class="vg-track-date">' + esc(t.placed) + ' ' + esc(fmtDate(d.created)) + '</span>' : '') + '</div>'
         + '<ol class="vg-track-steps">' + steps + '</ol>'
-        + '<p class="vg-track-status">' + esc(t['s_' + d.status]) + '</p>'
+        + '<p class="vg-track-status">' + esc(d.status === 'shipped' && d.track && t['st_' + d.track.state] ? t['st_' + d.track.state] : t['s_' + d.status]) + '</p>'
         + '<h2 class="vg-track-h">' + esc(t.items) + '</h2>'
         + '<ul class="cart-items">' + items + '</ul>'
         + '<div class="cart-footer">'

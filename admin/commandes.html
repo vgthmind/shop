@@ -26,6 +26,8 @@
     .tag.ok { color: var(--ok); border-color: var(--ok); }
     .tag.ref { font-weight: 700; letter-spacing: .04em; color: var(--ink); border-color: var(--ink); }
     .tag.prep { color: #8a5a00; border-color: #8a5a00; }
+    .tag.trk-problem { color: #fff; background: #b3261e; border-color: #b3261e; font-weight: 700; }
+    .tag.trk-pickup { color: #8a5a00; border-color: #8a5a00; }
     .tag.test { color: #8a5a00; border-color: #8a5a00; }
     .tag.refunded { color: #fff; background: #b3261e; border-color: #b3261e; font-weight: 700; }
     .order.is-refunded { border-left: 5px solid #b3261e; }
@@ -165,6 +167,7 @@
         + (o.refunded ? '<span class="tag refunded">' + (o.refunded.full ? 'Remboursée' : 'Remboursée en partie') + ' · ' + esc(String(o.refunded.amount).replace('.', ',')) + ' €</span> ' : '')
         + (o.preparing && !o.shipped ? '<span class="tag prep">en préparation depuis le ' + esc(date(o.preparing.at)) + '</span> ' : '')
         + (o.shipped ? '<span class="tag ok">expédiée le ' + esc(date(o.shipped.at)) + (o.shipped.tracking ? ' · suivi ' + esc(o.shipped.tracking) : '') + (o.shipped.notified ? ' · client prévenu' : '') + '</span>' : '')
+        + (o.shipped && o.shipped.track ? ' <span class="tag trk-' + esc(o.shipped.track.state) + (o.shipped.track.state === 'delivered' ? ' ok' : '') + '" title="' + esc(o.shipped.track.label || '') + '">' + esc({ transit: 'En transit', pickup: 'En point retrait', delivered: 'Livrée', problem: 'Problème' }[o.shipped.track.state] || '') + (o.shipped.track.label ? ' · ' + esc(o.shipped.track.label) : '') + '</span>' : (o.shipped && o.shipped.tracking ? ' <span class="tag">statut : en attente de La Poste</span>' : ''))
         + '<div class="muted">' + esc(date(o.created)) + ' · ' + esc(o.email) + (o.phone ? ' · ' + esc(o.phone) : '') + '</div></div>'
         + '</header>'
         + '<ul class="items">' + o.items.map(function (it) {

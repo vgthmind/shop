@@ -181,6 +181,12 @@ const CART_CSS = `
 .vg-track-parcel{margin-top:32px;padding:18px 20px;border:1px solid rgba(0,0,0,.2);border-radius:var(--border-radius);text-align:center;}
 .vg-track-parcel p{margin:0 0 14px;}
 .vg-track-parcel strong{letter-spacing:.04em;word-break:break-all;}
+.vg-track-histo-h{margin:26px 0 10px;font-size:.9em;text-transform:uppercase;letter-spacing:.12em;}
+.vg-track-histo,.vg-track-histo li{list-style:none;}
+.vg-track-histo li::marker{content:"";}
+.vg-track-histo{margin:0;padding:0;text-align:left;font-size:.92em;}
+.vg-track-histo li{padding:8px 0;border-top:1px solid rgba(0,0,0,.12);}
+.vg-track-histo small{display:block;opacity:.65;}
 .vg-track-parcel .button{margin:0 auto;}
 .vg-track-again{margin-top:32px;text-align:center;}
 .vg-track-again .button{display:block;margin:0 auto;max-width:320px;}
