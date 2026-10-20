@@ -177,7 +177,8 @@ const CART_CSS = `
 .vg-track-result .cart-footer .vg-cart-total,.vg-track-result .cart-footer .vg-cart-total span{font-weight:700 !important;}
 .vg-track-result .cart-footer .cart-subtotal{width:100%;justify-content:space-between;gap:16px;}
 .vg-track-address{white-space:pre-line;margin:0;text-align:left !important;}
-.vg-track-result h2.vg-track-h{text-align:left !important;}
+.vg-track-result h2.vg-track-h{text-align:left !important;margin:18px 0 6px !important;}
+.vg-track-result p.vg-track-address{margin:0 !important;}
 .vg-track-parcel{margin-top:32px;padding:18px 20px;border:1px solid rgba(0,0,0,.2);border-radius:var(--border-radius);text-align:center;}
 .vg-track-parcel p{margin:0 0 14px;}
 .vg-track-parcel strong{letter-spacing:.04em;word-break:break-all;}
