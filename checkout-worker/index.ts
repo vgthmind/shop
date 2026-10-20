@@ -479,6 +479,23 @@ async function alertContact(env: Env, kind: string, subject: string, detail: str
   } catch (e) { /* une alerte ne doit jamais faire planter le reste */ }
 }
 
+// Commandes de démonstration : session type Stripe rangée en KV (testorder:cs_test_zz…), posée à la main pour essayer l'admin, le mail
+// « expédiée » et la page /suivi sans paiement. livemode:false => étiquette « test », hors statistiques et export compta par défaut ;
+// aucun passage par Stripe, le webhook, le stock ou la compta. Facture refusée. Supprimer la clé = commande disparue.
+async function testSession(env: Env, id: string): Promise<any | null> {
+  if (!/^cs_test_zz[A-Za-z0-9]*$/.test(id)) return null;
+  const raw = await env.HOLDS.get('testorder:' + id);
+  try { return raw ? { ...JSON.parse(raw), id, livemode: false, payment_status: 'paid' } : null; } catch (e) { return null; }
+}
+async function testSessions(env: Env): Promise<any[]> {
+  const out: any[] = [];
+  try {
+    const l = await env.HOLDS.list({ prefix: 'testorder:' });
+    for (const k of l.keys) { const t = await testSession(env, k.name.slice('testorder:'.length)); if (t) out.push(t); }
+  } catch (e) {}
+  return out;
+}
+
 // --- Suivi automatique des colis (API Suivi La Poste) -----------------------------------------------------------
 // Relève (cron horaire, mais 1 appel par colis toutes les 11 h au plus = 2 par jour max) : statut (en transit / point retrait / livrée / problème) rangé dans shipped:<session>.track.
 // Livrée -> mail court au client (une fois). Retour, adresse incorrecte, colis bloqué -> alerte à contact@ (une fois par incident).
@@ -489,6 +506,8 @@ async function trackingCron(env: Env) {
   const sk = stripeKey(env);
   const from = (env.MAIL_FROM || '').trim();
   const orderOf = async (id: string) => {
+    const ts = await testSession(env, id);
+    if (ts) return await buildOrder(env, ts);
     if (!sk.ok) return null;
     const full = await stripeCall(sk.value, 'GET', `/v1/checkout/sessions/${id}?${SESSION_EXPAND}`);
     return full.ok ? await buildOrder(env, full.data) : null;
@@ -1334,6 +1353,7 @@ async function listOrders(request: Request, env: Env, key: string, json: JsonFn)
     if (!r.data.has_more) break;
     after = r.data.data[r.data.data.length - 1].id;
   }
+  sessions.push(...(await testSessions(env)));
   // Remboursements : une seule lecture KV (liste des cles refunded:<session>), pas une par commande.
   const refunds = new Map<string, any>();
   try {
@@ -1534,7 +1554,9 @@ async function trackOrder(request: Request, env: Env, key: string, json: JsonFn,
 
   const sessionId = await env.HOLDS.get('ref:' + ref);
   if (!sessionId || !isSessionId(sessionId)) return fail();
-  const full = await stripeCall(key, 'GET', `/v1/checkout/sessions/${sessionId}?${SESSION_EXPAND}`);
+  const tsx = await testSession(env, sessionId);
+  if (tsx && asInvoice) return fail();
+  const full = tsx ? { ok: true, data: tsx } : await stripeCall(key, 'GET', `/v1/checkout/sessions/${sessionId}?${SESSION_EXPAND}`);
   const s = full.data;
   if (!full.ok || s.payment_status !== 'paid') return fail();
   if (String(s.customer_details?.email || '').trim().toLowerCase() !== email) return fail();
@@ -1579,7 +1601,8 @@ async function sendShippedMail(request: Request, env: Env, key: string, json: Js
   const shipped = JSON.parse(raw);
   const newTracking = String(body.tracking || '').trim().slice(0, 100);
   if (newTracking && (cleanTracking(newTracking) || newTracking) !== shipped.tracking) { shipped.tracking = cleanTracking(newTracking) || newTracking; delete shipped.track; } // numéro saisi au moment d'envoyer le mail (oubli à « Marquer expédiée »)
-  const full = await stripeCall(key, 'GET', `/v1/checkout/sessions/${id}?${SESSION_EXPAND}`);
+  const tsx = await testSession(env, id);
+  const full = tsx ? { ok: true, data: tsx } : await stripeCall(key, 'GET', `/v1/checkout/sessions/${id}?${SESSION_EXPAND}`);
   if (!full.ok) return json({ error: full.data.error?.message || 'Erreur Stripe' }, 502);
   const order = await buildOrder(env, full.data);
   if (!order.email) return json({ error: 'Pas d’email client sur cette commande.' }, 400);
