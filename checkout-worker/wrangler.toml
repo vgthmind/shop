@@ -6,7 +6,7 @@ workers_dev = true
 # Pas d'account_id ici : wrangler prend le compte de `wrangler login`.
 # Aucun secret dans ce fichier (npx.cmd wrangler secret put …) :
 #   STRIPE_SECRET_KEY, STRIPE_WEBHOOK_SECRET, GITHUB_CLIENT_SECRET,
-#   RESEND_API_KEY, ALERT_EMAIL (adresse perso : jamais dans le depot)
+#   RESEND_API_KEY, LAPOSTE_API_KEY (suivi des colis), ALERT_EMAIL (adresse perso : jamais dans le depot)
 # Emails client : variable MAIL_FROM (domaine verifie dans Resend), vide = alerte seule.
 [vars]
 # Sites autorisés (séparés par des virgules) : ancien aperçu, Cloudflare Pages, domaine.

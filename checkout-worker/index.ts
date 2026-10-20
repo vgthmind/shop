@@ -42,7 +42,8 @@ import { buildInvoice, parisYear } from './invoice';
 export { TrafficDO } from './traffic';
 import { requestRoutes, requestsCron, backupRequests, onRequestPaid, onShipped, requestInvoiceParts, type ReqDeps } from './requests';
 export { RequestsDO } from './requests';
-import { customerEmail, sellerEmail, shippedEmail, REPLY_TO, CONTACT_EMAIL, FONT, esc, langFor, countryName, isNameIncomplete, type MailItem, type OrderData } from './emails';
+import { pollShipments, cleanTracking, STATE_LABEL_FR, type TrackInfo } from './laposte';
+import { customerEmail, sellerEmail, shippedEmail, deliveredEmail, parcelProblemEmail, REPLY_TO, CONTACT_EMAIL, FONT, esc, langFor, countryName, isNameIncomplete, type MailItem, type OrderData } from './emails';
 
 interface KV {
   get(key: string): Promise<string | null>;
@@ -58,6 +59,7 @@ interface Env {
   GITHUB_CLIENT_SECRET?: string; // OAuth App (secret)
   SESSION_SECRET?: string; // signe les sessions admin (30 jours)
   RESEND_API_KEY?: string; // secret : cle Resend
+  LAPOSTE_API_KEY?: string; // secret : clé API Suivi La Poste (developer.laposte.fr), en-tête X-Okapi-Key ; absente = pas de suivi automatique
   TURNSTILE_SECRET?: string; // secret : clé secrète Cloudflare Turnstile (absent = anti-robot désactivé)
   ALERT_EMAIL?: string; // secret : adresse qui recoit l'alerte de commande
   VAT_MENTION_2027?: string; // texte de la mention de TVA a partir du 01/01/2027 (defaut : art. L. 233-3 du CIBS)
@@ -458,9 +460,65 @@ export default {
       ctx.waitUntil(backupRequests(env as any).catch((e) => alertAdmin(env, 'req-backup', 'Sauvegarde des demandes en erreur', String(e && e.stack ? e.stack : e))));
       if (accountingConfigured(env as any)) ctx.waitUntil(replayPending(env as any, 100).catch(() => {})); // ventes restées en file (script Google injoignable)
     }
+    // Suivi des colis La Poste : chaque colis n'est interrogé qu'une fois toutes les 11 h au plus (2 fois par jour maximum), quel que soit le cron.
+    ctx.waitUntil(trackingCron(env).catch((e) => alertContact(env, 'track-cron', 'Suivi des colis en erreur', String(e && e.stack ? e.stack : e))));
     ctx.waitUntil(requestsCron(env as any, reqDeps(env)).catch((e) => alertAdmin(env, 'req-cron', 'Cron des demandes en erreur', String(e && e.stack ? e.stack : e))));
   },
 };
+
+// Alerte du suivi des colis : toujours à CONTACT_EMAIL (une fois par type et par 20 h).
+async function alertContact(env: Env, kind: string, subject: string, detail: string) {
+  try {
+    const from = (env.MAIL_FROM || '').trim();
+    if (!env.RESEND_API_KEY || !from) return;
+    const k = 'alert:' + kind.slice(0, 120);
+    if (await env.HOLDS.get(k)) return;
+    await env.HOLDS.put(k, '1', { expirationTtl: 20 * 3600 });
+    const html = '<p><b>' + subject.replace(/[<>&]/g, '') + '</b></p><pre style="white-space:pre-wrap">' + detail.replace(/[<>&]/g, '') + '</pre>';
+    await resendSend(env, from, CONTACT_EMAIL, '[vgthmind ALERTE] ' + subject, html, subject + '\n\n' + detail, REPLY_TO);
+  } catch (e) { /* une alerte ne doit jamais faire planter le reste */ }
+}
+
+// --- Suivi automatique des colis (API Suivi La Poste) -----------------------------------------------------------
+// Relève (cron horaire, mais 1 appel par colis toutes les 11 h au plus = 2 par jour max) : statut (en transit / point retrait / livrée / problème) rangé dans shipped:<session>.track.
+// Livrée -> mail court au client (une fois). Retour, adresse incorrecte, colis bloqué -> alerte à contact@ (une fois par incident).
+// L'API en panne ou la clé refusée ne casse rien : le dernier statut connu reste affiché, la relève suivante réessaie.
+async function trackingCron(env: Env) {
+  const lp = (env.LAPOSTE_API_KEY || '').trim();
+  if (!lp) return;
+  const sk = stripeKey(env);
+  const from = (env.MAIL_FROM || '').trim();
+  const orderOf = async (id: string) => {
+    if (!sk.ok) return null;
+    const full = await stripeCall(sk.value, 'GET', `/v1/checkout/sessions/${id}?${SESSION_EXPAND}`);
+    return full.ok ? await buildOrder(env, full.data) : null;
+  };
+  const statuses: Record<string, number> = {};
+  const r = await pollShipments({
+    onStatus: (st, rc) => { const k = String(st) + (rc !== undefined ? '/rc' + rc : ''); statuses[k] = (statuses[k] || 0) + 1; },
+    onSample: async (sample) => { if (!(await env.HOLDS.get('laposte:sample'))) await env.HOLDS.put('laposte:sample', JSON.stringify(sample)); },
+    now: Math.floor(Date.now() / 1000),
+    key: lp,
+    list: (cursor) => env.HOLDS.list({ prefix: 'shipped:', cursor }),
+    get: (n) => env.HOLDS.get(n),
+    put: (n, v) => env.HOLDS.put(n, v),
+    onDelivered: async (id, shipped) => {
+      if (!env.RESEND_API_KEY || !from) return false;
+      const order = await orderOf(id);
+      if (!order || !order.email) return false;
+      const m = deliveredEmail(order);
+      return await resendSend(env, from, order.email, m.subject, m.html, m.text, REPLY_TO);
+    },
+    onProblem: async (id, shipped, info: TrackInfo) => {
+      if (!env.RESEND_API_KEY || !from) return;
+      const order = await orderOf(id);
+      const m = parcelProblemEmail(order ? order.ref : id, order ? order.name : '', String(shipped.tracking || ''), info.label, info.events);
+      await resendSend(env, from, CONTACT_EMAIL, m.subject, m.html, m.text, REPLY_TO);
+    },
+    onAuthError: async () => { await alertContact(env, 'laposte-auth', 'Suivi La Poste : clé API refusée', "L'API Suivi La Poste a refusé la clé (LAPOSTE_API_KEY) : elle a peut-être expiré ou été révoquée. Le suivi automatique est suspendu, les derniers statuts restent affichés. Générer une nouvelle clé sur developer.laposte.fr puis la remplacer dans Cloudflare (Workers > vgthmind-shop-checkout > Settings > Variables and Secrets)."); },
+  });
+  await env.HOLDS.put('laposte:last', JSON.stringify({ at: new Date().toISOString(), ...r, http: statuses }), { expirationTtl: 30 * 86400 });
+}
 
 // --- Mise en ligne programmée ---------------------------------------------------------------------------------
 // La fiche porte `publish_at` (date ISO) et reste masquée dans le dépôt ; le site la publie quand une construction a lieu
@@ -1176,6 +1234,9 @@ async function status(env: Env, cors: Record<string, string> = {}): Promise<Resp
   lines.push(`${ok(!!env.GITHUB_CLIENT_SECRET)}GITHUB_CLIENT_SECRET (OAuth App) posé`);
   if (env.GITHUB_TOKEN) lines.push('-- GITHUB_TOKEN encore posé : plus utilisé, à supprimer');
   lines.push(`${ok(!!env.RESEND_API_KEY && !!env.MAIL_FROM)}RESEND_API_KEY posée et expéditeur réglé (mails de commande et de contact)`);
+  lines.push(`${ok(!!env.LAPOSTE_API_KEY)}LAPOSTE_API_KEY posée (suivi automatique des colis La Poste)`);
+  const lpLast = await env.HOLDS.get('laposte:last');
+  if (lpLast) lines.push(`   dernière relève des colis : ${lpLast}`);
   lines.push(`${ok(!!env.ALERT_EMAIL)}ALERT_EMAIL posée (alertes de commande et d'erreur)`);
   lines.push(`${ok(!!env.DEPLOY_HOOK_URL)}DEPLOY_HOOK_URL posée (mise en ligne programmée des drops)`);
   lines.push(`${ok(!!env.COMPTA_URL && !!env.COMPTA_SECRET)}COMPTA_URL + COMPTA_SECRET posées (ventes envoyées au Sheet de compta)${env.COMPTA_TEST ? ' : MODE ESSAI (COMPTA_TEST), à retirer après le test' : ''}`);
@@ -1328,7 +1389,8 @@ async function markShipped(request: Request, env: Env, json: JsonFn): Promise<Re
     await env.HOLDS.delete('shipped:' + body.id);
     return json({ ok: true });
   }
-  const value = { at: Math.floor(Date.now() / 1000), tracking: String(body.tracking || '').trim().slice(0, 100) };
+  const rawTracking = String(body.tracking || '').trim().slice(0, 100);
+  const value = { at: Math.floor(Date.now() / 1000), tracking: cleanTracking(rawTracking) || rawTracking };
   await env.HOLDS.put('shipped:' + body.id, JSON.stringify(value));
   await onShipped(env as any, reqDeps(env), body.id, value.tracking, new URL(request.url).origin).catch(() => {});
   return json({ ok: true, shipped: value });
@@ -1487,6 +1549,7 @@ async function trackOrder(request: Request, env: Env, key: string, json: JsonFn,
     total: s.amount_total / 100,
     refunded: !!(await env.HOLDS.get('refunded:' + sessionId)),
     tracking,
+    track: shipped && shipped.track ? { state: shipped.track.state, label: shipped.track.label, ok: shipped.track.ok || null, events: (shipped.track.events || []).slice(0, 15).map((e: any) => ({ date: e.date, label: e.label })) } : null,
     trackUrl: tracking ? 'https://www.laposte.fr/outils/suivre-vos-envois?code=' + encodeURIComponent(tracking) : '',
   });
 }
@@ -1504,7 +1567,7 @@ async function sendShippedMail(request: Request, env: Env, key: string, json: Js
   if (!raw) return json({ error: "Marque d'abord la commande « expédiée »." }, 400);
   const shipped = JSON.parse(raw);
   const newTracking = String(body.tracking || '').trim().slice(0, 100);
-  if (newTracking) shipped.tracking = newTracking; // numéro saisi au moment d'envoyer le mail (oubli à « Marquer expédiée »)
+  if (newTracking && (cleanTracking(newTracking) || newTracking) !== shipped.tracking) { shipped.tracking = cleanTracking(newTracking) || newTracking; delete shipped.track; } // numéro saisi au moment d'envoyer le mail (oubli à « Marquer expédiée »)
   const full = await stripeCall(key, 'GET', `/v1/checkout/sessions/${id}?${SESSION_EXPAND}`);
   if (!full.ok) return json({ error: full.data.error?.message || 'Erreur Stripe' }, 502);
   const order = await buildOrder(env, full.data);
