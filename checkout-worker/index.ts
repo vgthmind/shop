@@ -716,7 +716,9 @@ async function checkout(request: Request, env: Env, key: string, json: JsonFn): 
   params.set('metadata[region]', region);
   if (country) params.set('metadata[country]', country);
   params.set('metadata[cart_id]', cartId);
+  params.set('metadata[vg]', '1');
   params.set('payment_intent_data[metadata][slugs]', slugList);
+  params.set('payment_intent_data[metadata][vg]', '1');
   products.forEach((p, i) => {
     params.set(`line_items[${i}][quantity]`, String(wanted.get(p.permalink) || 1));
     params.set(`line_items[${i}][price_data][currency]`, 'eur');
@@ -797,6 +799,14 @@ async function release(request: Request, env: Env, key: string, json: JsonFn): P
   return json({ ok: true, sold });
 }
 
+// Le compte Stripe sert aussi à d'autres boutiques (Big Cartel) : le webhook ne traite que les objets créés par ce Worker.
+// Marque « vg=1 » posée sur toutes nos sessions et paiements ; repli sur les anciennes marques (panier, acompte, solde) pour les sessions déjà ouvertes.
+function isOurs(o: any): boolean {
+  const m = o && o.metadata;
+  if (!m) return false;
+  return m.vg === '1' || !!m.cart_id || !!m.slugs || m.kind === 'deposit' || m.kind === 'balance';
+}
+
 async function webhook(request: Request, env: Env, json: JsonFn): Promise<Response> {
   const secret = cleanWebhookSecret(env);
   if (!secret) return json({ error: 'Webhook pas encore configuré.' }, 503);
@@ -810,6 +820,8 @@ async function webhook(request: Request, env: Env, json: JsonFn): Promise<Respon
   const event = JSON.parse(payload);
   const s = event.data && event.data.object;
   if (!s) return json({ received: true });
+  // Charge remboursée : l'appartenance se vérifie sur la session retrouvée (processRefund). Le reste : sur l'objet lui-même.
+  if (event.type !== 'charge.refunded' && !isOurs(s)) return json({ received: true });
   if (event.type === 'payment_intent.payment_failed' || event.type === 'checkout.session.async_payment_failed') {
     const why = s.last_payment_error?.message || s.last_payment_error?.code || 'raison inconnue';
     const amount = ((s.amount ?? s.amount_total ?? 0) / 100).toFixed(2);
@@ -840,7 +852,7 @@ async function processRefund(env: Env, charge: any) {
   if (!pi || !k.ok) return;
   const found = await stripeCall(k.value, 'GET', `/v1/checkout/sessions?payment_intent=${encodeURIComponent(pi)}&limit=1`);
   const session = found.ok && found.data.data && found.data.data[0];
-  if (!session) return;
+  if (!session || !isOurs(session)) return;
   const full = charge.amount_refunded >= charge.amount;
   const amount = (charge.amount_refunded || 0) / 100;
   await env.HOLDS.put('refunded:' + session.id, JSON.stringify({ at: Math.floor(Date.now() / 1000), amount, full }));
