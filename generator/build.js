@@ -418,6 +418,10 @@ function injectAround(html, parts, product, relPath) {
   // Favicon : les memes fichiers que vgthmind.bigcartel.com (copies dans
   // assets/theme/ ; BigCartel les sert hors gabarit).
   html = html.replace(/<\/head>/i, (m) => `${FAVICON_LINKS}\n${m}`);
+  // Google Search Console (vérification par balise) : active dès que le code est renseigné dans
+  // data/shop-settings.json (google_site_verification), sur toutes les pages.
+  const gsc = String(SHOP_SETTINGS.google_site_verification || '').trim();
+  if (/^[\w-]{20,100}$/.test(gsc)) html = html.replace(/<\/head>/i, (m) => `<meta name="google-site-verification" content="${gsc}">\n${m}`);
   // Cloudflare Web Analytics (sans cookie) : actif dès que le jeton public
   // est renseigné dans data/shop-settings.json (cf_analytics_token).
   const cfToken = String(SHOP_SETTINGS.cf_analytics_token || '').trim();
