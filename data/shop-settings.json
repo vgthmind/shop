@@ -2,5 +2,6 @@
   "public": true,
   "site_url": "https://www.vgthmind.org",
   "cf_analytics_token": "ebb350ea66ad43c6a539b75d16af75d1",
-  "turnstile_site_key": "0x4AAAAAAFbvPohZm7OhvSE9"
+  "turnstile_site_key": "0x4AAAAAAFbvPohZm7OhvSE9",
+  "google_site_verification": "AQsW2Iq3Pqj7aucERuB977A4rtMULe5WRUM7H7BkJzI"
 }
