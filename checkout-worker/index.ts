@@ -458,8 +458,9 @@ export default {
       ctx.waitUntil(backupStock(env));
       ctx.waitUntil(backupOrders(env));
       ctx.waitUntil(backupRequests(env as any).catch((e) => alertAdmin(env, 'req-backup', 'Sauvegarde des demandes en erreur', String(e && e.stack ? e.stack : e))));
-      if (accountingConfigured(env as any)) ctx.waitUntil(replayPending(env as any, 100).catch(() => {})); // ventes restées en file (script Google injoignable)
     }
+    // Ventes restées en file d'attente (script Google injoignable ou refus) : nouvel essai toutes les heures.
+    if (accountingConfigured(env as any)) ctx.waitUntil(replayPending(env as any, 100).catch(() => {}));
     // Suivi des colis La Poste : chaque colis n'est interrogé qu'une fois toutes les 11 h au plus (2 fois par jour maximum), quel que soit le cron.
     ctx.waitUntil(trackingCron(env).catch((e) => alertContact(env, 'track-cron', 'Suivi des colis en erreur', String(e && e.stack ? e.stack : e))));
     ctx.waitUntil(requestsCron(env as any, reqDeps(env)).catch((e) => alertAdmin(env, 'req-cron', 'Cron des demandes en erreur', String(e && e.stack ? e.stack : e))));

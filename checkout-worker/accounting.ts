@@ -23,20 +23,24 @@ export interface AccEnv {
 type JsonFn = (data: unknown, status?: number) => Response;
 type Record_ = { type: string; key: string; livemode: boolean; row: any };
 
-const Q = 'compta:q:', OK = 'compta:ok:';
+const Q = 'compta:q:', OK = 'compta:ok:', LASTERR = 'compta:lasterr';
 
 export function accountingConfigured(env: AccEnv) { return !!(env.COMPTA_URL && env.COMPTA_SECRET); }
 
 // POST signe ; true seulement si le script confirme { ok: true }.
+// URL et secret nettoyés des espaces / retours à la ligne collés avec eux. La raison d'un échec (jamais de secret) est gardée dans KV (compta:lasterr).
 async function post(env: AccEnv, rec: Record_): Promise<boolean> {
+  const why = async (o: any) => { try { await env.HOLDS.put(LASTERR, JSON.stringify({ at: new Date().toISOString(), key: rec.key, ...o })); } catch (e) {} };
   try {
-    const res = await fetch(env.COMPTA_URL as string, {
+    const res = await fetch(String(env.COMPTA_URL || '').trim(), {
       method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-      body: await buildEnvelope(env.COMPTA_SECRET as string, rec),
+      body: await buildEnvelope(String(env.COMPTA_SECRET || '').trim(), rec),
     });
     const data: any = await res.json().catch(() => null);
-    return !!(res.ok && data && data.ok === true);
-  } catch (e) { return false; }
+    const ok = !!(res.ok && data && data.ok === true);
+    if (!ok) await why({ http: res.status, script: data ? String(data.error || 'réponse sans ok').slice(0, 120) : 'réponse non JSON (adresse /exec fausse, ou script non déployé pour « Tout le monde »)' });
+    return ok;
+  } catch (e) { await why({ exception: String(e).slice(0, 160) }); return false; }
 }
 
 // Envoie (ou met en file) une ligne. `force` : renvoyer meme si deja confirmee.
@@ -99,7 +103,8 @@ export async function accountingRoutes(
   if (!path.startsWith('/admin/compta/')) return null;
   if (path === '/admin/compta/status' && request.method === 'GET') {
     const [q, ok] = await Promise.all([env.HOLDS.list({ prefix: Q }), env.HOLDS.list({ prefix: OK })]);
-    return json({ configured: accountingConfigured(env), pending: q.keys.length, done: ok.keys.length });
+    let lastError = null; try { const e = await env.HOLDS.get(LASTERR); lastError = e ? JSON.parse(e) : null; } catch (x) {}
+    return json({ configured: accountingConfigured(env), pending: q.keys.length, done: ok.keys.length, lastError });
   }
   if (!accountingConfigured(env)) return json({ error: 'COMPTA_URL / COMPTA_SECRET non configurés.' }, 503);
   if (path === '/admin/compta/replay' && request.method === 'POST') return json(await replayPending(env, 100));
