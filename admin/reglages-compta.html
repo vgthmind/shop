@@ -68,6 +68,15 @@
     </div>
     <p class="muted" style="margin:6px 0 0">« Facturation hors boutique » (mot de passe) sert uniquement à ce qui ne passe pas par la boutique : prestations, locations payées hors du site. Jamais pour une vente de la boutique.</p>
   </div>
+  <div class="card" id="sheet-tools" hidden>
+    <h3 style="margin:0 0 8px;font-size:14px">Envoi vers le Sheet de compta</h3>
+    <p class="muted" style="margin:0 0 10px" id="sheet-state">…</p>
+    <div class="bar">
+      <button type="button" id="replay">Renvoyer la file</button>
+      <button type="button" id="resync">Rattraper la compta</button>
+    </div>
+    <p class="muted" style="margin:6px 0 0">« Renvoyer la file » réessaie les lignes qui n'ont pas pu partir. « Rattraper la compta » renvoie toutes les ventes payées et leurs remboursements depuis Stripe, avec leur n° de commande ; sans doublon (une ligne déjà arrivée n'est pas recopiée).</p>
+  </div>
   <p id="msg" role="status" aria-live="polite"></p>
 </main>
 <script src="vg-admin-auth.js"></script>
@@ -137,7 +146,31 @@
   ['type', 'year', 'month', 'quarter', 'test'].forEach(function (id) { $(id).addEventListener('change', refresh); });
   $('logout').addEventListener('click', function () { window.vgAdminLogout(); load(); });
   $('login-btn').addEventListener('click', function () { window.vgAdminLogin().then(load).catch(function (e) { say(e.message, true); }); });
+  function sheetState() {
+    if (demo || !window.vgAdminToken()) { $('sheet-tools').hidden = true; return; }
+    $('sheet-tools').hidden = false;
+    window.vgAdminApi('/admin/compta/status').then(function (d) {
+      $('sheet-state').textContent = (d.configured ? 'Branché.' : 'Pas branché (COMPTA_URL / COMPTA_SECRET manquants).') + ' Arrivées : ' + d.done + ' · en attente : ' + d.pending +
+        (d.lastError ? ' · dernier échec : ' + (d.lastError.script || d.lastError.exception || ('HTTP ' + d.lastError.http)) : '');
+    }).catch(function (e) { $('sheet-state').textContent = 'État illisible : ' + e.message; });
+  }
+  function sheetAction(path, question, label) {
+    if (!window.confirm(question)) return;
+    say('En cours…');
+    window.vgAdminApi(path, { method: 'POST' }).then(function (d) {
+      say(label(d)); sheetState();
+    }).catch(function (e) { say('Erreur : ' + e.message, true); });
+  }
+  $('replay').addEventListener('click', function () {
+    sheetAction('/admin/compta/replay', 'Renvoyer vers le Sheet les lignes restées en attente ?', function (d) { return d.sent + ' envoyée(s), ' + d.failed + ' toujours en attente.'; });
+  });
+  $('resync').addEventListener('click', function () {
+    sheetAction('/admin/compta/resync', 'Renvoyer au Sheet toutes les ventes payées et leurs remboursements ? Aucun doublon ne sera créé.', function (d) {
+      return 'Ventes : ' + d.sales.sent + ' envoyée(s), ' + d.sales.queued + ' en attente, ' + d.sales.skipped + ' déjà là. Remboursements : ' + d.refunds.sent + ' envoyé(s), ' + d.refunds.queued + ' en attente, ' + d.refunds.skipped + ' déjà là.';
+    });
+  });
   load();
+  sheetState();
 })();
 </script>
 <script src="vg-admin-cursor.js"></script>

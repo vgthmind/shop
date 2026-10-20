@@ -33,6 +33,9 @@
 import { DurableObject } from 'cloudflare:workers';
 import { checkoutShipping } from './shipping-worker';
 import { recordSale, recordRefund, replayPending, accountingConfigured } from './accounting';
+
+// Test à 1 € du 6/10 (ch_3UNdBj…), remboursé le jour même : jamais en compta, même par le rattrapage.
+const COMPTA_EXCLUDED = new Set(['cs_live_b122sOqOedMsv5w6lVzvtsMyfvsgBTLY7nraIj14gXr6T4xIzPhBdlCv6M']);
 import { handleContact } from './contact';
 import { checkTurnstile } from './turnstile';
 import { trafficRoutes } from './traffic';
@@ -343,9 +346,11 @@ export default {
         if (path === '/admin/compta/status' && request.method === 'GET') {
           const q = await env.HOLDS.list({ prefix: 'compta:q:' });
           const ok = await env.HOLDS.list({ prefix: 'compta:ok:' });
-          return json({ configured: accountingConfigured(env as any), pending: q.keys.length, done: ok.keys.length });
+          let lastError = null; try { const e = await env.HOLDS.get('compta:lasterr'); lastError = e ? JSON.parse(e) : null; } catch (x) {}
+          return json({ configured: accountingConfigured(env as any), pending: q.keys.length, done: ok.keys.length, lastError });
         }
         if (path === '/admin/compta/replay' && request.method === 'POST') return json(await replayPending(env as any, 100));
+        if (path === '/admin/compta/resync' && request.method === 'POST') return await comptaResync(env, json);
         if (path === '/admin/schedule' && request.method === 'GET') return json({ schedule: await readSchedule(env), hook: !!env.DEPLOY_HOOK_URL, leadSeconds: LEAD_S });
         if (path === '/admin/schedule' && request.method === 'POST') {
           const body: any = await request.json().catch(() => ({}));
@@ -1338,6 +1343,35 @@ async function isAdmin(request: Request, env: Env): Promise<boolean> {
     if (revoked && exp - SESSION_TTL <= revoked) return false;
   } catch (e) { /* KV indisponible : la signature suffit */ }
   return true;
+}
+
+// Rattrapage compta : ventes payees (reel) et leurs remboursements, lus chez Stripe, avec le numero VG-XXXXXX. Sans doublon : une ligne deja confirmee est ignoree.
+async function comptaResync(env: Env, json: JsonFn): Promise<Response> {
+  if (!accountingConfigured(env as any)) return json({ error: 'COMPTA_URL / COMPTA_SECRET non configurés.' }, 503);
+  const k = stripeKey(env);
+  if (!k.ok) return json({ error: 'Clé Stripe absente.' }, 503);
+  const out = { sales: { sent: 0, queued: 0, skipped: 0 }, refunds: { sent: 0, queued: 0, skipped: 0 }, excluded: 0 };
+  let after = '';
+  for (let page = 0; page < 3; page++) {
+    const r = await stripeCall(k.value, 'GET', '/v1/checkout/sessions?status=complete&limit=100' + (after ? '&starting_after=' + after : ''));
+    if (!r.ok) return json({ error: frStripeError(r.data.error, 'Impossible de lire les commandes chez Stripe.') }, 502);
+    for (const s of r.data.data || []) {
+      if (s.payment_status !== 'paid' || !s.livemode || !isOurs(s)) continue;
+      if (COMPTA_EXCLUDED.has(String(s.id))) { out.excluded++; continue; }
+      const ref = await assignRef(env, String(s.id));
+      out.sales[await recordSale(env as any, s, ref)]++;
+      const pi = typeof s.payment_intent === 'string' ? s.payment_intent : '';
+      if (!pi) continue;
+      const rl = await stripeCall(k.value, 'GET', '/v1/refunds?payment_intent=' + encodeURIComponent(pi) + '&limit=20');
+      for (const f of (rl.ok && rl.data.data) || []) {
+        if (f.status === 'failed' || f.status === 'canceled') continue;
+        out.refunds[await recordRefund(env as any, f, ref)]++;
+      }
+    }
+    if (!r.data.has_more) break;
+    after = r.data.data[r.data.data.length - 1].id;
+  }
+  return json(out);
 }
 
 async function listOrders(request: Request, env: Env, key: string, json: JsonFn): Promise<Response> {
