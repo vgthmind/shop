@@ -26,6 +26,7 @@ export class TrafficDO extends DurableObject {
   private visitors = new Set<string>();
   private presence = new Presence();
   private loaded = false;
+  private presenceSaved = 0;
 
   private async load(now: number) {
     const storage = (this as any).ctx.storage;
@@ -36,6 +37,8 @@ export class TrafficDO extends DurableObject {
     this.day = (await storage.get('d:' + key)) || emptyDay();
     this.visitors = new Set((await storage.get('v:' + key)) || []);
     this.salt = (await storage.get('salt:' + key)) || '';
+    // « En ce moment » vit en mémoire : un Durable Object inactif est déchargé, donc la liste est aussi gardée en stockage (voir savePresence).
+    for (const [id, t] of ((await storage.get('presence')) || []) as [string, number][]) this.presence.touch(id, t);
     if (!this.salt) {
       this.salt = crypto.randomUUID() + crypto.randomUUID();
       await storage.put('salt:' + key, this.salt);
@@ -58,6 +61,13 @@ export class TrafficDO extends DurableObject {
     await storage.put('v:' + this.today, [...this.visitors]);
   }
 
+  // Au plus une écriture par 15 s : une éviction du Durable Object fait perdre 15 s de présence, pas la liste.
+  private async savePresence(storage: any, now: number) {
+    if (now - this.presenceSaved < 15000) return;
+    this.presenceSaved = now;
+    await storage.put('presence', [...this.presence.seen]);
+  }
+
   async alarm() { await this.flush(); }
 
   private async hash(ip: string, ua: string) {
@@ -71,6 +81,7 @@ export class TrafficDO extends DurableObject {
     const storage = await this.load(now);
     const id = await this.hash(evt.ip, evt.ua);
     this.presence.touch(id, now);
+    await this.savePresence(storage, now);
     if (evt.hb) return; // battement : « en ce moment » seulement, pas une page vue
     const isNew = !this.visitors.has(id);
     if (isNew && this.visitors.size < MAX_VISITORS) this.visitors.add(id);
