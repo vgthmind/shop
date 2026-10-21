@@ -28,7 +28,16 @@ async function signEpoch(env: AccessEnv, epoch: number): Promise<string> {
   return b64url(await crypto.subtle.sign('HMAC', key, enc.encode('vg-access.' + epoch)));
 }
 
+// Réglage gardé 20 s en mémoire du Worker (une lecture KV par instance et par 20 s au lieu d'une par requête) ; vidé dès qu'il change ici.
+let accessCache: { cfg: AccessCfg; t: number; kv: unknown } | null = null;
+export function resetAccessCache() { accessCache = null; }
 export async function readAccess(env: AccessEnv): Promise<AccessCfg> {
+  if (accessCache && accessCache.kv === env.HOLDS && Date.now() - accessCache.t < 20_000) return accessCache.cfg;
+  const cfg = await readAccessKv(env);
+  accessCache = { cfg, t: Date.now(), kv: env.HOLDS };
+  return cfg;
+}
+async function readAccessKv(env: AccessEnv): Promise<AccessCfg> {
   let j: any = null;
   try { const raw = await env.HOLDS.get(KEY); if (raw) j = JSON.parse(raw); } catch (e) { /* KV indisponible : site ouvert */ }
   j = j && typeof j === 'object' ? j : {};
@@ -108,6 +117,7 @@ export async function accessRoutes(request: Request, env: AccessEnv, path: strin
       if (codeChanged || (next.mode === 'closed' && cfg.mode !== 'closed')) next.epoch = cfg.epoch + 1;
       next.updated = Date.now();
       await env.HOLDS.put(KEY, JSON.stringify(next));
+      accessCache = null;
       return json({ ok: true, mode: next.mode, has_code: !!next.hash, msg_fr: next.msg_fr, msg_en: next.msg_en, updated: next.updated });
     }
   }

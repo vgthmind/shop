@@ -35,7 +35,7 @@ const reset = () => { kv = mkKv(); workerDown = false; };
 // Une visite du site : la Function Pages devant la page statique.
 const HOME = '<!doctype html><html><head><title>vgthmind</title></head><body><main>PRODUITS</main></body></html>';
 const visit = async (path, { method = 'GET', cookie = '', body } = {}) => {
-  let reached = false;
+  mw.resetStateCache(); let reached = false;
   const request = new Request(SITE + path, { method, headers: cookie ? { Cookie: cookie } : {}, body });
   const res = await mw.onRequest({ request, next: async () => { reached = true; return new Response(HOME, { headers: { 'Content-Type': 'text/html', ETag: '"x"' } }); } });
   return { res, reached };

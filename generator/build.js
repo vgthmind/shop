@@ -849,8 +849,8 @@ async function main() {
   }
   // /favicon.ico a la racine du site (certains navigateurs le demandent d'office).
   fs.copyFileSync(rel(ROOT, 'assets', 'theme', 'favicon.ico'), rel(OUT_DIR, 'favicon.ico'));
-  // Cloudflare Pages : la Function racine (functions/_middleware.js, mode d'accès) ne tourne pas pour les fichiers de /assets (images, vidéos, polices) : pas de décompte inutile.
-  fs.writeFileSync(rel(OUT_DIR, '_routes.json'), JSON.stringify({ version: 1, include: ['/*'], exclude: ['/assets/*'] }, null, 2) + '\n');
+  // Cloudflare Pages : la Function racine (functions/_middleware.js, mode d'accès) ne tourne pas pour les fichiers de /assets (images, vidéos, polices), le catalogue, la config, les icônes ni robots.txt (tous exemptés du verrou) : un fichier statique ne compte jamais comme requête Worker.
+  fs.writeFileSync(rel(OUT_DIR, '_routes.json'), JSON.stringify({ version: 1, include: ['/*'], exclude: ['/assets/*', '/products.json', '/site-config.json', '/favicon.ico', '/favicon*', '/apple-touch-icon*', '/site.webmanifest', '/robots.txt'] }, null, 2) + '\n');
   // Manifest du site (icones 192/512 + maskable) : lie depuis FAVICON_LINKS.
   fs.writeFileSync(rel(OUT_DIR, 'site.webmanifest'), JSON.stringify({
     name: 'vgthmind', short_name: 'vgthmind', start_url: `${BASE_PATH}/`, scope: `${BASE_PATH}/`, display: 'browser',

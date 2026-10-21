@@ -5,7 +5,7 @@
 
 export const MAX_KEYS = 60;           // cles distinctes max par categorie et par jour (le reste -> « Autres »)
 export const MAX_VISITORS = 20000;    // visiteurs distincts gardes en memoire pour la journee
-export const LIVE_WINDOW_MS = 90 * 1000; // « en ce moment » = vu dans les 90 dernieres secondes (battement toutes les 30 s)
+export const LIVE_WINDOW_MS = 150 * 1000; // « en ce moment » = vu dans les 150 dernieres secondes (battement toutes les 60 s)
 
 const SOURCES = [
   [/(^|\.)instagram\.com$|^l\.instagram\.com$/, 'Instagram'],
