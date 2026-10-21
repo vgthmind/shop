@@ -634,13 +634,19 @@ function catalogDefaults(catalog: Product[]): Record<string, number> {
   return d;
 }
 
+// Stock public gardé 15 s en mémoire (la page le relit déjà toutes les 15 s côté navigateur) : les pings de supervision et les visiteurs
+// ne réveillent plus le Durable Object à chaque appel. Le paiement, lui, relit toujours le vrai stock.
+let stockCache: { body: string; t: number; ns: unknown } | null = null;
 async function publicStock(env: Env, cors: Record<string, string>): Promise<Response> {
+  if (stockCache && stockCache.ns === env.STOCK && Date.now() - stockCache.t < Number((env as any).STOCK_CACHE_MS ?? 15_000)) return new Response(stockCache.body, { headers: { 'Content-Type': 'application/json', 'Cache-Control': 'public, max-age=15', ...cors } });
   const catalog = await loadCatalog(env);
   const all = await stockStub(env).snapshot(catalogDefaults(catalog));
   // Seulement les pièces du catalogue publié (ni pièces de test, ni pièces masquées).
   const stock: Record<string, number> = {};
   for (const p of catalog) if (p.permalink in all) stock[p.permalink] = all[p.permalink];
-  return new Response(JSON.stringify({ stock }), {
+  const body = JSON.stringify({ stock });
+  stockCache = { body, t: Date.now(), ns: env.STOCK };
+  return new Response(body, {
     headers: { 'Content-Type': 'application/json', 'Cache-Control': 'public, max-age=15', ...cors },
   });
 }

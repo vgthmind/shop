@@ -67,7 +67,7 @@ beforeEach(() => {
   env = {
     STRIPE_SECRET_KEY: 'rk_test_abc', STRIPE_WEBHOOK_SECRET: WH, SITE_BASE: 'http://site.invalid', ALLOWED_ORIGIN: 'http://site.invalid', ADMIN_GITHUB_LOGIN: 'x',
     RESEND_API_KEY: 're_x', ALERT_EMAIL: 'alex-vendeur@example.com', MAIL_FROM: 'vgthmind <commande@vgthmind.org>', LIVE_MODE: '0',
-    HOLDS: makeKV(), STOCK: { idFromName: () => 'main', get: () => dos },
+    HOLDS: makeKV(), STOCK_CACHE_MS: '0', STOCK: { idFromName: () => 'main', get: () => dos },
   };
 });
 

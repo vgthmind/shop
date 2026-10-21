@@ -4,12 +4,24 @@
 //    toute autre page est renvoyée vers l'accueil, sauf les exceptions de shared/access-gate.js (admin, suivi, retour Stripe…).
 //  - Le code juste pose le cookie « vg-acces » (valable jusqu'à ce que le code change ou que le site soit fermé).
 // Si le Worker ne répond pas, le site reste OUVERT (une panne du Worker ne doit pas couper la boutique).
-import { decide, gateScript, NO_STORE, readCookie } from '../shared/access-gate.js';
+import { decide, gateScript, isExempt, NO_STORE, readCookie } from '../shared/access-gate.js';
 
 const WORKER = 'https://vgthmind-shop-checkout.vgthm66.workers.dev';
 const COOKIE = 'vg-acces';
 
+// État d'accès gardé 60 s en mémoire (par cookie) : sans cela, chaque page ou ping de supervision coûtait une requête Worker + une lecture KV.
+// Si le Worker ne répond plus, la dernière valeur connue est gardée (au plus 10 min) avant de laisser le site ouvert.
+const STATE_TTL = 60_000, STATE_STALE = 600_000;
+const stateCache = new Map();
+export function resetStateCache() { stateCache.clear(); }
 async function readState(token) {
+  const k = token || '', now = Date.now(), hit = stateCache.get(k);
+  if (hit && now - hit.t < STATE_TTL) return hit.v;
+  const v = await fetchState(token);
+  if (v) { if (stateCache.size > 50) stateCache.clear(); stateCache.set(k, { v, t: now }); return v; }
+  return hit && now - hit.t < STATE_STALE ? hit.v : null;
+}
+async function fetchState(token) {
   try {
     const r = await fetch(WORKER + '/access' + (token ? '?c=' + encodeURIComponent(token) : ''), { cf: { cacheTtl: 5, cacheEverything: true }, signal: AbortSignal.timeout(2500) });
     if (!r.ok) return null;
@@ -42,6 +54,7 @@ export async function onRequest(context) {
   const url = new URL(request.url);
   if (url.pathname === '/acces') return request.method === 'POST' ? enter(request) : reply('{"ok":false}', 405, { Allow: 'POST' });
 
+  if (isExempt(url.pathname, url.search)) return next(); // admin, suivi, retour Stripe… : jamais verrouillés, inutile d'interroger le Worker
   const token = readCookie(request.headers.get('Cookie'), COOKIE);
   const state = await readState(token);
   if (!state) return next();

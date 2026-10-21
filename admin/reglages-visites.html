@@ -145,7 +145,7 @@
   $('logout').addEventListener('click', function () { window.vgAdminLogout(); load(); });
   $('login-btn').addEventListener('click', function () { window.vgAdminLogin().then(load).catch(function (e) { say(e.message); }); });
   document.addEventListener('visibilitychange', poll);
-  timer = setInterval(poll, 10000);
+  timer = setInterval(poll, 30000); // onglet visible seulement (voir poll)
   load();
 })();
 </script>

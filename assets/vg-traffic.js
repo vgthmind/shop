@@ -1,6 +1,6 @@
 /* Mesure d'audience maison (sans cookie, sans identifiant, rien n'est garde dans
    le navigateur). Envoie au Worker : la page, d'ou on vient (domaine du referent
-   et ?utm_source), et un battement toutes les 30 s tant que la page est visible
+   et ?utm_source), et un battement toutes les 60 s (20 au plus par page ouverte) tant que la page est visible
    (pour « visiteurs en ce moment »). Rien n'est envoye pour l'admin connecte,
    les pages /admin, ni quand le navigateur demande de ne pas etre suivi (DNT). */
 (function () {
@@ -32,5 +32,6 @@
   }
 
   send(false);
-  setInterval(function () { if (document.visibilityState === 'visible') send(true); }, 30000);
+  var beats = 0;
+  var timer = setInterval(function () { if (document.visibilityState === 'visible' && ++beats <= 20) send(true); else if (beats > 20) clearInterval(timer); }, 60000);
 })();
