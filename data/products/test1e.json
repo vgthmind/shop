@@ -22,5 +22,6 @@
   "mode": "colis",
   "alone": false,
   "hidden": true,
-  "publish_at": "2026-10-21T00:55:00.000Z"
+  "publish_at": "2026-10-21T00:55:00.000Z",
+  "archived": true
 }
