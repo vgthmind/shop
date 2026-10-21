@@ -157,7 +157,7 @@ const CART_CSS = `
 .vg-track-date{font-size:.9em;opacity:.7;}
 .vg-track-steps,.vg-track-steps li{list-style:none;}
 .vg-track-steps li::marker{content:"";}
-.vg-track-steps{display:grid;grid-template-columns:repeat(3,1fr);list-style:none;margin:0 0 12px;padding:0;position:relative;}
+.vg-track-steps{display:grid;grid-template-columns:repeat(4,1fr);list-style:none;margin:0 0 12px;padding:0;position:relative;}
 .vg-track-steps li{position:relative;text-align:center;padding-top:34px;font-size:.9em;opacity:.55;}
 .vg-track-steps li::before{content:"";position:absolute;top:8px;left:calc(50% - 9px);width:18px;height:18px;border-radius:50%;border:2px solid #171717;background:transparent;box-sizing:border-box;z-index:1;}
 .vg-track-steps li::after{content:"";position:absolute;top:16px;left:calc(-50% + 9px);width:calc(100% - 18px);height:2px;background:rgba(0,0,0,.2);}

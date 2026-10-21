@@ -545,7 +545,7 @@
       missing: 'Renseigne ton numéro de commande et ton e-mail.',
       notfound: 'Nous n\'avons pas trouvé de commande avec ces informations. Vérifie le numéro et l\'e-mail, puis réessaie.',
       rate: 'Trop de tentatives. Réessaie dans quelques minutes.', error: 'Un problème est survenu. Réessaie dans un instant.',
-      order: 'Commande', placed: 'passée le', steps: ['Reçue', 'En préparation', 'Expédiée'],
+      order: 'Commande', placed: 'passée le', steps: ['Reçue', 'En préparation', 'Expédiée', 'Livrée'],
       s_received: 'Ta commande est bien reçue.', s_preparing: 'Ta commande est en cours de préparation.', s_shipped: 'Ta commande est partie.',
       items: 'Articles', size: 'Taille', qty: 'Qté', each: 'l\'unité', shipping: 'Livraison', discount: 'Remise', total: 'Total', address: 'Adresse de livraison',
       parcel: 'Numéro de suivi', invoice: 'Télécharger ma facture', credit: 'Télécharger mon avoir', trackBtn: 'Suivre mon colis', noTracking: 'Le numéro de suivi n\'est pas encore disponible.', histo: 'Historique du colis', delivered: 'Livrée', st_transit: 'Ton colis est en transit.', st_pickup: 'Ton colis t\'attend en point retrait.', st_delivered: 'Ton colis a été livré.', st_problem: 'Un souci est survenu avec la livraison : je m\'en occupe, écris-moi si besoin.', again: 'Suivre une autre commande',
@@ -556,7 +556,7 @@
       missing: 'Enter your order number and your email.',
       notfound: 'We couldn\'t find an order with these details. Check the number and email, then try again.',
       rate: 'Too many attempts. Please try again in a few minutes.', error: 'Something went wrong. Please try again in a moment.',
-      order: 'Order', placed: 'placed on', steps: ['Received', 'Being prepared', 'Shipped'],
+      order: 'Order', placed: 'placed on', steps: ['Received', 'Being prepared', 'Shipped', 'Delivered'],
       s_received: 'Your order has been received.', s_preparing: 'Your order is being prepared.', s_shipped: 'Your order is on its way.',
       items: 'Items', size: 'Size', qty: 'Qty', each: 'each', shipping: 'Shipping', discount: 'Discount', total: 'Total', address: 'Delivery address',
       parcel: 'Tracking number', invoice: 'Download my invoice', credit: 'Download my credit note', trackBtn: 'Track my parcel', noTracking: 'The tracking number isn\'t available yet.', histo: 'Parcel history', delivered: 'Delivered', st_transit: 'Your parcel is in transit.', st_pickup: 'Your parcel is waiting at a pickup point.', st_delivered: 'Your parcel has been delivered.', st_problem: 'There is a problem with the delivery: I\'m on it, write to me if needed.', again: 'Track another order',
@@ -603,11 +603,12 @@
 
     function drawResult(d) {
       result.__data = d;
-      var idx = d.status === 'shipped' ? 2 : d.status === 'preparing' ? 1 : 0;
+      var delivered = !!(d.track && d.track.state === 'delivered');
+      var idx = delivered ? 3 : d.status === 'shipped' ? 2 : d.status === 'preparing' ? 1 : 0;
+      var stepDate = [d.created, d.preparedAt, d.shippedAt, delivered ? d.deliveredAt : null];
       var steps = t.steps.map(function (label, i) {
         var cls = i < idx ? 'is-done' : i === idx ? 'is-done is-current' : '';
-        var sub = i === 2 && d.shippedAt ? '<small>' + esc(fmtDate(d.shippedAt)) + '</small>' : (i === 0 && d.created ? '<small>' + esc(fmtDate(d.created)) + '</small>' : '');
-        if (i === 2 && d.track && d.track.state === 'delivered') label = t.delivered;
+        var sub = i <= idx && stepDate[i] && fmtDate(stepDate[i]) ? '<small>' + esc(fmtDate(stepDate[i])) + '</small>' : '';
         return '<li class="' + cls + '"' + (i === idx ? ' aria-current="step"' : '') + '>' + esc(label) + sub + '</li>';
       }).join('');
       var colon = lang === 'fr' ? ' :' : ':';
