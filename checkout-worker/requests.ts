@@ -425,7 +425,7 @@ export async function requestRoutes(request: Request, env: ReqEnv, deps: ReqDeps
     if (!env.FILES || !m || !CARD_KEYS.includes(m[1])) return new Response('Not found', { status: 404 });
     const obj = await env.FILES.get(`cards/${m[1]}/${m[2]}`);
     if (!obj) return new Response('Not found', { status: 404 });
-    return new Response(obj.body, { headers: { 'Content-Type': obj.httpMetadata?.contentType || 'image/jpeg', 'Cache-Control': 'public, max-age=86400, immutable', 'Access-Control-Allow-Origin': '*' } });
+    return new Response(obj.body, { headers: { 'Content-Type': obj.httpMetadata?.contentType || 'image/jpeg', 'Cache-Control': 'public, max-age=31536000, s-maxage=31536000, immutable', 'Access-Control-Allow-Origin': '*' } });
   }
   if (path === '/requests' && request.method === 'POST') {
     const b = await body();

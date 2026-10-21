@@ -51,7 +51,7 @@ export async function onRequest(context) {
     const wantsPage = (request.headers.get('Accept') || '').includes('text/html');
     // Cookie présent mais session refusée : on l'efface (sinon il repartirait à chaque visite).
     const headers = { 'Cache-Control': 'no-store' };
-    if (token) headers['Set-Cookie'] = 'vg-admin=; Max-Age=0; Path=/; Secure; SameSite=Strict';
+    if (token) headers['Set-Cookie'] = 'vg-admin=; Max-Age=0; Path=/; Secure; SameSite=Lax';
     if (!wantsPage) return new Response('Connexion requise.', { status: 401, headers });
     const to = new URL('/admin/connexion', url);
     to.searchParams.set('next', url.pathname + url.search);

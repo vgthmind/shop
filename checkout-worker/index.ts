@@ -43,6 +43,7 @@ import { promoRoutes } from './promos';
 import { accessRoutes, closedRefusal } from './access';
 import { buildInvoice, parisYear } from './invoice';
 export { TrafficDO } from './traffic';
+import { buildBackupMail } from './backup-mail';
 import { requestRoutes, requestsCron, backupRequests, onRequestPaid, onShipped, requestInvoiceParts, type ReqDeps } from './requests';
 export { RequestsDO } from './requests';
 import { pollShipments, cleanTracking, STATE_LABEL_FR, type TrackInfo } from './laposte';
@@ -379,6 +380,7 @@ export default {
           return v ? new Response(v, { headers: { 'Content-Type': 'application/json', 'Content-Disposition': `attachment; filename="stock-${k.slice(7)}.json"`, ...cors } }) : json({ error: 'Introuvable.' }, 404);
         }
         if (path === '/admin/backup' && request.method === 'POST') return json(await backupStock(env));
+        if (path === '/admin/backup/mail' && request.method === 'POST') return json(await mailBackup(env));
         if (path === '/admin/obackups' && request.method === 'GET') {
           const list = await env.HOLDS.list({ prefix: 'obackup:' });
           return json({ backups: list.keys.map((k) => k.name).sort().reverse() });
@@ -460,9 +462,13 @@ export default {
     if (!event || !event.cron || event.cron === '30 3 * * *') {
       // Pièces de test oubliées dans le stock (2026-10-12) : retirées une fois pour toutes.
       ctx.waitUntil(Promise.resolve().then(() => stockStub(env).deleteStock(['zz-test-fictif', 'zz-test-live-k7q4x2m9', 'testtt', 'testttjaheh', 'test', 'test-2', 't-est-masquee'])).catch(() => {}));
-      ctx.waitUntil(backupStock(env));
-      ctx.waitUntil(backupOrders(env));
-      ctx.waitUntil(backupRequests(env as any).catch((e) => alertAdmin(env, 'req-backup', 'Sauvegarde des demandes en erreur', String(e && e.stack ? e.stack : e))));
+      // Les trois sauvegardes puis leur copie par mail (hors Cloudflare), dans cet ordre.
+      ctx.waitUntil((async () => {
+        await backupStock(env).catch(() => {});
+        await backupOrders(env).catch(() => {});
+        await backupRequests(env as any).catch((e) => alertAdmin(env, 'req-backup', 'Sauvegarde des demandes en erreur', String(e && e.stack ? e.stack : e)));
+        await mailBackup(env);
+      })());
     }
     // Ventes restées en file d'attente (script Google injoignable ou refus) : nouvel essai toutes les heures.
     if (accountingConfigured(env as any)) ctx.waitUntil(replayPending(env as any, 100).catch(() => {}));
@@ -471,6 +477,24 @@ export default {
     ctx.waitUntil(requestsCron(env as any, reqDeps(env)).catch((e) => alertAdmin(env, 'req-cron', 'Cron des demandes en erreur', String(e && e.stack ? e.stack : e))));
   },
 };
+
+// Copie de la sauvegarde par mail (contact@) : chaque nuit, ou à la demande. Alerte à contact@ si elle ne part pas.
+async function mailBackup(env: Env) {
+  const date = new Date().toISOString().slice(0, 10);
+  try {
+    const from = (env.MAIL_FROM || '').trim();
+    if (!env.RESEND_API_KEY || !from) throw new Error('RESEND_API_KEY ou MAIL_FROM manquant.');
+    const read = async (k: string) => { const v = await env.HOLDS.get(k); return v ? JSON.parse(v) : null; };
+    const m = buildBackupMail(date, { stock: await read('backup:latest'), orders: await read('obackup:latest'), requests: await read('rbackup:latest') });
+    if (m.missing.length === 3) throw new Error('Aucune sauvegarde à envoyer.');
+    if (!(await resendSend(env, from, CONTACT_EMAIL, m.subject, m.html, m.text, undefined, m.attachments))) throw new Error('Resend a refusé le mail.');
+    return { ok: true, date, size: m.size, missing: m.missing };
+  } catch (e) {
+    const msg = String(e && (e as any).message ? (e as any).message : e);
+    await alertContact(env, 'backup-mail', 'Copie de la sauvegarde par mail impossible', msg);
+    return { ok: false, date, error: msg };
+  }
+}
 
 // Alerte du suivi des colis : toujours à CONTACT_EMAIL (une fois par type et par 20 h).
 async function alertContact(env: Env, kind: string, subject: string, detail: string) {
@@ -1608,6 +1632,8 @@ async function trackOrder(request: Request, env: Env, key: string, json: JsonFn,
     status: shipped ? 'shipped' : preparingRaw ? 'preparing' : 'received',
     created: s.created,
     shippedAt: shipped ? shipped.at : null,
+    preparedAt: preparingRaw ? (Number(JSON.parse(preparingRaw).at) || null) : null,
+    deliveredAt: shipped && shipped.track && shipped.track.state === 'delivered' ? deliveredDate(shipped.track) : null,
     currency: String(s.currency || 'eur').toUpperCase(),
     items: (await mailItems(env, s.line_items?.data || [], (c) => String(c / 100))).map((i) => ({ ...i, amount: Number(i.amount), unit: i.unit ? Number(i.unit) : 0 })),
     address: [ship.name || s.customer_details?.name, a.line1, a.line2, [a.postal_code, a.city].filter(Boolean).join(' '), a.state].filter(Boolean),
@@ -1617,9 +1643,18 @@ async function trackOrder(request: Request, env: Env, key: string, json: JsonFn,
     total: s.amount_total / 100,
     refunded: !!(await env.HOLDS.get('refunded:' + sessionId)),
     tracking,
-    track: shipped && shipped.track ? { state: shipped.track.state, label: shipped.track.label, ok: shipped.track.ok || null, events: (shipped.track.events || []).slice(0, 15).map((e: any) => ({ date: e.date, label: e.label })) } : null,
-    trackUrl: tracking ? 'https://www.laposte.fr/outils/suivre-vos-envois?code=' + encodeURIComponent(tracking) : '',
+    track: shipped && shipped.track ? { state: shipped.track.state, label: noCarrier(shipped.track.label), ok: shipped.track.ok || null, events: (shipped.track.events || []).slice(0, 15).map((e: any) => ({ date: e.date, label: noCarrier(e.label) })) } : null,
   });
+}
+
+// Le transporteur ne doit pas apparaître côté client : « Colissimo » / « La Poste » retirés des libellés du suivi.
+const noCarrier = (s: any) => String(s || '').replace(/\bColissimo\b/gi, 'colis').replace(/\bLa Poste\b/gi, '').replace(/\s{2,}/g, ' ').trim();
+
+// Date réelle de livraison (secondes) donnée par La Poste : évènement DI1, sinon le plus récent ; null si absente.
+function deliveredDate(track: any): number | null {
+  const ev = (track.events || []).find((e: any) => e && e.code === 'DI1') || (track.events || [])[0];
+  const ms = ev && ev.date ? Date.parse(ev.date) : NaN;
+  return Number.isFinite(ms) ? Math.floor(ms / 1000) : null;
 }
 
 // Mail « expediee » HTML envoye au client (bouton admin), une fois par clic.

@@ -873,7 +873,13 @@ async function main() {
     // Adresse du site (réglage central) dans le script de connexion : page de connexion après « Se déconnecter », et renvoi
     // vers le bon site si l'admin est ouvert depuis une autre adresse (ancien aperçu, favori…).
     const authPath = rel(OUT_DIR, 'admin', 'vg-admin-auth.js');
-    fs.writeFileSync(authPath, fs.readFileSync(authPath, 'utf8').split('__VG_SITE_URL__').join(SHOP_SETTINGS.site_url.replace(/\/$/, '')));
+    // Numéro de version de l'admin = date et heure (Paris) de la construction ; il renomme aussi le cache du service worker,
+    // donc l'appli installée se met à jour à chaque déploiement.
+    const pp = Object.fromEntries(new Intl.DateTimeFormat('en-GB', { timeZone: 'Europe/Paris', year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).formatToParts(new Date()).map((x) => [x.type, x.value]));
+    const stamp = pp.year + '-' + pp.month + '-' + pp.day + '-' + pp.hour + pp.minute;
+    fs.writeFileSync(authPath, fs.readFileSync(authPath, 'utf8').split('__VG_SITE_URL__').join(SHOP_SETTINGS.site_url.replace(/\/$/, '')).split('__VG_BUILD__').join(stamp));
+    const swPath = rel(OUT_DIR, 'admin', 'sw.js');
+    fs.writeFileSync(swPath, fs.readFileSync(swPath, 'utf8').split('vg-admin-v15').join('vg-admin-' + stamp));
   }
   // Adresse du site pour le Worker (/site-config.json).
   write('site-config.json', JSON.stringify({ site_url: SHOP_SETTINGS.site_url.replace(/\/$/, '') }) + '\n');

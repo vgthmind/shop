@@ -64,7 +64,6 @@ const T = {
     deliveredSubject: (ref: string) => `Ta commande vgthmind est livrée (réf. ${ref})`,
     deliveredLead: 'Ton colis vient d’être livré. J’espère que ta pièce te plaît ! Si quelque chose ne va pas, écris-moi en répondant à ce mail.',
     tracking: 'Numéro de suivi',
-    track: 'Suivre mon colis',
     order: 'Ta commande',
     size: 'Taille',
     qty: 'Qté',
@@ -93,7 +92,6 @@ const T = {
     deliveredSubject: (ref: string) => `Your vgthmind order has been delivered (ref. ${ref})`,
     deliveredLead: 'Your parcel has just been delivered. I hope you love your piece! If anything is wrong, just reply to this email.',
     tracking: 'Tracking number',
-    track: 'Track my parcel',
     order: 'Your order',
     size: 'Size',
     qty: 'Qty',
@@ -196,16 +194,15 @@ export function customerEmail(o: OrderData) {
   return { subject, html, text };
 }
 
-// Mail « expediee » : numero de suivi + bouton, sans nom de transporteur.
+// Mail « expediee » : numero de suivi + « Voir ma commande » (/suivi), sans nom de transporteur ni lien vers lui.
 export function shippedEmail(o: OrderData, tracking: string) {
   const l = o.lang || langFor(o.country);
   const t = T[l];
   const first = (o.name || '').trim().split(/\s+/)[0] || '';
   const subject = t.shippedSubject(o.ref);
-  const url = tracking ? TRACKING_URL + encodeURIComponent(tracking) : '';
   const html = shell(l, subject,
     para(esc(t.hi(first))) + para(t.shippedLead)
-    + (tracking ? para(`${t.tracking} : <b>${esc(tracking)}</b>`) + button(url, t.track) : '')
+    + (tracking ? para(`${t.tracking} : <b>${esc(tracking)}</b>`) : '')
     + `<p style="margin:18px 0 4px;font:13px ${FONT};color:${MUTED}">${t.ref} ${esc(o.ref)}${o.requestId ? ` — ${t.request} ${esc(o.requestId)}` : ''}</p>`
     + heading(t.order) + itemsTable(o, t, false)
     + heading(t.shipTo) + para(o.address.map(esc).join('<br>'))
@@ -215,7 +212,7 @@ export function shippedEmail(o: OrderData, tracking: string) {
     + signature(t));
   const text = [
     t.hi(first), '', t.shippedLead,
-    ...(tracking ? ['', `${t.tracking} : ${tracking}`, `${t.track} : ${url}`] : []), '',
+    ...(tracking ? ['', `${t.tracking} : ${tracking}`] : []), '',
     `${t.ref} ${o.ref}${o.requestId ? ` — ${t.request} ${o.requestId}` : ''}`, ...itemLines(o, t), '',
     t.shipTo.toUpperCase(), ...o.address, '',
     `${t.view} : ${o.orderUrl}`, '', t.help, '', t.thanksEnd, 'vgthmind', `Instagram : ${INSTAGRAM_URL}`, CONTACT_EMAIL,

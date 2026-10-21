@@ -14,3 +14,16 @@ test('pièce sur demande : commande ET demande dans les mails de confirmation et
   assert.match(shippedEmail({ ...o, requestId: 'D-N9RDHR', lang: 'en' }, 'T').text, /Order VG-FACQGR — Request D-N9RDHR/);
   assert.doesNotMatch(shippedEmail(o, 'T').html, /Demande/, 'commande normale : inchangé');
 });
+
+test('mails client : aucun lien ni nom de transporteur, « Voir ma commande » vers /suivi', async () => {
+  const { deliveredEmail, customerEmail: ce } = await import('../checkout-worker/emails.ts');
+  for (const lang of ['fr', 'en']) {
+    const oo = { ...o, lang, orderUrl: 'https://www.vgthmind.org/suivi/?o=VG-FACQGR&l=' + lang };
+    for (const m of [shippedEmail(oo, 'CW533367635FR'), deliveredEmail(oo), ce(oo)]) {
+      for (const part of [m.html, m.text, m.subject]) assert.doesNotMatch(part, /laposte|la poste|colissimo|suivre mon colis|track my parcel/i);
+    }
+    const s = shippedEmail(oo, 'CW533367635FR');
+    assert.match(s.html, /suivi\/\?o=VG-FACQGR/);
+    assert.match(s.html, /CW533367635FR/);
+  }
+});
