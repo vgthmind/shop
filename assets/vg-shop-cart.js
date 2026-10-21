@@ -622,10 +622,8 @@
       }).join('');
       var parcel = '';
       if (d.status === 'shipped') {
-        var okUrl = d.trackUrl && d.trackUrl.indexOf('https://www.laposte.fr/') === 0;
         parcel = '<div class="vg-track-parcel">'
           + (d.tracking ? '<p>' + esc(t.parcel) + '<br><strong>' + esc(d.tracking) + '</strong></p>' : '<p>' + esc(t.noTracking) + '</p>')
-          + (okUrl ? '<a class="button view-all-products" href="' + esc(d.trackUrl) + '" target="_blank" rel="noopener noreferrer">' + esc(t.trackBtn) + '</a>' : '')
           + (d.track && d.track.events && d.track.events.length ? '<h3 class="vg-track-histo-h">' + esc(t.histo) + '</h3><ol class="vg-track-histo">' + d.track.events.map(function (e) {
             var when = ''; try { when = new Date(e.date).toLocaleString(lang === 'fr' ? 'fr-FR' : 'en-GB', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }); } catch (x) {}
             return '<li><small>' + esc(when === 'Invalid Date' ? '' : when) + '</small>' + esc(e.label) + '</li>';

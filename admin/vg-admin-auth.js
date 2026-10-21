@@ -29,7 +29,9 @@
   } catch (e) {}
   // Numéro de version de l'admin, affiché en petit en bas à gauche de chaque page : permet de vérifier qu'on a bien la dernière version.
   // À changer à chaque mise à jour de l'admin (aaaa-mm-jj + lettre).
-  window.VG_ADMIN_VERSION = '2026-10-14-h';
+  // Numéro posé automatiquement à chaque construction du site (generator/build.js) : plus rien à changer à la main.
+  var BUILD = '__VG_BUILD__';
+  window.VG_ADMIN_VERSION = BUILD.indexOf('__') === 0 ? 'local' : BUILD;
   function showVersion() {
     try {
       var d = document.createElement('div'); d.id = 'vg-admin-version'; d.textContent = 'Admin v' + window.VG_ADMIN_VERSION;
@@ -47,7 +49,7 @@
   // valable 30 min après la dernière activité (le garde refuse les pages admin sans lui).
   function setCookie(v) {
     try {
-      document.cookie = 'vg-admin=' + (v ? encodeURIComponent(v) : '') + '; path=/; max-age=' + (v ? 14400 : 0) + '; SameSite=Strict' + (location.protocol === 'https:' ? '; Secure' : '');
+      document.cookie = 'vg-admin=' + (v ? encodeURIComponent(v) : '') + '; path=/; max-age=' + (v ? 14400 : 0) + '; SameSite=Lax' + (location.protocol === 'https:' ? '; Secure' : '');
     } catch (e) {}
   }
   function touch() {
@@ -91,7 +93,20 @@
   // Admin installable (PWA) : manifeste + service worker.
   try {
     var l = document.createElement('link'); l.rel = 'manifest'; l.href = 'manifest.webmanifest'; document.head.appendChild(l);
-    if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(function () {});
+    if ('serviceWorker' in navigator) {
+      // Mise à jour automatique : le service worker change à chaque construction ; on le revérifie à chaque retour dans l'appli.
+      // Sur les pages sans saisie (menu, connexion) la nouvelle version est rechargée toute seule ; ailleurs elle arrive à la page suivante.
+      var hadController = !!navigator.serviceWorker.controller, reloaded = false;
+      navigator.serviceWorker.register('sw.js', { updateViaCache: 'none' }).then(function (reg) {
+        document.addEventListener('visibilitychange', function () { if (!document.hidden) reg.update().catch(function () {}); });
+      }).catch(function () {});
+      navigator.serviceWorker.addEventListener('controllerchange', function () {
+        if (!hadController || reloaded) { hadController = true; return; }
+        reloaded = true;
+        var here = location.pathname.split('.html').join('');
+        if (here === '/admin/menu' || here === '/admin/connexion' || here === '/admin/' || here === '/admin') location.reload();
+      });
+    }
   } catch (e) {}
 
   // Connexion GitHub. Deux chemins pour récupérer la session, le premier qui répond gagne :
@@ -159,7 +174,8 @@
       var url = ENDPOINT + '/auth?provider=github&site_id=' + encodeURIComponent(location.hostname) + '&lc=' + code
         + '&return=' + encodeURIComponent(location.origin + '/admin/connexion' + location.search) + (inApp ? '&mode=page' : '');
       // Appli installée : pas de fenêtre à part, la connexion se fait dans cette page et revient directement sur l'admin.
-      if (inApp) { location.href = url; return; }
+      // Si iOS garde cette page vivante sous la fenêtre GitHub (feuille de navigation), elle réclame elle-même la session au retour.
+      if (inApp) { waitForSession(code).then(function (ss) { acceptSession(ss); resolve(ss); }, function () {}); setTimeout(function () { location.href = url; }, 50); return; }
       var popup = window.open(url, 'vg-github-login', 'width=600,height=720');
       var settled = false;
       function ok(session) { if (settled) return; settled = true; window.removeEventListener('message', onMessage); acceptSession(session); resolve(session); }
