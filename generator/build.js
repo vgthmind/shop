@@ -194,6 +194,7 @@ const CART_CSS = `
 .vg-track-result .cart-items{margin:0;}
 .vg-track-result .cart-item{grid-template-columns:auto 1fr auto;padding-top:8px;padding-bottom:8px;min-height:0;}
 .vg-track-result .cart-item.vg-noimg{grid-template-columns:1fr auto;}
+.vg-track-result .cart-item.vg-noimg>*{grid-column:auto;grid-row:auto;}
 .vg-track-result .cart-item .cart-item-detail{padding-right:0;}
 .vg-track-result .cart-footer{display:flex;flex-direction:column;align-items:stretch;gap:6px;margin-top:8px;}
 .vg-track-result .cart-subtotal{flex-wrap:nowrap;}
