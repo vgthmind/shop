@@ -94,7 +94,7 @@
   }
 
   function css() {
-    var l = doc.createElement('link'); l.rel = 'stylesheet'; l.href = 'vg-admin-ui.css?v=5'; doc.head.appendChild(l);
+    var l = doc.createElement('link'); l.rel = 'stylesheet'; l.href = 'vg-admin-ui.css?v=6'; doc.head.appendChild(l);
   }
   // À expédier / demandes à traiter : même calcul que l'ancien tableau de bord, gardé 60 s (une seule demande pour toutes les pages).
   api.counts = function () {

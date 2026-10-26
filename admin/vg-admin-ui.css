@@ -27,7 +27,7 @@ body.vg-ui #vg-logout-bar, body.vg-ui #vg-admin-version, body.vg-ui .vg-legacy-n
 #vg-nav .brand { font: 700 15px/1 var(--f-title); letter-spacing: .12em; text-transform: uppercase; color: var(--ink); text-decoration: none; }
 #vg-nav ul { list-style: none; margin: 0; padding: 0; display: flex; gap: 6px; flex: 1; }
 #vg-nav li { display: block; }
-#vg-nav a.it { position: relative; display: flex; align-items: center; gap: 8px; min-height: 40px; padding: 8px 14px; border-radius: 999px; border: 1px solid transparent; color: var(--ink); text-decoration: none; font: 500 12px/1 var(--f-mono); letter-spacing: .06em; text-transform: uppercase; white-space: nowrap; }
+#vg-nav a.it { position: relative; display: flex; align-items: center; gap: 8px; min-height: 44px; padding: 8px 14px; border-radius: 999px; border: 1px solid transparent; color: var(--ink); text-decoration: none; font: 500 12px/1 var(--f-mono); letter-spacing: .06em; text-transform: uppercase; white-space: nowrap; }
 #vg-nav a.it svg { display: none; width: 22px; height: 22px; stroke: currentColor; fill: none; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
 #vg-nav a.it:hover { border-color: var(--line); }
 #vg-nav a.it[aria-current="page"] { background: var(--chrome); border-color: rgba(0,0,0,.28); box-shadow: 0 1px 0 #fff inset, 0 1px 3px rgba(0,0,0,.18); }
@@ -70,15 +70,15 @@ body.vg-ui main, body.vg-ui .vg-page { max-width: 1100px; }
 }
 
 /* ---- Voir la boutique : icône en haut à droite (dans la barre sur PC, flottante sur iPhone) ---- */
-#vg-nav a.shop { display: flex; align-items: center; justify-content: center; width: 40px; height: 40px; border-radius: 999px; border: 1px solid var(--line); color: var(--ink); margin-left: auto; flex: none; }
+#vg-nav a.shop { display: flex; align-items: center; justify-content: center; width: 44px; height: 44px; border-radius: 999px; border: 1px solid var(--line); color: var(--ink); margin-left: auto; flex: none; }
 #vg-nav a.shop:hover { border-color: var(--ink); }
 #vg-nav a.shop svg { display: block; width: 20px; height: 20px; stroke: currentColor; fill: none; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
 #vg-shop-m { display: none; }
 @media (max-width: 759px) {
   #vg-nav a.shop { display: none; }
-  #vg-shop-m { display: flex; position: absolute; top: calc(10px + env(safe-area-inset-top, 0px)); right: 14px; z-index: 45; width: 40px; height: 40px; align-items: center; justify-content: center; border-radius: 999px; border: 1px solid rgba(0,0,0,.28); background: var(--chrome); color: var(--ink); box-shadow: 0 1px 0 #fff inset, 0 1px 3px rgba(0,0,0,.18); }
+  #vg-shop-m { display: flex; position: absolute; top: calc(10px + env(safe-area-inset-top, 0px)); right: 14px; z-index: 45; width: 44px; height: 44px; align-items: center; justify-content: center; border-radius: 999px; border: 1px solid rgba(0,0,0,.28); background: var(--chrome); color: var(--ink); box-shadow: 0 1px 0 #fff inset, 0 1px 3px rgba(0,0,0,.18); }
   #vg-shop-m svg { width: 20px; height: 20px; stroke: currentColor; fill: none; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
-  .vg-head { padding-right: 52px; }
+  .vg-head { padding-right: 56px; }
 }
 
 /* ---- Lien « ← Réglages » en tête des sous-pages de Réglages ---- */
@@ -104,7 +104,18 @@ body.vg-ui :is(button, .btn) { max-width: 100%; overflow-wrap: anywhere; line-he
 body.vg-ui button:disabled { opacity: .5; cursor: not-allowed; }
 body.vg-ui :is(button, .btn):focus-visible, body.vg-ui nav.vg-back a:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
 body.vg-ui :is(.thumb button, .cardset button, .cardset label.btn) { min-height: 32px; }
-body.vg-ui :is(button.danger, button[data-del], button[data-refund], button.del, .del button) { color: var(--st-bad); border-color: var(--st-bad); background: #fff; }
+body.vg-ui :is(button.danger, button[data-del], button[data-refund], button[data-act=del], button.del, .del button):not(.vg-ok, .vg-err, .thumb button) { color: var(--st-bad) !important; border-color: var(--st-bad) !important; background: #fff !important; }
 /* Rien ne dépasse de l'écran : tableaux et blocs de code défilent dans leur cadre */
 body.vg-ui :is(pre, table) { max-width: 100%; }
 body.vg-ui main, body.vg-ui .vg-page { overflow-wrap: anywhere; }
+
+/* ---- Un seul style de bouton pour toute l'admin : contour = action secondaire, noir plein = action principale, rouge = danger ----
+   (les puces de filtre, onglets, + / − des quantités et boutons sur photo gardent leur forme propre) */
+body.vg-ui :is(button, a.btn, .btn):not(.chip, .ph, .mini, .vg-btn, [aria-pressed], .per button, .steps button, .step button, .ctl button, .thumb button, .cardset button, .bar2 button, .savebar button, .picker button, [data-ph], #cmp button, .qty button):not(.vg-ok, .vg-err) {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 44px; padding: 10px 18px; border-radius: 999px; border: 1px solid rgba(0,0,0,.28); background: #fff; color: var(--ink);
+  font: 500 12px/1.25 var(--f-mono); letter-spacing: .06em; text-transform: uppercase; text-decoration: none; text-align: center; cursor: pointer; }
+body.vg-ui :is(button, a.btn, .btn):not(.chip, .ph, .mini, .vg-btn, [aria-pressed], .per button, .steps button, .step button, .ctl button, .thumb button, .cardset button, .bar2 button, .picker button, [data-ph], #cmp button, .qty button):is(.primary, .main, [type=submit]) { background: var(--ink); border-color: var(--ink); color: #fff; }
+body.vg-ui :is(button, a.btn, .btn):not(.chip, .ph, .mini, .vg-btn):hover { border-color: var(--ink); }
+body.vg-ui .vg-btn.ghost:not(.bar2 .vg-btn) { background: #fff; }
+body.vg-ui :is(main, .vg-page) a:not([class]):not(nav.vg-back a) { color: var(--ink); text-decoration: underline; text-underline-offset: 3px; }
+@media (max-width: 759px) { body.vg-ui .vg-page > .vg-card:first-child { margin-top: 56px; } }

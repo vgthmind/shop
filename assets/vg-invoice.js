@@ -51,7 +51,7 @@
       + 'td{padding:8px 4px;border-bottom:1px solid #ddd;vertical-align:top}.n{text-align:right;white-space:nowrap}small{color:#6b6860}'
       + '.tot td{border:0;padding:3px 4px}.grand td{font-weight:700;font-size:16px;border-top:2px solid #171717;padding-top:8px}.mention{margin-top:18px;font-size:12px;color:#444}'
       + '.test{background:#fde8e8;color:#a23b2a;border:1px solid #a23b2a;padding:6px 10px;margin:10px 0;font-weight:700;text-align:center}'
-      + 'button{margin:0 8px 16px 0;padding:10px 16px;border-radius:999px;border:1px solid #171717;background:#171717;color:#fff;font:inherit;cursor:pointer}'
+      + 'button{margin:0 8px 16px 0;min-height:44px;padding:10px 18px;border-radius:999px;border:1px solid #171717;background:#171717;color:#fff;font:500 12px/1.25 ui-monospace,Menlo,Consolas,monospace;letter-spacing:.06em;text-transform:uppercase;cursor:pointer}'
       + '.tot td.n:nth-child(2){white-space:normal;word-break:break-word}.tot td:first-child{padding:0}@media(max-width:560px){.tot td:first-child{display:none}body{margin:16px auto}}'
       + '@media(pointer:coarse){#vg-print{display:none}}'
       + '@media print{button{display:none}body{margin:0}}</style></head><body>'
