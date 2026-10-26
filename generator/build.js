@@ -353,6 +353,50 @@ function baseContext(catalog) {
 // est « anglais, ligne vide, français » ; on garde le 1er paragraphe (anglais),
 // ligne par ligne séparées par des virgules, sans tirets de liste, puis la
 // mention « pièce unique ». (Avant : tout le texte collé sans ponctuation.)
+// Offre schema.org d'une fiche (prix, stock, état, livraison et retours) : lue par Google (Extraits de produits, Fiches de marchand).
+// Livraison = ce que paierait le client pour CETTE pièce seule (même calcul que le panier : admin/shipping-calc.js) ;
+// délais = ceux des conditions générales (préparation 3 à 5 jours ouvrés, livraison 2-4 France, 3-7 Europe).
+const SHIP_CALC = require('../admin/shipping-calc.js');
+const SHIP_CONFIG = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'admin', 'shipping-config.json'), 'utf8'));
+function productOffer(product, url) {
+  const price = Number(product.price) || 0;
+  const soldOut = product.quantity === 0;
+  const day = (min, max) => ({ '@type': 'QuantitativeValue', minValue: min, maxValue: max, unitCode: 'DAY' });
+  const tiers = SHIP_CONFIG.customer_pricing.tiers;
+  const ship = [];
+  const w = Number(product.weight_g) || 0;
+  if (w > 0) {
+    for (const [tier, only, transit] of [['FR', 'FR', day(2, 4)], ['A', null, day(3, 7)]]) {
+      const countries = only ? [only] : ((tiers.find((x) => x.id === tier) || {}).countries || []);
+      if (!countries.length || (tier === 'A' && Array.isArray(product.shipping) && product.shipping.length < 2)) continue;
+      const q = SHIP_CALC.quoteShipping(SHIP_CONFIG, { items: [{ slug: product.permalink, qty: 1, weight_g: w, mode: product.mode || 'colis', alone: true }], subtotal: price }, countries[0]);
+      if (!q || !q.ok) continue;
+      const paid = (q.parcels || []).reduce((a, p) => a + (Number(p.paid) || 0), 0);
+      ship.push({
+        '@type': 'OfferShippingDetails',
+        shippingRate: { '@type': 'MonetaryAmount', value: String(q.free ? 0 : paid), currency: 'EUR' },
+        shippingDestination: countries.map((cc) => ({ '@type': 'DefinedRegion', addressCountry: cc })),
+        deliveryTime: { '@type': 'ShippingDeliveryTime', handlingTime: day(3, 5), transitTime: transit },
+      });
+    }
+  }
+  const returnCountries = ['FR'].concat((tiers.find((x) => x.id === 'A') || { countries: [] }).countries);
+  const offer = {
+    '@type': 'Offer', url, priceCurrency: 'EUR', price: String(product.price),
+    priceValidUntil: String(new Date().getFullYear() + 1) + '-12-31',
+    itemCondition: 'https://schema.org/NewCondition',
+    availability: soldOut ? 'https://schema.org/OutOfStock' : 'https://schema.org/InStock',
+    seller: { '@type': 'Organization', name: 'vgthmind' },
+    hasMerchantReturnPolicy: {
+      '@type': 'MerchantReturnPolicy', applicableCountry: returnCountries, returnPolicyCountry: 'FR',
+      returnPolicyCategory: 'https://schema.org/MerchantReturnFiniteReturnWindow', merchantReturnDays: 14,
+      returnMethod: 'https://schema.org/ReturnByMail', returnFees: 'https://schema.org/ReturnShippingFees',
+    },
+  };
+  if (ship.length) offer.shippingDetails = ship;
+  return offer;
+}
+
 function seoDescription(product, withFrench) {
   const paras = String(product.description || '').split(/\r?\n\s*\r?\n/);
   const flat = (t) => String(t || '').split(/\r?\n/).map((l) => l.replace(/^[\s-]+/, '').replace(/[\s.]+$/, '').trim()).filter(Boolean).join(', ');
@@ -488,10 +532,8 @@ function injectAround(html, parts, product, relPath) {
         sku: product.permalink,
         image: imgs, brand: { '@type': 'Brand', name: 'vgthmind' },
         // Le stock reel vit dans le Worker (Durable Object) et change a chaque vente sans reconstruction du
-        // site : on n'affiche donc que ce qui est sur (« epuise » a la construction) ; « en stock » est omis
-        // plutot que faux apres la 1re vente.
-        offers: Object.assign({ '@type': 'Offer', url, priceCurrency: 'EUR', price: String(product.price) },
-          product.quantity === 0 ? { availability: 'https://schema.org/OutOfStock' } : {}),
+        // site : « en stock » est donc celui de la derniere construction (le stock a l'instant se lit dans la page).
+        offers: productOffer(product, url),
       };
       seoTags += `\n<script type="application/ld+json">${JSON.stringify(ld).replace(/</g, '\\u003c')}</script>`;
     }
@@ -500,7 +542,7 @@ function injectAround(html, parts, product, relPath) {
     seoTags,
     // Prototype: hidden from search engines until data/shop-settings.json
     // says "public": true (launch day, see README).
-    SHOP_SETTINGS.public && !/^(suivi|demande)\//.test(relPath || '') ? '' : '<meta name="robots" content="noindex, nofollow">',
+    SHOP_SETTINGS.public && !/^(suivi|demande|cart|merci|paiement-annule)\//.test(relPath || '') ? '' : '<meta name="robots" content="noindex, nofollow">',
     // Stock réel lu au chargement (assets/vg-shop-cart.js) : « Add to cart »
     // masqué le temps de la réponse (2,6 s max, puis affiché quoi qu'il arrive).
     '<script>(function(d){d.classList.add("vg-stock-pending");setTimeout(function(){d.classList.remove("vg-stock-pending")},2600)})(document.documentElement)</script>'
@@ -846,6 +888,12 @@ async function main() {
       }
     }
     fs.writeFileSync(rel(OUT_DIR, '_redirects'), '# Généré par generator/build.js : anciennes adresses BigCartel.\n' + lines.join('\n') + '\n');
+  }
+  // Adresses de dossiers (/assets/, /assets/products-sized/) : jamais une page, mais Google les trouve en remontant les chemins des
+  // images et les signale en 404. Renvoyées vers la boutique (301) ; les fichiers eux-mêmes (images, vidéos) ne sont pas touchés.
+  if (BASE_PATH === '') {
+    const dirs = ['/assets', '/assets/products', '/assets/products-sized', '/assets/products-og', '/assets/theme', '/assets/theme-sized', '/assets/media', '/assets/fonts'];
+    fs.appendFileSync(rel(OUT_DIR, '_redirects'), '# Dossiers sans page : pas de 404 dans la Search Console.\n' + dirs.map((d) => d + ' /products 301\n' + d + '/ /products 301').join('\n') + '\n');
   }
   // /favicon.ico a la racine du site (certains navigateurs le demandent d'office).
   fs.copyFileSync(rel(ROOT, 'assets', 'theme', 'favicon.ico'), rel(OUT_DIR, 'favicon.ico'));
