@@ -284,7 +284,8 @@
       + '<div class="dest"><strong>' + esc(o.name) + '</strong><br>' + address(o.address) + '</div>'
       + '<table>' + lines + '</table><p><small>' + esc(o.email) + (o.phone ? ' · ' + esc(o.phone) : '') + (o.shipped && o.shipped.tracking ? '<br>Suivi : ' + esc(o.shipped.tracking) : '') + '</small></p>');
     w.document.close();
-    var pb = w.document.getElementById('vg-print');
+    window.VGInvoice.addBack(w);
+    var pb =w.document.getElementById('vg-print');
     if (pb) pb.addEventListener('click', function () { w.focus(); w.print(); });
     var sb = w.document.getElementById('vg-share');
     if (sb) sb.addEventListener('click', function () {

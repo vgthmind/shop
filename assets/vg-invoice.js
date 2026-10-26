@@ -223,8 +223,40 @@
     return Promise.resolve(download(w, bytes, name));
   }
 
+  // Bouton « Retour » en haut de la page ouverte (facture, avoir, bon, devis) : ferme l'onglet ; si le navigateur ne le permet pas
+  // (appli iPhone), revient à la page de l'admin d'où on est parti.
+  function addBack(w) {
+    try {
+      var d = w.document;
+      if (!d || !d.body || d.getElementById('vg-back')) return;
+      var back = root.location.href;
+      var st = d.createElement('style');
+      st.textContent = '#vg-back{position:sticky;top:0;z-index:9;display:inline-flex;align-items:center;min-height:44px;margin:0 0 12px;padding:8px 18px;border-radius:999px;border:1px solid rgba(0,0,0,.12);background:#fff;color:#171717;font:500 12px/1 ui-monospace,Menlo,Consolas,monospace;letter-spacing:.05em;text-transform:uppercase;cursor:pointer}@media print{#vg-back{display:none}}';
+      (d.head || d.documentElement).appendChild(st);
+      var b = d.createElement('button'); b.id = 'vg-back'; b.type = 'button'; b.textContent = '← Retour';
+      d.body.insertBefore(b, d.body.firstChild);
+      b.addEventListener('click', function () {
+        try { w.close(); } catch (e) {}
+        root.setTimeout(function () { if (!w.closed) w.location.href = back; }, 250);
+      });
+    } catch (e) {}
+  }
+
+  // Photo, vidéo ou PDF (adresse blob:) dans un nouvel onglet, avec le bouton « Retour » en haut.
+  function openViewer(url, kind) {
+    var w = root.open('', '_blank');
+    if (!w) { alert('Fenêtre bloquée : autorise les pop-ups pour ce site.'); return false; }
+    var media = kind === 'video' ? '<video src="' + esc(url) + '" controls playsinline style="max-width:100%;max-height:80vh"></video>'
+      : kind === 'pdf' ? '<iframe src="' + esc(url) + '" style="flex:1;width:100%;min-height:70vh;border:1px solid #ddd"></iframe><p><a href="' + esc(url) + '">Ouvrir le PDF seul</a></p>'
+      : '<img src="' + esc(url) + '" alt="" style="max-width:100%;height:auto">';
+    w.document.write('<!doctype html><html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Aperçu</title><style>body{margin:0;padding:12px;font:15px system-ui,sans-serif;display:flex;flex-direction:column;align-items:flex-start;gap:8px;min-height:100vh;box-sizing:border-box}</style></head><body>' + media + '</body></html>');
+    w.document.close(); addBack(w);
+    return true;
+  }
+
   // Bouton d'impression branché depuis la page appelante (pas de script en ligne : la CSP et iOS le bloquent).
   function bindPrint(w, inv, lang, mode) {
+    addBack(w);
     var b = w.document.getElementById('vg-print');
     if (b) b.addEventListener('click', function () { w.focus(); w.print(); });
     var sh = w.document.getElementById('vg-share');
@@ -246,9 +278,9 @@
     if (!w) { alert('Fenêtre bloquée : autorise les pop-ups pour ce site.'); return Promise.resolve(false); }
     w.document.write('<p style="font:16px system-ui;padding:24px">…</p>');
     return promise.then(function (inv) { w.document.open(); w.document.write(html(inv, lang, mode)); w.document.close(); bindPrint(w, inv, lang, mode); return true; })
-      .catch(function (e) { w.document.body.innerHTML = '<p style="font:16px system-ui;padding:24px">' + esc(e && e.message ? e.message : 'Erreur') + '</p>'; return false; });
+      .catch(function (e) { w.document.body.innerHTML = '<p style="font:16px system-ui;padding:24px">' + esc(e && e.message ? e.message : 'Erreur') + '</p>'; addBack(w); return false; });
   }
 
-  root.VGInvoice = { bindPrint: bindPrint, pdf: pdf, sheetPdf: sheetPdf, sharePdf: sharePdf, html: html, open: open, openAsync: openAsync };
+  root.VGInvoice = { addBack: addBack, openViewer: openViewer, bindPrint: bindPrint, pdf: pdf, sheetPdf: sheetPdf, sharePdf: sharePdf, html: html, open: open, openAsync: openAsync };
   if (typeof module === 'object' && module.exports) module.exports = root.VGInvoice;
 }(typeof self !== 'undefined' ? self : this));

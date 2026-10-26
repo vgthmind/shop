@@ -241,7 +241,7 @@
   }
   function loadThumbs(r) {
     var el = $('r-' + r.id); if (!el) return;
-    el.querySelectorAll('img[data-key]').forEach(function (img) { blob(img.getAttribute('data-key'), r.id).then(function (u) { img.src = u; img.onclick = function () { window.open(u, '_blank'); }; }).catch(function () { img.alt = 'effacé'; }); });
+    el.querySelectorAll('img[data-key]').forEach(function (img) { blob(img.getAttribute('data-key'), r.id).then(function (u) { img.src = u; img.onclick = function () { window.VGInvoice.openViewer(u, 'image'); }; }).catch(function () { img.alt = 'effacé'; }); });
   }
   function find(id) { return list.filter(function (r) { return r.id === id; })[0]; }
   function replace(rec) { list = list.map(function (r) { return r.id === rec.id ? rec : r; }); draw(); }
@@ -277,10 +277,10 @@
     }
     if (t.hasAttribute('data-rmfinal')) { if (confirm('Retirer cette photo ?')) act(r, 'removeFinal', { key: t.getAttribute('data-rmfinal') }); }
     if (t.hasAttribute('data-inv')) { window.VGInvoice.openAsync(api('/admin/invoice?id=' + encodeURIComponent(t.getAttribute('data-inv'))).then(function (d) { return d.invoice; }), 'fr'); return; }
-    if (t.hasAttribute('data-qpdf')) { fetch(EP + '/admin/requests/quote.pdf?id=' + encodeURIComponent(r.id), { headers: { Authorization: 'Bearer ' + token() } }).then(function (x) { if (!x.ok) throw new Error('devis introuvable'); return x.blob(); }).then(function (bl) { window.open(URL.createObjectURL(bl), '_blank'); }).catch(function (err) { say('PDF : ' + err.message); }); return; }
+    if (t.hasAttribute('data-qpdf')) { fetch(EP + '/admin/requests/quote.pdf?id=' + encodeURIComponent(r.id), { headers: { Authorization: 'Bearer ' + token() } }).then(function (x) { if (!x.ok) throw new Error('devis introuvable'); return x.blob(); }).then(function (bl) { window.VGInvoice.openViewer(URL.createObjectURL(bl), 'pdf'); }).catch(function (err) { say('PDF : ' + err.message); }); return; }
     if (t.hasAttribute('data-qadd')) { var box = art.querySelector('[data-qlines]'); if (box && box.children.length < 12) { var d = document.createElement('div'); d.className = 'qline'; d.innerHTML = '<input type="text" data-ql="label" maxlength="140" placeholder="Désignation"><input type="number" data-ql="qty" min="1" max="99" value="1" aria-label="Quantité"><input type="number" step="0.01" min="0" data-ql="unit" placeholder="Prix unit. €" aria-label="Prix unitaire">'; box.appendChild(d); } return; }
     if (t.hasAttribute('data-addfinal')) { $('final-input').setAttribute('data-id', r.id); $('final-input').click(); }
-    if (t.hasAttribute('data-video')) blob(t.getAttribute('data-video'), r.id).then(function (u) { window.open(u, '_blank'); }).catch(function () { say('Vidéo effacée ou introuvable.'); });
+    if (t.hasAttribute('data-video')) blob(t.getAttribute('data-video'), r.id).then(function (u) { window.VGInvoice.openViewer(u, 'video'); }).catch(function () { say('Vidéo effacée ou introuvable.'); });
     if (t.hasAttribute('data-copy')) { try { navigator.clipboard.writeText(t.getAttribute('data-copy')); say('Lien copié.'); } catch (err) { prompt('Lien client :', t.getAttribute('data-copy')); } }
     if (t.hasAttribute('data-del')) {
       if (!confirm('Supprimer définitivement ' + r.id + ' (réponses, fichiers, photos) ? Les paiements restent dans Stripe.')) return;

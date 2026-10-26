@@ -83,7 +83,7 @@ body.vg-ui main, body.vg-ui .vg-page { max-width: 1100px; }
 
 /* ---- Lien « ← Réglages » en tête des sous-pages de Réglages ---- */
 nav.vg-back { margin: 0 0 10px; }
-nav.vg-back a { display: inline-flex; align-items: center; min-height: 40px; padding: 6px 14px; border-radius: 999px; border: 1px solid var(--line); color: var(--ink); text-decoration: none; font: 500 12px/1 var(--f-mono); letter-spacing: .05em; text-transform: uppercase; background: #fff; }
+nav.vg-back a { display: inline-flex; align-items: center; min-height: 44px; padding: 6px 14px; border-radius: 999px; border: 1px solid var(--line); color: var(--ink); text-decoration: none; font: 500 12px/1 var(--f-mono); letter-spacing: .05em; text-transform: uppercase; background: #fff; }
 nav.vg-back a:hover { border-color: var(--ink); }
 
 /* ---- Retour visuel des boutons (vg-admin-ui.js) : en cours / fait / échec, et message en bas d'écran ---- */
@@ -97,3 +97,14 @@ button.vg-err, a.vg-err { color: #a23b2a !important; border-color: #a23b2a !impo
 #vg-toast.err { background: #a23b2a; }
 @media (min-width: 760px) { #vg-toast { bottom: 28px; } }
 @media (prefers-reduced-motion: reduce) { button.vg-busy::before, a.vg-busy::before { animation-duration: 2s; } }
+
+/* ---- Boutons de toutes les pages : zone tactile d'au moins 44 px, texte qui passe à la ligne plutôt que de déborder, action dangereuse en rouge ---- */
+body.vg-ui :is(button, .btn, summary, select, input:not([type=checkbox]):not([type=radio]):not([type=file]):not([type=range]):not([type=hidden])) { min-height: 44px; }
+body.vg-ui :is(button, .btn) { max-width: 100%; overflow-wrap: anywhere; line-height: 1.25; }
+body.vg-ui button:disabled { opacity: .5; cursor: not-allowed; }
+body.vg-ui :is(button, .btn):focus-visible, body.vg-ui nav.vg-back a:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+body.vg-ui :is(.thumb button, .cardset button, .cardset label.btn) { min-height: 32px; }
+body.vg-ui :is(button.danger, button[data-del], button[data-refund], button.del, .del button) { color: var(--st-bad); border-color: var(--st-bad); background: #fff; }
+/* Rien ne dépasse de l'écran : tableaux et blocs de code défilent dans leur cadre */
+body.vg-ui :is(pre, table) { max-width: 100%; }
+body.vg-ui main, body.vg-ui .vg-page { overflow-wrap: anywhere; }
