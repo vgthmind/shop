@@ -156,3 +156,23 @@ test('acompte d\'une demande : envoyé à la compta avec le numéro de la demand
   assert.match(src, /const ref = await saleRef\(env, session\);/); // remboursement
   assert.match(src, /comptaResyncOnce\(env\)/);
 });
+
+test('nature comptable : « Prestation de services » seulement si la session le demande (metadata.nature = services), sinon « Vente de marchandises »', async () => {
+  const goods = buildSaleRecord({ ...session, metadata: {} }, { ref: 'VG-X' });
+  const services = buildSaleRecord({ ...session, metadata: { nature: 'services' } }, { ref: 'D-X' });
+  assert.equal(goods.row.nature, 'Vente de marchandises');
+  assert.equal(services.row.nature, 'Prestation de services');
+  const core = await import('../checkout-worker/requests-core.ts');
+  assert.equal(core.natureOf({ type: 'production' }), 'services');
+  assert.equal(core.natureOf({ type: 'collab' }), 'services');
+  assert.equal(core.natureOf({ type: 'custom', quote: { clientGarment: true } }), 'services');
+  assert.equal(core.natureOf({ type: 'custom', quote: { clientGarment: false } }), 'goods');
+  assert.equal(core.natureOf({ type: 'surmesure', quote: { clientGarment: true } }), 'goods');
+});
+
+test('alertes : ALERT_EMAIL, adresse directe ALERT_EMAIL_2 et contact@, sans doublon', async () => {
+  const { alertList } = await import('../checkout-worker/emails.ts');
+  assert.equal(alertList({ ALERT_EMAIL: 'a@x.fr', ALERT_EMAIL_2: 'b@gmail.com' }), 'a@x.fr,b@gmail.com,contact@vgthmind.org');
+  assert.equal(alertList({ ALERT_EMAIL: 'contact@vgthmind.org', ALERT_EMAIL_2: 'B@gmail.com' }), 'contact@vgthmind.org,B@gmail.com');
+  assert.equal(alertList({}), 'contact@vgthmind.org');
+});

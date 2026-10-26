@@ -41,10 +41,16 @@ Déjà validés par vgthmind le 26/10 et retirés : connexion iPhone, compta (li
 15. **PC** : Admin → Commandes : rembourse l'acompte puis le solde (bouton « Rembourser… »).
    → Attendu : Les deux se remboursent depuis l'admin ; mails/alertes reçus ; 2 lignes « Remboursements » dans Ma comptabilité, chacune une seule fois.
 
-## E. Codes promo
-16. **PC** : Admin → Réglages → Codes promo : crée un code de test (ex. TESTVG), puis touche « Supprimer » et confirme.
+## E. Alertes directes et nature en compta (après le 2e double-clic sur Deployer-worker.bat et le collage du script Google)
+16. **PC** : Envoie-toi une demande de test (ou fais une petite commande de test) et regarde ta Gmail ET contact@.
+   → Attendu : L'alerte « Nouvelle demande » (ou de commande) arrive directement sur ta Gmail ET sur contact@ (avec le transfert IONOS tu peux en avoir 2 dans Gmail : normal).
+17. **PC** : Admin → Demandes → une demande « custom » → devis : coche « Vêtement fourni par le client », envoie, fais payer l'acompte (petit prix).
+   → Attendu : Dans Ma comptabilité la ligne est classée « Prestation de services » (BIC) ; un devis sans la case, un sur-mesure ou une commande de la boutique restent « Vente de marchandises ». Location, collab et production visuelle sont toujours en prestation. (Il faut avoir collé le nouveau « Script Google compte pro (a coller).txt » dans Apps Script et redéployé.)
+
+## F. Codes promo
+18. **PC** : Admin → Réglages → Codes promo : crée un code de test (ex. TESTVG), puis touche « Supprimer » et confirme.
    → Attendu : Une confirmation s'affiche ; le code disparaît de la liste et n'est plus accepté dans un panier.
 
-## F. Sauvegarde
-17. **PC** : Ouvre la boîte contact@ demain matin.
+## G. Sauvegarde
+19. **PC** : Ouvre la boîte contact@ demain matin.
    → Attendu : Un mail de sauvegarde nocturne (3 h 30 UTC) avec le fichier JSON joint, ouvrable.

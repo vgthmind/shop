@@ -5,6 +5,12 @@
 // passent pas dans Gmail/Apple Mail), boutons en HTML et non en image.
 
 export const INSTAGRAM_URL = 'https://instagram.com/vgthmind';
+// Destinataires des alertes (sans doublon) : ALERT_EMAIL, l'adresse directe ALERT_EMAIL_2 (Gmail, hors transfert IONOS) et contact@.
+export function alertList(env: { ALERT_EMAIL?: string; ALERT_EMAIL_2?: string }): string {
+  const all = [env.ALERT_EMAIL, env.ALERT_EMAIL_2, CONTACT_EMAIL].map((x) => String(x || '').trim()).filter(Boolean);
+  return all.filter((x, i) => all.findIndex((y) => y.toLowerCase() === x.toLowerCase()) === i).join(',');
+}
+
 export const CONTACT_EMAIL = 'contact@vgthmind.org';
 export const REPLY_TO = CONTACT_EMAIL;
 export const TRACKING_URL = 'https://www.laposte.fr/outils/suivre-vos-envois?code=';

@@ -24,6 +24,12 @@ export const CHOICE_LABELS: Record<string, [string, string]> = {
   location: ['Location d’une pièce existante', 'Rent an existing piece'], creation: ['Création pour le projet', 'A piece made for the project'],
 };
 // Champs affichés pour chaque type (ordre du récapitulatif et de l'admin).
+// Nature comptable d'un encaissement de demande : « services » (location, collab, production visuelle, custom fait sur le vêtement du client) ou « goods » (customs sur pièce achetée par vgthmind, sur-mesure).
+export function natureOf(rec: any): 'services' | 'goods' {
+  if (rec && (rec.type === 'production' || rec.type === 'collab')) return 'services';
+  return rec && rec.type === 'custom' && rec.quote && rec.quote.clientGarment ? 'services' : 'goods';
+}
+
 export const FIELDS_BY_TYPE: Record<string, string[]> = {
   custom: ['piece', 'mode', 'idea', 'mood', 'colors', 'refs', 'size', 'measures', 'budget', 'deadline', 'link'],
   surmesure: ['piece', 'paint', 'mode', 'idea', 'mood', 'colors', 'refs', 'measures', 'budget', 'deadline', 'link'],
@@ -402,6 +408,7 @@ export function applyAction(input: any, action: string, d: any, s: Settings, now
       rec.quoteNumber = number; rec.quoteVersion = version;
       rec.quote = {
         number, version, lines: lines.length ? lines : [{ label: title, qty: 1, unit: total, amount: total }], total, depositPct: rawPct, deposit: depositFor(total, rawPct), optionalDeposit: !paid,
+        clientGarment: rec.type === 'custom' && (d.clientGarment === true || d.clientGarment === 'true'), // vêtement fourni par le client : prestation de services
         delay, weight_g: weight, message: block(d.message, 3000), title, sentAt: now, validDays, validUntil: now + validDays * DAY,
       };
       rec.status = 'devis';

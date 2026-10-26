@@ -194,6 +194,7 @@
       + (paid ? '<label>Poids emballé (g, pour le port)<input type="number" data-q="weight_g" value="' + (q ? q.weight_g : '') + '" placeholder="auto"></label>' : '') + '</div>'
       + '<p class="muted" style="margin:10px 0 4px">Lignes du devis (le total est la somme des lignes)</p><div data-qlines>' + lines + '</div>'
       + '<div class="actions"><button type="button" data-qadd>+ Ligne</button><b>Total : <span data-qtotal>0,00 €</span></b></div>'
+      + (paid && r.type === 'custom' ? '<label class="chk" style="margin-top:8px"><input type="checkbox" data-q="clientGarment"' + (q && q.clientGarment ? ' checked' : '') + '> Vêtement fourni par le client (compta : prestation de services, et non vente de marchandises)</label>' : '')
       + '<label class="lbl" style="margin-top:8px">Message dans le devis (facultatif)<textarea data-q="message">' + esc(q ? q.message : '') + '</textarea></label>'
       + '<div class="actions"><button type="button" class="main" data-act="quote">' + (q ? 'Envoyer le devis modifié (v' + (q.version + 1) + ')' : 'Envoyer le devis au client') + '</button><span class="muted">Le client reçoit un mail avec le PDF et le lien vers sa page, où il accepte le devis et les CGV' + (paid ? ' puis paie l’acompte' : '') + '.</span></div>';
     return h;
@@ -259,7 +260,7 @@
     if (a === 'status') act(r, 'status', { status: art.querySelector('[data-status]').value });
     if (a === 'notes') act(r, 'notes', { notes: art.querySelector('[data-notes]').value });
     if (a === 'quote') {
-      var v = {}; art.querySelectorAll('[data-q]').forEach(function (i) { v[i.getAttribute('data-q')] = i.value; });
+      var v = {}; art.querySelectorAll('[data-q]').forEach(function (i) { v[i.getAttribute('data-q')] = i.type === 'checkbox' ? i.checked : i.value; });
       v.lines = collectLines(art);
       var tot = v.lines.reduce(function (a, l) { return a + l.qty * l.unit; }, 0);
       if (!v.lines.length || !(tot > 0) || !v.delay) { say('Indique au moins une ligne avec son prix, et le délai.'); return; }

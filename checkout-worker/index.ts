@@ -47,7 +47,7 @@ import { buildBackupMail } from './backup-mail';
 import { requestRoutes, requestsCron, backupRequests, onRequestPaid, onShipped, requestInvoiceParts, type ReqDeps } from './requests';
 export { RequestsDO } from './requests';
 import { pollShipments, cleanTracking, STATE_LABEL_FR, type TrackInfo } from './laposte';
-import { customerEmail, sellerEmail, shippedEmail, deliveredEmail, parcelProblemEmail, REPLY_TO, CONTACT_EMAIL, FONT, esc, langFor, countryName, isNameIncomplete, type MailItem, type OrderData } from './emails';
+import { customerEmail, sellerEmail, shippedEmail, deliveredEmail, parcelProblemEmail, REPLY_TO, CONTACT_EMAIL, alertList, FONT, esc, langFor, countryName, isNameIncomplete, type MailItem, type OrderData } from './emails';
 
 interface KV {
   get(key: string): Promise<string | null>;
@@ -66,6 +66,7 @@ interface Env {
   LAPOSTE_API_KEY?: string; // secret : clé API Suivi La Poste (developer.laposte.fr), en-tête X-Okapi-Key ; absente = pas de suivi automatique
   TURNSTILE_SECRET?: string; // secret : clé secrète Cloudflare Turnstile (absent = anti-robot désactivé)
   ALERT_EMAIL?: string; // secret : adresse qui recoit l'alerte de commande
+  ALERT_EMAIL_2?: string; // variable : 2e adresse d'alerte, directe (Gmail), en plus de contact@
   VAT_MENTION_2027?: string; // texte de la mention de TVA a partir du 01/01/2027 (defaut : art. L. 233-3 du CIBS)
   MAIL_FROM?: string; // expediteur sur domaine verifie ; vide = pas d'email client
   GITHUB_TOKEN?: string; // ancien systeme : n'est plus utilise, a supprimer
@@ -507,7 +508,7 @@ async function alertContact(env: Env, kind: string, subject: string, detail: str
     if (await env.HOLDS.get(k)) return;
     await env.HOLDS.put(k, '1', { expirationTtl: 20 * 3600 });
     const html = '<p><b>' + subject.replace(/[<>&]/g, '') + '</b></p><pre style="white-space:pre-wrap">' + detail.replace(/[<>&]/g, '') + '</pre>';
-    await resendSend(env, from, CONTACT_EMAIL, '[vgthmind ALERTE] ' + subject, html, subject + '\n\n' + detail, REPLY_TO);
+    await resendSend(env, from, alertList(env), '[vgthmind ALERTE] ' + subject, html, subject + '\n\n' + detail, REPLY_TO);
   } catch (e) { /* une alerte ne doit jamais faire planter le reste */ }
 }
 
@@ -564,7 +565,7 @@ async function trackingCron(env: Env) {
       if (!env.RESEND_API_KEY || !from) return;
       const order = await orderOf(id);
       const m = parcelProblemEmail(order ? order.ref : id, order ? order.name : '', String(shipped.tracking || ''), info.label, info.events);
-      await resendSend(env, from, CONTACT_EMAIL, m.subject, m.html, m.text, REPLY_TO);
+      await resendSend(env, from, alertList(env), m.subject, m.html, m.text, REPLY_TO);
     },
     onAuthError: async () => { await alertContact(env, 'laposte-auth', 'Suivi La Poste : clé API refusée', "L'API Suivi La Poste a refusé la clé (LAPOSTE_API_KEY) : elle a peut-être expiré ou été révoquée. Le suivi automatique est suspendu, les derniers statuts restent affichés. Générer une nouvelle clé sur developer.laposte.fr puis la remplacer dans Cloudflare (Workers > vgthmind-shop-checkout > Settings > Variables and Secrets)."); },
   });
@@ -1081,7 +1082,7 @@ async function resendSend(env: Env, from: string, to: string, subject: string, h
   const res = await fetch('https://api.resend.com/emails', {
     method: 'POST',
     headers: { Authorization: `Bearer ${env.RESEND_API_KEY}`, 'Content-Type': 'application/json' },
-    body: JSON.stringify({ from, to: [to], subject, html, text, ...(replyTo ? { reply_to: replyTo } : {}), ...(attachments && attachments.length ? { attachments } : {}) }),
+    body: JSON.stringify({ from, to: to.split(',').map((x) => x.trim()).filter(Boolean), subject, html, text, ...(replyTo ? { reply_to: replyTo } : {}), ...(attachments && attachments.length ? { attachments } : {}) }),
   });
   return res.ok;
 }
@@ -1148,7 +1149,7 @@ async function buildOrder(env: Env, o: any, forSeller = false): Promise<OrderDat
 
 async function sendOrderEmails(env: Env, s: any) {
   if (!env.RESEND_API_KEY || !env.STRIPE_SECRET_KEY) return;
-  const alertTo = (env.ALERT_EMAIL || '').trim();
+  const alertTo = alertList(env);
   const customerFrom = (env.MAIL_FROM || '').trim(); // ex. "vgthmind <commande@mondomaine.com>"
   const doneKey = 'mailed:' + s.id;
   const done = JSON.parse((await env.HOLDS.get(doneKey)) || '{}');
@@ -1783,7 +1784,7 @@ async function allow(env: Env, key: string, max: number, windowSec: number): Pro
 // Alerte mail à ALERT_EMAIL (une seule fois par type d'incident et par 10 min, pour ne pas inonder la boîte).
 async function alertAdmin(env: Env, kind: string, subject: string, detail: string) {
   try {
-    const to = (env.ALERT_EMAIL || '').trim(), from = (env.MAIL_FROM || '').trim();
+    const to = alertList(env), from = (env.MAIL_FROM || '').trim();
     if (!env.RESEND_API_KEY || !to || !from) return;
     const k = 'alert:' + kind.slice(0, 120);
     if (await env.HOLDS.get(k)) return;

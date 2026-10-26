@@ -15,10 +15,10 @@
 import { DurableObject } from 'cloudflare:workers';
 import {
   applyAction, parseSubmission, newRequest, mergeSettings, checkSettings, priceFloors, dueStep, retention, clientView, fileKind,
-  FILE_LIMITS, DRAFT_GRACE_MS, DAY, PAID_TYPES, CARD_KEYS, TYPE_LABELS, answerLines, type Settings, type Effect,
+  FILE_LIMITS, DRAFT_GRACE_MS, DAY, PAID_TYPES, CARD_KEYS, TYPE_LABELS, answerLines, type Settings, type Effect, natureOf,
 } from './requests-core';
 import { receivedEmail, newRequestAlert, quoteEmail, quoteAcceptedEmail, depositPaidEmail, validationEmail, balanceRequestEmail, replyEmail, type ReqMailCtx } from './request-emails';
-import { CONTACT_EMAIL } from './emails';
+import { CONTACT_EMAIL, alertList } from './emails';
 import { checkTurnstile } from './turnstile';
 import { quotePdf, toBase64, type QuotePdfInput } from './quote-pdf';
 
@@ -31,6 +31,7 @@ export interface ReqEnv {
   WORKER_BASE?: string;
   MAIL_FROM?: string;
   ALERT_EMAIL?: string;
+  ALERT_EMAIL_2?: string;
   RESEND_API_KEY?: string;
   TURNSTILE_SECRET?: string;
   LIVE_MODE?: string;
@@ -121,7 +122,7 @@ export async function runEffects(env: ReqEnv, deps: ReqDeps, rec: any, effects: 
       let to = rec.client.email;
       let attachments: { filename: string; content: string }[] | undefined;
       if (e.kind === 'mail:received') m = receivedEmail(rec, ctx);
-      else if (e.kind === 'mail:new') { m = newRequestAlert(rec, ctx); to = (env.ALERT_EMAIL || '').trim(); }
+      else if (e.kind === 'mail:new') { m = newRequestAlert(rec, ctx); to = alertList(env); }
       else if (e.kind === 'mail:quote' || e.kind === 'mail:quoteReminder') {
         m = quoteEmail(rec, ctx, e.kind === 'mail:quoteReminder');
         const pdf = await quotePdfFor(env, rec);
@@ -197,7 +198,7 @@ async function depositCheckout(env: ReqEnv, deps: ReqDeps, rec: any, key: string
   p.set('line_items[0][price_data][product_data][name]', (fr ? `Acompte ${q.depositPct} % · ` : `Deposit ${q.depositPct}% · `) + q.title);
   p.set('line_items[0][price_data][product_data][description]', fr ? `Demande ${rec.id} · devis ${q.number || ''} · prix total ${q.total} €` : `Request ${rec.id} · quote ${q.number || ''} · total price €${q.total}`);
   p.set('custom_text[submit][message]', q.optionalDeposit ? (fr ? 'Acompte facultatif, non remboursable une fois le travail commencé (sauf refus ou abandon par vgthmind).' : 'Optional deposit, non-refundable once work has started (unless vgthmind declines or abandons the order).') : (fr ? 'Acompte (et non arrhes) : commande ferme. Pièce personnalisée : pas de droit de rétractation.' : 'Deposit ("acompte", not "arrhes"): firm order. Personalised piece: no right of withdrawal.'));
-  const meta: Record<string, string> = { vg: '1', kind: 'deposit', request: rec.id, total: String(q.total), pct: String(q.depositPct), title: q.title.slice(0, 400), quote: String(q.number || '') };
+  const meta: Record<string, string> = { vg: '1', kind: 'deposit', nature: natureOf(rec), request: rec.id, total: String(q.total), pct: String(q.depositPct), title: q.title.slice(0, 400), quote: String(q.number || '') };
   for (const [k, v] of Object.entries(meta)) { p.set(`metadata[${k}]`, v); p.set(`payment_intent_data[metadata][${k}]`, v); }
   const r = await deps.stripe(key, 'POST', '/v1/checkout/sessions', p);
   if (!r.ok) return { error: r.data.error?.message || 'Erreur Stripe' };
@@ -240,7 +241,7 @@ async function balanceCheckout(env: ReqEnv, deps: ReqDeps, rec: any, key: string
   p.set('shipping_options[0][shipping_rate_data][fixed_amount][amount]', String(ship.cents));
   p.set('shipping_options[0][shipping_rate_data][fixed_amount][currency]', 'eur');
   const meta: Record<string, string> = {
-    vg: '1', kind: 'balance', request: rec.id, total: String(q.total), deposit: String(q.deposit), deposit_session: String(rec.deposit.session || ''),
+    vg: '1', kind: 'balance', nature: natureOf(rec), request: rec.id, total: String(q.total), deposit: String(q.deposit), deposit_session: String(rec.deposit.session || ''),
     deposit_invoice: depInvoice && depInvoice.ok ? String(depInvoice.invoice.number) : '', deposit_date: String(Math.floor((rec.deposit.paidAt || Date.now()) / 1000)),
     title: q.title.slice(0, 400), country,
   };
