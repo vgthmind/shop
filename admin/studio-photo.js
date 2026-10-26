@@ -66,8 +66,10 @@
     return engines[engineKind];
   }
 
-  async function runQueue() {
-    if (busy) return; busy = true;
+  var queueP = Promise.resolve();
+  function runQueue() { if (busy) return queueP; queueP = runQueueRun(); return queueP; } // la promesse sert au retour visuel des boutons
+  async function runQueueRun() {
+    busy = true;
     try {
       for (;;) {
         var p = photos.find(function (x) { return x.status === 'queued'; });
@@ -533,6 +535,15 @@
 
   // ---------- publication (voir studio-publish.js) ----------
   function pubSay(t) { $('pubMsg').textContent = t; }
+  // Statut de la pièce (étape 5) : le champ date n'apparaît que pour « Programmée », avec l'heure à laquelle la pièce sera visible.
+  function refreshStatus() {
+    var st = (document.querySelector('input[name=pstatus]:checked') || {}).value;
+    $('pWhenBox').hidden = st !== 'scheduled';
+    var iso = st === 'scheduled' && $('pWhen').value ? window.VGCatalogue.parisToIso($('pWhen').value.replace('T', ' ')) : '';
+    $('pWhenHelp').textContent = iso ? 'Visible vers ' + new Date(Date.parse(iso) + 60000).toLocaleTimeString('fr-FR', { timeZone: 'Europe/Paris', hour: '2-digit', minute: '2-digit' }) + ' (la reconstruction du site dure environ 1 minute).' : '';
+  }
+  document.querySelectorAll('input[name=pstatus]').forEach(function (r) { r.addEventListener('change', refreshStatus); });
+  $('pWhen').addEventListener('input', refreshStatus);
   if (window.VGStudioPublish.connected()) { $('bPublish').disabled = false; $('bLogin').textContent = 'Connecté ✓'; } // jeton gardé dans l'onglet
   $('bLogin').onclick = async function () {
     try { await window.VGStudioPublish.login(); pubSay('Connecté à GitHub.'); $('bPublish').disabled = false; $('bLogin').textContent = 'Connecté ✓'; }
@@ -545,14 +556,30 @@
     if (pendingCount()) { pubSay(pendingCount() + ' photo(s) à détourer ou à valider : publication impossible tant que ce n’est pas fait (étape 2).'); return; }
     var piece = window.VGWizard && window.VGWizard.collect();
     if (!piece || piece.error) { pubSay(piece ? piece.error : 'Assistant indisponible.'); return; }
-    if (!confirm('Publier « ' + piece.product.name + ' » (' + n + ' photo(s)) ?\nLe site sera reconstruit (1 à 2 min).')) return;
+    // Statut choisi dans l'étape 5 (masquée par défaut) : la pièce n'est mise en ligne que si « En ligne maintenant » est coché.
+    var st = (document.querySelector('input[name=pstatus]:checked') || {}).value || 'hidden', whenIso = '';
+    if (st === 'scheduled') {
+      whenIso = window.VGCatalogue.parisToIso(($('pWhen').value || '').replace('T', ' '));
+      if (!whenIso) { pubSay('Choisis la date et l\'heure de mise en ligne (statut « Programmée »).'); return; }
+      if (Date.parse(whenIso) < Date.now() + 5 * 60 * 1000) { pubSay('Choisis une heure au moins 5 minutes dans le futur.'); return; }
+    }
+    var stText = st === 'live' ? 'EN LIGNE MAINTENANT (visible et achetable dès la reconstruction du site, 1 à 2 min)'
+      : st === 'scheduled' ? 'PROGRAMMÉE (mise en ligne automatique le ' + new Date(whenIso).toLocaleString('fr-FR', { timeZone: 'Europe/Paris', dateStyle: 'short', timeStyle: 'short' }) + ')'
+      : 'MASQUÉE (rien n\'est visible sur le site)';
+    if (!confirm('Enregistrer « ' + piece.product.name + ' » (' + n + ' photo(s)) ?\nStatut : ' + stText + '.')) return;
+    if (st !== 'live') { piece.product.hidden = true; if (st === 'scheduled') piece.product.publish_at = whenIso; } else { delete piece.product.hidden; delete piece.product.publish_at; }
     $('bPublish').disabled = true;
     try {
       var r = await buildFiles();
       var rv = reelFile ? { data: new Uint8Array(await reelFile.arrayBuffer()) } : null;
       var isNew = !(await window.VGStudioPublish.exists(piece.product.slug));
       await window.VGStudioPublish.publish({ slug: piece.product.slug, piece: piece.product, isNew: isNew, files: r.files, reelVideo: rv, replace: $('replace').checked, onStatus: pubSay });
-      savedOnline = true; draftOff = true; Draft.clear(); // publié : plus besoin du brouillon (et on n'en refait pas un à la fermeture)
+      savedOnline = true; draftOff = true; Draft.clear(); // enregistré : plus besoin du brouillon (et on n'en refait pas un à la fermeture)
+      if (st === 'scheduled') {
+        pubSay('Enregistrement de la mise en ligne programmée…');
+        await window.vgAdminApi('/admin/schedule', { method: 'POST', body: JSON.stringify({ slug: piece.product.slug, at: whenIso }) });
+      }
+      pubSay('✓ Fait : « ' + piece.product.name + ' » est ' + (st === 'live' ? 'EN LIGNE (visible dans 1 à 2 minutes, le temps que le site se reconstruise)' : st === 'scheduled' ? 'PROGRAMMÉE : visible vers ' + new Date(Date.parse(whenIso) + 60000).toLocaleTimeString('fr-FR', { timeZone: 'Europe/Paris', hour: '2-digit', minute: '2-digit' }) : 'MASQUÉE (rien n\'est visible ; complète-la puis mets-la en ligne dans Pièces)') + '.');
     } catch (e) { pubSay('Échec : ' + (e.message || e)); }
     $('bPublish').disabled = !window.VGStudioPublish.connected();
   };
@@ -580,6 +607,26 @@
     } catch (e) { say('Échec : ' + (e.message || e)); }
     $('bDraft').disabled = false;
   };
+
+  // Retour visuel (vg-admin-ui.js) sur les boutons du détourage : « en cours… » + animation, puis « ✓ fait » ; message aussi en bas d'écran.
+  (function () {
+    var U = window.VGAdminUI; if (!U || !U.track) return;
+    function queued() { return photos.some(function (p) { return p.status === 'queued' || p.status === 'processing'; }); }
+    function wrapQueue(id, done, idle) { // bouton qui lance (ou relance) le détourage
+      var el = $(id), h = el.onclick;
+      el.onclick = function (ev) { h.call(this, ev); if (queued() || busy) U.track(el, queueP, { doing: 'Détourage en cours…', done: done }); else U.flash(el, idle); };
+    }
+    function wrapFlash(id, text) { var el = $(id), h = el.onclick; el.onclick = function (ev) { h.call(this, ev); U.flash(el, text); }; }
+    wrapQueue('bCutAll', '✓ Détourage terminé', 'Rien à détourer');
+    wrapQueue('bRetry', '✓ Détourage terminé', 'Rien à relancer');
+    wrapQueue('bRedoAll', '✓ Détourage terminé', 'Annulé');
+    wrapQueue('bRedo', '✓ Détourage terminé', 'Rien à relancer');
+    wrapFlash('bKeepAll', '✓ Originaux gardés');
+    wrapFlash('bValid', '✓ Photo gardée');
+    wrapFlash('bOrig', '✓ Original gardé');
+    wrapFlash('bUndo', '↶ Annulé');
+    ['bPublish', 'bDraft'].forEach(function (id) { $(id).setAttribute('data-vg-manual', '1'); }); // ces deux-là ont leurs propres messages (étape 5 / brouillon)
+  })();
 
   // Échantillon de la photo principale (réduit à 64 px) pour proposer une couleur dans la fiche.
   function colorSample() {

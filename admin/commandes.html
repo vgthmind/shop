@@ -78,6 +78,7 @@
     <button type="button" data-f="todo" aria-pressed="true">À expédier</button>
     <button type="button" data-f="done" aria-pressed="false">Expédiées</button>
     <button type="button" data-f="refunded" aria-pressed="false">Remboursées</button>
+    <button type="button" data-f="deposit" aria-pressed="false">Acomptes</button>
     <button type="button" data-f="all" aria-pressed="false">Toutes</button>
     <input type="text" id="q" placeholder="Rechercher : VG-…, nom, e-mail" aria-label="Rechercher une commande" autocomplete="off">
     <button type="button" id="refresh">Actualiser</button>
@@ -145,15 +146,16 @@
     counts();
     var needle = (($('q') && $('q').value) || '').trim().toLowerCase().replace(/^vg[\s-]*/, '');
     var list = orders.filter(function (o) {
-      if (o.kind === 'deposit') return false; // acompte d'une pièce sur demande : rien à expédier (onglet Demandes ; compté dans l'export compta)
       if (needle && [o.ref, o.name, o.email].join(' ').toLowerCase().replace(/vg-/g, '').indexOf(needle) === -1) return false;
       var rfd = !!(o.refunded && o.refunded.full);
       if (filter === 'all' || needle) return true;
       if (filter === 'refunded') return !!o.refunded;
+      if (filter === 'deposit') return o.kind === 'deposit';
+      if (o.kind === 'deposit') return false; // un acompte n'a rien à expédier : visible dans « Acomptes », « Remboursées » et « Toutes »
       return filter === 'todo' ? (!o.shipped && !rfd) : !!o.shipped;
     });
     $('orders').innerHTML = list.length ? list.map(function (o) {
-      var rfd = !!(o.refunded && o.refunded.full), st = rfd ? ['ref', 'Remboursée'] : o.refunded ? ['ref', 'Remboursée en partie'] : o.shipped ? ['sent', 'Expédiée'] : o.preparing ? ['prep', 'En préparation'] : ['', 'À expédier'];
+      var dep = o.kind === 'deposit', rfd = !!(o.refunded && o.refunded.full), st = rfd ? ['ref', 'Remboursée'] : o.refunded ? ['ref', 'Remboursée en partie'] : dep ? ['sent', 'Acompte payé'] : o.shipped ? ['sent', 'Expédiée'] : o.preparing ? ['prep', 'En préparation'] : ['', 'À expédier'];
       var first = o.items[0] || {}, isOpen = openId === o.id;
       return '<article class="order ord ' + st[0] + (o.refunded ? ' is-refunded' : '') + (isOpen ? ' open' : '') + '" data-id="' + esc(o.id) + '">'
         + '<div class="sum" role="button" tabindex="0" aria-expanded="' + isOpen + '">' + (first.image ? '<img class="th" src="' + esc(first.image) + '" alt="" loading="lazy">' : '<span class="th"></span>')
@@ -178,13 +180,13 @@
         + '<li class="muted"><span class="ph" style="visibility:hidden"></span><span class="nm">Livraison' + (o.discount ? ' · remise −' + money(o.discount) : '') + '</span><span class="pr">' + money(o.shipping) + '</span></li></ul>'
         + '<div class="muted">' + address(o.address) + '</div>'
         + '<div class="actions">'
-        + (o.shipped
+        + (dep ? '' : o.shipped
           ? '<button type="button" data-mail>' + (o.shipped.notified ? 'Renvoyer le mail « expédiée »' : 'Envoyer le mail « expédiée » au client') + '</button><button type="button" data-undo>Annuler « expédiée »</button>'
           : (o.preparing
             ? '<button type="button" data-unprep>Annuler « en préparation »</button>'
             : '<button type="button" data-prep>Marquer en préparation</button>')
             + '<button type="button" data-ship>Marquer expédiée…</button>')
-        + '<button type="button" data-print>Bon de commande (imprimer)</button>'
+        + (dep ? '' : '<button type="button" data-print>Bon de commande (imprimer)</button>')
         + '<button type="button" data-invoice>Facture' + (o.invoice_no ? ' ' + esc(o.invoice_no) : '') + '</button>'
         + (o.refunded ? '<button type="button" data-credit>Voir l’avoir</button>' : '')
         + (o.refunded && o.refunded.full ? '' : '<button type="button" data-refund>Rembourser…</button>')
@@ -277,12 +279,13 @@
     if (!w) { window.alert('Fenêtre bloquée : autorise les pop-ups pour ce site.'); return; }
     var lines = o.items.map(function (it) { return '<tr><td>' + esc(it.name) + (it.size ? ' — taille ' + esc(it.size) : '') + '</td><td class="n">× ' + esc(it.qty || 1) + '</td></tr>'; }).join('');
     w.document.write('<!doctype html><meta charset="utf-8"><title>Bon ' + esc(o.ref) + '</title><style>body{font:15px/1.5 system-ui,sans-serif;max-width:520px;margin:16px auto;padding:0 12px}h1{font-size:20px;margin:0}.dest{font-size:20px;line-height:1.35;border:2px solid #000;padding:12px;margin:14px 0}table{width:100%;border-collapse:collapse}td{padding:6px 2px;border-bottom:1px solid #ccc}.n{text-align:right}small{color:#555}button{margin-bottom:12px;padding:8px 14px}@media print{button{display:none}}</style>'
-      + '<button>Imprimer</button><h1>vgthmind — ' + esc(o.ref) + (o.livemode ? '' : ' (TEST)') + '</h1><small>' + esc(date(o.created)) + ' · ' + money(o.total) + ' dont port ' + money(o.shipping) + '</small>'
+      + '<button id="vg-print" type="button">Imprimer</button><h1>vgthmind — ' + esc(o.ref) + (o.livemode ? '' : ' (TEST)') + '</h1><small>' + esc(date(o.created)) + ' · ' + money(o.total) + ' dont port ' + money(o.shipping) + '</small>'
       + '<div class="dest"><strong>' + esc(o.name) + '</strong><br>' + address(o.address) + '</div>'
       + '<table>' + lines + '</table><p><small>' + esc(o.email) + (o.phone ? ' · ' + esc(o.phone) : '') + (o.shipped && o.shipped.tracking ? '<br>Suivi : ' + esc(o.shipped.tracking) : '') + '</small></p>');
+    // Pas d'onclick en ligne (CSP) : script d'impression avec le nonce de cette page (la fenêtre hérite de la CSP).
+    var ns = document.querySelector('script[nonce]'), nonce = ns ? (ns.nonce || ns.getAttribute('nonce') || '') : '';
+    w.document.write('<script' + (nonce ? ' nonce="' + esc(nonce) + '"' : '') + '>document.getElementById("vg-print").addEventListener("click",function(){window.print();});</' + 'script>');
     w.document.close();
-    var pb = w.document.querySelector('button'); // pas d'onclick en ligne (CSP) : le clic est branché d'ici
-    if (pb) pb.addEventListener('click', function () { w.print(); });
   }
 
   $('orders').addEventListener('keydown', function (e) {

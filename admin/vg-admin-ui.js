@@ -29,8 +29,72 @@
 
   var doc = root.document, CK = 'vg-admin-counts';
 
+  // ---- Retour visuel de chaque bouton : « en cours… » + animation, puis « ✓ fait » ou l'erreur (bouton + message en bas d'écran) ----
+  var toastTimer = 0;
+  api.toast = function (msg, kind) {
+    var t = doc.getElementById('vg-toast');
+    if (!t) { t = doc.createElement('div'); t.id = 'vg-toast'; t.setAttribute('role', 'status'); t.setAttribute('aria-live', 'polite'); (doc.body || doc.documentElement).appendChild(t); }
+    t.textContent = msg; t.className = 'show ' + (kind || 'ok');
+    root.clearTimeout(toastTimer); toastTimer = root.setTimeout(function () { t.className = ''; }, kind === 'err' ? 8000 : 2600);
+  };
+  function say(err) { return err && err.message ? err.message : String(err || 'erreur inconnue'); }
+  // btn : le bouton cliqué ; promise : l'action ; opts.doing / opts.done : textes (facultatifs) ; opts.silent : pas de message en bas.
+  api.track = function (btn, promise, opts) {
+    opts = opts || {};
+    var live = btn && btn.isConnected, n = live ? (Number(btn.getAttribute('data-vg-n')) || 0) : 0;
+    if (live) {
+      if (n === 0) btn.setAttribute('data-vg-label', btn.innerHTML);
+      btn.setAttribute('data-vg-n', String(n + 1)); btn.classList.remove('vg-ok', 'vg-err'); btn.classList.add('vg-busy'); btn.setAttribute('aria-busy', 'true');
+      if (opts.doing !== '') btn.textContent = opts.doing || 'En cours…';
+    }
+    function end(ok, err) {
+      if (btn && btn.isConnected) {
+        var left = Math.max(0, (Number(btn.getAttribute('data-vg-n')) || 1) - 1); btn.setAttribute('data-vg-n', String(left));
+        if (left === 0) {
+          btn.classList.remove('vg-busy'); btn.removeAttribute('aria-busy'); btn.classList.add(ok ? 'vg-ok' : 'vg-err');
+          btn.textContent = ok ? (opts.done || '✓ Fait') : '✕ Échec';
+          root.setTimeout(function () { if (!btn.isConnected || btn.getAttribute('data-vg-n') !== '0') return; btn.classList.remove('vg-ok', 'vg-err'); if (btn.hasAttribute('data-vg-label')) btn.innerHTML = btn.getAttribute('data-vg-label'); }, ok ? 1800 : 4000);
+        }
+      }
+      if (!opts.silent) api.toast(ok ? (opts.done || '✓ Fait') : 'Erreur : ' + say(err), ok ? 'ok' : 'err');
+    }
+    Promise.resolve(promise).then(function () { end(true); }, function (e) { end(false, e); });
+    return promise;
+  };
+  // Bouton occupé à la main (enregistrements GitHub) : api.busy(btn, true) au début, api.busy(btn, false) à la fin.
+  api.busy = function (btn, on, text) {
+    if (!btn) return;
+    if (on) { if (!btn.hasAttribute('data-vg-label')) btn.setAttribute('data-vg-label', btn.innerHTML); btn.classList.remove('vg-ok', 'vg-err'); btn.classList.add('vg-busy'); btn.setAttribute('aria-busy', 'true'); btn.textContent = text || 'Enregistrement…'; }
+    else { btn.classList.remove('vg-busy'); btn.removeAttribute('aria-busy'); if (btn.hasAttribute('data-vg-label')) { btn.innerHTML = btn.getAttribute('data-vg-label'); btn.removeAttribute('data-vg-label'); } }
+  };
+  // Action immédiate (sans attente) : le bouton affiche brièvement « ✓ … » et un message le confirme.
+  api.flash = function (btn, text) {
+    if (btn && btn.isConnected) {
+      if (!btn.hasAttribute('data-vg-label')) btn.setAttribute('data-vg-label', btn.innerHTML);
+      btn.classList.add('vg-ok'); btn.textContent = text;
+      root.setTimeout(function () { if (btn.isConnected) { btn.classList.remove('vg-ok'); btn.innerHTML = btn.getAttribute('data-vg-label'); btn.removeAttribute('data-vg-label'); } }, 1500);
+    }
+    api.toast(text, 'ok');
+  };
+  // Dernier bouton cliqué : les appels d'écriture au Worker (POST/PUT) qui suivent sont rattachés à ce bouton.
+  var lastClick = null;
+  doc.addEventListener('click', function (e) {
+    var b = e.target && e.target.closest ? e.target.closest('button, a.btn, a.vg-btn') : null;
+    lastClick = b && !b.disabled ? { el: b, t: Date.now() } : null;
+  }, true);
+  if (root.vgAdminApi && !root.vgAdminApi.vgWrapped) {
+    var baseApi = root.vgAdminApi;
+    root.vgAdminApi = function (path, opts) {
+      var write = opts && opts.method && String(opts.method).toUpperCase() !== 'GET';
+      var p = baseApi.apply(this, arguments);
+      if (write && lastClick && Date.now() - lastClick.t < 120000 && lastClick.el.isConnected && !lastClick.el.hasAttribute('data-vg-manual')) api.track(lastClick.el, p);
+      return p;
+    };
+    root.vgAdminApi.vgWrapped = true;
+  }
+
   function css() {
-    var l = doc.createElement('link'); l.rel = 'stylesheet'; l.href = 'vg-admin-ui.css?v=3'; doc.head.appendChild(l);
+    var l = doc.createElement('link'); l.rel = 'stylesheet'; l.href = 'vg-admin-ui.css?v=4'; doc.head.appendChild(l);
   }
   // À expédier / demandes à traiter : même calcul que l'ancien tableau de bord, gardé 60 s (une seule demande pour toutes les pages).
   api.counts = function () {

@@ -28,6 +28,11 @@
     return copy;
   }
 
+  // Nonce du script de la page (admin : CSP sans unsafe-inline) : la fenêtre ouverte hérite de la même CSP, son script d'impression doit le porter.
+  function pageNonce() {
+    try { var s = root.document && root.document.querySelector('script[nonce]'); return s ? (s.nonce || s.getAttribute('nonce') || '') : ''; } catch (e) { return ''; }
+  }
+
   function html(inv, lang, mode) {
     if (mode === 'credit' && inv.credit) inv = creditView(inv, lang);
     var t = T[lang] || T.fr;
@@ -48,7 +53,7 @@
       + '.test{background:#fde8e8;color:#a23b2a;border:1px solid #a23b2a;padding:6px 10px;margin:10px 0;font-weight:700;text-align:center}'
       + 'button{margin:0 0 16px;padding:10px 16px;border-radius:999px;border:1px solid #171717;background:#171717;color:#fff;font:inherit;cursor:pointer}'
       + '@media print{button{display:none}body{margin:0}}</style></head><body>'
-      + '<button onclick="window.print()">' + t.print + '</button>'
+      + '<button id="vg-print" type="button">' + t.print + '</button>'
       + (inv.test ? '<div class="test">' + t.test + '</div>' : '')
       + '<div class="top"><div><h1>' + esc(title) + '</h1><div>' + t.no + ' ' + esc(inv.number) + '<br>' + t.date + ' : ' + esc(date) + '<br>' + t.order + ' ' + esc(inv.ref) + '</div></div>'
       + '<div style="text-align:right"><strong>' + esc(inv.seller.name) + '</strong><br>' + esc(inv.seller.line2) + '<br>' + t.siret + ' ' + esc(inv.seller.siret) + '<br>' + esc(inv.seller.email) + '</div></div>'
@@ -58,7 +63,8 @@
       + (inv.deductions || []).map(function (d) { return '<tr><td></td><td class="n">' + esc(d.label) + '</td><td class="n">−' + money(d.amount) + '</td></tr>'; }).join('')
       + (inv.discount ?'<tr><td></td><td class="n">' + t.discount + '</td><td class="n">−' + money(inv.discount) + '</td></tr>' : '')
       + '<tr class="grand"><td></td><td class="n">' + (inv.totalLabel || t.total) + '</td><td class="n">' + money(inv.total) + '</td></tr></table>'
-      + '<p class="mention">' + (inv.notes || []).map(function (n) { return esc(n) + '<br>'; }).join('') + esc(inv.vat) + '<br>' + (inv.paid || t.paid) + '</p></body></html>';
+      + '<p class="mention">' + (inv.notes || []).map(function (n) { return esc(n) + '<br>'; }).join('') + esc(inv.vat) + '<br>' + (inv.paid || t.paid) + '</p>'
+      + '<script' + (pageNonce() ? ' nonce="' + esc(pageNonce()) + '"' : '') + '>document.getElementById("vg-print").addEventListener("click",function(){window.print();});</script></body></html>';
   }
 
   // Ouvre la facture dans un nouvel onglet (à appeler dans un clic : sinon le navigateur bloque la fenêtre).

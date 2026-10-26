@@ -146,3 +146,13 @@ test('Apps Script : refuse mauvaise signature, mauvais secret, message trop anci
   assert.equal(app.post('pas du json').ok, false);
   assert.equal(app.sheets.Ventes, undefined);
 });
+
+test('acompte d\'une demande : envoyé à la compta avec le numéro de la demande (pas de numéro VG), rattrapage unique, remboursement avec la même référence', async () => {
+  const { readFileSync } = await import('node:fs');
+  const src = readFileSync(new URL('../checkout-worker/index.ts', import.meta.url), 'utf8');
+  const dep = src.slice(src.indexOf("if (meta.kind === 'deposit') {"), src.indexOf('const items: Item[] = meta.items'));
+  assert.match(dep, /recordSale\(env as any, s, await saleRef\(env, s\)\)/);
+  assert.match(src, /async function saleRef\(env: Env, s: any\)[^]*metadata\.kind === 'deposit' && s\.metadata\.request/);
+  assert.match(src, /const ref = await saleRef\(env, session\);/); // remboursement
+  assert.match(src, /comptaResyncOnce\(env\)/);
+});

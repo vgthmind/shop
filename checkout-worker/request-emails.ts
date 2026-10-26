@@ -25,6 +25,8 @@ const T = {
     depositPaid: (id: string) => `Acompte reçu, la fabrication commence (${id})`,
     depositPaidLead: (a: string, d: string) => `Merci, ton acompte de ${a} est bien reçu : ta commande est ferme et je commence ta pièce. Délai prévu : ${d}. Je t’envoie des photos dès qu’elle est finie pour que tu la valides.`,
     invoice: 'Ta facture d’acompte est disponible sur la page de ta demande.',
+    balanceReq: (id: string) => `Ta pièce est prête : il ne reste que le solde (${id})`,
+    balanceReqLead: 'Ta pièce est finie ! Il ne reste plus que le solde à régler pour que je puisse l’envoyer.', payBalance: 'Régler le solde',
     validation: (id: string) => `Ta pièce est prête : valide-la sur photos (${id})`,
     validationLead: 'Ta pièce est finie ! Regarde les photos ci-dessous.', validate: 'Je valide et je paie le solde', retouch: 'Je demande une retouche',
     validationNote: (n: number, days: number) => `${n > 0 ? `${n} retouche${n > 1 ? 's' : ''} incluse${n > 1 ? 's' : ''} : explique ce que tu veux changer depuis la page de ta demande.` : 'Retouche supplémentaire : sur devis.'} Sans validation ni paiement du solde ${days} jours après ce mail (relance comprise), l’acompte reste acquis (voir les CGV).`,
@@ -49,6 +51,8 @@ const T = {
     depositPaid: (id: string) => `Deposit received, work begins (${id})`,
     depositPaidLead: (a: string, d: string) => `Thank you, your deposit of ${a} is received: your order is firm and I’m starting your piece. Expected time: ${d}. I’ll send you photos as soon as it’s finished so you can approve it.`,
     invoice: 'Your deposit invoice is available on your request page.',
+    balanceReq: (id: string) => `Your piece is ready: only the balance is left (${id})`,
+    balanceReqLead: 'Your piece is finished! Only the balance is left to pay so that I can ship it.', payBalance: 'Pay the balance',
     validation: (id: string) => `Your piece is ready: approve it from photos (${id})`,
     validationLead: 'Your piece is finished! Have a look at the photos below.', validate: 'I approve and pay the balance', retouch: 'I’d like a change',
     validationNote: (n: number, days: number) => `${n > 0 ? `${n} change${n > 1 ? 's' : ''} included: explain what you’d like changed from your request page.` : 'Extra changes: on quote.'} If you neither approve nor pay the balance ${days} days after this email (reminder included), the deposit is kept (see the terms of sale).`,
@@ -143,6 +147,24 @@ export function validationEmail(rec: any, c: ReqMailCtx, s: { retouchesLeft: num
     + button(c.pageUrl + '#valider', t.validate) + `<div style="height:8px"></div>` + para(link(c.pageUrl + '#retouche', esc(t.retouch)))
     + para(esc(t.validationNote(s.retouchesLeft, s.forfeitDays)), `color:${MUTED};font-size:13px;margin-top:14px`) + sign(rec.lang) + footer(rec.lang, c);
   const text = `${t.hi(rec.client.name)}\n\n${reminder ? t.valRemindLead : t.validationLead}\n${(c.photoUrls || []).join('\n')}\n\n${t.balance} : ${balance}\n${t.shipping}\n\n${t.validate} : ${c.pageUrl}#valider\n${t.retouch} : ${c.pageUrl}#retouche\n\n${t.validationNote(s.retouchesLeft, s.forfeitDays)}\n\nvgthmind`;
+  return { subject: testTag(c) + subject, html: shell(rec.lang, subject, inner), text };
+}
+
+// Solde demandé sans photos (vgthmind s'est arrangé avec le client hors du site) : pas de validation, juste le lien de paiement.
+export function balanceRequestEmail(rec: any, c: ReqMailCtx): Mail {
+  const t: any = tr(rec.lang), subject = t.balanceReq(rec.id), balance = eur(rec.quote.total - rec.quote.deposit, rec.lang);
+  const inner = para(esc(t.hi(rec.client.name))) + para(esc(t.balanceReqLead)) + amountsTable([[t.balance, balance, true]]) + para(esc(t.shipping), `color:${MUTED};font-size:13px;margin-top:10px`)
+    + button(c.pageUrl, t.payBalance) + sign(rec.lang) + footer(rec.lang, c);
+  const text = `${t.hi(rec.client.name)}
+
+${t.balanceReqLead}
+
+${t.balance} : ${balance}
+${t.shipping}
+
+${t.payBalance} : ${c.pageUrl}
+
+vgthmind`;
   return { subject: testTag(c) + subject, html: shell(rec.lang, subject, inner), text };
 }
 

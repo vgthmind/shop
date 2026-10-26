@@ -17,7 +17,7 @@ import {
   applyAction, parseSubmission, newRequest, mergeSettings, checkSettings, priceFloors, dueStep, retention, clientView, fileKind,
   FILE_LIMITS, DRAFT_GRACE_MS, DAY, PAID_TYPES, CARD_KEYS, TYPE_LABELS, answerLines, type Settings, type Effect,
 } from './requests-core';
-import { receivedEmail, newRequestAlert, quoteEmail, quoteAcceptedEmail, depositPaidEmail, validationEmail, replyEmail, type ReqMailCtx } from './request-emails';
+import { receivedEmail, newRequestAlert, quoteEmail, quoteAcceptedEmail, depositPaidEmail, validationEmail, balanceRequestEmail, replyEmail, type ReqMailCtx } from './request-emails';
 import { CONTACT_EMAIL } from './emails';
 import { checkTurnstile } from './turnstile';
 import { quotePdf, toBase64, type QuotePdfInput } from './quote-pdf';
@@ -131,6 +131,7 @@ export async function runEffects(env: ReqEnv, deps: ReqDeps, rec: any, effects: 
       else if (e.kind === 'mail:validation' || e.kind === 'mail:validationReminder') {
         const left = Math.max(0, settings.retouchesIncluded - (rec.validation?.retouchesUsed || 0));
         m = validationEmail(rec, ctx, { retouchesLeft: left, forfeitDays: settings.forfeitDays }, e.kind === 'mail:validationReminder');
+      } else if (e.kind === 'mail:balanceRequest') { m = balanceRequestEmail(rec, ctx);
       } else if (e.kind === 'mail:reply') m = replyEmail(rec, ctx, e.data.subject, e.data.message);
       else if (e.kind === 'alert') { await deps.alert(`req:${rec.id}:${e.data.subject}`, e.data.subject, `${e.data.detail}\n\nAdmin : ${ctx.adminUrl}`); continue; }
       else if (e.kind === 'deleteFile') { if (env.FILES) await env.FILES.delete(e.data.key); continue; }
@@ -347,7 +348,7 @@ export async function requestRoutes(request: Request, env: ReqEnv, deps: ReqDeps
     }
     if (path === '/admin/requests/act' && request.method === 'POST') {
       const b = await body();
-      const allowed = ['status', 'notes', 'quote', 'cancelQuote', 'sendValidation', 'reply', 'removeFinal'];
+      const allowed = ['status', 'notes', 'quote', 'cancelQuote', 'sendValidation', 'requestBalance', 'reply', 'removeFinal'];
       if (!isId(String(b.id || '')) || !allowed.includes(b.action)) return json({ error: 'Requête invalide.' }, 400);
       if (b.action === 'reply' && (!env.RESEND_API_KEY || !env.MAIL_FROM)) return json({ error: "Envoi d'email non configuré." }, 503);
       const r = await act(env, deps, b.id, b.action, b, wb);

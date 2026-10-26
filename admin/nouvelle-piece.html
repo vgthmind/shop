@@ -215,15 +215,22 @@
   </section>
 
   <section data-step="5" hidden>
-    <h2>5 · Publier sur le site</h2>
+    <h2>5 · Enregistrer la pièce</h2>
     <div id="recap" class="notice"></div>
     <p class="muted">Même chemin que l'admin habituel : connexion GitHub (compte vgthmind), un seul commit sur <code>main</code> (photos + fiche), puis le site se reconstruit tout seul (1 à 2 min). Rien ne touche au paiement.</p>
+    <fieldset id="statusBox" style="border:1px solid var(--line);border-radius:12px;padding:10px 14px;margin:0 0 12px">
+      <legend><b>Statut de la pièce</b> (à choisir avant d'enregistrer)</legend>
+      <label style="display:block;margin:6px 0"><input type="radio" name="pstatus" value="hidden" checked> <b>Masquée</b> : rien n'est visible sur le site ; tu la mets en ligne plus tard dans Pièces.</label>
+      <label style="display:block;margin:6px 0"><input type="radio" name="pstatus" value="scheduled"> <b>Programmée</b> : elle se met en ligne toute seule à l'heure choisie (heure de Paris, au moins 5 minutes dans le futur).</label>
+      <div id="pWhenBox" hidden style="margin:0 0 6px 24px"><input type="datetime-local" id="pWhen"> <span class="muted" id="pWhenHelp"></span></div>
+      <label style="display:block;margin:6px 0"><input type="radio" name="pstatus" value="live"> <b>En ligne maintenant</b> : visible et achetable dès la fin de la reconstruction du site (environ 1 minute).</label>
+    </fieldset>
     <div class="bar">
       <label class="muted"><input id="replace" type="checkbox" checked> Remplacer les photos actuelles si la pièce existe déjà</label>
     </div>
     <div class="bar">
       <button id="bLogin">Autoriser les modifications (GitHub)</button>
-      <button id="bPublish" class="primary" disabled>Publier la pièce</button>
+      <button id="bPublish" class="primary" disabled>Enregistrer la pièce</button>
       <span class="muted" id="pubMsg"></span>
     </div>
   </section>
@@ -235,6 +242,7 @@
   </div>
   <div class="muted" id="draftOut" role="status" aria-live="polite" style="margin-top:6px"></div>
 </main>
+<script src="catalogue-core.js"></script>
 <script src="video-convert.js"></script>
 <script src="studio-process.js"></script>
 <script src="studio-engine.js"></script>

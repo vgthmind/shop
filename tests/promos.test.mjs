@@ -138,3 +138,23 @@ test('liste : un code expiré ou épuisé n\'est pas « désactivé » et ne se 
   assert.equal(promoRow(base, NOW).status, 'off');
   assert.equal(promoRow({ ...base, active: true }, NOW).status, 'on');
 });
+
+test('suppression : le code est désactivé et marqué supprimé (plus listé), son coupon est supprimé ; identifiant invalide refusé', async () => {
+  const calls = [];
+  const call = async (m, p, params) => {
+    calls.push([m, p, params && params.toString()]);
+    if (p === '/v1/promotion_codes/promo_9' && m === 'GET') return { ok: true, data: { id: 'promo_9', coupon: { id: 'co_9' } } };
+    if (p === '/v1/promotion_codes/promo_9') return { ok: true, data: { id: 'promo_9', active: false } };
+    if (p === '/v1/coupons/co_9') return { ok: true, data: { deleted: true } };
+    if (p.startsWith('/v1/promotion_codes?')) return { ok: true, data: { data: [{ id: 'promo_9', code: 'X', active: false, metadata: { vg_deleted: '1' }, coupon: {} }, { id: 'promo_1', code: 'Y', active: true, coupon: { percent_off: 10, valid: true } }] } };
+    throw new Error('appel inattendu ' + p);
+  };
+  let r = await promoRoutes(req('POST', '/admin/promos/delete', { id: 'promo_9' }), '/admin/promos/delete', call, json, NOW);
+  assert.equal(r.status, 200);
+  assert.ok(calls.some((c) => c[0] === 'POST' && c[1] === '/v1/promotion_codes/promo_9' && /active=false/.test(c[2]) && /vg_deleted/.test(c[2])));
+  assert.ok(calls.some((c) => c[0] === 'DELETE' && c[1] === '/v1/coupons/co_9'));
+  r = await promoRoutes(req('GET', '/admin/promos'), '/admin/promos', call, json, NOW);
+  assert.deepEqual((await r.json()).promos.map((p) => p.code), ['Y']);
+  r = await promoRoutes(req('POST', '/admin/promos/delete', { id: '../x' }), '/admin/promos/delete', call, json, NOW);
+  assert.equal(r.status, 400);
+});

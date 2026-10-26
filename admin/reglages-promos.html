@@ -81,7 +81,7 @@
     if (p.first) bits.push('1re commande');
     if (p.expires) bits.push('jusqu’au ' +fmtDate(p.expires));
     return '<div class="row" data-id="' + esc(p.id) + '"><div><strong>' + esc(p.code) + '</strong> <span class="tag ' + esc(p.status || (p.active ? 'on' : 'off')) + '">' + esc(STATE[p.status] || (p.active ? 'actif' : 'désactivé')) + '</span><div class="muted">' + esc(bits.join(' · ')) + '</div></div>'
-      + (p.status === 'expired' || p.status === 'exhausted' ? '' : '<button type="button" data-act="' + (p.active ? 'off' : 'on') + '">' + (p.active ? 'Désactiver' : 'Réactiver') + '</button>') + '</div>';
+      + (p.status === 'expired' || p.status === 'exhausted' ? '' : '<button type="button" data-act="' + (p.active ? 'off' : 'on') + '">' + (p.active ? 'Désactiver' : 'Réactiver') + '</button>') + '<button type="button" data-act="del">Supprimer</button></div>';
   }
   // Codes actifs en tête ; désactivés, expirés et épuisés rangés dans une section repliée dessous (ouverte si on vient d'en réactiver un).
   function draw(promos) {
@@ -109,6 +109,13 @@
   $('list').addEventListener('click', function (ev) {
     var b = ev.target.closest('button[data-act]'); if (!b) return;
     var id = b.closest('.row').getAttribute('data-id');
+    if (b.getAttribute('data-act') === 'del') {
+      var code = (b.closest('.row').querySelector('b, strong') || b.closest('.row')).textContent.trim().split(/\s+/)[0];
+      if (!window.confirm('Supprimer définitivement le code ' + code + ' ?\n\nIl ne pourra plus être utilisé et disparaîtra de la liste. Les commandes déjà payées avec ce code ne changent pas.')) return;
+      window.vgAdminApi('/admin/promos/delete', { method: 'POST', body: JSON.stringify({ id: id }) })
+        .then(function () { say('Code supprimé.'); load(); }).catch(function (e) { say(e.message, true); });
+      return;
+    }
     b.disabled = true;
     window.vgAdminApi('/admin/promos/toggle', { method: 'POST', body: JSON.stringify({ id: id, active: b.getAttribute('data-act') === 'on' }) })
       .then(function () { say(''); load(); }).catch(function (e) { say(e.message, true); b.disabled = false; });

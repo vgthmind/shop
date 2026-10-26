@@ -1,68 +1,50 @@
 # Checklist de tests à faire à la main (PC + iPhone)
 
-Mise à jour : 2026-10-26. Un point = une action + le résultat attendu. Version cochable : « Tests à faire à la main (PC + iPhone) » dans Bureau\TAFF\Outils Taff.
-Supprimés (obsolètes) : test de paiement 4242 (le site est en mode réel : les essais se font en réel, petit prix, remboursés) ; Admin Commandes + /suivi + mails expédiée/livrée (validés par vgthmind le 21/10).
+Mise à jour : 2026-10-26 (soir). Un point = une action + le résultat attendu. Version cochable : « Tests à faire à la main (PC + iPhone) » dans Bureau\TAFF\Outils Taff.
+Déjà validés par vgthmind le 26/10 et retirés : connexion iPhone, compta (liens, lignes 3×+7 / 3×−7), stock, essai 1 €, adresse sur facture, pages de l'admin après la CSP, Stripe webhooks, Better Stack, clés R2, programmation de pièce, éditeur, demande, Instagram, code promo, Search Console.
 
-## A. Connexion iPhone (appli de l'écran d'accueil)
-1. **iPhone** : Ouvre l'appli admin de l'écran d'accueil → Menu → touche « Connexion » → GitHub → autorise.
-   → Attendu : Tu reviens sur le Menu de l'appli, connecté. Pas de retour sur « Connexion requise », pas de boucle.
-2. **iPhone** : En bas à gauche du Menu, lis le numéro de version.
-   → Attendu : Format date-heure (AAAA-MM-JJ-hhmm, posé à chaque build), plus « v2026-10-14-h ».
-3. **iPhone** : Ferme complètement l'appli, rouvre-la.
-   → Attendu : Toujours connecté ; la version se met à jour toute seule. Si ça boucle : note le message affiché sous le bouton Connexion.
+## A. Impression (corrigée : script d'impression avec le nonce de la page)
+1. **PC** : Admin → Commandes → une commande → « Facture » → dans la page qui s'ouvre, « Imprimer / Enregistrer en PDF ».
+   → Attendu : La fenêtre d'impression s'ouvre. La facture affiche « vgthmind », l'adresse sans la ville en double, le SIRET, et un prix unitaire égal au montant (plus de 0,00 €). Pareil avec « Voir l'avoir » sur une commande remboursée.
+2. **PC** : Commandes → une commande → « Bon de commande (imprimer) » → « Imprimer ».
+   → Attendu : La fenêtre d'impression s'ouvre.
+3. **iPhone** : Mêmes deux boutons depuis l'appli admin.
+   → Attendu : L'impression / le partage s'ouvre (si une fenêtre est bloquée, autorise les pop-ups pour ce site).
 
-## B. Compta
-4. **PC** : Admin → Réglages → tuile « Comptabilité » (https://www.vgthmind.org/admin/reglages), saisis le mot de passe.
-   → Attendu : Le livre des recettes s'ouvre.
-5. **iPhone** : Même chemin sur iPhone : Admin → Réglages → « Comptabilité ».
-   → Attendu : Le livre des recettes s'ouvre, rien ne déborde.
-6. **PC** : Admin → Réglages → Compta → « Ma comptabilité », puis Ctrl+Maj+R.
-   → Attendu : Lignes canal « Site vgthmind » visibles : 3 ventes à +7 € et 3 remboursements à −7 € (total 0 €), dates = jour du paiement. (Côté Worker, déjà vérifié : 3 ventes + 3 remboursements envoyés une seule fois, file vide. Reste : l'affichage dans ton outil.)
-7. **iPhone** : Admin → Réglages → Compta → « Ma comptabilité » (lien claude.ai, connecte-toi si demandé).
-   → Attendu : La page s'ouvre et affiche les mêmes lignes « Site vgthmind ».
-8. **PC** : À la prochaine vente réelle (dans l'heure qui suit) : regarde « Ma comptabilité » (Ctrl+Maj+R).
-   → Attendu : Une seule nouvelle ligne « Site vgthmind », montant = total payé par le client, port compris, à la bonne date.
+## B. Admin : nouvelle pièce et boutons
+4. **PC** : Admin → Pièces → Nouvelle pièce → va à l'étape 5 (ou touche « Enregistrer en brouillon »).
+   → Attendu : Le bloc « Statut de la pièce » est visible avec 3 choix : Masquée (coché par défaut), Programmée (date + heure), En ligne maintenant. Le bouton s'appelle « Enregistrer la pièce » et rappelle le statut dans la confirmation. Rien n'est en ligne si tu laisses « Masquée ».
+5. **PC** : Choisis « Programmée » à +10 minutes et regarde le texte sous la date, puis enregistre.
+   → Attendu : Le texte « Visible vers HH:MM » s'affiche ; la pièce apparaît à cette heure environ (la reconstruction du site dure environ 1 minute, mesurée à 65 secondes) ; la fiche dans Pièces montre « Programmée · … · visible vers HH:MM ». Si l'heure réelle est très différente, note-la.
+6. **PC** : Dans l'admin, touche un bouton d'enregistrement ou d'action (ex. « Marquer en préparation », « Enregistrer »), puis dans le détourage : « Garder », « Annuler », « Relancer ».
+   → Attendu : Le bouton affiche « En cours… » avec une animation, puis « ✓ fait » (ou « ✕ Échec »), et un message apparaît en bas de l'écran avec le résultat ou l'erreur claire.
+7. **iPhone** : Même test des boutons sur iPhone (message en bas, au-dessus du menu).
+   → Attendu : Le message en bas est visible et ne cache pas le menu.
+8. **iPhone** : Admin → Réglages → Compta.
+   → Attendu : « Ma comptabilité » est tout en haut de la page, avec « Comptabilité : livre des recettes » et « Facturation hors boutique » ; elle est aussi dans Réglages (tuile « Ma comptabilité »). Le lien s'ouvre.
 
-## C. Commandes, stock, factures
-9. **PC** : Admin → Catalogue (https://www.vgthmind.org/admin/catalogue) : colonne stock.
-   → Attendu : Les pièces vendues sont à 0 / « Sold out » ; le CD et le cache-cou ont leur vrai stock.
-10. **PC** : Admin → Commandes → l'essai à 1 € → « Facture » puis « Avoir ».
-   → Attendu : La facture et l'avoir s'ouvrent, avec le bon numéro et les bons montants.
-11. **PC** : Admin → Réglages → Demandes → champ « Adresse » : saisis l'adresse du profil du Facturier → Enregistrer. Puis Commandes → une commande → « Facture ».
-   → Attendu : Le bloc vendeur de la facture affiche « vgthmind », « votre adresse, Vitry-sur-Seine, France », le SIRET et contact@vgthmind.org, sans aucun nom ni prénom. Pareil sur un « Avoir ».
-12. **PC** : Après la mise à jour de la sécurité de l'admin (26/10) : ouvre Menu, Catalogue, Commandes, Demandes, Réglages ; dans Commandes ouvre une commande → « Bon de commande » → « Imprimer ».
-   → Attendu : Toutes les pages se chargent et réagissent (boutons, listes) ; les miniatures du Catalogue s'affichent ; le bouton Imprimer lance l'impression. Sinon : note la page et le bouton.
-13. **iPhone** : Même ouverture de pages dans l'appli admin (Menu, Catalogue, Commandes).
-   → Attendu : Tout se charge et réagit comme avant.
+## C. Acomptes et compta (après le double-clic sur le fichier Deployer-worker.bat du dossier checkout-worker)
+9. **PC** : Admin → Commandes → bouton « Acomptes » (ou « Toutes »).
+   → Attendu : L'acompte de 0,60 € du 26/10 apparaît (« Remboursée »), avec « Facture » et « Voir l'avoir ». Un acompte payé non remboursé a un bouton « Rembourser… ».
+10. **PC** : Ma comptabilité (Ctrl+Maj+R) : cherche les lignes « Site vgthmind » du 26/10.
+   → Attendu : L'acompte de 0,60 € apparaît en vente (+0,60 €) une seule fois, avec son remboursement (−0,60 €) : total 0 €. (La ligne est ajoutée toute seule dans l'heure qui suit la mise à jour du Worker.)
+11. **PC** : À la prochaine vente réelle : Ma comptabilité (Ctrl+Maj+R).
+   → Attendu : Une seule nouvelle ligne « Site vgthmind », montant = total payé par le client (port compris), à la bonne date.
 
-## D. Sauvegarde et surveillance
-14. **PC** : Ouvre la boîte contact@ le matin.
+## D. Sur demande : parcours complet (à refaire, petit prix, après la mise à jour du Worker)
+12. **PC** : Crée une demande (ton adresse mail), un devis de 2 à 3 € avec acompte, accepte-le, paie l'acompte.
+   → Attendu : Mails reçus ; l'acompte apparaît dans Commandes → Acomptes et, dans l'heure, dans Ma comptabilité.
+13. **PC** : Admin → Demandes → la demande : regarde les deux boutons du solde.
+   → Attendu : « Envoyer les photos et demander le solde » (le client valide puis paie) et « Demander le solde sans photos » (seulement le lien de paiement du solde). Le second envoie un mail « il ne reste que le solde ».
+14. **PC** : Paie le solde.
+   → Attendu : Le mail de confirmation contient un lien « Télécharger ta facture » ; il mène à la page de suivi avec le bouton de facture à l'écran.
+15. **PC** : Admin → Commandes : rembourse l'acompte puis le solde (bouton « Rembourser… »).
+   → Attendu : Les deux se remboursent depuis l'admin ; mails/alertes reçus ; 2 lignes « Remboursements » dans Ma comptabilité, chacune une seule fois.
+
+## E. Codes promo
+16. **PC** : Admin → Réglages → Codes promo : crée un code de test (ex. TESTVG), puis touche « Supprimer » et confirme.
+   → Attendu : Une confirmation s'affiche ; le code disparaît de la liste et n'est plus accepté dans un panier.
+
+## F. Sauvegarde
+17. **PC** : Ouvre la boîte contact@ demain matin.
    → Attendu : Un mail de sauvegarde nocturne (3 h 30 UTC) avec le fichier JSON joint, ouvrable.
-15. **PC** : Stripe → Développeurs → Webhooks → le endpoint du Worker.
-   → Attendu : Les 2 anciens événements en échec sont compris (ou rejoués : 200) et aucun nouvel échec depuis.
-16. **PC** : Better Stack : liste des moniteurs.
-   → Attendu : Tous au vert ; une alerte de test arrive bien sur ton mail ou ton téléphone.
-17. **PC** : Cloudflare → R2 → clés API.
-   → Attendu : Seule la clé utilisée existe, sans expiration proche, avec les droits strictement nécessaires.
-
-## E. Pièces et éditeur
-18. **PC** : Admin → Catalogue (Pièces) : crée une pièce de test masquée, programmée dans 10 min ; regarde le site avant puis après l'heure ; archive-la ensuite.
-   → Attendu : Invisible avant l'heure ; visible peu après (le secret DEPLOY_HOOK_URL est posé, il faut juste voir que la mise en ligne se déclenche) ; plus rien une fois archivée.
-19. **iPhone** : Admin → Modifier une fiche → ouvre une fiche → change une virgule → Enregistrer → attends 2 min → recharge la fiche → remets la virgule.
-   → Attendu : Badge « Pièce unique », pastille de couleur et reel identiques à avant l'enregistrement. Une pièce programmée ou en aperçu le reste.
-
-## F. Parcours « sur demande », Instagram, code promo
-20. **PC** : Site → Sur demande : envoie une demande avec ta propre adresse mail.
-   → Attendu : Mail de confirmation reçu ; la demande apparaît dans Admin → Demandes.
-21. **PC** : Crée un devis de 2 à 3 € (acompte inclus), envoie-le, accepte-le, paie l'acompte, demande le solde, paie le solde.
-   → Attendu : Un mail à chaque étape (devis avec PDF, acompte, solde + facture), statuts corrects dans l'admin.
-22. **PC** : Rembourse l'acompte puis le solde (Admin → Commandes → Rembourser…) et regarde « Ma comptabilité ».
-   → Attendu : Mails et alertes reçus ; 2 lignes « Remboursements » en négatif ; 2 lignes de ventes, sans doublon.
-23. **iPhone** : Envoie-toi en DM Instagram le lien https://www.vgthmind.org/product/cache-cou/ puis celui de l'accueil.
-   → Attendu : L'aperçu s'affiche dans Instagram. (Balises déjà vérifiées en ligne : fiche = photo 1200×1200 + titre « Cache-cou blanc en molleton, design aérographe | vgthmind » ; accueil = image générique. Si Instagram montre un ancien aperçu : ajoute ?v=2 au lien.)
-24. **PC** : Admin → Réglages → Codes promo : crée « TESTVG » (10 %, 1 utilisation), essaie-le dans un panier jusqu'à Stripe sans payer, puis supprime-le.
-   → Attendu : Remise visible dans le panier ; une fois supprimé, il n'est plus accepté. Erreur de droits : la clé Stripe n'a pas « Écriture » sur Coupons et Promotion Codes.
-
-## G. Google Search Console
-25. **PC** : Search Console → Indexation / Améliorations : pour « 404 », « Extraits de produits » et « Fiches de marchand », clique « Valider la correction » ; vérifie aussi que sitemap.xml est bien soumis (Sitemaps).
-   → Attendu : Statut « Validation commencée » sur les trois ; sitemap « Réussite » (les résultats arrivent en quelques jours).

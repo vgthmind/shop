@@ -3,7 +3,7 @@
 (function () {
   'use strict';
   var F = window.VGPieceForm, $ = function (id) { return document.getElementById(id); };
-  var STEPS = ['Photos', 'Détourage', 'Fiche', 'Poids et ports', 'Publier'];
+  var STEPS = ['Photos', 'Détourage', 'Fiche', 'Poids et ports', 'Enregistrer'];
   var step = 1, config = null, categories = [], colorTouched = false, uniqueTouched = false, slugTouched = false;
 
   function esc(s) { return String(s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }

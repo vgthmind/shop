@@ -88,7 +88,8 @@ export async function promoRoutes(request: Request, path: string, call: StripeCa
   if (path === '/admin/promos' && request.method === 'GET') {
     const r = await call('GET', '/v1/promotion_codes?limit=100&expand[]=data.coupon');
     if (!r.ok) return json({ error: stripeMsg(r.data, 'Stripe a refusé la lecture des codes (droits « Promotion Codes » en lecture ?).') }, 502);
-    return json({ promos: (r.data.data || []).map((x: any) => promoRow(x, now)) });
+    // Un code « supprimé » (Stripe ne sait que désactiver un code promo) porte metadata.vg_deleted = 1 : il n'est plus listé.
+    return json({ promos: (r.data.data || []).filter((x: any) => !(x.metadata && x.metadata.vg_deleted === '1')).map((x: any) => promoRow(x, now)) });
   }
   if (path === '/admin/promos' && request.method === 'POST') {
     const body: any = await request.json().catch(() => null);
@@ -112,6 +113,18 @@ export async function promoRoutes(request: Request, path: string, call: StripeCa
     const r = await call('POST', '/v1/promotion_codes/' + id, new URLSearchParams({ active: String(body.active) }));
     if (!r.ok) return json({ error: stripeMsg(r.data, 'Stripe a refusé la modification.') }, 502);
     return json({ ok: true, id, active: !!r.data.active });
+  }
+  if (path === '/admin/promos/delete' && request.method === 'POST') {
+    const body: any = await request.json().catch(() => null);
+    const id = String(body && body.id || '');
+    if (!/^promo_[A-Za-z0-9]+$/.test(id)) return json({ error: 'Requête invalide.' }, 400);
+    // 1) le code est désactivé et marqué supprimé (Stripe ne permet pas de supprimer un code promo), 2) son coupon est supprimé (plus aucun usage possible).
+    const cur = await call('GET', '/v1/promotion_codes/' + id);
+    const couponId = cur.ok && cur.data && cur.data.coupon ? String(typeof cur.data.coupon === 'object' ? cur.data.coupon.id : cur.data.coupon) : '';
+    const r = await call('POST', '/v1/promotion_codes/' + id, new URLSearchParams({ active: 'false', 'metadata[vg_deleted]': '1' }));
+    if (!r.ok) return json({ error: stripeMsg(r.data, 'Stripe a refusé la suppression.') }, 502);
+    if (couponId) await call('DELETE', '/v1/coupons/' + encodeURIComponent(couponId)).catch(() => null);
+    return json({ ok: true, id, deleted: true });
   }
   return json({ error: 'Not found' }, 404);
 }

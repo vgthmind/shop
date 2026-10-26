@@ -76,7 +76,7 @@ const T = {
     nextText: "Je prépare ta commande et je l'envoie. Je t'écris dès qu'elle part.",
     duties: '',
     help: 'Un souci, une question ? Réponds simplement à ce mail.',
-    view: 'Voir ma commande',
+    view: 'Voir ma commande', invoiceLink: 'Télécharger ta facture',
     ref: 'Commande', request: 'Demande',
     withdrawal: "Les pièces de la boutique, y compris customisées, bénéficient du droit de rétractation de 14 jours. Les créations sur-mesure ou sur demande personnalisée (commande passée par message) ne sont ni reprises ni échangées, sauf défaut de fabrication (art. L221-28 3° du Code de la consommation). TVA non applicable, art. 293 B du CGI.",
     cgv: 'Conditions générales de vente',
@@ -104,7 +104,7 @@ const T = {
     nextText: "I'm getting your order ready. I'll email you as soon as it ships.",
     duties: "Orders outside the EU: import duties, taxes and local fees, if any, are paid by you and aren't included in the price or shipping.",
     help: 'Questions? Just reply to this email.',
-    view: 'View my order',
+    view: 'View my order', invoiceLink: 'Download your invoice',
     ref: 'Order', request: 'Request',
     withdrawal: 'Pieces from the shop, including customised ones, have a 14-day right of withdrawal. Creations made to measure or to personal request (orders placed by message) are neither taken back nor exchanged, except in case of a manufacturing defect (art. L221-28 3° of the French Consumer Code). VAT not applicable, art. 293 B of the French Tax Code.',
     cgv: 'Terms of sale',
@@ -179,6 +179,7 @@ export function customerEmail(o: OrderData) {
     + heading(t.shipTo) + para(o.address.map(esc).join('<br>'))
     + heading(t.next) + para(esc(t.nextText)) + (t.duties ? para(esc(t.duties), `color:${MUTED}`) : '')
     + button(o.orderUrl, t.view)
+    + para(link(o.orderUrl + '#facture', esc(t.invoiceLink)), 'margin-top:12px;font-size:14px')
     + para(esc(t.help), 'margin-top:16px')
     + para(esc(t.bye), 'margin:22px 0 0') + signature(t).replace('margin:22px 0 4px', 'margin:0 0 4px') + legalFooter(o, t));
   const text = [
@@ -187,7 +188,7 @@ export function customerEmail(o: OrderData) {
     ...(o.discount ? [`${t.discount} : - ${o.discount}`] : []), `${t.shipping} : ${o.shipping}`, `${t.total} : ${o.total}`, '',
     t.shipTo.toUpperCase(), ...o.address, '',
     t.next.toUpperCase(), t.nextText, ...(t.duties ? [t.duties] : []), '',
-    `${t.view} : ${o.orderUrl}`, '', t.help, '',
+    `${t.view} : ${o.orderUrl}`, `${t.invoiceLink} : ${o.orderUrl}#facture`, '', t.help, '',
     t.bye, 'vgthmind', `Instagram : ${INSTAGRAM_URL}`, CONTACT_EMAIL, '',
     `${t.withdrawal} ${t.cgv} : ${o.cgvUrl}`,
   ].join('\n');

@@ -45,3 +45,11 @@ test('l\'adresse n\'est jamais renvoyée par la route publique /requests/setting
   const block = src.slice(i, src.indexOf("path === '/requests/card'", i));
   assert.ok(block.length > 100 && !/sellerAddress/.test(block));
 });
+
+test('facture : la ville n\'est pas répétée si l\'adresse saisie la contient ; prix unitaire = montant quand la quantité est 1', () => {
+  const s = { created: 1, livemode: false, currency: 'eur', customer_details: { name: 'Client', email: 'c@example.com', address: { country: 'FR' } }, amount_total: 100 };
+  assert.equal(buildInvoice(s, [], { number: 'T', ref: 'R', sellerAddress: '18 Villa X, 94400 Vitry-Sur-Seine' }).seller.line2, '18 Villa X, 94400 Vitry-Sur-Seine');
+  assert.equal(buildInvoice(s, [], { number: 'T', ref: 'R', sellerAddress: '12 rue des Lilas' }).seller.line2, '12 rue des Lilas, Vitry-sur-Seine, France');
+  const src = readFileSync(new URL('../checkout-worker/index.ts', import.meta.url), 'utf8');
+  assert.ok(/unit: i\.unit \? Number\(i\.unit\) : Math\.round\(\(Number\(i\.amount\) \/ \(i\.qty \|\| 1\)\) \* 100\) \/ 100/.test(src));
+});

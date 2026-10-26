@@ -643,8 +643,11 @@
         + '<h2 class="vg-track-h">' + esc(t.address) + '</h2>'
         + '<p class="vg-track-address">' + esc((d.address || []).concat(countryLabel(d.country)).filter(Boolean).join('\n')) + '</p>'
         + parcel
+        + '<p class="vg-track-docs"><button type="button" class="button button--checkout vg-track-invoice-btn" id="vg-track-invoice">' + esc(t.invoice) + '</button>' + (d.refunded ? ' <button type="button" class="button button--checkout vg-track-invoice-btn" data-mode="credit">' + esc(t.credit) + '</button>' : '') + '</p>'
         + '<p class="vg-track-again"><button type="button" class="button button--checkout vg-track-back">' + esc(t.again) + '</button></p>';
       lookup.hidden = true; result.hidden = false;
+      // Lien « Télécharger ta facture » du mail (#facture) : on amène le bouton à l'écran (le téléchargement reste un clic).
+      if (/^#facture$/.test(location.hash)) { var fb = document.getElementById('vg-track-invoice'); if (fb && fb.scrollIntoView) { fb.scrollIntoView({ block: 'center' }); try { fb.focus(); } catch (x) {} } }
     }
 
     result.addEventListener('click', function (e) {
@@ -676,7 +679,7 @@
       fetch(ENDPOINT + '/track', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ref: ref, email: email }) })
         .then(function (r) { return r.json().catch(function () { return {}; }).then(function (d) { return { status: r.status, d: d }; }); })
         .then(function (res) {
-          if (res.d && res.d.ok) { result.__req = { ref: ref, email: email }; drawResult(res.d); window.scrollTo(0, 0); return; }
+          if (res.d && res.d.ok) { result.__req = { ref: ref, email: email }; drawResult(res.d); if (!/^#facture$/.test(location.hash)) window.scrollTo(0, 0); return; }
           showMsg(res.status === 429 ? t.rate : res.status === 404 ? t.notfound : t.error);
         })
         .catch(function () { showMsg(t.error); })

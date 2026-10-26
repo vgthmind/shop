@@ -41,6 +41,16 @@
   <h1>Compta</h1>
   <p class="muted">Fichier CSV pour le livre des recettes : séparateur « ; », virgule décimale, UTF-8 avec BOM (s'ouvre directement dans Excel FR). Aucune donnée client dedans : n° de commande, désignation, montants.</p>
 
+  <div class="card" style="margin:0 0 14px">
+    <h3 style="margin:0 0 8px;font-size:14px">Outils de comptabilité</h3>
+    <p class="muted" style="margin:0 0 10px"><strong>Les factures de la boutique ne se créent pas à la main</strong> : elles existent dès que le paiement est réussi. Pour les retrouver, ouvre la commande (Commandes) ou la demande (Demandes) et touche « Facture » (« Avoir » après un remboursement).</p>
+    <div class="bar">
+      <a class="btn" href="https://outils-e073a53c.pages.dev/comptabilite" target="_blank" rel="noopener">Comptabilité : livre des recettes ↗</a>
+      <a class="btn" href="https://claude.ai/code/artifact/db6d1903-b71f-4c0e-b017-6e75ec769256" target="_blank" rel="noopener">Ma comptabilité ↗</a>
+      <a class="btn" href="https://outils-e073a53c.pages.dev/facturation" target="_blank" rel="noopener">Facturation hors boutique ↗</a>
+    </div>
+    <p class="muted" style="margin:6px 0 0">« Facturation hors boutique » (mot de passe) sert uniquement à ce qui ne passe pas par la boutique : prestations, locations payées hors du site. Jamais pour une vente de la boutique.</p>
+  </div>
   <div class="bar" id="login" hidden><button type="button" class="primary" id="login-btn">Se connecter avec GitHub</button></div>
 
   <div id="app" hidden>
@@ -57,16 +67,6 @@
       <p class="warn" id="limit" hidden>Attention : le Worker ne renvoie que les 100 dernières commandes. Si la période en contient plus ou date d'avant, l'export est incomplet.</p></div>
     <div class="bar"><button type="button" class="primary" id="dl" disabled>Télécharger le CSV</button><button type="button" id="logout">Se déconnecter</button></div>
     <div class="card scroll"><table id="preview"></table></div>
-  </div>
-  <div class="card" style="margin-top:14px">
-    <h3 style="margin:0 0 8px;font-size:14px">Outils de comptabilité</h3>
-    <p class="muted" style="margin:0 0 10px"><strong>Les factures de la boutique ne se créent pas à la main</strong> : elles existent dès que le paiement est réussi. Pour les retrouver, ouvre la commande (Commandes) ou la demande (Demandes) et touche « Facture » (« Avoir » après un remboursement).</p>
-    <div class="bar">
-      <a class="btn" href="https://outils-e073a53c.pages.dev/comptabilite" target="_blank" rel="noopener">Comptabilité : livre des recettes ↗</a>
-      <a class="btn" href="https://claude.ai/code/artifact/db6d1903-b71f-4c0e-b017-6e75ec769256" target="_blank" rel="noopener">Ma comptabilité ↗</a>
-      <a class="btn" href="https://outils-e073a53c.pages.dev/facturation" target="_blank" rel="noopener">Facturation hors boutique ↗</a>
-    </div>
-    <p class="muted" style="margin:6px 0 0">« Facturation hors boutique » (mot de passe) sert uniquement à ce qui ne passe pas par la boutique : prestations, locations payées hors du site. Jamais pour une vente de la boutique.</p>
   </div>
   <div class="card" id="sheet-tools" hidden>
     <h3 style="margin:0 0 8px;font-size:14px">Envoi vers le Sheet de compta</h3>

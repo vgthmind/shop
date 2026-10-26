@@ -36,6 +36,13 @@ export function parisYear(unixSeconds: number): number {
   return Number(new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/Paris', year: 'numeric' }).format(new Date(unixSeconds * 1000)));
 }
 
+// Adresse de l'émetteur + ville : la ville n'est pas répétée quand l'adresse saisie la contient déjà (« 94400 Vitry-Sur-Seine »).
+const plain = (t: string) => t.toLowerCase().normalize('NFD').replace(/[^a-z]/g, '');
+function sellerLine2(address?: string): string {
+  const a = String(address || '').trim(), city = SELLER.city.split(',')[0];
+  return a && plain(a).includes(plain(city)) ? a : [a, SELLER.city].filter(Boolean).join(', ');
+}
+
 export function buildInvoice(s: any, lines: InvoiceLine[], opts: { number: string; ref: string; sellerAddress?: string; vatAfter?: string }): Invoice {
   const ship = (s.collected_information && s.collected_information.shipping_details) || s.shipping_details || {};
   const a = ship.address || s.customer_details?.address || {}; // acompte : pas de livraison, adresse de facturation
@@ -46,7 +53,7 @@ export function buildInvoice(s: any, lines: InvoiceLine[], opts: { number: strin
     test: !s.livemode,
     date: s.created,
     currency: String(s.currency || 'eur').toUpperCase(),
-    seller: { name: SELLER.name, line2: [opts.sellerAddress, SELLER.city].filter(Boolean).join(', '), siret: SELLER.siret, email: SELLER.email },
+    seller: { name: SELLER.name, line2: sellerLine2(opts.sellerAddress), siret: SELLER.siret, email: SELLER.email },
     customer: { name: ship.name || s.customer_details?.name || '', email: s.customer_details?.email || '', address: addr, country: a.country || s.customer_details?.address?.country || '' },
     lines,
     shipping: (s.shipping_cost?.amount_total || 0) / 100,

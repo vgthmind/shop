@@ -196,9 +196,12 @@
   var FILTERS = [['all', 'Toutes'], ['live', 'En ligne'], ['preview', 'Masquées'], ['scheduled', 'Programmées'], ['soldout', 'Épuisées'], ['noweight', 'Sans poids'], ['archived', 'Archivées']];
 
   function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
-  function say(t, err) { $('msg').textContent = t || ''; $('msg').style.color = err ? '#a23b2a' : ''; }
+  function say(t, err) { $('msg').textContent = t || ''; $('msg').style.color = err ? '#a23b2a' : ''; if (t && !/…$/.test(t) && window.VGAdminUI) window.VGAdminUI.toast(t, err ? 'err' : 'ok'); }
+  function busy(id, on) { if (window.VGAdminUI) window.VGAdminUI.busy($(id), on); }
   function eur(n) { return (Math.round(n * 100) / 100).toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' €'; }
   function fmtParis(iso) { try { return new Date(iso).toLocaleString('fr-FR', { timeZone: 'Europe/Paris', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }); } catch (e) { return iso; } }
+  // Mise en ligne programmée : le Worker lance la reconstruction du site 60 s avant l'heure choisie ; elle dure ~65 s (mesuré le 26/10/2026) : la pièce est visible à l'heure + quelques secondes. On affiche l'heure + 1 min par prudence.
+  function visibleAt(iso) { try { return new Date(Date.parse(iso) + 60000).toLocaleTimeString('fr-FR', { timeZone: 'Europe/Paris', hour: '2-digit', minute: '2-digit' }); } catch (e) { return ''; } }
   function parisInput(iso) { // ISO UTC -> « AAAA-MM-JJTHH:MM » à l'heure de Paris
     if (!iso) return '';
     var o = {}; new Intl.DateTimeFormat('en-GB', { timeZone: 'Europe/Paris', hour12: false, year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' }).formatToParts(new Date(iso)).forEach(function (x) { o[x.type] = x.value; });
@@ -235,7 +238,7 @@
     var b = [];
     if (st !== 'archived' && stockOf(p) <= 0) b.push('<span class="vg-pill bad">Épuisée</span>');
     if (st === 'preview') b.push('<span class="vg-pill">Masquée</span>');
-    if (st === 'scheduled') b.push('<span class="vg-pill plan">Programmée · ' + esc(fmtParis(p.publish_at)) + '</span>');
+    if (st === 'scheduled') b.push('<span class="vg-pill plan">Programmée · ' + esc(fmtParis(p.publish_at)) + ' · visible vers ' + esc(visibleAt(p.publish_at)) + '</span>');
     if (st === 'coming') b.push('<span class="vg-pill todo">Bientôt disponible</span>');
     if (st === 'archived') b.push('<span class="vg-pill">Archivée</span>');
     if (st !== 'archived' && !PV.weightOf(p)) b.push('<span class="vg-pill todo">Sans poids</span>');
@@ -327,12 +330,12 @@
 
   $('list-save').addEventListener('click', function () {
     var n = Object.keys(listChanges).length + Object.keys(stockEdits).length, toSync = listChanges, se = stockEdits;
-    $('list-save').disabled = true; say('Enregistrement…');
+    $('list-save').disabled = true; busy('list-save', true); say('Enregistrement…');
     (Object.keys(toSync).length ? VGPiecesSave.saveFiles(gh(), toSync, 'Pièces (ordre, copie, archivage, aperçu)', say) : Promise.resolve())
       .then(function () { return syncSchedule(toSync); })
       .then(function () { return saveStock(se); })
       .then(function () { stockEdits = {}; return load().then(function () { say('Enregistré (' + n + '). Le site se reconstruit tout seul (1 à 2 min).'); }); })
-      .catch(function (e) { say('Erreur : ' + e.message, true); }).then(function () { $('list-save').disabled = false; });
+      .catch(function (e) { say('Erreur : ' + e.message, true); }).then(function () { busy('list-save', false); $('list-save').disabled = false; });
   });
   $('list-cancel').addEventListener('click', function () { listChanges = {}; stockEdits = {}; drawList(); say('Changements annulés.'); });
 
@@ -382,7 +385,7 @@
 
       + '<section class="vg-card sect"><h2>Statut</h2>'
       + '<select id="f-status" aria-label="Statut">' + sel + '</select><p class="muted" id="f-status-help" style="margin:6px 0 0"></p>'
-      + '<div id="f-when-wrap" hidden><label class="fl" for="f-when">Mise en ligne le (heure de Paris)</label><input type="datetime-local" id="f-when" value="' + esc(parisInput(f.publish_at)) + '"></div></section>'
+      + '<div id="f-when-wrap" hidden><label class="fl" for="f-when">Mise en ligne le (heure de Paris)</label><input type="datetime-local" id="f-when" value="' + esc(parisInput(f.publish_at)) + '"><p class="muted" id="f-when-help" style="margin:6px 0 0"></p></div></section>'
 
       + '<section class="vg-card sect"><h2>Prix et stock</h2><div class="two"><div><label class="fl" for="f-price">Prix (€)</label><input type="text" id="f-price" inputmode="decimal" value="' + esc(f.price) + '"></div>'
       + '<div><label class="fl" for="f-stock">Stock</label><input type="number" id="f-stock" min="0" max="9999" step="1" inputmode="numeric" value="' + esc(cur.stock) + '"></div></div>'
@@ -428,6 +431,8 @@
     var f = cur.form;
     $('f-status-help').textContent = STAT_HELP[f.status] || '';
     $('f-when-wrap').hidden = f.status !== 'scheduled';
+    var wiso = $('f-when').value ? C.parisToIso($('f-when').value) : '';
+    $('f-when-help').textContent = wiso ? 'Visible vers ' + visibleAt(wiso) + ' (la reconstruction du site dure environ 1 minute ; heure de Paris).' : '';
     $('f-color-other').hidden = f.color !== 'autre';
     drawPorts();
   }
@@ -549,7 +554,7 @@
       photoCount: cur.images.length, position: maxPos + 1
     });
     if (built.error) { err.textContent = built.error; err.hidden = false; err.scrollIntoView({ block: 'center', behavior: 'smooth' }); return; }
-    err.hidden = true; btn.disabled = true;
+    err.hidden = true; btn.disabled = true; busy('fiche-save', true);
     try {
       var rv = cur.reel ? { data: new Uint8Array(await cur.reel.arrayBuffer()) } : null;
       var product = built.product, slug = isNew ? product.slug : cur.base.slug;
@@ -567,7 +572,7 @@
       say('Enregistré. Le site se reconstruit tout seul (1 à 2 min).' + note, !!note);
       if (isNew) location.hash = '#/p/' + encodeURIComponent(slug); else openFiche(slug, false);
     } catch (e) { say('Erreur : ' + e.message, true); err.textContent = e.message; err.hidden = false; }
-    btn.disabled = false;
+    busy('fiche-save', false); btn.disabled = false;
   });
 
   // ---------- PROGRAMMER (ancien « drop » : plusieurs pièces à la même heure + texte Instagram) ----------
@@ -618,11 +623,11 @@
     if (r.error) return say(r.error, true);
     var n = Object.keys(r.changes).length;
     if (!confirm('Programmer ' + n + ' pièce' + (n > 1 ? 's' : '') + ' pour le ' + dLabel(iso) + ' (heure de Paris) ?')) return;
-    $('d-go').disabled = true; say('Enregistrement…');
+    $('d-go').disabled = true; busy('d-go', true); say('Enregistrement…');
     VGPiecesSave.saveFiles(gh(), r.changes, 'Drop programmé le ' + iso, say)
       .then(function () { return syncSchedule(r.changes); })
-      .then(function () { pieces = pieces.map(function (p) { return r.changes[p.slug] || p; }); dPicked = {}; drawDrop(); say('Programmé : ' + n + ' pièce' + (n > 1 ? 's' : '') + ' le ' + dLabel(iso) + '. Le site se reconstruit tout seul (1 à 2 min), puis se remet à jour à l\'heure dite.'); })
-      .catch(function (e) { say('Erreur : ' + e.message, true); $('d-go').disabled = false; });
+      .then(function () { pieces = pieces.map(function (p) { return r.changes[p.slug] || p; }); dPicked = {}; busy('d-go', false); drawDrop(); say('Programmé : ' + n + ' pièce' + (n > 1 ? 's' : '') + ' le ' + dLabel(iso) + '. Le site se reconstruit tout seul (1 à 2 min), puis se remet à jour à l\'heure dite.'); })
+      .catch(function (e) { busy('d-go', false); say('Erreur : ' + e.message, true); $('d-go').disabled = false; });
   });
 
   // ---------- chargement ----------

@@ -150,7 +150,7 @@
       } else if (e.status === 422 || e.status === 409) throw new Error('Le dépôt a changé pendant l\'envoi (autre enregistrement). Rien n\'a été publié : réessaie.');
       else throw e;
     }
-    say('Publié. Le site se reconstruit tout seul (1 à 2 min).');
+    say('Enregistré. Le site se reconstruit tout seul (1 à 2 min).');
     return { commit: nc.sha, added: newPaths, removed: removed };
   }
 

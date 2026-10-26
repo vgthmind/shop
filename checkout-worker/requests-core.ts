@@ -463,6 +463,15 @@ export function applyAction(input: any, action: string, d: any, s: Settings, now
       rec.validation = v; rec.status = 'validation'; rec.reminders = {}; rec.forfeited = false;
       return done(rec, now, `Photos envoyées pour validation (envoi n° ${v.round})`, [{ kind: 'mail:validation' }]);
     }
+    case 'requestBalance': { // solde demandé SANS photos (arrangement hors site) : validation implicite, le client n'a plus qu'à payer
+      if (!paid || !rec.deposit || !rec.deposit.paidAt) return fail('L’acompte n’est pas encore payé.');
+      if (rec.balance && rec.balance.paidAt) return fail('Solde déjà payé.');
+      if (!rec.quote) return fail('Pas de devis.');
+      const v = rec.validation || { round: 0, retouchesUsed: 0, retouches: [] };
+      v.sentAt = now; v.validatedAt = now;
+      rec.validation = v; rec.status = 'validation'; rec.reminders = {}; rec.forfeited = false;
+      return done(rec, now, 'Solde demandé sans photos (le client peut payer)', [{ kind: 'mail:balanceRequest' }]);
+    }
     case 'validate': {
       if (rec.status !== 'validation' || !rec.validation) return fail('not_waiting', 409);
       if (!rec.validation.validatedAt) rec.validation.validatedAt = now;

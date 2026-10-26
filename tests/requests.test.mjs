@@ -537,3 +537,15 @@ test('devis pro : location / collab, acompte facultatif — acceptation sans pay
   await webhook('checkout.session.completed', pay(dep.url.split('/').pop()));
   assert.equal((await getReq(id)).status, 'fabrication');
 });
+
+test('solde demandé sans photos : acompte requis, validation implicite, mail avec le lien, le client peut ensuite payer', async () => {
+  const early = await untilDeposit();
+  const { id, k } = early;
+  const r = await admin('/admin/requests/act', { id, action: 'requestBalance' });
+  assert.equal(r.status, 200);
+  const m = mails.at(-1);
+  assert.match(m.subject, /il ne reste que le solde/);
+  assert.equal((await getReq(id)).status, 'validation');
+  const q = await J(await call('/requests/balance-quote', { id, k, country: 'FR' }));
+  assert.equal(q.ok, true);
+});

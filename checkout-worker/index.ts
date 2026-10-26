@@ -472,6 +472,8 @@ export default {
     }
     // Ventes restées en file d'attente (script Google injoignable ou refus) : nouvel essai toutes les heures.
     if (accountingConfigured(env as any)) ctx.waitUntil(replayPending(env as any, 100).catch(() => {}));
+    // Rattrapage unique (acomptes jamais envoyés avant le 26/10/2026) : lit les ventes chez Stripe, sans doublon grâce à la clé de chaque ligne.
+    if (accountingConfigured(env as any)) ctx.waitUntil(comptaResyncOnce(env).catch(() => {}));
     // Suivi des colis La Poste : chaque colis n'est interrogé qu'une fois toutes les 11 h au plus (2 fois par jour maximum), quel que soit le cron.
     ctx.waitUntil(trackingCron(env).catch((e) => alertContact(env, 'track-cron', 'Suivi des colis en erreur', String(e && e.stack ? e.stack : e))));
     ctx.waitUntil(requestsCron(env as any, reqDeps(env)).catch((e) => alertAdmin(env, 'req-cron', 'Cron des demandes en erreur', String(e && e.stack ? e.stack : e))));
@@ -977,7 +979,7 @@ La pièce n'est pas remise en vente automatiquement : page Stock de l'admin.`);
   if (accountingConfigured(env as any)) {
     try {
       const rl = await stripeCall(k.value, 'GET', `/v1/refunds?charge=${encodeURIComponent(String(charge.id))}&limit=20`);
-      const ref = await assignRef(env, String(session.id));
+      const ref = await saleRef(env, session);
       for (const r of (rl.ok && rl.data.data) || []) {
         if (r.status === 'failed' || r.status === 'canceled') continue;
         await recordRefund(env as any, r, ref);
@@ -994,6 +996,10 @@ async function processPaid(env: Env, s: any) {
   if (meta.kind === 'deposit' || meta.kind === 'balance') await onRequestPaid(env as any, reqDeps(env), s, (env.WORKER_BASE || '').replace(/\/$/, ''));
   if (meta.kind === 'deposit') {
     if (s.livemode) await stockStub(env).invoiceNumber(s.id, parisYear(s.created || Math.floor(Date.now() / 1000))).catch(() => {});
+    // Compta : l'acompte est un encaissement comme un autre (sa ligne « Ventes » porte le numéro de la demande).
+    if (accountingConfigured(env as any)) {
+      await recordSale(env as any, s, await saleRef(env, s)).catch((e) => alertAdmin(env, 'compta-' + s.id, "Un acompte n'est pas parti vers la compta", `Session ${s.id} : ${String(e && e.message ? e.message : e)}`));
+    }
     return;
   }
   const items: Item[] = meta.items
@@ -1375,6 +1381,13 @@ async function isAdmin(request: Request, env: Env): Promise<boolean> {
   return true;
 }
 
+async function comptaResyncOnce(env: Env) {
+  const key = 'compta:resync:2026-10-26-acomptes';
+  if (await env.HOLDS.get(key)) return;
+  const r = await comptaResync(env, (d: unknown, status = 200) => new Response(JSON.stringify(d), { status }));
+  if (r.ok) await env.HOLDS.put(key, new Date().toISOString());
+}
+
 // Rattrapage compta : ventes payees (reel) et leurs remboursements, lus chez Stripe, avec le numero VG-XXXXXX. Sans doublon : une ligne deja confirmee est ignoree.
 async function comptaResync(env: Env, json: JsonFn): Promise<Response> {
   if (!accountingConfigured(env as any)) return json({ error: 'COMPTA_URL / COMPTA_SECRET non configurés.' }, 503);
@@ -1388,7 +1401,7 @@ async function comptaResync(env: Env, json: JsonFn): Promise<Response> {
     for (const s of r.data.data || []) {
       if (s.payment_status !== 'paid' || !s.livemode || !isOurs(s)) continue;
       if (COMPTA_EXCLUDED.has(String(s.id))) { out.excluded++; continue; }
-      const ref = await assignRef(env, String(s.id));
+      const ref = await saleRef(env, s);
       out.sales[await recordSale(env as any, s, ref)]++;
       const pi = typeof s.payment_intent === 'string' ? s.payment_intent : '';
       if (!pi) continue;
@@ -1450,7 +1463,7 @@ async function listOrders(request: Request, env: Env, key: string, json: JsonFn)
   for (const s of sessions) {
     if (s.payment_status !== 'paid') continue;
     const ship = (s.collected_information && s.collected_information.shipping_details) || s.shipping_details || {};
-    const [shipped, preparing, ref] = await Promise.all([env.HOLDS.get('shipped:' + s.id), env.HOLDS.get('preparing:' + s.id), assignRef(env, s.id)]);
+    const [shipped, preparing, ref] = await Promise.all([env.HOLDS.get('shipped:' + s.id), env.HOLDS.get('preparing:' + s.id), saleRef(env, s)]);
     orders.push({
       id: s.id,
       ref,
@@ -1573,6 +1586,11 @@ async function refCandidate(sessionId: string, salt: number): Promise<string> {
 // Numero stable d'une commande. Index KV ref:<numero> -> session et
 // sref:<session> -> numero. Si le numero est deja pris par UNE AUTRE commande
 // (tres rare), on genere une variante au lieu d'ecraser l'ancienne.
+// Référence d'une session payée : un acompte porte le numéro de la demande (pas de numéro VG-… : ce n'est pas une commande à expédier).
+async function saleRef(env: Env, s: any): Promise<string> {
+  return s && s.metadata && s.metadata.kind === 'deposit' && s.metadata.request ? String(s.metadata.request) : assignRef(env, String(s.id));
+}
+
 async function assignRef(env: Env, sessionId: string): Promise<string> {
   const have = await env.HOLDS.get('sref:' + sessionId);
   if (have) return have;
@@ -1720,11 +1738,17 @@ async function invoiceData(env: Env, key: string, sessionId: string, loaded?: an
     const parts = requestInvoiceParts(s, depNumber);
     const inv: any = buildInvoice(s, parts.lines as any, { number, ref, ...seller, vatAfter: env.VAT_MENTION_2027 });
     inv.title = parts.title; inv.titleEn = parts.titleEn; inv.deductions = parts.deductions; inv.notes = parts.notes; inv.kind = kind;
+    // Acompte ou solde remboursé : avoir lié à la facture, comme pour une commande de la boutique.
+    const rfd = await env.HOLDS.get('refunded:' + sessionId);
+    if (rfd) {
+      const r = JSON.parse(rfd);
+      inv.credit = { number: (s.livemode ? 'AV-' : 'TEST-AV-') + number.replace(/^TEST-/, ''), original: number, at: r.at, amount: Number(r.amount) || 0, full: !!r.full };
+    }
     return { ok: true, invoice: inv };
   }
   const ref = await assignRef(env, sessionId);
   const number = await num(sessionId, s.created, ref);
-  const lines = (await mailItems(env, s.line_items?.data || [], (c) => String(c / 100))).map((i) => ({ name: i.name, size: i.size, qty: i.qty || 1, unit: i.unit ? Number(i.unit) : 0, amount: Number(i.amount) }));
+  const lines = (await mailItems(env, s.line_items?.data || [], (c) => String(c / 100))).map((i) => ({ name: i.name, size: i.size, qty: i.qty || 1, unit: i.unit ? Number(i.unit) : Math.round((Number(i.amount) / (i.qty || 1)) * 100) / 100, amount: Number(i.amount) })); // mailItems ne donne « unit » que si qté > 1
   const inv: any = buildInvoice(s, lines as any, { number, ref, ...seller, vatAfter: env.VAT_MENTION_2027 });
   // Commande remboursée (webhook charge.refunded) : avoir lié à la facture, total ou partiel.
   const rf = await env.HOLDS.get('refunded:' + sessionId);
