@@ -1,0 +1,41 @@
+{
+  "_note": "Titres des fiches (balise title, partage) et descriptions des catégories (EN puis FR, comme la page Studio). Clé = permalink. Titre complet = texte + ' | vgthmind'. Pas de « cousu à la main », pas de « fait en France » sur les customs.",
+  "titles": {
+    "ch_0002": "Hoodie noir customisé à l'aérographe CH_0002",
+    "ch_0004": "Hoodie noir customisé à l'aérographe CH_0004",
+    "ch_0005": "Hoodie gris customisé à l'aérographe CH_0005",
+    "ch_0006": "Hoodie blanc customisé à l'aérographe CH_0006",
+    "ch_0003": "Hoodie kaki teint à la main, aérographe CH_0003",
+    "custom-hoodie": "Hoodie bleu marine customisé à l'aérographe",
+    "custom-tee-shirt-col-en-v": "Tee-shirt col V beige customisé à l'aérographe",
+    "longsleeve-td002": "Longsleeve noir à capuche texturé TD002",
+    "sma_0001": "Short gris foncé fait main, aérographe SMA_0001",
+    "sa": "Short noir fait main, aérographe SMA_0002",
+    "sma_0003": "Short gris chiné fait main, aérographe SMA_0003",
+    "sma_0004": "Short blanc fait main, aérographe SMA_0004",
+    "short-ge0001": "Short noir popeline, effet ghillie GE001",
+    "short-ml001": "Short gris molleton texturé ML001",
+    "short-sg001": "Short bleu gris soie gaufrée SG001",
+    "short-coupe-évasée": "Short satin gris bleuté, collab Yazzart",
+    "ja_0001": "Jogging blanc cassé fait main, aérographe JA_0001",
+    "pantalon-dd001": "Pantalon noir laine et coton, poches satin DD001",
+    "pantalon-ff001": "Pantalon gris polyester, poches satin FF001",
+    "pantalon-vc001": "Pantalon bleu velours de coton VC001",
+    "pantalon-denim-bleu": "Pantalon denim bleu épais, coupe droite",
+    "pantalon-rouge-framboise": "Pantalon rouge framboise coupe droite",
+    "gp_0002": "Pantalon noir satin duchesse, collection VGTHM",
+    "sc_0008": "Sacoche à pik noire en popeline SC_0008",
+    "sacoche": "Sacoche à pik bleue, PVC réfléchissant SC_0009",
+    "cache-cou": "Cache-cou blanc en molleton, design aérographe",
+    "cd-vgtape": "CD VGTAPE gravé à la main, pochette unique"
+  },
+  "categories": {
+    "latest-drop": "The latest vgthmind pieces, handmade or customised with airbrush. One-of-a-kind pieces. Les dernières pièces vgthmind, faites main ou customisées à l'aérographe. Pièces uniques.",
+    "all": "The whole vgthmind shop: hoodies, shorts, pants, bags and accessories, all one-of-a-kind. Toute la boutique vgthmind : hoodies, shorts, pantalons, sacoches et accessoires. Pièces uniques.",
+    "tops": "vgthmind hoodies, tees and longsleeves, airbrushed in France. One-of-a-kind pieces. Hoodies, tee-shirts et longsleeves vgthmind, peints en France à l'aérographe. Pièces uniques.",
+    "customsupcycling": "Garments customised with airbrush by vgthmind, never reproduced. One-of-a-kind pieces. Vêtements customisés à l'aérographe par vgthmind, jamais reproduits. Pièces uniques.",
+    "pantsshorts": "vgthmind shorts, pants and joggers, handmade, some airbrushed. One-of-a-kind pieces. Shorts, pantalons et joggings vgthmind, faits main, certains peints à l'aérographe. Pièces uniques.",
+    "merch": "The VGTAPE CD, hand-engraved, with a unique sleeve made from fabric offcuts. Le CD VGTAPE, gravé à la main, pochette unique en chutes de tissu.",
+    "accessories": "vgthmind bags, neck warmers and small accessories, one-of-a-kind or small runs. Sacoches à pik, cache-cou et petits accessoires vgthmind, pièces uniques ou petites séries."
+  }
+}

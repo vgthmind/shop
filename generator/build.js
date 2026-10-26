@@ -418,12 +418,16 @@ function localizeProduct(p, imageMap) {
   return q;
 }
 
+// Titres de fiches et descriptions de catégories rédigés à la main (data/seo.json) ; repli = « nom | vgthmind ».
+const SEO_TEXTS = Object.assign({ titles: {}, categories: {} }, (() => { try { return JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'data', 'seo.json'), 'utf8')); } catch (e) { return {}; } })());
+function productSeoTitle(product) { return `${SEO_TEXTS.titles[product.permalink] || product.name} | vgthmind`; }
+
 // --- head / body injections (what BigCartel adds around the templates) ---
 function headContent(page, product, imageMap) {
   if (!product) return '';
   // Aperçu de partage : JPG carré 1200x1200 < 300 Ko (generator/resize-images.js), adresse encodée (accents).
   const img = product.permalink ? SITE_ORIGIN_URL + BASE_PATH + '/assets/products-og/' + encodeURIComponent(product.permalink) + '.jpg' : '';
-  const ogTitle = `${product.name} | vgthmind`;
+  const ogTitle = productSeoTitle(product);
   const hid = product.hidden && HIDDEN_CONFIG[product.permalink] ? `<script>window.__vgConfigExtra=${JSON.stringify({ [product.permalink]: HIDDEN_CONFIG[product.permalink] }).replace(/</g, '\\u003c')};</script>` : '';
   const esc = (s) => String(s || '').replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
   const desc = esc(seoDescription(product, false));
@@ -462,6 +466,17 @@ function stripGenericMeta(html, names) {
 }
 
 function injectAround(html, parts, product, relPath) {
+  // Titres des fiches et descriptions des catégories (data/seo.json) : remplacent le titre « CH_0002 | vgthmind » et la
+  // description générique de la boutique.
+  const seoCat = relPath && (String(relPath).match(/^category\/([^/]+)\//) || [])[1];
+  const seoDesc = seoCat && SEO_TEXTS.categories[seoCat];
+  if (seoDesc) {
+    const d = seoDesc.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
+    html = html.replace(/(<meta name="description" content=")[^"]*/, (m, a) => a + d)
+      .replace(/(<meta property="og:description" content=")[^"]*/, (m, a) => a + d)
+      .replace(/(<meta name="twitter:description" content=")[^"]*/, (m, a) => a + d);
+  }
+  if (product && SEO_TEXTS.titles[product.permalink]) html = html.replace(/<title>[\s\S]*?<\/title>/i, `<title>${productSeoTitle(product).replace(/&/g, '&amp;').replace(/</g, '&lt;')}</title>`);
   // Head: noindex + Custom CSS + Head code, right before </head> (where
   // BigCartel puts them). The shim goes first in <head>, before any script.
   const tsKey = String(SHOP_SETTINGS.turnstile_site_key || '').trim();
