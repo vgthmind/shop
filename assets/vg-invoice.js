@@ -53,6 +53,7 @@
       + '.test{background:#fde8e8;color:#a23b2a;border:1px solid #a23b2a;padding:6px 10px;margin:10px 0;font-weight:700;text-align:center}'
       + 'button{margin:0 8px 16px 0;padding:10px 16px;border-radius:999px;border:1px solid #171717;background:#171717;color:#fff;font:inherit;cursor:pointer}'
       + '.tot td.n:nth-child(2){white-space:normal;word-break:break-word}.tot td:first-child{padding:0}@media(max-width:560px){.tot td:first-child{display:none}body{margin:16px auto}}'
+      + '@media(pointer:coarse){#vg-print{display:none}}'
       + '@media print{button{display:none}body{margin:0}}</style></head><body>'
       + '<button id="vg-print" type="button">' + t.print + '</button><button id="vg-share" type="button">' + t.share + '</button>'
       + (inv.test ? '<div class="test">' + t.test + '</div>' : '')
