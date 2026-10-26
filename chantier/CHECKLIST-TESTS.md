@@ -17,7 +17,7 @@ Supprimés (obsolètes) : test de paiement 4242 (le site est en mode réel : les
 5. **iPhone** : Même chemin sur iPhone : Admin → Réglages → « Comptabilité ».
    → Attendu : Le livre des recettes s'ouvre, rien ne déborde.
 6. **PC** : Admin → Réglages → Compta → « Ma comptabilité », puis Ctrl+Maj+R.
-   → Attendu : Lignes canal « Site vgthmind » : 3 ventes à +7 € et 3 remboursements à −7 € (total 0 €), chacune une seule fois, date = jour du paiement.
+   → Attendu : Lignes canal « Site vgthmind » visibles : 3 ventes à +7 € et 3 remboursements à −7 € (total 0 €), dates = jour du paiement. (Côté Worker, déjà vérifié : 3 ventes + 3 remboursements envoyés une seule fois, file vide. Reste : l'affichage dans ton outil.)
 7. **iPhone** : Admin → Réglages → Compta → « Ma comptabilité » (lien claude.ai, connecte-toi si demandé).
    → Attendu : La page s'ouvre et affiche les mêmes lignes « Site vgthmind ».
 8. **PC** : À la prochaine vente réelle (dans l'heure qui suit) : regarde « Ma comptabilité » (Ctrl+Maj+R).
@@ -45,7 +45,7 @@ Supprimés (obsolètes) : test de paiement 4242 (le site est en mode réel : les
 
 ## E. Pièces et éditeur
 17. **PC** : Admin → Catalogue (Pièces) : crée une pièce de test masquée, programmée dans 10 min ; regarde le site avant puis après l'heure ; archive-la ensuite.
-   → Attendu : Invisible avant l'heure ; visible peu après (le temps de la reconstruction) ; plus rien une fois archivée.
+   → Attendu : Invisible avant l'heure ; visible peu après (le secret DEPLOY_HOOK_URL est posé, il faut juste voir que la mise en ligne se déclenche) ; plus rien une fois archivée.
 18. **iPhone** : Admin → Modifier une fiche → ouvre une fiche → change une virgule → Enregistrer → attends 2 min → recharge la fiche → remets la virgule.
    → Attendu : Badge « Pièce unique », pastille de couleur et reel identiques à avant l'enregistrement. Une pièce programmée ou en aperçu le reste.
 
@@ -57,10 +57,10 @@ Supprimés (obsolètes) : test de paiement 4242 (le site est en mode réel : les
 21. **PC** : Rembourse l'acompte puis le solde (Admin → Commandes → Rembourser…) et regarde « Ma comptabilité ».
    → Attendu : Mails et alertes reçus ; 2 lignes « Remboursements » en négatif ; 2 lignes de ventes, sans doublon.
 22. **iPhone** : Envoie-toi en DM Instagram le lien https://www.vgthmind.org/product/cache-cou/ puis celui de l'accueil.
-   → Attendu : Fiche : photo carrée et titre « Cache-cou blanc en molleton, design aérographe | vgthmind ». Accueil : image générique. Ancien aperçu ? ajoute ?v=2 au lien.
+   → Attendu : L'aperçu s'affiche dans Instagram. (Balises déjà vérifiées en ligne : fiche = photo 1200×1200 + titre « Cache-cou blanc en molleton, design aérographe | vgthmind » ; accueil = image générique. Si Instagram montre un ancien aperçu : ajoute ?v=2 au lien.)
 23. **PC** : Admin → Réglages → Codes promo : crée « TESTVG » (10 %, 1 utilisation), essaie-le dans un panier jusqu'à Stripe sans payer, puis supprime-le.
    → Attendu : Remise visible dans le panier ; une fois supprimé, il n'est plus accepté. Erreur de droits : la clé Stripe n'a pas « Écriture » sur Coupons et Promotion Codes.
 
 ## G. Google Search Console
-24. **PC** : Search Console → Indexation / Améliorations : pour « 404 », « Extraits de produits » et « Fiches de marchand », clique « Valider la correction ».
-   → Attendu : Statut « Validation commencée » sur les trois (les résultats arrivent en quelques jours).
+24. **PC** : Search Console → Indexation / Améliorations : pour « 404 », « Extraits de produits » et « Fiches de marchand », clique « Valider la correction » ; vérifie aussi que sitemap.xml est bien soumis (Sitemaps).
+   → Attendu : Statut « Validation commencée » sur les trois ; sitemap « Réussite » (les résultats arrivent en quelques jours).
