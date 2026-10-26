@@ -211,7 +211,7 @@
     if (!u) return '';
     var sized = '../assets/products-sized/' + (size || 320) + '/' + u.replace(/^\/?assets\/products\//, '').replace(/\.\w+$/, '.webp');
     if (localImg[u]) return '<img alt="" src="' + esc(localImg[u]) + '">'; // photo tout juste enregistrée : pas encore en ligne, on garde l'aperçu local
-    return '<img alt="" loading="lazy" src="' + esc(sized) + '" data-sized="' + esc(sized) + '" data-full="' + esc('..' + u) + '" onerror="vgImgRetry(this)">';
+    return '<img alt="" loading="lazy" src="' + esc(sized) + '" data-sized="' + esc(sized) + '" data-full="' + esc('..' + u) + '">';
   }
   function stockOf(p) { // stock réel (Worker) si connu, sinon quantité de départ de la fiche
     if (p.slug in stockEdits) return stockEdits[p.slug];

@@ -11,4 +11,9 @@
     if (!base) return;
     setTimeout(function () { img.src = base + (base.indexOf('?') < 0 ? '?' : '&') + 'r=' + Date.now(); }, n === 0 ? 0 : 15000);
   };
+  // L'événement « error » ne remonte pas : on l'écoute en capture sur la page (plus d'attribut onerror, interdit par la CSP).
+  document.addEventListener('error', function (e) {
+    var t = e.target;
+    if (t && t.tagName === 'IMG' && t.hasAttribute('data-full')) root.vgImgRetry(t);
+  }, true);
 })(window);

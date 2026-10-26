@@ -20,10 +20,17 @@ function movedTo(pathname) {
 }
 
 // CSP de l'admin : le site lui-même, l'API GitHub (publication), le Worker (connexion GitHub, commandes), le serveur de détourage
-// (PC local ou tunnel trycloudflare). Scripts/styles en ligne et WebAssembly (encodeur WebP) autorisés ; rien d'autre.
-const ADMIN_CSP = "default-src 'self'; script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; media-src 'self' blob:; font-src 'self' data:; "
+// (PC local ou tunnel trycloudflare). Scripts : fichiers du site + scripts en ligne portant le nonce de la réponse (posé plus bas
+// sur chaque <script> de la page), plus WebAssembly (encodeur WebP). Styles en ligne autorisés ; rien d'autre.
+const adminCsp = (scriptSrc) => "default-src 'self'; script-src " + scriptSrc + " 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; media-src 'self' blob:; font-src 'self' data:; "
   + 'connect-src \'self\' https://api.github.com ' + WORKER + ' http://localhost:7860 http://127.0.0.1:7860 https://*.trycloudflare.com blob: data:; '
   + "worker-src 'self' blob:; frame-ancestors 'none'; base-uri 'self'; form-action 'self'; object-src 'none'";
+
+function newNonce() {
+  const b = crypto.getRandomValues(new Uint8Array(16)); let s = '';
+  for (const x of b) s += String.fromCharCode(x);
+  return btoa(s);
+}
 
 function cookie(request, name) {
   const m = new RegExp('(?:^|; )' + name + '=([^;]*)').exec(request.headers.get('Cookie') || '');
@@ -58,11 +65,16 @@ export async function onRequest(context) {
     return new Response(null, { status: 302, headers: { ...headers, Location: to.toString() } });
   }
   const res = await next();
-  const out = new Response(res.body, res);
+  // Nonce neuf à chaque réponse HTML ; sans HTMLRewriter (hors Cloudflare), on garde l'ancienne règle plutôt que de bloquer les pages.
+  const isHtml = /^text\/html/i.test(res.headers.get('Content-Type') || '');
+  const nonce = isHtml && typeof HTMLRewriter !== 'undefined' ? newNonce() : '';
+  const body = nonce ? new HTMLRewriter().on('script', { element(el) { el.setAttribute('nonce', nonce); } }).transform(res) : res;
+  const out = new Response(body.body, res);
+  if (nonce) out.headers.delete('Content-Length');
   out.headers.set('Cache-Control', 'private, no-store');
   // Les en-têtes de _headers ne s'appliquent pas aux réponses d'une Function : on les pose ici.
   // La CSP globale du site bloquait l'API GitHub (page Pièces bloquée sur « Chargement… ») : l'admin a la sienne, limitée à ses besoins.
-  out.headers.set('Content-Security-Policy', ADMIN_CSP);
+  out.headers.set('Content-Security-Policy', adminCsp(nonce ? "'self' 'nonce-" + nonce + "'" : "'self' 'unsafe-inline'"));
   out.headers.set('X-Frame-Options', 'DENY'); out.headers.set('X-Content-Type-Options', 'nosniff'); out.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');
   return out;
 }

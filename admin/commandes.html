@@ -277,10 +277,12 @@
     if (!w) { window.alert('Fenêtre bloquée : autorise les pop-ups pour ce site.'); return; }
     var lines = o.items.map(function (it) { return '<tr><td>' + esc(it.name) + (it.size ? ' — taille ' + esc(it.size) : '') + '</td><td class="n">× ' + esc(it.qty || 1) + '</td></tr>'; }).join('');
     w.document.write('<!doctype html><meta charset="utf-8"><title>Bon ' + esc(o.ref) + '</title><style>body{font:15px/1.5 system-ui,sans-serif;max-width:520px;margin:16px auto;padding:0 12px}h1{font-size:20px;margin:0}.dest{font-size:20px;line-height:1.35;border:2px solid #000;padding:12px;margin:14px 0}table{width:100%;border-collapse:collapse}td{padding:6px 2px;border-bottom:1px solid #ccc}.n{text-align:right}small{color:#555}button{margin-bottom:12px;padding:8px 14px}@media print{button{display:none}}</style>'
-      + '<button onclick="window.print()">Imprimer</button><h1>vgthmind — ' + esc(o.ref) + (o.livemode ? '' : ' (TEST)') + '</h1><small>' + esc(date(o.created)) + ' · ' + money(o.total) + ' dont port ' + money(o.shipping) + '</small>'
+      + '<button>Imprimer</button><h1>vgthmind — ' + esc(o.ref) + (o.livemode ? '' : ' (TEST)') + '</h1><small>' + esc(date(o.created)) + ' · ' + money(o.total) + ' dont port ' + money(o.shipping) + '</small>'
       + '<div class="dest"><strong>' + esc(o.name) + '</strong><br>' + address(o.address) + '</div>'
       + '<table>' + lines + '</table><p><small>' + esc(o.email) + (o.phone ? ' · ' + esc(o.phone) : '') + (o.shipped && o.shipped.tracking ? '<br>Suivi : ' + esc(o.shipped.tracking) : '') + '</small></p>');
     w.document.close();
+    var pb = w.document.querySelector('button'); // pas d'onclick en ligne (CSP) : le clic est branché d'ici
+    if (pb) pb.addEventListener('click', function () { w.print(); });
   }
 
   $('orders').addEventListener('keydown', function (e) {

@@ -143,3 +143,23 @@ test('admin : CSP propre de l\'admin (remplace celle du site ; autorise GitHub, 
     assert.equal(r.headers.get('X-Frame-Options'), 'DENY');
   } finally { globalThis.fetch = realFetch; }
 });
+
+test('admin : CSP sans unsafe-inline pour les scripts quand le nonce est posé (HTMLRewriter), repli sûr sinon', async () => {
+  const exp = Math.floor(Date.now() / 1000) + 600, tok = 'vgs.' + exp + '.' + 'A'.repeat(43);
+  const realFetch = globalThis.fetch; globalThis.fetch = async () => new Response('{}', { status: 200 });
+  const page = () => new Response('<script>1</script>', { headers: { 'Content-Type': 'text/html' } });
+  const req = () => new Request('https://site.test/admin/menu.html', { headers: { Cookie: 'vg-admin=' + tok } });
+  try {
+    const fallback = await onRequest({ request: req(), next: async () => page() });
+    assert.match(fallback.headers.get('Content-Security-Policy'), /script-src 'self' 'unsafe-inline'/); // pas de HTMLRewriter ici
+    globalThis.HTMLRewriter = class { on(sel, h) { this.h = h; return this; } transform(res) { const h = this.h; return new Response('<script nonce="' + (h.element({ setAttribute(k, v) { h.v = v; } }), h.v) + '">1</script>', res); } };
+    const r = await onRequest({ request: req(), next: async () => page() });
+    const csp = r.headers.get('Content-Security-Policy'), m = /script-src 'self' 'nonce-([^']+)' 'wasm-unsafe-eval'/.exec(csp);
+    assert.ok(m, csp); assert.ok(!/script-src[^;]*unsafe-inline/.test(csp));
+    assert.ok((await r.text()).includes('nonce="' + m[1] + '"'));
+  } finally { globalThis.fetch = realFetch; delete globalThis.HTMLRewriter; }
+});
+test('admin : plus aucun gestionnaire en ligne (onclick/onerror…) dans les pages ni les scripts de l\'admin', () => {
+  for (const f of readdirSync(ADMIN).filter((x) => /\.(html|js)$/.test(x) && !/\.test\./.test(x)))
+    assert.ok(!/[\s"']on(click|error|load|change|input|submit|focus|blur|key\w+|mouse\w+|touch\w+)=["']/.test(read(f)), f + ' contient un gestionnaire en ligne');
+});
