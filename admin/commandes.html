@@ -110,10 +110,11 @@
     if (!c) return '';
     try { return new Intl.DisplayNames(['fr'], { type: 'region' }).of(String(c).toUpperCase()) || c; } catch (e) { return c; }
   }
-  function address(a) {
-    if (!a) return '';
-    return [a.line1, a.line2, [a.postal_code, a.city].filter(Boolean).join(' '), a.state, countryName(a.country)].filter(Boolean).map(esc).join('<br>');
+  function addressLines(a) {
+    if (!a) return [];
+    return [a.line1, a.line2, [a.postal_code, a.city].filter(Boolean).join(' '), a.state, countryName(a.country)].filter(Boolean);
   }
+  function address(a) { return addressLines(a).map(esc).join('<br>'); }
 
   var api = window.vgAdminApi;
 
@@ -279,12 +280,23 @@
     if (!w) { window.alert('Fenêtre bloquée : autorise les pop-ups pour ce site.'); return; }
     var lines = o.items.map(function (it) { return '<tr><td>' + esc(it.name) + (it.size ? ' — taille ' + esc(it.size) : '') + '</td><td class="n">× ' + esc(it.qty || 1) + '</td></tr>'; }).join('');
     w.document.write('<!doctype html><meta charset="utf-8"><title>Bon ' + esc(o.ref) + '</title><style>body{font:15px/1.5 system-ui,sans-serif;max-width:520px;margin:16px auto;padding:0 12px}h1{font-size:20px;margin:0}.dest{font-size:20px;line-height:1.35;border:2px solid #000;padding:12px;margin:14px 0}table{width:100%;border-collapse:collapse}td{padding:6px 2px;border-bottom:1px solid #ccc}.n{text-align:right}small{color:#555}button{margin-bottom:12px;padding:8px 14px}@media print{button{display:none}}</style>'
-      + '<button id="vg-print" type="button">Imprimer</button><h1>vgthmind — ' + esc(o.ref) + (o.livemode ? '' : ' (TEST)') + '</h1><small>' + esc(date(o.created)) + ' · ' + money(o.total) + ' dont port ' + money(o.shipping) + '</small>'
+      + '<button id="vg-print" type="button">Imprimer</button> <button id="vg-share" type="button">Partager / Enregistrer le PDF</button><h1>vgthmind — ' + esc(o.ref) + (o.livemode ? '' : ' (TEST)') + '</h1><small>' + esc(date(o.created)) + ' · ' + money(o.total) + ' dont port ' + money(o.shipping) + '</small>'
       + '<div class="dest"><strong>' + esc(o.name) + '</strong><br>' + address(o.address) + '</div>'
       + '<table>' + lines + '</table><p><small>' + esc(o.email) + (o.phone ? ' · ' + esc(o.phone) : '') + (o.shipped && o.shipped.tracking ? '<br>Suivi : ' + esc(o.shipped.tracking) : '') + '</small></p>');
     w.document.close();
     var pb = w.document.getElementById('vg-print');
     if (pb) pb.addEventListener('click', function () { w.focus(); w.print(); });
+    var sb = w.document.getElementById('vg-share');
+    if (sb) sb.addEventListener('click', function () {
+      window.VGInvoice.sharePdf(w, function () {
+        return window.VGInvoice.sheetPdf({
+          title: 'vgthmind — ' + o.ref + (o.livemode ? '' : ' (TEST)'), sub: date(o.created) + ' · ' + money(o.total) + ' dont port ' + money(o.shipping),
+          dest: [o.name].concat(addressLines(o.address)),
+          items: o.items.map(function (it) { return [it.name + (it.size ? ' — taille ' + it.size : ''), '× ' + (it.qty || 1)]; }),
+          foot: [[o.email, o.phone].filter(Boolean).join(' · ')].concat(o.shipped && o.shipped.tracking ? ['Suivi : ' + o.shipped.tracking] : [])
+        });
+      }, 'bon-' + o.ref + '.pdf');
+    });
   }
 
   $('orders').addEventListener('keydown', function (e) {
