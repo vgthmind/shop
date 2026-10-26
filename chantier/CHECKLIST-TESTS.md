@@ -28,35 +28,39 @@ Supprimés (obsolètes) : test de paiement 4242 (le site est en mode réel : les
    → Attendu : Les pièces vendues sont à 0 / « Sold out » ; le CD et le cache-cou ont leur vrai stock.
 10. **PC** : Admin → Commandes → l'essai à 1 € → « Facture » puis « Avoir ».
    → Attendu : La facture et l'avoir s'ouvrent, avec le bon numéro et les bons montants.
+11. **PC** : Après la mise à jour de la sécurité de l'admin (26/10) : ouvre Menu, Catalogue, Commandes, Demandes, Réglages ; dans Commandes ouvre une commande → « Bon de commande » → « Imprimer ».
+   → Attendu : Toutes les pages se chargent et réagissent (boutons, listes) ; les miniatures du Catalogue s'affichent ; le bouton Imprimer lance l'impression. Sinon : note la page et le bouton.
+12. **iPhone** : Même ouverture de pages dans l'appli admin (Menu, Catalogue, Commandes).
+   → Attendu : Tout se charge et réagit comme avant.
 
 ## D. Sauvegarde et surveillance
-11. **PC** : Ouvre la boîte contact@ le matin.
+13. **PC** : Ouvre la boîte contact@ le matin.
    → Attendu : Un mail de sauvegarde nocturne (3 h 30 UTC) avec le fichier JSON joint, ouvrable.
-12. **PC** : Stripe → Développeurs → Webhooks → le endpoint du Worker.
+14. **PC** : Stripe → Développeurs → Webhooks → le endpoint du Worker.
    → Attendu : Les 2 anciens événements en échec sont compris (ou rejoués : 200) et aucun nouvel échec depuis.
-13. **PC** : Better Stack : liste des moniteurs.
+15. **PC** : Better Stack : liste des moniteurs.
    → Attendu : Tous au vert ; une alerte de test arrive bien sur ton mail ou ton téléphone.
-14. **PC** : Cloudflare → R2 → clés API.
+16. **PC** : Cloudflare → R2 → clés API.
    → Attendu : Seule la clé utilisée existe, sans expiration proche, avec les droits strictement nécessaires.
 
 ## E. Pièces et éditeur
-15. **PC** : Admin → Catalogue (Pièces) : crée une pièce de test masquée, programmée dans 10 min ; regarde le site avant puis après l'heure ; archive-la ensuite.
+17. **PC** : Admin → Catalogue (Pièces) : crée une pièce de test masquée, programmée dans 10 min ; regarde le site avant puis après l'heure ; archive-la ensuite.
    → Attendu : Invisible avant l'heure ; visible peu après (le temps de la reconstruction) ; plus rien une fois archivée.
-16. **iPhone** : Admin → Modifier une fiche → ouvre une fiche → change une virgule → Enregistrer → attends 2 min → recharge la fiche → remets la virgule.
+18. **iPhone** : Admin → Modifier une fiche → ouvre une fiche → change une virgule → Enregistrer → attends 2 min → recharge la fiche → remets la virgule.
    → Attendu : Badge « Pièce unique », pastille de couleur et reel identiques à avant l'enregistrement. Une pièce programmée ou en aperçu le reste.
 
 ## F. Parcours « sur demande », Instagram, code promo
-17. **PC** : Site → Sur demande : envoie une demande avec ta propre adresse mail.
+19. **PC** : Site → Sur demande : envoie une demande avec ta propre adresse mail.
    → Attendu : Mail de confirmation reçu ; la demande apparaît dans Admin → Demandes.
-18. **PC** : Crée un devis de 2 à 3 € (acompte inclus), envoie-le, accepte-le, paie l'acompte, demande le solde, paie le solde.
+20. **PC** : Crée un devis de 2 à 3 € (acompte inclus), envoie-le, accepte-le, paie l'acompte, demande le solde, paie le solde.
    → Attendu : Un mail à chaque étape (devis avec PDF, acompte, solde + facture), statuts corrects dans l'admin.
-19. **PC** : Rembourse l'acompte puis le solde (Admin → Commandes → Rembourser…) et regarde « Ma comptabilité ».
+21. **PC** : Rembourse l'acompte puis le solde (Admin → Commandes → Rembourser…) et regarde « Ma comptabilité ».
    → Attendu : Mails et alertes reçus ; 2 lignes « Remboursements » en négatif ; 2 lignes de ventes, sans doublon.
-20. **iPhone** : Envoie-toi en DM Instagram le lien https://www.vgthmind.org/product/cache-cou/ puis celui de l'accueil.
+22. **iPhone** : Envoie-toi en DM Instagram le lien https://www.vgthmind.org/product/cache-cou/ puis celui de l'accueil.
    → Attendu : Fiche : photo carrée et titre « Cache-cou blanc en molleton, design aérographe | vgthmind ». Accueil : image générique. Ancien aperçu ? ajoute ?v=2 au lien.
-21. **PC** : Admin → Réglages → Codes promo : crée « TESTVG » (10 %, 1 utilisation), essaie-le dans un panier jusqu'à Stripe sans payer, puis supprime-le.
+23. **PC** : Admin → Réglages → Codes promo : crée « TESTVG » (10 %, 1 utilisation), essaie-le dans un panier jusqu'à Stripe sans payer, puis supprime-le.
    → Attendu : Remise visible dans le panier ; une fois supprimé, il n'est plus accepté. Erreur de droits : la clé Stripe n'a pas « Écriture » sur Coupons et Promotion Codes.
 
 ## G. Google Search Console
-22. **PC** : Search Console → Indexation / Améliorations : pour « 404 », « Extraits de produits » et « Fiches de marchand », clique « Valider la correction ».
+24. **PC** : Search Console → Indexation / Améliorations : pour « 404 », « Extraits de produits » et « Fiches de marchand », clique « Valider la correction ».
    → Attendu : Statut « Validation commencée » sur les trois (les résultats arrivent en quelques jours).
