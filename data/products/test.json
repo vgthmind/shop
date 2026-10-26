@@ -20,5 +20,7 @@
   "color_hex": "#f2f2f2",
   "weight_g": 5,
   "mode": "colis",
-  "alone": false
+  "alone": false,
+  "hidden": true,
+  "publish_at": "2026-10-26T17:25:00.000Z"
 }
