@@ -119,3 +119,6 @@ body.vg-ui :is(button, a.btn, .btn):not(.chip, .ph, .mini, .vg-btn):hover { bord
 body.vg-ui .vg-btn.ghost:not(.bar2 .vg-btn) { background: #fff; }
 body.vg-ui :is(main, .vg-page) a:not([class]):not(nav.vg-back a) { color: var(--ink); text-decoration: underline; text-underline-offset: 3px; }
 @media (max-width: 759px) { body.vg-ui .vg-page > .vg-card:first-child { margin-top: 56px; } }
+.vg-head:has(> #refresh) { align-items: flex-start; flex-wrap: nowrap; }
+.vg-head:has(> #refresh) > div { flex: 1; min-width: 0; }
+.vg-head > #refresh { flex: none; }

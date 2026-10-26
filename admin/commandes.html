@@ -68,7 +68,7 @@
 </head>
 <body>
 <main>
-  <div class="vg-head"><div><h1>Commandes</h1><p class="vg-sub">Paiements reçus via Stripe (100 derniers).</p></div></div>
+  <div class="vg-head"><div><h1>Commandes</h1><p class="vg-sub">Paiements reçus via Stripe (100 derniers).</p></div><button type="button" id="refresh">Actualiser</button></div>
 
   <div class="bar" id="login" hidden>
     <button type="button" id="login-btn">Se connecter avec GitHub</button>
@@ -81,7 +81,6 @@
     <button type="button" data-f="deposit" aria-pressed="false">Acomptes</button>
     <button type="button" data-f="all" aria-pressed="false">Toutes</button>
     <input type="text" id="q" placeholder="Rechercher : VG-…, nom, e-mail" aria-label="Rechercher une commande" autocomplete="off">
-    <button type="button" id="refresh">Actualiser</button>
   </div>
 
   <p id="msg" role="status" aria-live="polite"></p>

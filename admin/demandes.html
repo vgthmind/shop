@@ -82,13 +82,9 @@
 </head>
 <body>
 <main class="vg-page">
-  <div class="vg-head"><div><h1>Demandes</h1><p class="vg-sub">Pièces sur demande (custom, sur-mesure), productions visuelles et collabs envoyées depuis la page « Proposer un projet ».</p></div></div>
+  <div class="vg-head"><div><h1>Demandes</h1><p class="vg-sub">Pièces sur demande (custom, sur-mesure), productions visuelles et collabs envoyées depuis la page « Proposer un projet ».</p></div><button type="button" id="refresh">Actualiser</button></div>
 
   <div class="bar" id="login" hidden><button type="button" id="login-btn">Se connecter avec GitHub</button></div>
-
-  <div class="bar" id="tabs" hidden>
-    <button type="button" id="refresh">Actualiser</button>
-  </div>
 
   <section id="list-view" hidden>
     <div class="bar chips" id="chips"></div>
@@ -127,7 +123,7 @@
     say('Chargement…');
     api('/admin/requests').then(function (d) {
       list = d.requests || []; settings = d.settings; uploads = d.uploads;
-      $('login').hidden = true; $('tabs').hidden = false; $('r2').hidden = uploads;
+      $('login').hidden = true; $('r2').hidden = uploads;
       $('list-view').hidden = false;
       say(''); draw();
     }).catch(function (e) { if (e.status === 401) { $('login').hidden = false; say('Connexion expirée : reconnecte-toi.'); } else say('Erreur : ' + e.message); });
