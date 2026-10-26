@@ -28,39 +28,41 @@ Supprimés (obsolètes) : test de paiement 4242 (le site est en mode réel : les
    → Attendu : Les pièces vendues sont à 0 / « Sold out » ; le CD et le cache-cou ont leur vrai stock.
 10. **PC** : Admin → Commandes → l'essai à 1 € → « Facture » puis « Avoir ».
    → Attendu : La facture et l'avoir s'ouvrent, avec le bon numéro et les bons montants.
-11. **PC** : Après la mise à jour de la sécurité de l'admin (26/10) : ouvre Menu, Catalogue, Commandes, Demandes, Réglages ; dans Commandes ouvre une commande → « Bon de commande » → « Imprimer ».
+11. **PC** : Admin → Réglages → Demandes → champ « Adresse » : saisis l'adresse du profil du Facturier → Enregistrer. Puis Commandes → une commande → « Facture ».
+   → Attendu : Le bloc vendeur de la facture affiche « vgthmind », « votre adresse, Vitry-sur-Seine, France », le SIRET et contact@vgthmind.org, sans aucun nom ni prénom. Pareil sur un « Avoir ».
+12. **PC** : Après la mise à jour de la sécurité de l'admin (26/10) : ouvre Menu, Catalogue, Commandes, Demandes, Réglages ; dans Commandes ouvre une commande → « Bon de commande » → « Imprimer ».
    → Attendu : Toutes les pages se chargent et réagissent (boutons, listes) ; les miniatures du Catalogue s'affichent ; le bouton Imprimer lance l'impression. Sinon : note la page et le bouton.
-12. **iPhone** : Même ouverture de pages dans l'appli admin (Menu, Catalogue, Commandes).
+13. **iPhone** : Même ouverture de pages dans l'appli admin (Menu, Catalogue, Commandes).
    → Attendu : Tout se charge et réagit comme avant.
 
 ## D. Sauvegarde et surveillance
-13. **PC** : Ouvre la boîte contact@ le matin.
+14. **PC** : Ouvre la boîte contact@ le matin.
    → Attendu : Un mail de sauvegarde nocturne (3 h 30 UTC) avec le fichier JSON joint, ouvrable.
-14. **PC** : Stripe → Développeurs → Webhooks → le endpoint du Worker.
+15. **PC** : Stripe → Développeurs → Webhooks → le endpoint du Worker.
    → Attendu : Les 2 anciens événements en échec sont compris (ou rejoués : 200) et aucun nouvel échec depuis.
-15. **PC** : Better Stack : liste des moniteurs.
+16. **PC** : Better Stack : liste des moniteurs.
    → Attendu : Tous au vert ; une alerte de test arrive bien sur ton mail ou ton téléphone.
-16. **PC** : Cloudflare → R2 → clés API.
+17. **PC** : Cloudflare → R2 → clés API.
    → Attendu : Seule la clé utilisée existe, sans expiration proche, avec les droits strictement nécessaires.
 
 ## E. Pièces et éditeur
-17. **PC** : Admin → Catalogue (Pièces) : crée une pièce de test masquée, programmée dans 10 min ; regarde le site avant puis après l'heure ; archive-la ensuite.
+18. **PC** : Admin → Catalogue (Pièces) : crée une pièce de test masquée, programmée dans 10 min ; regarde le site avant puis après l'heure ; archive-la ensuite.
    → Attendu : Invisible avant l'heure ; visible peu après (le secret DEPLOY_HOOK_URL est posé, il faut juste voir que la mise en ligne se déclenche) ; plus rien une fois archivée.
-18. **iPhone** : Admin → Modifier une fiche → ouvre une fiche → change une virgule → Enregistrer → attends 2 min → recharge la fiche → remets la virgule.
+19. **iPhone** : Admin → Modifier une fiche → ouvre une fiche → change une virgule → Enregistrer → attends 2 min → recharge la fiche → remets la virgule.
    → Attendu : Badge « Pièce unique », pastille de couleur et reel identiques à avant l'enregistrement. Une pièce programmée ou en aperçu le reste.
 
 ## F. Parcours « sur demande », Instagram, code promo
-19. **PC** : Site → Sur demande : envoie une demande avec ta propre adresse mail.
+20. **PC** : Site → Sur demande : envoie une demande avec ta propre adresse mail.
    → Attendu : Mail de confirmation reçu ; la demande apparaît dans Admin → Demandes.
-20. **PC** : Crée un devis de 2 à 3 € (acompte inclus), envoie-le, accepte-le, paie l'acompte, demande le solde, paie le solde.
+21. **PC** : Crée un devis de 2 à 3 € (acompte inclus), envoie-le, accepte-le, paie l'acompte, demande le solde, paie le solde.
    → Attendu : Un mail à chaque étape (devis avec PDF, acompte, solde + facture), statuts corrects dans l'admin.
-21. **PC** : Rembourse l'acompte puis le solde (Admin → Commandes → Rembourser…) et regarde « Ma comptabilité ».
+22. **PC** : Rembourse l'acompte puis le solde (Admin → Commandes → Rembourser…) et regarde « Ma comptabilité ».
    → Attendu : Mails et alertes reçus ; 2 lignes « Remboursements » en négatif ; 2 lignes de ventes, sans doublon.
-22. **iPhone** : Envoie-toi en DM Instagram le lien https://www.vgthmind.org/product/cache-cou/ puis celui de l'accueil.
+23. **iPhone** : Envoie-toi en DM Instagram le lien https://www.vgthmind.org/product/cache-cou/ puis celui de l'accueil.
    → Attendu : L'aperçu s'affiche dans Instagram. (Balises déjà vérifiées en ligne : fiche = photo 1200×1200 + titre « Cache-cou blanc en molleton, design aérographe | vgthmind » ; accueil = image générique. Si Instagram montre un ancien aperçu : ajoute ?v=2 au lien.)
-23. **PC** : Admin → Réglages → Codes promo : crée « TESTVG » (10 %, 1 utilisation), essaie-le dans un panier jusqu'à Stripe sans payer, puis supprime-le.
+24. **PC** : Admin → Réglages → Codes promo : crée « TESTVG » (10 %, 1 utilisation), essaie-le dans un panier jusqu'à Stripe sans payer, puis supprime-le.
    → Attendu : Remise visible dans le panier ; une fois supprimé, il n'est plus accepté. Erreur de droits : la clé Stripe n'a pas « Écriture » sur Coupons et Promotion Codes.
 
 ## G. Google Search Console
-24. **PC** : Search Console → Indexation / Améliorations : pour « 404 », « Extraits de produits » et « Fiches de marchand », clique « Valider la correction » ; vérifie aussi que sitemap.xml est bien soumis (Sitemaps).
+25. **PC** : Search Console → Indexation / Améliorations : pour « 404 », « Extraits de produits » et « Fiches de marchand », clique « Valider la correction » ; vérifie aussi que sitemap.xml est bien soumis (Sitemaps).
    → Attendu : Statut « Validation commencée » sur les trois ; sitemap « Réussite » (les résultats arrivent en quelques jours).
