@@ -282,10 +282,9 @@
       + '<button id="vg-print" type="button">Imprimer</button><h1>vgthmind — ' + esc(o.ref) + (o.livemode ? '' : ' (TEST)') + '</h1><small>' + esc(date(o.created)) + ' · ' + money(o.total) + ' dont port ' + money(o.shipping) + '</small>'
       + '<div class="dest"><strong>' + esc(o.name) + '</strong><br>' + address(o.address) + '</div>'
       + '<table>' + lines + '</table><p><small>' + esc(o.email) + (o.phone ? ' · ' + esc(o.phone) : '') + (o.shipped && o.shipped.tracking ? '<br>Suivi : ' + esc(o.shipped.tracking) : '') + '</small></p>');
-    // Pas d'onclick en ligne (CSP) : script d'impression avec le nonce de cette page (la fenêtre hérite de la CSP).
-    var ns = document.querySelector('script[nonce]'), nonce = ns ? (ns.nonce || ns.getAttribute('nonce') || '') : '';
-    w.document.write('<script' + (nonce ? ' nonce="' + esc(nonce) + '"' : '') + '>document.getElementById("vg-print").addEventListener("click",function(){window.print();});</' + 'script>');
     w.document.close();
+    var pb = w.document.getElementById('vg-print');
+    if (pb) pb.addEventListener('click', function () { w.focus(); w.print(); });
   }
 
   $('orders').addEventListener('keydown', function (e) {
