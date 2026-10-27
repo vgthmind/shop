@@ -398,6 +398,13 @@ function productOffer(product, url) {
   return offer;
 }
 
+// Description de recherche : 160 caractères au plus (Google coupe au-delà), coupée à la fin d'un mot.
+function cut160(t) {
+  t = String(t || '').replace(/\s+/g, ' ').trim();
+  if (t.length <= 160) return t;
+  return t.slice(0, 157).replace(/[\s,;:.-]+\S*$/, '').replace(/[\s,;:.-]+$/, '') + '…';
+}
+
 function seoDescription(product, withFrench) {
   const paras = String(product.description || '').split(/\r?\n\s*\r?\n/);
   const flat = (t) => String(t || '').split(/\r?\n/).map((l) => l.replace(/^[\s-]+/, '').replace(/[\s.]+$/, '').trim()).filter(Boolean).join(', ');
@@ -421,6 +428,8 @@ function localizeProduct(p, imageMap) {
 
 // Titres de fiches et descriptions de catégories rédigés à la main (data/seo.json) ; repli = « nom | vgthmind ».
 const SEO_TEXTS = Object.assign({ titles: {}, categories: {} }, (() => { try { return JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'data', 'seo.json'), 'utf8')); } catch (e) { return {}; } })());
+const CAT_NAMES = Object.fromEntries(((() => { try { return JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'data', 'catalog.json'), 'utf8')).categories; } catch (e) { return []; } })()).map((c) => [c.permalink, c.name]));
+function seoCatName(relPath) { const m = String(relPath).match(/^category\/([^/]+)\//); return m ? (CAT_NAMES[m[1]] || '') : ''; }
 function productSeoTitle(product) { return `${SEO_TEXTS.titles[product.permalink] || product.name} | vgthmind`; }
 
 // --- head / body injections (what BigCartel adds around the templates) ---
@@ -431,7 +440,7 @@ function headContent(page, product, imageMap) {
   const ogTitle = productSeoTitle(product);
   const hid = product.hidden && HIDDEN_CONFIG[product.permalink] ? `<script>window.__vgConfigExtra=${JSON.stringify({ [product.permalink]: HIDDEN_CONFIG[product.permalink] }).replace(/</g, '\\u003c')};</script>` : '';
   const esc = (s) => String(s || '').replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
-  const desc = esc(seoDescription(product, false));
+  const desc = esc(cut160(seoDescription(product, false)));
   return [
     hid,
     `<meta name="description" content="${desc}">`,
@@ -472,7 +481,7 @@ function injectAround(html, parts, product, relPath) {
   const seoCat = relPath && (String(relPath).match(/^category\/([^/]+)\//) || [])[1];
   const seoDesc = seoCat && SEO_TEXTS.categories[seoCat];
   if (seoDesc) {
-    const d = seoDesc.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
+    const d = cut160(seoDesc).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
     html = html.replace(/(<meta name="description" content=")[^"]*/, (m, a) => a + d)
       .replace(/(<meta property="og:description" content=")[^"]*/, (m, a) => a + d)
       .replace(/(<meta name="twitter:description" content=")[^"]*/, (m, a) => a + d);
@@ -511,7 +520,7 @@ function injectAround(html, parts, product, relPath) {
   // language: Safari iPhone guesses one and offers "Translation available"
   // on every load. Declare English (the shop's main language) and opt out of
   // translation (the pages already have their own English / French parts).
-  html = html.replace(/<!DOCTYPE html>/i, (m) => `${m}\n<html lang="en" translate="no">`);
+  html = html.replace(/<!DOCTYPE html>/i, (m) => `${m}\n<html lang="fr" translate="no">`);
   html = ownScripts(html);
   // The layout's own transition boot (arrival check: flag href vs current
   // path) must see the same /shop-less path as vg-transitions-dev.js.
@@ -534,8 +543,30 @@ function injectAround(html, parts, product, relPath) {
   if (relPath && !/^(merci|paiement-annule|suivi|demande\/|404|contact\/)/.test(relPath)) {
     const escA = (v) => String(v || '').replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
     const pagePath = '/' + relPath.replace(/index\.html$/, '').replace(/\/$/, '');
-    const url = SHOP_SETTINGS.site_url.replace(/\/$/, '') + (pagePath === '/' ? '/' : pagePath);
+    // Cloudflare Pages sert chaque page sous /adresse/ (sans « / » : redirection 308) : l'adresse canonique est celle-là.
+    const url = SHOP_SETTINGS.site_url.replace(/\/$/, '') + (pagePath === '/' ? '/' : encodeURI(pagePath) + '/');
+    const origin = SHOP_SETTINGS.site_url.replace(/\/$/, '');
+    // Fil d'Ariane (Google) : accueil > boutique > catégorie / fiche.
+    const crumbs = [['Accueil', origin + '/']];
+    if (/^products\//.test(relPath)) crumbs.push(['Boutique', origin + '/products/']);
+    else if (seoCatName(relPath)) crumbs.push(['Boutique', origin + '/products/'], [seoCatName(relPath), url]);
+    else if (product) {
+      const c = (product.categories || []).find((x) => x.permalink !== 'all' && x.permalink !== 'latest-drop');
+      crumbs.push(['Boutique', origin + '/products/']);
+      if (c && c.permalink) crumbs.push([c.name, origin + '/category/' + encodeURIComponent(c.permalink) + '/']);
+      crumbs.push([product.name, url]);
+    }
     seoTags = `<link rel="canonical" href="${escA(url)}">\n<meta property="og:url" content="${escA(url)}">`;
+    const ldJson = (o) => `\n<script type="application/ld+json">${JSON.stringify(o).replace(/</g, '\\u003c')}</script>`;
+    if (crumbs.length > 1) {
+      seoTags += ldJson({ '@context': 'https://schema.org', '@type': 'BreadcrumbList', itemListElement: crumbs.map((c, i) => ({ '@type': 'ListItem', position: i + 1, name: c[0], item: c[1] })) });
+    }
+    if (pagePath === '/') {
+      seoTags += ldJson({ '@context': 'https://schema.org', '@graph': [
+        { '@type': 'Organization', '@id': origin + '/#organization', name: 'vgthmind', url: origin + '/', logo: origin + '/assets/theme/icon-512.png', email: 'contact@vgthmind.org', sameAs: ['https://www.instagram.com/vgthmind/'] },
+        { '@type': 'WebSite', '@id': origin + '/#website', url: origin + '/', name: 'vgthmind', inLanguage: 'fr', publisher: { '@id': origin + '/#organization' } },
+      ] });
+    }
     if (!product) {
       const t = (html.match(/<title>([\s\S]*?)<\/title>/i) || [])[1];
       if (t) seoTags += `\n<meta property="og:title" content="${escA(t.trim())}">\n<meta property="og:type" content="website">\n<meta name="twitter:card" content="summary_large_image">`;
@@ -963,7 +994,7 @@ async function main() {
     ...catalog.products.filter((p) => !p.hidden).map((p) => `${BASE_PATH}${p.url}`),
     ...CUSTOM_PAGES.map((cp) => `${BASE_PATH}${cp.url}`),
     ...LEGAL_PAGES.map((lp) => `${BASE_PATH}${lp.url}`),
-  ];
+  ].map((u) => (u.endsWith('/') ? u : encodeURI(decodeURI(u)) + '/')); // adresses réellement servies (sans « / » : redirection 308)
   const sitemap = '<?xml version="1.0" encoding="UTF-8"?>\n'
     + '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'
     + urls.map((u) => `  <url><loc>${SITE_ORIGIN}${u}</loc><lastmod>${today}</lastmod></url>`).join('\n')

@@ -38,13 +38,15 @@ test('bascule : aucun préfixe /shop ni ancien domaine dans les liens internes',
 
 test('bascule : référencement ouvert (sitemap www, robots, canonical, pas de noindex)', () => {
   const sm = readFileSync(path.join(out, 'sitemap.xml'), 'utf8');
-  assert.match(sm, /<loc>https:\/\/www\.vgthmind\.org\/product\/ch_0002<\/loc>/);
+  assert.match(sm, /<loc>https:\/\/www\.vgthmind\.org\/product\/ch_0002\/<\/loc>/);
   assert.ok(!/vgthmind\.github\.io|pages\.dev/.test(sm));
   const robots = readFileSync(path.join(out, 'robots.txt'), 'utf8');
   assert.ok(!/^Disallow: \/\s*$/m.test(robots));
   assert.match(robots, /Sitemap: https:\/\/www\.vgthmind\.org\/sitemap\.xml/);
   const fiche = page('product/ch_0002');
-  assert.match(fiche, /<link rel="canonical" href="https:\/\/www\.vgthmind\.org\/product\/ch_0002"/);
+  assert.match(fiche, /<link rel="canonical" href="https:\/\/www\.vgthmind\.org\/product\/ch_0002\/"/);
+  assert.match(fiche, /"@type":"BreadcrumbList"/);
+  assert.match(page('.'), /"@type":"Organization"/);
   assert.ok(!/name="robots" content="noindex/.test(fiche));
   // Le suivi de commande et les demandes privées restent hors des moteurs de recherche.
   assert.match(page('suivi'), /noindex/);
