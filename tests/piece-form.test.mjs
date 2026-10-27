@@ -87,3 +87,18 @@ test('corrections de vgthmind : ja_0001 blanc cassé, cd-vgtape ×5, cache-cou s
   assert.equal(read('cd-vgtape').quantity, 5); assert.equal(read('cd-vgtape').unique, false);
   assert.equal(read('cache-cou').unique, false); assert.equal(read('cache-cou').quantity, 0);
 });
+
+test('lien Instagram : post, carrousel et paramètres (?igsh=, ?img_index=) acceptés ; messages clairs sinon', () => {
+  for (const u of ['https://www.instagram.com/p/C1KfFi9Lm9p/?img_index=1', 'https://www.instagram.com/p/DMdJP5yId7f/?igsh=MWx4ZXRh', 'https://instagram.com/reel/Da8M1VzMmoS/?igsh=abc&utm_source=qr']) assert.equal(F.reelError(u), null, u);
+  assert.match(F.reelError('http://www.instagram.com/p/x/'), /https:\/\//);
+  assert.match(F.reelError('https://www.instagram.com/p/x/ en plus'), /espace/);
+  assert.match(F.reelError('https://evil.example/p/x/'), /igsh/);
+});
+
+test('fiche pièce : jamais de cadre Instagram (la CSP ne l’autorise pas) ; post / reel sans vidéo = simple lien ; CSP inchangée', () => {
+  const body = readFileSync(new URL('../theme/custom/body.html', import.meta.url), 'utf8');
+  assert.ok(!/createElement\('iframe'\)/.test(body) && !/instagram\.com\/'? ?\+ ?embedPath/.test(body), 'plus d’iframe Instagram');
+  assert.ok(/ig-reel-linkonly/.test(body));
+  const headers = readFileSync(new URL('../generator/_headers', import.meta.url), 'utf8');
+  assert.ok(/frame-src https:\/\/challenges\.cloudflare\.com;/.test(headers) && !/frame-src[^;]*instagram/.test(headers), 'frame-src non élargi');
+});

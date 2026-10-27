@@ -115,7 +115,7 @@ window.__vgConfig = fetch('https://vgthmind.github.io/assets/bigcartel/products-
     }
     if (!reelUrl) return;
     var desc = document.querySelector('.product-description');
-    if (!desc || document.querySelector('.ig-reel-embed')) return;
+    if (!desc || document.querySelector('.ig-reel-embed, .ig-reel-linkonly')) return;
 
     var wrap = document.createElement('div');
     wrap.className = 'ig-reel-embed';
@@ -154,39 +154,19 @@ window.__vgConfig = fetch('https://vgthmind.github.io/assets/bigcartel/products-
       wrap.appendChild(video);
       wrap.appendChild(extLink);
     } else {
-      wrap.setAttribute('role', 'button');
-      wrap.setAttribute('tabindex', '0');
-      // Sans vidéo MP4 : carte sombre (jamais une photo de la pièce) ; le reel Instagram s'ouvre au clic.
-      var posterUrl = '';
-      var posterSpan = document.createElement('span');
-      posterSpan.className = 'ig-reel-poster';
-      if (posterUrl) posterSpan.style.backgroundImage = "url('" + posterUrl + "')";
-      var play = document.createElement('span');
-      play.className = 'ig-reel-play';
-      wrap.appendChild(posterSpan);
-      wrap.appendChild(play);
-      wrap.appendChild(label);
-      var activated = false;
-      var activateReel = function () {
-        if (activated) return;
-        activated = true;
-        posterSpan.remove();
-        play.remove();
-        if (embedPath) {
-          var iframe = document.createElement('iframe');
-          iframe.src = 'https://www.instagram.com/' + embedPath + 'embed';
-          iframe.setAttribute('allowtransparency', 'true');
-          iframe.setAttribute('allow', 'autoplay; encrypted-media');
-          iframe.frameBorder = '0';
-          iframe.scrolling = 'no';
-          wrap.insertBefore(iframe, label);
-        } else {
-          window.open(reelUrl, '_blank', 'noopener');
-        }
-        wrap.appendChild(extLink);
-      };
-      wrap.addEventListener('click', activateReel);
-      wrap.addEventListener('keydown', function (e) { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); activateReel(); } });
+      // Sans vidéo MP4 (reel sans fichier, post, carrousel) : pas de cadre. Instagram ne s'intègre pas dans une page dont la CSP
+      // n'autorise pas son cadre (et on ne l'élargit pas) : seulement un lien propre vers Instagram.
+      var isPost = /instagram.com/(?:p|tv)//.test(reelUrl);
+      var linkOnly = document.createElement('a');
+      linkOnly.className = 'ig-reel-linkonly';
+      linkOnly.href = reelUrl;
+      linkOnly.target = '_blank';
+      linkOnly.rel = 'noopener noreferrer';
+      linkOnly.textContent = (isPost
+        ? (window.vgL ? window.vgL('View the post on Instagram', 'Voir le post sur Instagram') : 'Voir le post sur Instagram')
+        : (window.vgL ? window.vgL('View on Instagram', 'Voir sur Instagram') : 'Voir sur Instagram')) + ' →';
+      desc.insertAdjacentElement('afterend', linkOnly);
+      return;
     }
 
     desc.insertAdjacentElement('afterend', wrap);
@@ -719,6 +699,8 @@ nav.sections a:hover:hover:hover:hover:hover:hover,.header nav a:hover:hover:hov
 .ig-reel-embed{position:relative !important;display:block !important;aspect-ratio:9/16 !important;max-width:280px !important;margin:16px auto 0 !important;padding:0 !important;border-radius:14px !important;overflow:hidden !important;text-decoration:none !important;background:#111 !important;box-shadow:0 4px 10px rgba(0,0,0,0.25) !important;}
 .ig-reel-video{width:100% !important;height:100% !important;object-fit:cover !important;display:block !important;border-radius:0 !important;background:#111 !important;}
 .ig-reel-extlink{position:absolute !important;top:10px !important;right:10px !important;padding:6px 10px !important;background:rgba(0,0,0,0.55) !important;color:#fff !important;font-family:'IBM Plex Mono',monospace !important;font-size:10px !important;letter-spacing:0.05em !important;text-transform:uppercase !important;text-decoration:none !important;border-radius:20px !important;backdrop-filter:blur(4px) !important;z-index:2 !important;transition:background .2s ease !important;}
+.ig-reel-linkonly{display:block !important;width:max-content !important;max-width:100% !important;margin:16px auto 0 !important;padding:12px 20px !important;min-height:44px !important;box-sizing:border-box !important;background:#111 !important;color:#fff !important;font-family:'IBM Plex Mono',monospace !important;font-size:12px !important;letter-spacing:0.05em !important;text-transform:uppercase !important;text-decoration:none !important;border-radius:999px !important;text-align:center !important;line-height:1.4 !important;}
+.ig-reel-linkonly:hover{background:#3a4de8 !important;}
 .ig-reel-extlink:hover{background:rgba(0,0,0,0.8) !important;}
 .ig-reel-embed .ig-reel-poster{position:absolute !important;inset:0 !important;background-size:cover !important;background-position:center !important;filter:brightness(0.85) !important;border-radius:0 !important;}
 .ig-reel-embed .ig-reel-play{position:absolute !important;top:50% !important;left:50% !important;width:52px !important;height:52px !important;transform:translate(-50%,-50%) !important;border-radius:50% !important;background:rgba(255,255,255,0.92) !important;box-shadow:0 2px 8px rgba(0,0,0,0.35) !important;transition:transform 0.25s ease !important;}

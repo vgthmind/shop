@@ -15,8 +15,11 @@
   // Lien Instagram (reel, post photo ou carrousel) ou YouTube, en https. Vide = pas de lien.
   function reelError(url) {
     if (!url) return null;
+    url = String(url).trim();
+    if (/^http:\/\//i.test(url)) return 'Lien Instagram : l\'adresse doit commencer par https:// (et non http://).';
+    if (/\s/.test(url)) return 'Lien Instagram : l\'adresse ne doit pas contenir d\'espace (colle-la entière, sans rien avant ni après).';
     return /^https:\/\/(?:www\.|m\.)?(instagram\.com|youtube\.com|youtu\.be)\/\S+$/i.test(url)
-      ? null : 'Lien Instagram : adresse d\'un reel, d\'un post ou d\'un carrousel Instagram (ou YouTube) en https://.';
+      ? null : 'Lien Instagram : colle l\'adresse d\'un reel, d\'un post ou d\'un carrousel Instagram (ou YouTube), par exemple https://www.instagram.com/p/…/ ; les paramètres comme ?igsh=… sont acceptés.';
   }
 
   function weightOf(p) { var w = Math.floor(Number(p && p.weight_g)); return isFinite(w) && w > 0 ? w : 0; }
