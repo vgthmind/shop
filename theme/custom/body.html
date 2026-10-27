@@ -60,6 +60,7 @@ window.__vgConfig = fetch('https://vgthmind.github.io/assets/bigcartel/products-
 <script>
 (function () {
   var slug = window.location.pathname.replace(/\/$/, '').split('/').pop();
+  try { slug = decodeURIComponent(slug); } catch (e) {} // « short-coupe-évasée » : l'adresse arrive encodée, les clés du catalogue non
   var REEL_MAP = {
     'ch_0005': 'reel/Da8M1VzMmoS/',
     'ch_0006': 'reel/Da5kXNzsk48/',

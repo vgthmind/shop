@@ -110,3 +110,8 @@ test('body.html : chaque script en ligne est du JavaScript valide (une erreur ca
   while ((m = re.exec(body))) { n++; assert.doesNotThrow(() => new Function(m[1]), 'script en ligne n° ' + n); }
   assert.ok(n > 3);
 });
+
+test('fiche à accent (short-coupe-évasée) : le slug de l’adresse est décodé avant la recherche du reel', () => {
+  const body = readFileSync(new URL('../theme/custom/body.html', import.meta.url), 'utf8');
+  assert.ok(/decodeURIComponent\(slug\)/.test(body));
+});
