@@ -3,7 +3,7 @@
 Les mots techniques sont expliqués entre parenthèses. **Rien n'a été poussé sur `main`, rien n'a été déployé** (ni site, ni Worker = le petit serveur de paiement chez Cloudflare). Tout est sur la branche `claude/keen-hypatia-ikrv7l` ; la bascule du domaine est sur la branche `bascule-prete`. Depuis mon environnement, les adresses `pages.dev`, `workers.dev` et `vgthmind.org` sont bloquées (403) : je ne peux donc ni voir le site en ligne, ni vérifier un déploiement, ni parler à Stripe. Tout a été essayé sur une copie locale (navigateur Chromium simulant un PC et un iPhone 13) avec un faux serveur de paiement.
 
 ## 1. En ligne ou pas
-- **En ligne : rien de nouveau.** Version en ligne = celle d'avant (Worker `cf99b2d4`, retour arrière documenté dans ETAT.md).
+- **En ligne : rien de nouveau.** Version en ligne = celle d'avant (Worker `cf99b2d4`, retour arrière documenté dans vgthmind-chantier/chantier/ETAT.md).
 - **Prêt, attend ton OK** : tout ce qui suit. Pour le mettre en ligne : « déploie la branche de la nuit ».
 
 ## 2. Audit page par page (PC et iPhone, FR et EN)

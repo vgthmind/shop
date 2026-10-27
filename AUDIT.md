@@ -55,4 +55,4 @@ Rien n'a été modifié dans le code pour cet audit. Chaque point : risque, éta
 - Sauvegarde nocturne des commandes : vérifier la restauration une fois à blanc.
 - Dépendances (`npm audit`) : lancer avant la bascule ; `sharp` est la seule dépendance de développement.
 - Journaliser dans le Worker les échecs de connexion admin et envoyer l'alerte e-mail existante au bout de N échecs.
-- Données de test à supprimer avant le live (liste dans ETAT.md).
+- Données de test à supprimer avant le live (liste dans vgthmind-chantier/chantier/ETAT.md).

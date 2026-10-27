@@ -11,7 +11,7 @@
 4. Ne m'envoie ces deux valeurs **nulle part**. Dis-moi juste « clé live créée » : je te donne les commandes à coller : `wrangler secret put STRIPE_SECRET_KEY` (clé live), `wrangler secret put STRIPE_WEBHOOK_SECRET` (whsec live), puis `LIVE_MODE = "1"` dans `wrangler.toml` + redéploiement.
 5. Paramètres, Moyens de paiement : carte (+ Apple Pay / Google Pay si tu veux). Paramètres, Informations de l'entreprise : nom « vgthmind », SIRET.
 6. **Test réel** : une pièce fictive à 1 € (je la crée), tu paies avec ta vraie carte, je vérifie stock + mails, puis **Remboursement** depuis Stripe (Paiements, le paiement, Rembourser). Frais Stripe perdus : environ 0,25 €.
-Retour arrière : `LIVE_MODE="0"` + secrets de test (`rk_test...`) + `npx wrangler@4 rollback <id>` (ids dans ETAT.md).
+Retour arrière : `LIVE_MODE="0"` + secrets de test (`rk_test...`) + `npx wrangler@4 rollback <id>` (ids dans vgthmind-chantier/chantier/ETAT.md).
 
 ## 2. Domaine vgthmind.org chez IONOS (32) : état relevé aujourd'hui
 - `www.vgthmind.org` : CNAME `vgthmind.bigcartel.com` (la boutique BigCartel).
@@ -39,7 +39,7 @@ Déjà le cas : le port est calculé par `shipping-calc.js` + `shipping-config.j
 Proposition : (a) Cloudflare, Notifications, « Workers : taux d'erreur élevé » vers contact@ (réglage de ton compte, 3 clics) ; (b) dans le Worker : en cas d'échec d'un envoi Resend ou d'une erreur dans `/webhook`, envoyer un mail d'alerte à ALERT_EMAIL ; (c) Stripe, Développeurs, Webhooks : alertes d'échec par mail (réglage Stripe). Je le code après ton OK.
 
 ## 6. Checklist « jour J » (37)
-**Avant (J-1)** : `npm test` tout vert ; sauvegarde catalogue + commandes (admin) ; noter l'id de version Worker actuelle (ETAT.md) ; TTL DNS `www` à 300 s ; paiement live testé (§1.6) ; mail de test reçu hors spam ; rien publié sur Instagram ce jour-là.
+**Avant (J-1)** : `npm test` tout vert ; sauvegarde catalogue + commandes (admin) ; noter l'id de version Worker actuelle (vgthmind-chantier/chantier/ETAT.md) ; TTL DNS `www` à 300 s ; paiement live testé (§1.6) ; mail de test reçu hors spam ; rien publié sur Instagram ce jour-là.
 **Pendant** : (1) Stripe live + secrets + LIVE_MODE=1 (Worker), (2) build racine poussé, (3) DNS `www` puis GitHub, (4) HTTPS actif, (5) tests : accueil, fiche, panier, paiement 1 € remboursé, mails commande + contact, suivi, 404, `/product/ch_0002`.
 **Après** : surveiller Stripe et Resend 48 h ; Search Console + sitemap ; garder BigCartel 2 semaines ; remettre le TTL à 1 h.
 **Retour d'urgence** : (1) DNS `www` vers `vgthmind.bigcartel.com` ; (2) Worker : `LIVE_MODE="0"` + secrets test + `npx wrangler@4 rollback <id précédent>` ; (3) prévenir les clients en cours de paiement ; (4) rembourser dans Stripe les paiements incohérents.
