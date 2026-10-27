@@ -129,5 +129,5 @@ test('fiche produit : offers du JSON-LD porte validFrom (date de mise en ligne, 
   const { readFileSync } = await import('node:fs');
   const b = readFileSync(new URL('../generator/build.js', import.meta.url), 'utf8');
   assert.match(b, /validFrom: String\(product\.created_at\)\.slice\(0, 10\)/);
-  assert.match(b, /\^\d\{4\}-\d\{2\}-\d\{2\}/);
+  assert.ok(b.includes('/^\\d{4}-\\d{2}-\\d{2}/.test(String(product.created_at'), 'validFrom seulement si created_at est une date ISO');
 });
