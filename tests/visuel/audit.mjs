@@ -86,6 +86,25 @@ export async function auditViews(ctx, base, view, shotDir) {
   await page.goto(base + '/admin/commandes.html'); await page.waitForTimeout(900);
   await page.locator('.sum').first().click(); await page.waitForTimeout(400);
   await snap('commande-ouverte');
+  // Commande expédiée : champ du numéro de suivi + « Enregistrer le suivi » / « Actualiser le colis » (taille, débordement, retour visuel après enregistrement)
+  await page.locator('.sum').first().click(); await page.waitForTimeout(200);
+  await page.locator('[data-f=done]').first().click(); await page.waitForTimeout(300);
+  const shipped = page.locator('.order', { has: page.locator('[data-trk-save]') }).first();
+  await shipped.locator('.sum').click(); await page.waitForTimeout(300);
+  await snap('commande-expediee');
+  const box = async (sel) => (await shipped.locator(sel).first().boundingBox().catch(() => null));
+  for (const [sel, nom] of [['.trk-in', 'champ du numéro de suivi'], ['[data-trk-save]', 'Enregistrer le suivi']]) { const bb = await box(sel); if (!bb) problems.push(nom + ' : absent'); else if (bb.height < 43.5) problems.push(nom + ' : ' + Math.round(bb.height) + ' px'); }
+  await shipped.locator('.trk-in').fill('6a 123 456 789 01'); await shipped.locator('[data-trk-save]').click(); await page.waitForTimeout(500);
+  const fb = await page.evaluate(() => ({ msg: (document.getElementById('msg') || {}).textContent || '', toast: !!document.querySelector('#vg-toast.show') }));
+  if (!/Suivi enregistré/.test(fb.msg)) problems.push('suivi : pas de message après enregistrement (« ' + fb.msg.slice(0, 60) + ' »)');
+  if (!fb.toast) problems.push('suivi : pas de retour visuel (message en bas d’écran) après enregistrement');
+  const shipped2 = page.locator('.order', { has: page.locator('[data-trk-refresh]') }).first();
+  const rb = await shipped2.locator('[data-trk-refresh]').boundingBox().catch(() => null);
+  if (!rb) problems.push('Actualiser le colis : absent après enregistrement'); else if (rb.height < 43.5) problems.push('Actualiser le colis : ' + Math.round(rb.height) + ' px');
+  if (!/En transit/.test(await shipped2.innerText().catch(() => ''))) problems.push('suivi : état du colis « En transit » non affiché');
+  await snap('commande-expediee-apres');
+  await page.locator('[data-f=todo]').first().click(); await page.waitForTimeout(300);
+  await page.locator('.sum').first().click(); await page.waitForTimeout(300);
   problems.push(...await popupCheck(ctx, page, () => page.locator('[data-invoice]').first().click(), view, 'facture', shotDir).catch((e) => ['facture : ' + e.message.slice(0, 100)]));
   problems.push(...await popupCheck(ctx, page, () => page.locator('[data-sheet], [data-bon], [data-print]').first().click(), view, 'bon-de-commande', shotDir).catch((e) => ['bon de commande : ' + e.message.slice(0, 100)]));
   await page.locator('button[data-f=refunded], [data-f=refunded]').first().click().catch(() => {}); await page.waitForTimeout(300);

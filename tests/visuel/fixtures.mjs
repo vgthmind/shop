@@ -66,6 +66,7 @@ export function workerReply(pathname) {
   const days = Array.from({ length: 7 }, (_, i) => ({ day: new Date(now - i * DAY).toISOString().slice(0, 10), views: 20 + i, visitors: 9 + i, pages: {}, sources: {} }));
   const table = {
     '/orders': { orders: ORDERS },
+    '/orders/tracking': { ok: true, lp: 'ok', shipped: { at: Math.floor(now / 1000) - 86400, tracking: '6A12345678901', notified: true, track: { state: 'transit', label: 'Pris en charge', checked: Math.floor(now / 1000), ok: Math.floor(now / 1000), events: [] } } },
     '/admin/requests': { requests: requests(), settings: DEFAULT_SETTINGS, uploads: true, floors: {} },
     '/admin/requests/settings': { settings: DEFAULT_SETTINGS, floors: {} },
     '/admin/stock': { stock: STOCK },
