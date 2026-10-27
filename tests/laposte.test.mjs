@@ -114,3 +114,13 @@ test('échantillon expurgé : ni contexte ni titulaire', () => {
   const j = JSON.stringify(sanitizeSample(raw));
   assert.ok(!/secret|holder|contextData|idShip/.test(j));
 });
+
+test('admin : numéro de suivi modifiable par commande, route Worker protégée, clé jamais côté navigateur', async () => {
+  const { readFileSync } = await import('node:fs');
+  const w = readFileSync(new URL('../checkout-worker/index.ts', import.meta.url), 'utf8');
+  const a = readFileSync(new URL('../admin/commandes.html', import.meta.url), 'utf8');
+  assert.match(w, /path === '\/orders\/tracking'[^\n]*saveTracking/);
+  assert.match(w, /async function saveTracking[^]*?isAdmin\(request, env\)[^]*?fetchSuivi\(lpKey/);
+  assert.match(a, /data-trk-save/); assert.match(a, /data-trk-refresh/); assert.match(a, /\/orders\/tracking/);
+  assert.doesNotMatch(a + readFileSync(new URL('../assets/vg-shop-cart.js', import.meta.url), 'utf8'), /LAPOSTE|X-Okapi|api\.laposte/);
+});

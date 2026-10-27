@@ -33,6 +33,9 @@
     .order.is-refunded { border-left: 5px solid #b3261e; }
     ul { margin: 8px 0; padding-left: 18px; }
     .actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
+    .trk-row { display: flex; gap: 8px; flex-wrap: wrap; align-items: flex-end; margin-top: 10px; }
+    .trk-row label { display: flex; flex-direction: column; gap: 4px; flex: 1 1 220px; font-size: .85em; }
+    .trk-row .trk-in { min-height: 44px; font-size: 16px; padding: 0 10px; border: 1px solid var(--line, #ccc); border-radius: 8px; background: transparent; color: inherit; }
     #msg { min-height: 1.4em; }
     .items { list-style: none; padding: 0; margin: 10px 0; }
     .items li { display: flex; gap: 12px; align-items: center; padding: 8px 0; border-top: 1px solid var(--line); }
@@ -179,6 +182,8 @@
         }).join('')
         + '<li class="muted"><span class="ph" style="visibility:hidden"></span><span class="nm">Livraison' + (o.discount ? ' · remise −' + money(o.discount) : '') + '</span><span class="pr">' + money(o.shipping) + '</span></li></ul>'
         + '<div class="muted">' + address(o.address) + '</div>'
+        + (o.shipped && !dep ? '<div class="trk-row"><label>Numéro de suivi <input type="text" class="trk-in" inputmode="text" autocomplete="off" autocapitalize="characters" spellcheck="false" value="' + esc(o.shipped.tracking || '') + '" placeholder="ex. 6A12345678901"></label>'
+          + '<button type="button" data-trk-save>Enregistrer le suivi</button>' + (o.shipped.tracking ? '<button type="button" data-trk-refresh>Actualiser le colis</button>' : '') + '</div>' : '')
         + '<div class="actions">'
         + (dep ? '' : o.shipped
           ? '<button type="button" class="primary" data-mail>' + (o.shipped.notified ? 'Renvoyer le mail « expédiée »' : 'Envoyer le mail « expédiée » au client') + '</button><button type="button" data-undo>Annuler « expédiée »</button>'
@@ -240,6 +245,15 @@
             o.shipped = m.shipped; draw(); $('msg').textContent = 'Expédiée : le mail avec le lien de suivi est parti vers ' + o.email + '.';
           });
         })
+        .catch(function (err) { $('msg').textContent = 'Erreur : ' + err.message; });
+    }
+    if (e.target.hasAttribute('data-trk-save') || e.target.hasAttribute('data-trk-refresh')) {
+      var inp = card.querySelector('.trk-in');
+      var typed = inp ? inp.value.trim() : (o.shipped.tracking || '');
+      var onlyRefresh = e.target.hasAttribute('data-trk-refresh');
+      var lpMsg = { ok: 'Suivi enregistré, état du colis mis à jour.', inconnu: 'Suivi enregistré. Le colis n\'est pas encore connu de La Poste (normal les premières heures).', 'pas-de-cle': 'Suivi enregistré (clé La Poste non posée : pas d\'état automatique).', erreur: 'Suivi enregistré, mais La Poste n\'a pas répondu : l\'état sera relevé plus tard.', 'sans-numero': 'Numéro de suivi retiré.' };
+      return api('/orders/tracking', { method: 'POST', body: JSON.stringify(onlyRefresh ? { id: o.id } : { id: o.id, tracking: typed }) })
+        .then(function (d) { o.shipped = d.shipped; draw(); $('msg').textContent = lpMsg[d.lp] || 'Enregistré.'; })
         .catch(function (err) { $('msg').textContent = 'Erreur : ' + err.message; });
     }
     if (e.target.hasAttribute('data-mail')) {

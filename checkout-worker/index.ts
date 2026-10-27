@@ -46,7 +46,7 @@ export { TrafficDO } from './traffic';
 import { buildBackupMail } from './backup-mail';
 import { requestRoutes, requestsCron, backupRequests, onRequestPaid, onShipped, requestInvoiceParts, type ReqDeps } from './requests';
 export { RequestsDO } from './requests';
-import { pollShipments, cleanTracking, STATE_LABEL_FR, type TrackInfo } from './laposte';
+import { pollShipments, cleanTracking, fetchSuivi, parseSuivi, STATE_LABEL_FR, type TrackInfo } from './laposte';
 import { customerEmail, sellerEmail, shippedEmail, deliveredEmail, parcelProblemEmail, REPLY_TO, CONTACT_EMAIL, alertList, FONT, esc, langFor, countryName, isNameIncomplete, type MailItem, type OrderData } from './emails';
 
 interface KV {
@@ -444,6 +444,7 @@ export default {
       if (path === '/orders/refund' && request.method === 'POST') return await refundOrder(request, env, key.value, json);
       if (path === '/orders/shipped' && request.method === 'POST') return await markShipped(request, env, json);
       if (path === '/orders/shipped-mail' && request.method === 'POST') return await sendShippedMail(request, env, key.value, json);
+      if (path === '/orders/tracking' && request.method === 'POST') return await saveTracking(request, env, json);
     } catch (e: any) {
       await alertAdmin(env, 'worker-' + path, `Le Worker a planté sur ${path}`, String(e && e.stack ? e.stack : e).slice(0, 1500));
       return json({ error: 'Erreur interne. Réessaie dans un instant ; si ça continue, écris à contact@vgthmind.org.' }, 500); // le détail part par mail d'alerte, jamais au navigateur
@@ -1504,6 +1505,37 @@ async function markShipped(request: Request, env: Env, json: JsonFn): Promise<Re
   await env.HOLDS.put('shipped:' + body.id, JSON.stringify(value));
   await onShipped(env as any, reqDeps(env), body.id, value.tracking, new URL(request.url).origin).catch(() => {});
   return json({ ok: true, shipped: value });
+}
+
+// Numéro de suivi d'une commande déjà expédiée : enregistré (ou corrigé) sans renvoyer de mail, puis état du colis relevé tout de suite
+// (la clé La Poste reste côté Worker). Sans numéro nouveau, c'est un simple « Actualiser » de l'état. lp : ok | inconnu | pas-de-cle | erreur.
+async function saveTracking(request: Request, env: Env, json: JsonFn): Promise<Response> {
+  if (!(await isAdmin(request, env))) return json({ error: 'Non autorisé.' }, 401);
+  let body: any = {};
+  try { body = await request.json(); } catch (e) {}
+  const id = String(body.id || '');
+  if (!isSessionId(id)) return json({ error: 'Identifiant invalide.' }, 400);
+  const raw = await env.HOLDS.get('shipped:' + id);
+  if (!raw) return json({ error: "Marque d'abord la commande « expédiée »." }, 400);
+  const shipped = JSON.parse(raw);
+  const typed = String(body.tracking == null ? shipped.tracking || '' : body.tracking).trim().slice(0, 100);
+  const next = cleanTracking(typed) || typed;
+  if (next !== (shipped.tracking || '')) { shipped.tracking = next; delete shipped.track; delete shipped.notified; }
+  let lp = 'inconnu';
+  const lpKey = (env.LAPOSTE_API_KEY || '').trim();
+  const num = cleanTracking(shipped.tracking);
+  if (!num) lp = next ? 'inconnu' : 'sans-numero';
+  else if (!lpKey) lp = 'pas-de-cle';
+  else {
+    const now = Math.floor(Date.now() / 1000);
+    const r = await fetchSuivi(lpKey, num);
+    const parsed = r.ok ? parseSuivi(r.data, now) : null;
+    const prev = shipped.track || { state: 'transit', label: '', events: [] };
+    if (parsed) { shipped.track = { ...prev, ...parsed, checked: now, ok: now }; if (parsed.state === 'delivered') shipped.track.deliveredAt = prev.deliveredAt || now; lp = 'ok'; }
+    else { shipped.track = { ...prev, checked: now }; lp = r.ok || r.status === 404 ? 'inconnu' : 'erreur'; }
+  }
+  await env.HOLDS.put('shipped:' + id, JSON.stringify(shipped));
+  return json({ ok: true, shipped, lp });
 }
 
 // « En preparation » : pose a la main depuis l'admin (bouton a cote de « expediee »).
