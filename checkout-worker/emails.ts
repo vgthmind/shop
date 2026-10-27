@@ -4,6 +4,8 @@
 // capitales espacees, boutons « pilule »), police systeme (les polices web ne
 // passent pas dans Gmail/Apple Mail), boutons en HTML et non en image.
 
+import { vatMention } from './invoice.ts';
+
 export const INSTAGRAM_URL = 'https://instagram.com/vgthmind';
 // Destinataires des alertes (sans doublon) : ALERT_EMAIL, l'adresse directe ALERT_EMAIL_2 (Gmail, hors transfert IONOS) et contact@.
 export function alertList(env: { ALERT_EMAIL?: string; ALERT_EMAIL_2?: string }): string {
@@ -25,6 +27,7 @@ export type MailItem = {
 };
 
 export type OrderData = {
+  vatAfter?: string; // texte de la mention de TVA a partir de 2027 (variable VAT_MENTION_2027)
   ref: string;
   requestId?: string; // pièce sur demande : numéro de la demande (D-XXXXXX), affiché avec la référence de commande
   name: string;
@@ -84,7 +87,7 @@ const T = {
     help: 'Un souci, une question ? Réponds simplement à ce mail.',
     view: 'Voir ma commande', invoiceLink: 'Télécharger ta facture',
     ref: 'Commande', request: 'Demande',
-    withdrawal: "Les pièces de la boutique, y compris customisées, bénéficient du droit de rétractation de 14 jours. Les créations sur-mesure ou sur demande personnalisée (commande passée par message) ne sont ni reprises ni échangées, sauf défaut de fabrication (art. L221-28 3° du Code de la consommation). TVA non applicable, art. 293 B du CGI.",
+    withdrawal: "Les pièces de la boutique, y compris customisées, bénéficient du droit de rétractation de 14 jours. Les créations sur-mesure ou sur demande personnalisée (commande passée par message) ne sont ni reprises ni échangées, sauf défaut de fabrication (art. L221-28 3° du Code de la consommation).",
     cgv: 'Conditions générales de vente',
     thanksEnd: 'Merci pour ton soutien,',
   },
@@ -112,7 +115,7 @@ const T = {
     help: 'Questions? Just reply to this email.',
     view: 'View my order', invoiceLink: 'Download your invoice',
     ref: 'Order', request: 'Request',
-    withdrawal: 'Pieces from the shop, including customised ones, have a 14-day right of withdrawal. Creations made to measure or to personal request (orders placed by message) are neither taken back nor exchanged, except in case of a manufacturing defect (art. L221-28 3° of the French Consumer Code). VAT not applicable, art. 293 B of the French Tax Code.',
+    withdrawal: 'Pieces from the shop, including customised ones, have a 14-day right of withdrawal. Creations made to measure or to personal request (orders placed by message) are neither taken back nor exchanged, except in case of a manufacturing defect (art. L221-28 3° of the French Consumer Code).',
     cgv: 'Terms of sale',
     thanksEnd: 'Thank you for your support,',
   },
@@ -169,8 +172,14 @@ function signature(t: (typeof T)['fr']) {
     + para(`${link(INSTAGRAM_URL, 'instagram.com/vgthmind')} · ${link('mailto:' + CONTACT_EMAIL, CONTACT_EMAIL)}`);
 }
 
+// Mention de franchise de TVA : meme regle de date que les factures (293 B jusqu'au 31/12/2026, puis CIBS).
+function withdrawalText(o: OrderData, t: (typeof T)['fr']) {
+  const m = vatMention(Date.now(), o.vatAfter);
+  return `${t.withdrawal} ${t === T.en ? 'VAT not applicable (franchise), ' + m.replace(/^TVA non applicable, /, '') + '.' : m + '.'}`;
+}
+
 function legalFooter(o: OrderData, t: (typeof T)['fr']) {
-  return `<p style="margin:24px 0 0;padding-top:14px;border-top:1px solid ${LINE};font:12px/1.5 ${FONT};color:#777">${esc(t.withdrawal)} ${link(o.cgvUrl, esc(t.cgv))}</p>`;
+  return `<p style="margin:24px 0 0;padding-top:14px;border-top:1px solid ${LINE};font:12px/1.5 ${FONT};color:#777">${esc(withdrawalText(o, t))} ${link(o.cgvUrl, esc(t.cgv))}</p>`;
 }
 
 export function customerEmail(o: OrderData) {
@@ -196,7 +205,7 @@ export function customerEmail(o: OrderData) {
     t.next.toUpperCase(), t.nextText, ...(t.duties ? [t.duties] : []), '',
     `${t.view} : ${o.orderUrl}`, `${t.invoiceLink} : ${o.orderUrl}#facture`, '', t.help, '',
     t.bye, 'vgthmind', `Instagram : ${INSTAGRAM_URL}`, CONTACT_EMAIL, '',
-    `${t.withdrawal} ${t.cgv} : ${o.cgvUrl}`,
+    `${withdrawalText(o, t)} ${t.cgv} : ${o.cgvUrl}`,
   ].join('\n');
   return { subject, html, text };
 }

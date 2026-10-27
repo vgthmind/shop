@@ -1,8 +1,8 @@
-# Mise en production : Stripe live, domaine, e-mails, surveillance, factures (PLAN, rien n'est activé)
+# Mise en production : Stripe live, domaine, e-mails, surveillance, factures (HISTORIQUE : tout est fait)
 
 > **Le §2 (domaine) est remplacé par `BASCULE-JOUR-J.md`** (le site est sur Cloudflare Pages, plus sur GitHub Pages). Le reste (Stripe live §1, DMARC §3, checklist §6) reste valable.
 
-Écrit le 2026-10-12. Rien de ce document n'a été exécuté : LIVE_MODE reste 0, aucun DNS touché.
+Écrit le 2026-10-12, **exécuté fin octobre 2026** : Stripe live, LIVE_MODE=1, domaine www.vgthmind.org sur Cloudflare Pages, DMARC, alertes (Gmail + contact@, Better Stack) et factures W-AAAA-NNN sont en place. Le document reste comme mémoire de la procédure et du retour arrière.
 
 ## 1. Stripe en live (31) : ce que TU crées dans le tableau de bord Stripe
 1. Stripe, coin haut-gauche : **désactive « Mode test »** (tu es en live).
@@ -11,7 +11,7 @@
 4. Ne m'envoie ces deux valeurs **nulle part**. Dis-moi juste « clé live créée » : je te donne les commandes à coller : `wrangler secret put STRIPE_SECRET_KEY` (clé live), `wrangler secret put STRIPE_WEBHOOK_SECRET` (whsec live), puis `LIVE_MODE = "1"` dans `wrangler.toml` + redéploiement.
 5. Paramètres, Moyens de paiement : carte (+ Apple Pay / Google Pay si tu veux). Paramètres, Informations de l'entreprise : nom « vgthmind », SIRET.
 6. **Test réel** : une pièce fictive à 1 € (je la crée), tu paies avec ta vraie carte, je vérifie stock + mails, puis **Remboursement** depuis Stripe (Paiements, le paiement, Rembourser). Frais Stripe perdus : environ 0,25 €.
-Retour arrière : `LIVE_MODE="0"` + secrets de test (`rk_test...`) + `npx wrangler@4 rollback <id>` (ids dans vgthmind-chantier/chantier/ETAT.md).
+Retour arrière : `LIVE_MODE="0"` + secrets de test (`rk_test...`) + `npx wrangler@4 rollback <id>` (id précédent : « npx wrangler@4 deployments list » dans checkout-worker).
 
 ## 2. Domaine vgthmind.org chez IONOS (32) : état relevé aujourd'hui
 - `www.vgthmind.org` : CNAME `vgthmind.bigcartel.com` (la boutique BigCartel).
@@ -35,11 +35,11 @@ Relevé DNS : DKIM `resend._domainkey.vgthmind.org` présent ; `send.vgthmind.or
 ## 4. Colissimo sans API (34)
 Déjà le cas : le port est calculé par `shipping-calc.js` + `shipping-config.json` (grille manuelle, page admin « Expédition »), aucune API La Poste n'est appelée. Branchement futur : le calcul passe par une seule fonction (`shipping-worker.ts`), une API pourra remplacer la grille en ne changeant que celle-ci. Mise à jour annuelle des tarifs (janvier) = à faire dans l'admin.
 
-## 5. Surveillance (35) : NON FAIT (touche le Worker, décision à prendre)
+## 5. Surveillance (35) : FAIT (alertes Worker vers Gmail et contact@, Better Stack, Cloudflare)
 Proposition : (a) Cloudflare, Notifications, « Workers : taux d'erreur élevé » vers contact@ (réglage de ton compte, 3 clics) ; (b) dans le Worker : en cas d'échec d'un envoi Resend ou d'une erreur dans `/webhook`, envoyer un mail d'alerte à ALERT_EMAIL ; (c) Stripe, Développeurs, Webhooks : alertes d'échec par mail (réglage Stripe). Je le code après ton OK.
 
 ## 6. Checklist « jour J » (37)
-**Avant (J-1)** : `npm test` tout vert ; sauvegarde catalogue + commandes (admin) ; noter l'id de version Worker actuelle (vgthmind-chantier/chantier/ETAT.md) ; TTL DNS `www` à 300 s ; paiement live testé (§1.6) ; mail de test reçu hors spam ; rien publié sur Instagram ce jour-là.
+**Avant (J-1)** : `npm test` tout vert ; sauvegarde catalogue + commandes (admin) ; noter l’id de version Worker actuelle (« npx wrangler@4 deployments list ») ; TTL DNS `www` à 300 s ; paiement live testé (§1.6) ; mail de test reçu hors spam ; rien publié sur Instagram ce jour-là.
 **Pendant** : (1) Stripe live + secrets + LIVE_MODE=1 (Worker), (2) build racine poussé, (3) DNS `www` puis GitHub, (4) HTTPS actif, (5) tests : accueil, fiche, panier, paiement 1 € remboursé, mails commande + contact, suivi, 404, `/product/ch_0002`.
 **Après** : surveiller Stripe et Resend 48 h ; Search Console + sitemap ; garder BigCartel 2 semaines ; remettre le TTL à 1 h.
 **Retour d'urgence** : (1) DNS `www` vers `vgthmind.bigcartel.com` ; (2) Worker : `LIVE_MODE="0"` + secrets test + `npx wrangler@4 rollback <id précédent>` ; (3) prévenir les clients en cours de paiement ; (4) rembourser dans Stripe les paiements incohérents.

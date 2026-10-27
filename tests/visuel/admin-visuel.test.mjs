@@ -11,3 +11,9 @@ test('admin : aucun débordement, zone tactile ≥ 44 px, « ← Retour » sur f
   const problems = await runAudit(null);
   assert.deepEqual(problems, [], String.fromCharCode(10) + problems.join(String.fromCharCode(10)));
 });
+
+test('admin : suivi de colis (Enregistrer, Actualiser, pastilles Livrée / Problème) et visionneuse photo / vidéo / PDF avec « ← Retour » (iPhone et PC)', { skip: b ? false : 'aucun navigateur Edge/Chrome', timeout: 120000 }, async () => {
+  const { runParcours } = await import('./parcours.mjs');
+  const problems = await runParcours();
+  assert.deepEqual(problems, [], String.fromCharCode(10) + problems.join(String.fromCharCode(10)));
+});

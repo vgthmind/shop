@@ -1,5 +1,7 @@
 # Plan : un admin complet qui remplace BigCartel (avant avril 2027)
 
+> **Statut (27/10/2026) : plan réalisé ; LIVE_MODE est à 1 depuis la bascule.** Les mentions « LIVE_MODE reste 0 » ci-dessous sont historiques.
+
 Phase plan seulement : rien modifié, rien commité (ce fichier est le seul ajout). Écrit en lisant tes outils (sans y toucher) et l'admin actuel.
 Je n'ai recopié nulle part la clé secrète du script Google. Remarque sécurité en bas (§ Points d'attention).
 

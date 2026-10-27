@@ -1135,6 +1135,7 @@ async function buildOrder(env: Env, o: any, forSeller = false): Promise<OrderDat
     phone: o.customer_details?.phone || '',
     country: a.country || o.customer_details?.address?.country || '',
     lang: mailLang as 'fr' | 'en',
+    vatAfter: env.VAT_MENTION_2027,
     address: [ship.name || o.customer_details?.name, a.line1, a.line2, [a.postal_code, a.city].filter(Boolean).join(' '), a.state, countryName(a.country, mailLang)].filter(Boolean),
     items: await mailItems(env, o.line_items?.data || [], money),
     shipping: money(o.shipping_cost?.amount_total || 0),
