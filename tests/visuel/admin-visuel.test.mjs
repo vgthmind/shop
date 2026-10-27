@@ -17,3 +17,9 @@ test('admin : suivi de colis (Enregistrer, Actualiser, pastilles Livrée / Probl
   const problems = await runParcours();
   assert.deepEqual(problems, [], String.fromCharCode(10) + problems.join(String.fromCharCode(10)));
 });
+
+test('fiches pièces : aucune erreur JavaScript (body.html), pas de cadre Instagram, lien Instagram bien affiché (iPhone et PC)', { skip: b ? false : 'aucun navigateur Edge/Chrome', timeout: 280000 }, async () => {
+  const { runFiches } = await import('./fiches.mjs');
+  const problems = await runFiches();
+  assert.deepEqual(problems, [], String.fromCharCode(10) + problems.join(String.fromCharCode(10)));
+});
