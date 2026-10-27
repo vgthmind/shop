@@ -156,7 +156,7 @@ window.__vgConfig = fetch('https://vgthmind.github.io/assets/bigcartel/products-
     } else {
       // Sans vidéo MP4 (reel sans fichier, post, carrousel) : pas de cadre. Instagram ne s'intègre pas dans une page dont la CSP
       // n'autorise pas son cadre (et on ne l'élargit pas) : seulement un lien propre vers Instagram.
-      var isPost = /instagram.com/(?:p|tv)//.test(reelUrl);
+      var isPost = /instagram\.com\/(?:p|tv)\//.test(reelUrl);
       var linkOnly = document.createElement('a');
       linkOnly.className = 'ig-reel-linkonly';
       linkOnly.href = reelUrl;

@@ -102,3 +102,11 @@ test('fiche pièce : jamais de cadre Instagram (la CSP ne l’autorise pas) ; po
   const headers = readFileSync(new URL('../generator/_headers', import.meta.url), 'utf8');
   assert.ok(/frame-src https:\/\/challenges\.cloudflare\.com;/.test(headers) && !/frame-src[^;]*instagram/.test(headers), 'frame-src non élargi');
 });
+
+test('body.html : chaque script en ligne est du JavaScript valide (une erreur casse toutes les fiches)', () => {
+  const body = readFileSync(new URL('../theme/custom/body.html', import.meta.url), 'utf8');
+  const re = /<script(?![^>]*\ssrc)(?![^>]*type="application\/ld)[^>]*>([\s\S]*?)<\/script>/g;
+  let m, n = 0;
+  while ((m = re.exec(body))) { n++; assert.doesNotThrow(() => new Function(m[1]), 'script en ligne n° ' + n); }
+  assert.ok(n > 3);
+});
