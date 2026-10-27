@@ -384,6 +384,7 @@ function productOffer(product, url) {
   const offer = {
     '@type': 'Offer', url, priceCurrency: 'EUR', price: String(product.price),
     priceValidUntil: String(new Date().getFullYear() + 1) + '-12-31',
+    ...(/^\d{4}-\d{2}-\d{2}/.test(String(product.created_at || '')) ? { validFrom: String(product.created_at).slice(0, 10) } : {}), // mise en ligne de la pièce (Fiches de marchand)
     itemCondition: 'https://schema.org/NewCondition',
     availability: soldOut ? 'https://schema.org/OutOfStock' : 'https://schema.org/InStock',
     seller: { '@type': 'Organization', name: 'vgthmind' },

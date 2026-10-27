@@ -124,3 +124,10 @@ test('admin : numéro de suivi modifiable par commande, route Worker protégée,
   assert.match(a, /data-trk-save/); assert.match(a, /data-trk-refresh/); assert.match(a, /\/orders\/tracking/);
   assert.doesNotMatch(a + readFileSync(new URL('../assets/vg-shop-cart.js', import.meta.url), 'utf8'), /LAPOSTE|X-Okapi|api\.laposte/);
 });
+
+test('fiche produit : offers du JSON-LD porte validFrom (date de mise en ligne, Fiches de marchand)', async () => {
+  const { readFileSync } = await import('node:fs');
+  const b = readFileSync(new URL('../generator/build.js', import.meta.url), 'utf8');
+  assert.match(b, /validFrom: String\(product\.created_at\)\.slice\(0, 10\)/);
+  assert.match(b, /\^\d\{4\}-\d\{2\}-\d\{2\}/);
+});
