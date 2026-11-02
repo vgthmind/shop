@@ -96,18 +96,13 @@
       var j = JSON.parse(text), stock = j && j.stock;
       if (stock && stock.stock && typeof stock.stock === 'object') stock = stock.stock; // fichier du mail de nuit : { date, stock: { date, stock: {…} }, orders, requests }
       if (!stock || typeof stock !== 'object') throw new Error('fichier non reconnu');
-      var edits = {};
-      Object.keys(stock).forEach(function (s) {
-        var n = Math.max(0, Math.floor(Number(stock[s])));
-        if (!isFinite(n)) return;
-        var cur = data.stock[s] ? data.stock[s].stock : null;
-        if (cur === null || n !== cur) edits[s] = n;
-      });
-      var n = Object.keys(edits).length;
-      if (!n) { sSay('Rien à restaurer : le stock actuel est déjà identique à la sauvegarde du ' + (j.date || '?') + '.'); return; }
-      if (!window.confirm('Rétablir ' + n + ' quantité(s) de stock depuis la sauvegarde du ' + (j.date || '?') + ' ?')) return;
+      var vals = {};
+      Object.keys(stock).forEach(function (k) { var n = Math.max(0, Math.floor(Number(stock[k]))); if (isFinite(n)) vals[k] = n; });
+      var n = Object.keys(vals).length;
+      if (!n) { sSay('Rien à restaurer : le fichier ne contient aucune quantité lisible.'); return; }
+      if (!window.confirm('Ajouter les quantités manquantes (' + n + ' pièce(s) dans le fichier du ' + (j.date || '?') + ') ? Les quantités déjà réglées ne sont jamais modifiées.')) return;
       sSay('Restauration…');
-      return api('/admin/stock', { method: 'POST', body: JSON.stringify({ stock: edits }) }).then(function (d) { data = d; sSay(n + ' quantité(s) rétablie(s). Le site affiche le nouveau stock sous 15 secondes.'); });
+      return api('/admin/stock/restore', { method: 'POST', body: JSON.stringify({ stock: vals }) }).then(function (d) { sSay(d.added + ' quantité(s) ajoutée(s), ' + d.skipped + ' ignorée(s) car déjà présente(s) (non modifiées).'); return loadStock(); });
     }).catch(function (e) { sSay('Restauration impossible : ' + e.message); });
   });
 
@@ -122,16 +117,16 @@
   });
   $('b-restore').addEventListener('change', function () {
     var f = this.files[0]; this.value = ''; if (!f) return;
-    if (!window.confirm("Remettre l'état des commandes (expédiée, préparation, numéros) depuis ce fichier ? Les entrées du fichier remplacent celles du site.")) return;
+    if (!window.confirm("Ajouter depuis ce fichier les commandes (expédiée, préparation, numéros) et les demandes qui manquent ? Ce qui existe déjà n'est jamais modifié.")) return;
     f.text().then(function (t) {
       var j = JSON.parse(t), reqs = j && j.requests && j.requests.requests; // fichier du mail de nuit : { orders, requests } ; sinon fichier « commandes » seul
       return api('/admin/obackup-restore', { method: 'POST', body: JSON.stringify(j && j.orders ? j.orders : j) }).then(function (d) {
-        if (!Array.isArray(reqs) || !reqs.length) return d.restored + ' entrées restaurées.';
-        return api('/admin/requests/restore', { method: 'POST', body: JSON.stringify({ requests: reqs }) }).then(function (r) { return d.restored + ' entrées restaurées ; ' + r.restored + ' demande(s) manquante(s) rétablie(s).'; });
+        if (!Array.isArray(reqs) || !reqs.length) return d.added + ' commande(s) ajoutée(s), ' + d.skipped + ' ignorée(s) car déjà présente(s).';
+        return api('/admin/requests/restore', { method: 'POST', body: JSON.stringify({ requests: reqs }) }).then(function (r) { return d.added + ' commande(s) ajoutée(s), ' + d.skipped + ' ignorée(s) ; ' + r.added + ' demande(s) ajoutée(s), ' + r.skipped + ' ignorée(s) car déjà présente(s).'; });
       });
     })
       .then(function (m) { oSay(m); })
-      .catch(function (e) { oSay(e instanceof SyntaxError ? 'Erreur : fichier non reconnu (ce n'est pas une sauvegarde).' : 'Erreur : ' + e.message); });
+      .catch(function (e) { oSay(e instanceof SyntaxError ? 'Erreur : fichier non reconnu (ce n’est pas une sauvegarde).' : 'Erreur : ' + e.message); });
   });
 
   loadStock();

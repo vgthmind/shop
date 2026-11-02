@@ -20,11 +20,12 @@ try {
     const ctx = await browser.newContext(opts);
     await fakeNetwork(ctx, base);
     const posts = {};
-    await ctx.route(/workers\.dev\/admin\/(stock|obackup-restore|requests\/restore)$/, (route) => {
+    await ctx.route(/workers\.dev\/admin\/(stock|stock\/restore|obackup-restore|requests\/restore)$/, (route) => {
       const r = route.request(); if (r.method() === 'OPTIONS') return json(route, {});
       if (r.method() === 'GET') return json(route, { stock: { 'piece-a': { stock: 1 }, 'piece-b': { stock: 2 }, 'piece-c': { stock: 0 } } });
+      if (r.method() === 'GET') return json(route, {});
       const u = new URL(r.url()).pathname; posts[u] = JSON.parse(r.postData() || 'null');
-      return json(route, u.endsWith('/stock') ? { stock: {} } : { ok: true, restored: u.includes('requests') ? 2 : 2 });
+      return json(route, u.endsWith('/stock/restore') ? { ok: true, added: 1, skipped: 2 } : { ok: true, added: 2, skipped: 1, restored: 2 });
     });
     const page = await ctx.newPage(); page.on('dialog', (d) => d.accept());
     const errs = []; page.on('pageerror', (e) => errs.push(e.message.slice(0, 120)));
@@ -32,20 +33,20 @@ try {
     const buf = Buffer.from(JSON.stringify(FILE));
     await page.locator('#restore').setInputFiles({ name: 'vgthmind-sauvegarde-2026-11-01.json', mimeType: 'application/json', buffer: buf }); await page.waitForTimeout(600);
     const sm = await page.locator('#smsg').innerText();
-    const st = posts['/admin/stock'] && posts['/admin/stock'].stock;
-    if (!st || JSON.stringify(st) !== JSON.stringify({ 'piece-b': 5, 'piece-d': 3 })) problems.push(`[${view}] stock : envoyé ${JSON.stringify(st)} (attendu piece-b 5 et piece-d 3 seulement)`);
-    if (!/2 quantité/.test(sm)) problems.push(`[${view}] stock : message « ${sm} »`);
+    const st = posts['/admin/stock/restore'] && posts['/admin/stock/restore'].stock;
+    if (!st || JSON.stringify(st) !== JSON.stringify({ 'piece-a': 1, 'piece-b': 5, 'piece-d': 3 })) problems.push(`[${view}] stock : envoyé ${JSON.stringify(st)}`);
+    if (!sm.startsWith("1 quantité(s) ajoutée(s), 2 ignorée(s)")) problems.push(`[${view}] stock : message « ${sm} »`);
     await page.locator('#b-restore').setInputFiles({ name: 'f.json', mimeType: 'application/json', buffer: buf }); await page.waitForTimeout(700);
     const om = await page.locator('#bmsg').innerText();
     const o = posts['/admin/obackup-restore'];
     if (!o || !o.shipped || !o.shipped.cs_live_fake1 || o.stock || o.requests) problems.push(`[${view}] commandes : corps envoyé ${JSON.stringify(o)}`);
     const rq = posts['/admin/requests/restore'];
     if (!rq || rq.requests.length !== 2) problems.push(`[${view}] demandes : corps ${JSON.stringify(rq)}`);
-    if (!/2 entrées restaurées ; 2 demande/.test(om)) problems.push(`[${view}] message commandes : « ${om} »`);
+    if (!om.startsWith("2 commande(s) ajoutée(s), 1 ignorée(s) ; 2 demande(s) ajoutée(s), 1 ignorée(s)")) problems.push(`[${view}] message commandes : « ${om} »`);
     // fichier invalide : message d'erreur clair, rien d'envoyé
     for (const k of Object.keys(posts)) delete posts[k];
     await page.locator('#restore').setInputFiles({ name: 'x.json', mimeType: 'application/json', buffer: Buffer.from('pas du json') }); await page.waitForTimeout(400);
-    if (!/impossible/.test(await page.locator('#smsg').innerText()) || posts['/admin/stock']) problems.push(`[${view}] fichier invalide : pas de message d'échec`);
+    if (!/impossible/.test(await page.locator('#smsg').innerText()) || posts['/admin/stock/restore']) problems.push(`[${view}] fichier invalide : pas de message d'échec`);
     await page.locator('#b-restore').setInputFiles({ name: 'x.json', mimeType: 'application/json', buffer: Buffer.from('pas du json') }); await page.waitForTimeout(400);
     console.log(`[${view}] msgs :`, sm, '|', om, '|', await page.locator('#bmsg').innerText());
     errs.forEach((e) => problems.push(`[${view}] erreur JS : ${e}`));

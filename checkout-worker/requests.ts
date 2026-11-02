@@ -339,7 +339,8 @@ export async function requestRoutes(request: Request, env: ReqEnv, deps: ReqDeps
     if (path === '/admin/requests/restore' && request.method === 'POST') {
       const b = await body();
       if (!b || !Array.isArray(b.requests)) return json({ error: 'Fichier invalide.' }, 400);
-      return json({ ok: true, restored: await S.restoreMissing(b.requests) });
+      const added = await S.restoreMissing(b.requests);
+      return json({ ok: true, restored: added, added, skipped: Math.max(0, b.requests.length - added) });
     }
     if (path === '/admin/requests' && request.method === 'GET') {
       const list = (await S.list()).filter((r: any) => r.status !== 'brouillon' || Date.now() - r.created > 5 * 60 * 1000);

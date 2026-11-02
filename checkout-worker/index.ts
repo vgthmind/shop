@@ -244,6 +244,18 @@ export class StockDO extends DurableObject {
     for (const slug of slugs) await storage.delete('q:' + slug);
   }
 
+  // Restauration : une quantité n'est remontée que si la pièce n'a pas de quantité réglée (q:<slug> absente) ; sinon elle est ignorée, sans rien modifier.
+  async restoreStock(values: Record<string, number>) {
+    const storage = (this as any).ctx.storage;
+    let added = 0, skipped = 0;
+    for (const [slug, n] of Object.entries(values || {})) {
+      if (!/^[^\s]{1,100}$/.test(slug) || !Number.isFinite(Number(n))) continue;
+      if ((await storage.get('q:' + slug)) !== undefined) { skipped++; continue; }
+      await storage.put('q:' + slug, Math.max(0, Math.min(9999, Math.floor(Number(n))))); added++;
+    }
+    return { added, skipped };
+  }
+
   async setStock(values: Record<string, number>) {
     const storage = (this as any).ctx.storage;
     for (const [slug, n] of Object.entries(values)) {
@@ -339,6 +351,11 @@ export default {
           await stockStub(env).setStock(body.stock);
           return json(await adminStock(env));
         }
+        if (path === '/admin/stock/restore' && request.method === 'POST') {
+          const body: any = await request.json().catch(() => ({}));
+          if (!body || !body.stock || typeof body.stock !== 'object') return json({ error: 'Requête invalide.' }, 400);
+          return json({ ok: true, ...(await stockStub(env).restoreStock(body.stock)) });
+        }
         if (path === '/admin/stock/delete' && request.method === 'POST') {
           const body: any = await request.json().catch(() => ({}));
           if (!body || !Array.isArray(body.slugs)) return json({ error: 'Requête invalide.' }, 400);
@@ -396,7 +413,8 @@ export default {
         if (path === '/admin/obackup-restore' && request.method === 'POST') {
           const body: any = await request.json().catch(() => null);
           if (!body || typeof body !== 'object') return json({ error: 'Fichier invalide.' }, 400);
-          return json({ ok: true, restored: await restoreOrders(env, body) });
+          const r = await restoreOrders(env, body);
+          return json({ ok: true, ...r, restored: r.added });
         }
         if (path.startsWith('/admin/promos')) {
           const sk = stripeKey(env);
@@ -705,19 +723,22 @@ async function backupOrders(env: Env) {
 }
 
 // Restauration : n'écrit que des entrées bien formées (identifiants Stripe, numéros VG-XXXXXX).
-async function restoreOrders(env: Env, data: any) {
-  let n = 0;
+export async function restoreOrders(env: Env, data: any) {
+  let added = 0, skipped = 0;
   for (const bucket of ['shipped', 'preparing'] as const) {
     for (const [id, v] of Object.entries((data && data[bucket]) || {})) {
       if (!isSessionId(id) || typeof v !== 'object' || !v) continue;
-      await env.HOLDS.put(bucket + ':' + id, JSON.stringify(v)); n++;
+      // Une commande qui a déjà un état (en préparation ou expédiée) n'est jamais modifiée, même par un fichier plus avancé.
+      if ((await env.HOLDS.get('shipped:' + id)) || (await env.HOLDS.get('preparing:' + id))) { skipped++; continue; }
+      await env.HOLDS.put(bucket + ':' + id, JSON.stringify(v)); added++;
     }
   }
   for (const [id, ref] of Object.entries((data && data.refs) || {})) {
     if (!isSessionId(id) || !/^VG-[A-Z0-9]{6}$/.test(String(ref))) continue;
-    await env.HOLDS.put('sref:' + id, String(ref)); await env.HOLDS.put('ref:' + ref, id); n++;
+    if ((await env.HOLDS.get('sref:' + id)) || (await env.HOLDS.get('ref:' + ref))) { skipped++; continue; }
+    await env.HOLDS.put('sref:' + id, String(ref)); await env.HOLDS.put('ref:' + ref, id); added++;
   }
-  return n;
+  return { added, skipped };
 }
 
 // --- Frais de livraison (affichage du panier) ---
