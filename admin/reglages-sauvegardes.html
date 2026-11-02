@@ -131,7 +131,7 @@
       });
     })
       .then(function (m) { oSay(m); })
-      .catch(function (e) { oSay('Erreur : ' + e.message); });
+      .catch(function (e) { oSay(e instanceof SyntaxError ? 'Erreur : fichier non reconnu (ce n'est pas une sauvegarde).' : 'Erreur : ' + e.message); });
   });
 
   loadStock();

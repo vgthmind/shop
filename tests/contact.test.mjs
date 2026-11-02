@@ -32,3 +32,21 @@ test('contact : échec Resend = 502 ; retour à la ligne retiré du sujet', asyn
   const r = await handleContact({ ...ok, subject: 'a\r\nBcc: x@y.z' }, d);
   assert.equal(r.status, 502); assert.ok(!/[\r\n]/.test(sent[0][2]));
 });
+
+test('contact : champs vides, mauvais types, formats d’e-mail invalides = 400, rien d’envoyé', async () => {
+  const { d, sent } = mk();
+  const r = await handleContact({ ...ok, name: '  ', subject: '', message: '', email: '' }, d);
+  assert.equal(r.status, 400); assert.deepEqual(r.data.fields, ['name', 'email', 'subject', 'message']);
+  for (const email of ['a@b', 'a b@c.fr', '<x>@c.fr', 'a@@c.fr', '"a"@c.fr', 'a@c.f']) assert.equal((await handleContact({ ...ok, email }, d)).status, 400, email);
+  assert.equal((await handleContact({ ...ok, name: { a: 1 }, message: ['x'] }, d)).status, 400);
+  assert.equal((await handleContact(null, d)).status, 400); assert.equal(sent.length, 0);
+});
+test('contact : textes trop longs tronqués, caractères spéciaux (accents, emoji, balises, retours à la ligne) sans danger', async () => {
+  const { d, sent } = mk();
+  const r = await handleContact({ ...ok, name: 'É'.repeat(500), subject: 'Sujet\r\nBcc: x@y.fr <script>', message: 'é😀"<img src=x onerror=alert(1)>&\n' + 'a'.repeat(10000) }, d);
+  assert.equal(r.status, 200);
+  const [, , subj, html, text] = sent[0];
+  assert.ok(!/[\r\n]/.test(subj), 'pas de retour à la ligne dans le sujet');
+  assert.ok(!html.includes('<img') && !html.includes('<script'));
+  assert.ok(text.length < 3500 && html.length < 4500, 'tronqué');
+});
