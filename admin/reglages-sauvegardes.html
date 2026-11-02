@@ -94,6 +94,7 @@
     if (!file || !data) return;
     file.text().then(function (text) {
       var j = JSON.parse(text), stock = j && j.stock;
+      if (stock && stock.stock && typeof stock.stock === 'object') stock = stock.stock; // fichier du mail de nuit : { date, stock: { date, stock: {…} }, orders, requests }
       if (!stock || typeof stock !== 'object') throw new Error('fichier non reconnu');
       var edits = {};
       Object.keys(stock).forEach(function (s) {
@@ -122,8 +123,14 @@
   $('b-restore').addEventListener('change', function () {
     var f = this.files[0]; this.value = ''; if (!f) return;
     if (!window.confirm("Remettre l'état des commandes (expédiée, préparation, numéros) depuis ce fichier ? Les entrées du fichier remplacent celles du site.")) return;
-    f.text().then(function (t) { return api('/admin/obackup-restore', { method: 'POST', body: t }); })
-      .then(function (d) { oSay(d.restored + ' entrées restaurées.'); })
+    f.text().then(function (t) {
+      var j = JSON.parse(t), reqs = j && j.requests && j.requests.requests; // fichier du mail de nuit : { orders, requests } ; sinon fichier « commandes » seul
+      return api('/admin/obackup-restore', { method: 'POST', body: JSON.stringify(j && j.orders ? j.orders : j) }).then(function (d) {
+        if (!Array.isArray(reqs) || !reqs.length) return d.restored + ' entrées restaurées.';
+        return api('/admin/requests/restore', { method: 'POST', body: JSON.stringify({ requests: reqs }) }).then(function (r) { return d.restored + ' entrées restaurées ; ' + r.restored + ' demande(s) manquante(s) rétablie(s).'; });
+      });
+    })
+      .then(function (m) { oSay(m); })
       .catch(function (e) { oSay('Erreur : ' + e.message); });
   });
 
