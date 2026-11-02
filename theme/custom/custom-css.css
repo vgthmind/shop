@@ -1344,7 +1344,9 @@ ul.categories li.page a:hover{color:#3d4045 !important;background:transparent !i
 }
 
 /* === SUPPRIME TOUT CONTOUR BLEU AU FOCUS PARTOUT DANS LE HEADER (correction, ajout) === */
-.header *:focus,.header *:focus-visible,.header *:focus-within,nav.utility *:focus,nav.utility *:focus-visible{outline:none !important;box-shadow:none !important;border-color:transparent !important;}
+.header *:focus:not(:focus-visible),nav.utility *:focus:not(:focus-visible){outline:none !important;box-shadow:none !important;border-color:transparent !important;}
+/* Accessibilité : contour visible pour la navigation au clavier (le contour souris reste masqué) */
+.header a:focus-visible,.header button:focus-visible,nav.utility a:focus-visible,video:focus-visible{outline:2px solid #171717 !important;outline-offset:3px !important;}
 
 /* === SUPPRIME LE FLASH BLEU TACTILE (webkit-tap-highlight) (ajout) === */
 *{-webkit-tap-highlight-color:transparent !important;}
@@ -1391,7 +1393,7 @@ html[data-vg-lang="fr"] .vg-story-block p.vg-story-fr { font-size: 14px !importa
   background: linear-gradient(165deg, #ffffff 0%, #f2f2f1 55%, #dfdfdd 100%); box-shadow: 0 1px 2px rgba(0,0,0,.1), 0 -1px 1px rgba(255,255,255,.9) inset; }
 .vg-lang-keys button[aria-pressed="true"] { color: #171717; font-weight: 700; cursor: default; }
 .vg-lang-keys button[aria-pressed="true"]::after { content: ''; position: absolute; left: 50%; bottom: 5px; width: 4px; height: 4px; margin-left: -2px; border-radius: 50%; background: #171717; }
-.vg-lang-keys button[aria-pressed="false"] { color: #7d8085; transform: translateY(2px); box-shadow: 0 1px 0 #9a9da2, 0 1px 2px rgba(0,0,0,.15); }
+.vg-lang-keys button[aria-pressed="false"] { color: #5f6368; transform: translateY(2px); box-shadow: 0 1px 0 #9a9da2, 0 1px 2px rgba(0,0,0,.15); }
 .vg-lang-keys button[aria-pressed="false"]::before { background: linear-gradient(165deg, #eceae6 0%, #e2e0dc 100%); }
 .vg-lang-keys button[aria-pressed="false"]:hover { color: #171717; }
 .vg-lang-keys button:focus-visible { outline: 2px solid #171717 !important; outline-offset: 3px; }
@@ -1478,3 +1480,15 @@ input[type="checkbox"]:not(#vg-nc):checked{background-color:#171717;background-i
 input[type="checkbox"]:not(#vg-nc):active{transform:scale(.92)}
 input[type="checkbox"]:not(#vg-nc):focus-visible{outline:3px solid rgba(23,23,23,.35);outline-offset:2px}
 input[type="checkbox"][aria-invalid="true"]:not(#vg-nc){border-color:#b3261e}
+
+/* Accessibilité iPhone : zones tactiles d'au moins 44 px dans l'en-tête */
+@media (pointer:coarse){
+  .header nav a, ul.categories li.page a{min-height:44px;line-height:44px;padding-top:0 !important;padding-bottom:0 !important;}
+  header .vg-lang-keys button{min-height:44px !important;}
+}
+@media (pointer:coarse){
+  footer a, nav.footernav a, ul.categories a, nav.sections .navigation a{padding-top:14px !important;padding-bottom:14px !important;}
+}
+@media (pointer:coarse){
+  footer a:has(svg){display:inline-flex !important;align-items:center;justify-content:center;min-width:44px;min-height:44px;}
+}
