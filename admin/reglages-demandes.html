@@ -196,7 +196,7 @@
       .catch(function (e) { $('smsg').textContent = 'Erreur : ' + e.message; });
   });
   function pickShop(c) {
-    fetch('../products.json').then(function (r) { return r.json(); }).then(function (ps) {
+    fetch('../products.json').then(function (r) { if (!r.ok) throw new Error(r.status); return r.json(); }).then(function (ps) {
       var imgs = [];
       ps.forEach(function (p) { (p.images || []).slice(0, 3).forEach(function (im) { if (im.url) imgs.push([im.url, p.name]); }); });
       var box = document.createElement('div'); box.className = 'picker';
@@ -208,7 +208,7 @@
         if (p || e.target.hasAttribute('data-close') || e.target === box) box.remove();
       });
       document.body.appendChild(box);
-    });
+    }).catch(function (e) { $('smsg').textContent = 'Photos de la boutique indisponibles (' + e.message + ').'; });
   }
   $('save-settings').addEventListener('click', function () {
     var s = JSON.parse(JSON.stringify(settings));
