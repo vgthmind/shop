@@ -962,6 +962,8 @@ async function main() {
   write('robots.txt', SHOP_SETTINGS.public
     ? `User-agent: *\nDisallow: ${BASE_PATH}/admin/\nSitemap: ${SHOP_SETTINGS.site_url}/sitemap.xml\n`
     : read(rel(ROOT, 'robots.txt')));
+  // security.txt (RFC 9116) : où signaler une faille ; expire un an après chaque construction.
+  if (BASE_PATH === '') { fs.mkdirSync(rel(OUT_DIR, '.well-known'), { recursive: true }); fs.writeFileSync(rel(OUT_DIR, '.well-known', 'security.txt'), ['Contact: mailto:contact@vgthmind.org', 'Expires: ' + new Date(Date.now() + 365 * 864e5).toISOString().replace(/\.\d+Z$/, 'Z'), 'Preferred-Languages: fr, en', 'Canonical: ' + SHOP_SETTINGS.site_url + '/.well-known/security.txt', ''].join('\n')); }
   // Admin (pages maison) : servi tel quel sous /admin/, jamais passé par le préfixe /shop.
   fs.cpSync(rel(ROOT, 'admin'), rel(OUT_DIR, 'admin'), { recursive: true });
   {
