@@ -4,7 +4,7 @@
 // (/admin/renew, qui répond 401 si la session est fausse ou expirée). Aucun secret n'est stocké ici.
 const WORKER = 'https://vgthmind-shop-checkout.vgthm66.workers.dev';
 // Restent publics : la page de connexion, son script et ce qu'il faut à l'installation de l'appli.
-const PUBLIC = /^\/admin\/connexion(\.html)?$|^\/admin\/(vg-admin-auth\.js|manifest\.webmanifest|sw\.js|icon-\d+\.png|vendor\/.*)$/;
+const PUBLIC = /^\/admin\/connexion(\.html)?$|^\/admin\/(vg-admin-auth\.js|vg-admin-cursor\.js|manifest\.webmanifest|sw\.js|icon-\d+\.png|vendor\/.*)$/;
 
 // Anciennes pages de l'admin (supprimées, ou rangées dans Réglages) -> nouvelle adresse. Redirection permanente, avant la connexion :
 // les anciens favoris, les liens de mails et l'appli déjà installée continuent de marcher. Un # d'origine est conservé par le navigateur.
