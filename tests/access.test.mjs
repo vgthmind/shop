@@ -224,3 +224,17 @@ test('doublon d’environnement : vgthmind-shop.pages.dev renvoie en 301 vers ww
   assert.equal(p.status, 200);
   assert.match(p.headers.get('X-Robots-Tag'), /noindex/);
 });
+
+test('stock en direct : le JSON-LD d’une fiche passe en SoldOut / InStock selon le Worker, sans redéploiement', async () => {
+  const LD = (a) => '<script type="application/ld+json">{"@type":"Product","offers":{"availability":"https://schema.org/' + a + '"}}</script>';
+  let stock = { 'p-vendue': 0, 'p-dispo': 2 };
+  const saved = globalThis.fetch, savedRW = globalThis.HTMLRewriter;
+  globalThis.fetch = async (u) => String(u).endsWith('/stock') ? new Response(JSON.stringify({ stock }), { status: 200 }) : saved(u);
+  globalThis.HTMLRewriter = class { on(sel, h) { this.h = h; return this; } async transform(res) { const t = await res.text(); let out = t; this.h.text({ text: t.match(/<script[^>]*>([\s\S]*?)<\/script>/)[1], lastInTextNode: true, remove() {}, replace(x) { out = t.replace(/(<script[^>]*>)[\s\S]*?(<\/script>)/, '$1' + x + '$2'); } }); return new Response(out, { status: 200, headers: res.headers }); } };
+  try {
+    const get = async (slug, a) => { mw.resetStockMemo(); const r = await mw.onRequest({ request: new Request(SITE + '/product/' + slug + '/'), next: async () => new Response('<html>' + LD(a) + '</html>', { headers: { 'Content-Type': 'text/html' } }) }); return r.text(); };
+    assert.match(await get('p-vendue', 'InStock'), /schema\.org\/SoldOut/);
+    assert.match(await get('p-dispo', 'SoldOut'), /schema\.org\/InStock/);
+    assert.match(await get('inconnue', 'InStock'), /schema\.org\/InStock/);
+  } finally { globalThis.fetch = saved; globalThis.HTMLRewriter = savedRW; }
+});

@@ -69,6 +69,7 @@ for (const { u, r, html } of pages) {
 }
 
 // 2. Prix/stock du JSON-LD = catalogue publié
+const liveStock = await (async () => { try { const r = await fetch((process.env.WORKER || 'https://vgthmind-shop-checkout.vgthm66.workers.dev') + '/stock'); return (await r.json()).stock; } catch (e) { wa('stock du Worker illisible : ' + e.message); return null; } })();
 const pj = await get(O + '/products.json');
 if (pj.status === 200) {
   const list = await pj.json();
@@ -76,8 +77,10 @@ if (pj.status === 200) {
     const p = list.find((x) => x.permalink === l.sku);
     if (!p) { ko(l.path + ' : absente de products.json'); continue; }
     if (String(p.price) !== String(l.price)) ko(l.path + ' : prix JSON-LD ' + l.price + ' ≠ catalogue ' + p.price);
-    const sold = p.status === 'sold-out' || p.quantity === 0;
-    if (sold !== /SoldOut|OutOfStock/.test(l.availability || '')) ko(l.path + ' : disponibilité JSON-LD incohérente avec le catalogue');
+    // Stock réel du Worker (vente ou admin) ; à défaut, le catalogue publié.
+    const live = liveStock && typeof liveStock[l.sku] === 'number' ? liveStock[l.sku] : null;
+    const sold = live !== null ? live === 0 : (p.status === 'sold-out' || p.quantity === 0);
+    if (sold !== /SoldOut|OutOfStock/.test(l.availability || '')) ko(l.path + ' : disponibilité JSON-LD (' + (l.availability || '').split('/').pop() + ') incohérente avec le stock réel (' + (live === null ? 'catalogue' : live) + ')');
   }
   for (const p of list) { const u = O + '/product/' + encodeURIComponent(p.permalink).toLowerCase() + '/'; if (!locs.includes(u) && !locs.some((x) => decodeURIComponent(x) === decodeURIComponent(u))) wa('pièce visible hors sitemap : ' + p.permalink); }
 } else ko('products.json : statut ' + pj.status);

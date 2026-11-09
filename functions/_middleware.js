@@ -49,7 +49,7 @@ async function enter(request) {
   return reply(JSON.stringify({ ok: false, error: j.error || 'Code incorrect.' }), r.status === 429 ? 429 : 401);
 }
 
-export async function onRequest(context) {
+async function gate(context) {
   const { request, next } = context;
   const url = new URL(request.url);
   // Doublon d'environnement : l'adresse technique *.pages.dev ne doit pas être indexée. L'adresse officielle du projet renvoie vers www (301,
@@ -77,4 +77,41 @@ export async function onRequest(context) {
   for (const h of ['ETag', 'Last-Modified', 'Content-Length']) out.headers.delete(h);
   for (const [k, v] of Object.entries(NO_STORE)) out.headers.set(k, v);
   return new HTMLRewriter().on('head', { element(el) { el.append(gateScript(state), { html: true }); } }).transform(out);
+}
+
+// Stock réel (Worker, public, sans clé) gardé 60 s : sert à tenir à jour, SANS redéploiement, la disponibilité des données structurées
+// d'une fiche (InStock / SoldOut). Une vente ou un passage à 0 dans l'admin est donc visible de Google dès la minute suivante.
+let stockMemo = { t: 0, v: null };
+export async function liveStock() {
+  const now = Date.now();
+  if (stockMemo.v && now - stockMemo.t < 60_000) return stockMemo.v;
+  try {
+    const r = await fetch(WORKER + '/stock', { signal: AbortSignal.timeout(2000) });
+    if (r.ok) { const j = await r.json(); if (j && j.stock && typeof j.stock === 'object') { stockMemo = { t: now, v: j.stock }; return j.stock; } }
+  } catch (e) { /* Worker injoignable : on garde la page telle que construite */ }
+  return stockMemo.v && now - stockMemo.t < 600_000 ? stockMemo.v : null;
+}
+export function resetStockMemo() { stockMemo = { t: 0, v: null }; }
+
+export async function onRequest(context) {
+  const res = await gate(context);
+  try {
+    const url = new URL(context.request.url);
+    const m = context.request.method === 'GET' && res.status === 200 && /^\/product\/([^/]+)\/$/.exec(url.pathname);
+    if (!m || !/html/.test(res.headers.get('Content-Type') || '')) return res;
+    const slug = decodeURIComponent(m[1]);
+    const stock = await liveStock();
+    if (!stock || typeof stock[slug] !== 'number') return res;
+    const want = stock[slug] > 0 ? 'https://schema.org/InStock' : 'https://schema.org/SoldOut';
+    let buf = '';
+    return new HTMLRewriter().on('script[type="application/ld+json"]', {
+      text(t) {
+        buf += t.text;
+        if (!t.lastInTextNode) { t.remove(); return; }
+        const out = buf.replace(/"availability":"https:\/\/schema\.org\/(?:InStock|SoldOut|OutOfStock)"/, '"availability":"' + want + '"');
+        buf = '';
+        t.replace(out, { html: true });
+      },
+    }).transform(res);
+  } catch (e) { return res; }
 }
