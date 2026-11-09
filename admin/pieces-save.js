@@ -49,7 +49,7 @@
     var ref = await gh('GET', '/git/ref/heads/' + BRANCH), head = ref.object.sha;
     var commit = await gh('GET', '/git/commits/' + head);
     for (i = 0; i < slugs.length; i++) {
-      var blob = await gh('POST', '/git/blobs', { content: toB64(JSON.stringify(next[slugs[i]], null, 2) + '\n'), encoding: 'base64' });
+      var blob = await gh('POST', '/git/blobs', { content: toB64(JSON.stringify(Object.assign({}, next[slugs[i]], { updated_at: new Date().toISOString() }), null, 2) + '\n'), encoding: 'base64' });
       tree.push({ path: DIR + slugs[i] + '.json', mode: '100644', type: 'blob', sha: blob.sha });
     }
     var newTree = await gh('POST', '/git/trees', { base_tree: commit.tree.sha, tree: tree });
@@ -73,7 +73,7 @@
     var ref = await gh('GET', '/git/ref/heads/' + BRANCH), head = ref.object.sha;
     var commit = await gh('GET', '/git/commits/' + head);
     for (i = 0; i < slugs.length; i++) {
-      var fiche = Object.assign({}, files[slugs[i]]); delete fiche.sha;
+      var fiche = Object.assign({}, files[slugs[i]]); delete fiche.sha; fiche.updated_at = new Date().toISOString();
       var blob = await gh('POST', '/git/blobs', { content: toB64(JSON.stringify(fiche, null, 2) + String.fromCharCode(10)), encoding: 'base64' });
       tree.push({ path: DIR + slugs[i] + '.json', mode: '100644', type: 'blob', sha: blob.sha });
     }

@@ -37,5 +37,23 @@
     "pantsshorts": "vgthmind shorts, pants and joggers, handmade, some airbrushed. One-of-a-kind pieces. Shorts, pantalons et joggings vgthmind, faits main, certains peints à l'aérographe. Pièces uniques.",
     "merch": "The VGTAPE CD, hand-engraved, with a unique sleeve made from fabric offcuts. Le CD VGTAPE, gravé à la main, pochette unique en chutes de tissu.",
     "accessories": "vgthmind bags, neck warmers and small accessories, one-of-a-kind or small runs. Sacoches à pik, cache-cou et petits accessoires vgthmind, pièces uniques ou petites séries."
+  },
+  "intros": {
+    "tops": {
+      "fr": "Hoodies, tee-shirts et longsleeves vgthmind : des hauts de créateur en pièces uniques, customisés à l'aérographe ou texturés à la main. Chaque pièce est unique, jamais reproduite : quand elle est partie, elle est partie. Les fiches indiquent la taille, la matière et les mesures.",
+      "en": "vgthmind hoodies, tees and longsleeves: designer tops in one-of-a-kind pieces, customised with airbrush or hand-textured. Each piece is unique and never reproduced. Every listing gives the size, fabric and measurements."
+    },
+    "customsupcycling": {
+      "fr": "Les customs et l'upcycling de vgthmind : des vêtements existants repris et peints à l'aérographe, avec un dessin unique qui n'est jamais refait. Une pièce unique, créée en France par un créateur indépendant, vendue une seule fois.",
+      "en": "vgthmind customs and upcycling: existing garments reworked and airbrushed with a unique design that is never repeated. A one-of-a-kind piece made in France by an independent designer, sold only once."
+    },
+    "pantsshorts": {
+      "fr": "Shorts, pantalons et joggings vgthmind : des bas faits main en pièces uniques ou petites séries, dans des tissus de fin de rouleau, parfois peints à l'aérographe. Chaque fiche détaille la taille, la coupe et les mesures pour choisir sereinement.",
+      "en": "vgthmind shorts, pants and joggers: handmade bottoms in one-of-a-kind pieces or small runs, in end-of-roll fabrics, sometimes airbrushed. Each listing details size, cut and measurements."
+    },
+    "accessories": {
+      "fr": "Sacoches, cache-cou et petits accessoires vgthmind : des accessoires de créateur faits à la main, en pièces uniques ou petites séries, souvent avec un design à l'aérographe.",
+      "en": "vgthmind bags, neck warmers and small accessories: handmade designer accessories in one-of-a-kind pieces or small runs, often with an airbrushed design."
+    }
   }
 }

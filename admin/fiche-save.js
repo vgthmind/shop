@@ -57,7 +57,7 @@
     }
 
     say('Création du commit…');
-    var jb = await gh('POST', '/git/blobs', { content: toB64Text(JSON.stringify(product, null, 2) + '\n'), encoding: 'base64' });
+    product.updated_at = new Date().toISOString(); var jb = await gh('POST', '/git/blobs', { content: toB64Text(JSON.stringify(product, null, 2) + '\n'), encoding: 'base64' });
     tree.push({ path: jsonPath, mode: '100644', type: 'blob', sha: jb.sha });
     var newTree = await gh('POST', '/git/trees', { base_tree: commit.tree.sha, tree: tree });
     var nc = await gh('POST', '/git/commits', { message: (opts.message || (opts.isNew ? 'Nouvelle pièce ' : 'Fiche ')) + slug + ' (page Pièces)', tree: newTree.sha, parents: [head] });

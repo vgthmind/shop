@@ -1,7 +1,7 @@
 // Audit vitesse + accessibilité des pages publiques en ligne (lecture seule). Usage : node tests/visuel/audit-vitesse-a11y.mjs [site]
 import { launch, VIEWS } from './audit.mjs';
 const site = process.argv[2] || 'https://www.vgthmind.org';
-const PAGES = ['/', '/category/all/', '/product/ch_0002/', '/cart/', '/mentions-legales/', '/confidentialite/', '/infos-conditions-generales/', '/sur-demande/', '/contact-914a3d/'];
+const PAGES = ['/', '/category/all/', '/product/ch_0002/', '/cart/', '/mentions-legales/', '/confidentialite/', '/infos-conditions-generales/', '/sur-demande/', '/contact//'];
 const b = await launch(); if (!b) process.exit(2);
 for (const [view, opts] of Object.entries(VIEWS)) {
   const ctx = await b.newContext(opts); const page = await ctx.newPage();

@@ -91,7 +91,7 @@ test('rien de perdu : chaque champ d’une fiche (les 26 clés des pièces) se m
     name: 'f-name', name_en: 'f-name-en', slug: 'f-slug', price: 'f-price', description: 'f-desc-fr', keywords: 'f-kw', images: 'photos',
     categories: 'f-cats', latest_drop: 'f-drop', color_name: 'f-colors', color_hex: 'f-colors', quantity: 'f-stock', in_stock: 'f-stock', unique: 'f-unique',
     weight_g: 'f-weight', mode: 'f-mode', alone: 'f-alone', ships_intl: 'f-intl', stripe_payment_link: 'f-stripe', reel_url: 'f-reel', reel_video: 'f-reelv',
-    hidden: 'f-status', archived: 'f-status', coming_soon: 'f-status', publish_at: 'f-when', position: null, created_at: null, weight_estimated: null
+    hidden: 'f-status', archived: 'f-status', coming_soon: 'f-status', publish_at: 'f-when', position: null, created_at: null, updated_at: null, weight_estimated: null
   };
   const used = new Set(['hidden', 'publish_at', 'coming_soon', 'reel_video', 'unique', 'in_stock', 'color_name', 'color_hex', 'reel_url']);
   for (const f of readdirSync(new URL('../data/products/', import.meta.url)).filter((x) => x.endsWith('.json'))) for (const k of Object.keys(JSON.parse(readFileSync(new URL('../data/products/' + f, import.meta.url), 'utf8')))) used.add(k);

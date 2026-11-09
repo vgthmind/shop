@@ -135,7 +135,7 @@
     removed.forEach(function (p) { tree.push({ path: p, mode: '100644', type: 'blob', sha: null }); });
     product.images = (opts.replace ? [] : kept).concat(newPaths.map(function (p) { return '/' + p; }));
 
-    var jsonBlob = await gh('POST', '/git/blobs', { content: b64(new TextEncoder().encode(JSON.stringify(product, null, 2) + '\n')), encoding: 'base64' });
+    product.updated_at = new Date().toISOString(); var jsonBlob = await gh('POST', '/git/blobs', { content: b64(new TextEncoder().encode(JSON.stringify(product, null, 2) + '\n')), encoding: 'base64' });
     tree.push({ path: jsonPath, mode: '100644', type: 'blob', sha: jsonBlob.sha });
 
     say('Création du commit…');

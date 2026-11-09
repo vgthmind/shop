@@ -238,9 +238,9 @@
           return;
         }
         addItem(product);
-        setTimeout(function () { loc.href = '/cart'; }, 200);
+        setTimeout(function () { loc.href = '/cart/'; }, 200);
       })
-      .catch(function () { loc.href = '/cart'; });
+      .catch(function () { loc.href = '/cart/'; });
   }, true);
 
   // --- Frais de port : ligne "FR" pour la France, ligne sans pays pour

@@ -55,7 +55,7 @@ test('bascule : référencement ouvert (sitemap www, robots, canonical, pas de n
 test('bascule : /products.xml (flux Google Merchant / catalogue Meta) remplace celui de l’ancienne boutique', () => {
   const xml = readFileSync(path.join(out, 'products.xml'), 'utf8');
   assert.match(xml, /<rss version="2.0" xmlns:g="http:\/\/base.google.com\/ns\/1.0">/);
-  assert.match(xml, /<link>https:\/\/www\.vgthmind\.org\/product\/ch_0002<\/link>/);
+  assert.match(xml, /<link>https:\/\/www\.vgthmind\.org\/product\/ch_0002\/<\/link>/);
   assert.match(xml, /<g:price>100\.00 EUR<\/g:price>/);
   assert.match(xml, /<g:image_link>https:\/\/www\.vgthmind\.org\/assets\/products-og\/ch_0002\.jpg<\/g:image_link>/);
   assert.equal((xml.match(/<item>/g) || []).length, JSON.parse(readFileSync(path.join(out, 'products.json'), 'utf8')).length);

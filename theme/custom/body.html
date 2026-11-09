@@ -762,7 +762,7 @@ nav.sections a:hover:hover:hover:hover:hover:hover,.header nav a:hover:hover:hov
       if (isFeatured) labelText = '\u2726 ' + labelText;
       // Variante WebP allégée (800 px au plus) au lieu du PNG d'origine (~450 Ko) : l'accueil pesait ~12 Mo.
       var tileImg = function (u) { return (window.__vgSized && window.__vgSized(u, isFeatured ? 800 : 540)) || u; };
-      var tileHtml = '<a class="vg-category-tile' + extraClass + '" href="/category/' + cats[m].permalink + '">' +
+      var tileHtml = '<a class="vg-category-tile' + extraClass + '" href="/category/' + cats[m].permalink + '/">' +
         '<span class="vg-category-tile-img" style="background-image:url(&quot;' + tileImg(cats[m].img) + '&quot;)"></span>' +
         (cats[m].img2 ? '<span class="vg-category-tile-img vg-category-tile-img-alt" style="background-image:url(&quot;' + tileImg(cats[m].img2) + '&quot;)"></span>' : '') +
         '<span class="vg-category-tile-label">' + labelText + '</span></a>';
@@ -789,7 +789,7 @@ nav.sections a:hover:hover:hover:hover:hover:hover,.header nav a:hover:hover:hov
   if (!h1 || document.querySelector('.vg-back-link')) return;
   var back = document.createElement('a');
   back.className = 'vg-back-link';
-  back.href = '/products';
+  back.href = '/products/';
   back.textContent = '\u2190 Boutique';
   h1.parentNode.insertBefore(back, h1);
 })();

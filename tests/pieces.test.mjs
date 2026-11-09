@@ -76,7 +76,7 @@ test('enregistrement : un seul commit, fiches fusionnées (autres champs intacts
   const { gh, calls, blobs } = fakeRepo({ a: { name: 'A', price: 55, weight_g: 300, weight_estimated: true }, b: { name: 'B', price: 20 } });
   const r = await S.savePieces(gh, { a: { weight_g: 310, mode: 'colis', alone: true }, b: { weight_g: 48, mode: 'lettre', alone: false } });
   assert.deepEqual(r.saved, ['a', 'b']);
-  assert.deepEqual(Object.values(blobs), [
+  assert.deepEqual(Object.values(blobs).map((b) => { const c = Object.assign({}, b); assert.match(c.updated_at, /^\d{4}-\d{2}-\d{2}T/); delete c.updated_at; return c; }), [
     { name: 'A', price: 55, weight_g: 310, mode: 'colis', alone: true },
     { name: 'B', price: 20, weight_g: 48, mode: 'lettre', alone: false }]);
   assert.equal(calls.filter((c) => c.path === '/git/commits' && c.method === 'POST').length, 1);

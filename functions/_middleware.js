@@ -52,6 +52,15 @@ async function enter(request) {
 export async function onRequest(context) {
   const { request, next } = context;
   const url = new URL(request.url);
+  // Doublon d'environnement : l'adresse technique *.pages.dev ne doit pas être indexée. L'adresse officielle du projet renvoie vers www (301,
+  // même chemin) ; les aperçus de déploiement (abc.vgthmind-shop.pages.dev) restent consultables mais en noindex. L'admin n'est pas déplacée.
+  if (/\.pages\.dev$/i.test(url.hostname) && !/^\/admin(\/|$)/.test(url.pathname)) {
+    if (url.hostname.toLowerCase() === 'vgthmind-shop.pages.dev') return new Response(null, { status: 301, headers: { Location: 'https://www.vgthmind.org' + url.pathname + url.search, 'Cache-Control': 'public, max-age=3600' } });
+    const r = await next();
+    const o = new Response(r.body, r);
+    o.headers.set('X-Robots-Tag', 'noindex, nofollow');
+    return o;
+  }
   if (url.pathname === '/acces') return request.method === 'POST' ? enter(request) : reply('{"ok":false}', 405, { Allow: 'POST' });
 
   if (isExempt(url.pathname, url.search)) return next(); // admin, suivi, retour Stripe… : jamais verrouillés, inutile d'interroger le Worker

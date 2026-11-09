@@ -115,6 +115,7 @@ function buildProduct(admin, imageMap) {
     // coming_soon (admin « Bientôt disponible ») : visible et listée, mais pas achetable (thème : libellé « Coming soon »).
     status: admin.coming_soon === true || scheduled ? 'coming-soon' : inStock ? 'active' : 'sold-out',
     created_at: admin.created_at || new Date().toISOString(),
+    updated_at: admin.updated_at || undefined,
     has_password_protection: false,
     images,
     price: admin.price,

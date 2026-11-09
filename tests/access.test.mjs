@@ -9,7 +9,7 @@ const hooks = `
 export async function resolve(spec, ctx, next) { if (spec === 'cloudflare:workers') return { url: 'data:text/javascript,export class DurableObject {}', shortCircuit: true }; if (/^[.]{1,2}[/]/.test(spec) && !/[.][a-z]+$/.test(spec)) return next(spec + '.ts', ctx); return next(spec, ctx); }`;
 register('data:text/javascript,' + encodeURIComponent(hooks));
 
-const WORKER = 'https://vgthmind-shop-checkout.vgthm66.workers.dev', SITE = 'https://vgthmind-shop.pages.dev', SECRET = 'secret-de-test';
+const WORKER = 'https://vgthmind-shop-checkout.vgthm66.workers.dev', SITE = 'https://www.vgthmind.org', SECRET = 'secret-de-test';
 let worker, mw, gate, kv, workerDown;
 const mkKv = () => { const m = new Map(); return { get: async (k) => m.get(k) ?? null, put: async (k, v) => { m.set(k, String(v)); }, delete: async (k) => { m.delete(k); }, list: async () => ({ keys: [] }), m }; };
 const env = () => ({ SITE_BASE: SITE, ALLOWED_ORIGIN: SITE, ADMIN_GITHUB_LOGIN: 'x', SESSION_SECRET: SECRET, HOLDS: kv, STRIPE_SECRET_KEY: 'sk_test_abc', STRIPE_WEBHOOK_SECRET: 'whsec_test' });
@@ -213,4 +213,14 @@ test('formulaires du site : le message « fermé » du Worker est affiché (pani
   const dem = readFileSync(new URL('../assets/vg-demande.js', import.meta.url), 'utf8');
   assert.match(cart, /res\.data\.code === 'closed'[\s\S]{0,160}message_en[\s\S]{0,60}message_fr/);
   assert.match(dem, /x\.j\.code === 'closed'[\s\S]{0,160}message_en[\s\S]{0,60}message_fr/);
+});
+
+test('doublon d’environnement : vgthmind-shop.pages.dev renvoie en 301 vers www (même chemin), les aperçus *.pages.dev passent en noindex', async () => {
+  const run = async (u, next) => mw.onRequest({ request: new Request(u), next });
+  const r = await run('https://vgthmind-shop.pages.dev/product/ch_0006/?x=1', async () => { throw new Error('ne doit pas servir la page'); });
+  assert.equal(r.status, 301);
+  assert.equal(r.headers.get('Location'), 'https://www.vgthmind.org/product/ch_0006/?x=1');
+  const p = await run('https://abc123.vgthmind-shop.pages.dev/', async () => new Response('x'));
+  assert.equal(p.status, 200);
+  assert.match(p.headers.get('X-Robots-Tag'), /noindex/);
 });

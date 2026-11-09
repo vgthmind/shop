@@ -1492,3 +1492,5 @@ input[type="checkbox"][aria-invalid="true"]:not(#vg-nc){border-color:#b3261e}
 @media (pointer:coarse){
   footer a:has(svg){display:inline-flex !important;align-items:center;justify-content:center;min-width:44px;min-height:44px;}
 }
+
+.vg-cat-intro{max-width:46rem;margin:0 auto 24px;padding:0 16px;font-size:14px;line-height:1.55;text-align:center;opacity:.85}.vg-cat-intro p{margin:0 0 8px}

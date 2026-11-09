@@ -1,0 +1,23 @@
+# Contrôle SEO du site en ligne : après chaque mise en ligne (push sur main) et chaque lundi.
+# Silencieux si tout va bien ; en cas de problème, l'exécution échoue et GitHub envoie un e-mail.
+name: seo-check
+on:
+  push:
+    branches: [main]
+  schedule:
+    - cron: '17 6 * * 1'
+  workflow_dispatch:
+jobs:
+  seo:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Attendre la fin de la construction Cloudflare
+        if: github.event_name == 'push'
+        run: sleep 300
+      - name: seo:check
+        run: |
+          node outils/seo-check.mjs || { sleep 240; node outils/seo-check.mjs; }

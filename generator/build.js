@@ -240,7 +240,7 @@ const FAVICON_LINKS = [
 // PRODUCTS comes from the layout, then these).
 const CUSTOM_PAGES = [
   { name: 'Info & Terms', url: '/infos-conditions-generales', permalink: 'infos-conditions-generales' },
-  { name: 'Contact', url: '/contact-914a3d', permalink: 'contact-914a3d' },
+  { name: 'Contact', url: '/contact', permalink: 'contact' },
   { name: 'Studio', url: '/studio', permalink: 'studio' },
   // Pièce sur demande / production / collab : parcours étape par étape (theme/pages/sur-demande.html + assets/vg-demande.js).
   { name: 'Got a project?', url: '/sur-demande', permalink: 'sur-demande' },
@@ -265,6 +265,14 @@ const SHOP_PAGES = [
 ];
 
 function rel(...p) { return path.join(...p); }
+// Adresses : Cloudflare Pages sert chaque page sous /adresse/ (sans « / » final : 308) et normalise l'encodage en MINUSCULES
+// (/short-coupe-%C3%A9 -> %c3%a9 : 301). Toute adresse écrite par le site (lien, canonical, sitemap) doit déjà avoir cette forme.
+const encPath = (p) => { let d = p; try { d = decodeURI(p); } catch (e) { /* déjà brut */ } return encodeURI(d).replace(/%[0-9A-F]{2}/g, (m) => m.toLowerCase()); };
+const slashPath = (p) => { const [path0, ...q] = String(p).split(/(?=[?#])/); const a = encPath(path0); return (/\/$/.test(a) || /\.[A-Za-z0-9]{1,6}$/.test(a) ? a : a + '/') + q.join(''); };
+// Liens internes <a href="/x"> -> "/x/" : aucun lien du site ne doit déclencher une redirection (Search Console : « Page avec redirection »).
+function slashLinks(html) {
+  return html.replace(/(<a\b[^>]*?\bhref=")(\/[^"]*)(")/gi, (m, a, h, c) => (h === '/' || h.startsWith('//') || /^\/(admin|assets)(\/|$)/.test(h) ? m : a + slashPath(h) + c));
+}
 function read(p) { return fs.readFileSync(p, 'utf8'); }
 
 // --- base path ---------------------------------------------------------
@@ -386,7 +394,7 @@ function productOffer(product, url) {
     priceValidUntil: String(new Date().getFullYear() + 1) + '-12-31',
     ...(/^\d{4}-\d{2}-\d{2}/.test(String(product.created_at || '')) ? { validFrom: String(product.created_at).slice(0, 10) } : {}), // mise en ligne de la pièce (Fiches de marchand)
     itemCondition: 'https://schema.org/NewCondition',
-    availability: soldOut ? 'https://schema.org/OutOfStock' : 'https://schema.org/InStock',
+    availability: soldOut ? 'https://schema.org/SoldOut' : 'https://schema.org/InStock',
     seller: { '@type': 'Organization', name: 'vgthmind' },
     hasMerchantReturnPolicy: {
       '@type': 'MerchantReturnPolicy', applicableCountry: returnCountries, returnPolicyCountry: 'FR',
@@ -405,9 +413,22 @@ function cut160(t) {
   return t.slice(0, 157).replace(/[\s,;:.-]+\S*$/, '').replace(/[\s,;:.-]+$/, '') + '…';
 }
 
+// Description de recherche d'une fiche : titre soigné + détails, coupée proprement (jamais au milieu de la signature).
+function metaDescription(product) {
+  const paras = String(product.description || '').split(/\r?\n\s*\r?\n/);
+  const flat = (t) => String(t || '').split(/\r?\n/).map((l) => l.replace(/^[\s-]+/, '').replace(/[\s.]+$/, '').trim()).filter((l) => l && !/^\*?\s*sold\s*-?\s*out\s*\*?$/i.test(l)).join(', ');
+  const fr = flat(paras[1]), en = flat(paras[0]);
+  const sig = fr || !en ? ' Pièce unique faite en France par vgthmind.' : ' One-of-a-kind piece made in France by vgthmind.';
+  const lead = (SEO_TEXTS.titles[product.permalink] || product.name || '').replace(/[\s.]+$/, '');
+  const full = (lead + '. ' + (fr || en)).replace(/\s+/g, ' ').trim();
+  const room = 160 - sig.length;
+  const body = full.length <= room ? full : full.slice(0, room).replace(/[\s,;:.-]+\S*$/, '').replace(/[\s,;:.-]+$/, '');
+  return body + '.' + sig;
+}
+
 function seoDescription(product, withFrench) {
   const paras = String(product.description || '').split(/\r?\n\s*\r?\n/);
-  const flat = (t) => String(t || '').split(/\r?\n/).map((l) => l.replace(/^[\s-]+/, '').replace(/[\s.]+$/, '').trim()).filter(Boolean).join(', ');
+  const flat = (t) => String(t || '').split(/\r?\n/).map((l) => l.replace(/^[\s-]+/, '').replace(/[\s.]+$/, '').trim()).filter((l) => l && !/^\*?\s*sold\s*-?\s*out\s*\*?$/i.test(l)).join(', ');
   const en = flat(paras[0]);
   const fr = flat(paras[1]);
   if (withFrench) return ((fr || en) + '. Pièce unique faite en France par vgthmind.').slice(0, 300);
@@ -440,7 +461,7 @@ function headContent(page, product, imageMap) {
   const ogTitle = productSeoTitle(product);
   const hid = product.hidden && HIDDEN_CONFIG[product.permalink] ? `<script>window.__vgConfigExtra=${JSON.stringify({ [product.permalink]: HIDDEN_CONFIG[product.permalink] }).replace(/</g, '\\u003c')};</script>` : '';
   const esc = (s) => String(s || '').replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
-  const desc = esc(cut160(seoDescription(product, false)));
+  const desc = esc(metaDescription(product));
   return [
     hid,
     `<meta name="description" content="${desc}">`,
@@ -479,7 +500,15 @@ function injectAround(html, parts, product, relPath) {
   // Titres des fiches et descriptions des catégories (data/seo.json) : remplacent le titre « CH_0002 | vgthmind » et la
   // description générique de la boutique.
   const seoCat = relPath && (String(relPath).match(/^category\/([^/]+)\//) || [])[1];
-  const seoDesc = seoCat && SEO_TEXTS.categories[seoCat];
+  const seoIntro = seoCat && (SEO_TEXTS.intros || {})[seoCat];
+  const seoDesc = seoCat && ((seoIntro && seoIntro.fr) || SEO_TEXTS.categories[seoCat]);
+  if (seoIntro) {
+    // Texte visible sous le titre de la catégorie (contre « explorée, non indexée » : une page de catégorie ne doit pas être qu'une grille d'images).
+    const esc = (v) => String(v).replace(/&/g, '&amp;').replace(/</g, '&lt;');
+    html = html.replace(/<\/h1>/i, (m) => m + `\n<div class="vg-cat-intro"><p lang="fr" data-l="fr">${esc(seoIntro.fr)}</p><p lang="en" data-l="en">${esc(seoIntro.en)}</p></div>`);
+    const CAT_TITLES = { tops: 'Hauts de créateur : hoodies, tee-shirts, longsleeves', customsupcycling: "Customs et upcycling à l'aérographe, pièces uniques", pantsshorts: 'Shorts, pantalons et joggings faits main', accessories: 'Sacoches, cache-cou et accessoires de créateur' };
+    if (CAT_TITLES[seoCat]) html = html.replace(/<title>[\s\S]*?<\/title>/i, `<title>${CAT_TITLES[seoCat].replace(/&/g, '&amp;')} | vgthmind</title>`);
+  }
   if (seoDesc) {
     const d = cut160(seoDesc).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
     html = html.replace(/(<meta name="description" content=")[^"]*/, (m, a) => a + d)
@@ -540,11 +569,11 @@ function injectAround(html, parts, product, relPath) {
     const escT = (v) => String(v || '').trim().replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
     if (t0) seoTags = '<meta property="og:title" content="' + escT(t0) + '">\n<meta property="og:type" content="website">\n<meta name="twitter:card" content="summary_large_image">';
   }
-  if (relPath && !/^(merci|paiement-annule|suivi|demande\/|404|contact\/)/.test(relPath)) {
+  if (relPath && !/^(merci|paiement-annule|suivi|demande\/|404)/.test(relPath)) {
     const escA = (v) => String(v || '').replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
     const pagePath = '/' + relPath.replace(/index\.html$/, '').replace(/\/$/, '');
     // Cloudflare Pages sert chaque page sous /adresse/ (sans « / » : redirection 308) : l'adresse canonique est celle-là.
-    const url = SHOP_SETTINGS.site_url.replace(/\/$/, '') + (pagePath === '/' ? '/' : encodeURI(pagePath) + '/');
+    const url = SHOP_SETTINGS.site_url.replace(/\/$/, '') + (pagePath === '/' ? '/' : encPath(pagePath) + '/');
     const origin = SHOP_SETTINGS.site_url.replace(/\/$/, '');
     // Fil d'Ariane (Google) : accueil > boutique > catégorie / fiche.
     const crumbs = [['Accueil', origin + '/']];
@@ -553,7 +582,7 @@ function injectAround(html, parts, product, relPath) {
     else if (product) {
       const c = (product.categories || []).find((x) => x.permalink !== 'all' && x.permalink !== 'latest-drop');
       crumbs.push(['Boutique', origin + '/products/']);
-      if (c && c.permalink) crumbs.push([c.name, origin + '/category/' + encodeURIComponent(c.permalink) + '/']);
+      if (c && c.permalink) crumbs.push([c.name, origin + '/category/' + encodeURIComponent(c.permalink).toLowerCase() + '/']);
       crumbs.push([product.name, url]);
     }
     seoTags = `<link rel="canonical" href="${escA(url)}">\n<meta property="og:url" content="${escA(url)}">`;
@@ -571,7 +600,7 @@ function injectAround(html, parts, product, relPath) {
       const t = (html.match(/<title>([\s\S]*?)<\/title>/i) || [])[1];
       if (t) seoTags += `\n<meta property="og:title" content="${escA(t.trim())}">\n<meta property="og:type" content="website">\n<meta name="twitter:card" content="summary_large_image">`;
     } else {
-      const imgs = (product.images || []).map((im) => im.url).filter(Boolean).slice(0, 4)
+      const imgs = (product.images || []).map((im) => im.url).filter(Boolean).slice(0, 10)
         .map((u) => (u.charAt(0) === '/' ? SHOP_SETTINGS.site_url.replace(/\/$/, '') + u : u));
       const ld = {
         '@context': 'https://schema.org', '@type': 'Product', name: product.name,
@@ -589,7 +618,7 @@ function injectAround(html, parts, product, relPath) {
     seoTags,
     // Prototype: hidden from search engines until data/shop-settings.json
     // says "public": true (launch day, see README).
-    SHOP_SETTINGS.public && !/^(suivi|demande|cart|merci|paiement-annule)\//.test(relPath || '') ? '' : '<meta name="robots" content="noindex, nofollow">',
+    SHOP_SETTINGS.public && !/^(suivi|demande|cart|merci|paiement-annule)\//.test(relPath || '') && !(seoCat && NOINDEX_CATS.has(seoCat)) ? '' : (seoCat && NOINDEX_CATS.has(seoCat) && SHOP_SETTINGS.public ? '<meta name="robots" content="noindex, follow">' : '<meta name="robots" content="noindex, nofollow">'),
     // Stock réel lu au chargement (assets/vg-shop-cart.js) : « Add to cart »
     // masqué le temps de la réponse (2,6 s max, puis affiché quoi qu'il arrive).
     '<script>(function(d){d.classList.add("vg-stock-pending");setTimeout(function(){d.classList.remove("vg-stock-pending")},2600)})(document.documentElement)</script>'
@@ -690,8 +719,11 @@ function writeRedirectStub(catalog) {
   fs.writeFileSync(rel(OUT_DIR, '.nojekyll'), '');
 }
 
+// Catégories à ne pas indexer : doublons de /products/ (all, latest-drop) ou presque vides (moins de 2 pièces visibles).
+let NOINDEX_CATS = new Set(['all', 'latest-drop']);
 async function main() {
   const catalog = loadCatalog();
+  for (const c of catalog.categories) if (catalog.products.filter((p) => !p.hidden && (p.categories || []).some((x) => x.permalink === c.permalink)).length < 2) NOINDEX_CATS.add(c.permalink);
   const imageMap = catalog.imageMap || {};
   const T = (n) => read(rel(THEME_DIR, n));
   const layoutSrc = T('layout.html');
@@ -743,7 +775,8 @@ async function main() {
   const write = (relPath, html) => {
     const dest = rel(OUT_DIR, relPath);
     fs.mkdirSync(path.dirname(dest), { recursive: true });
-    fs.writeFileSync(dest, testBanner(localizeBigCartelImages(html), relPath));
+    const out = testBanner(localizeBigCartelImages(html), relPath);
+    fs.writeFileSync(dest, /\.html$/.test(dest) ? slashLinks(out) : out);
   };
   // page_title is assigned at the top of the real layout (before
   // <!DOCTYPE html>), but page templates (products.html, cart.html) print it
@@ -819,11 +852,6 @@ async function main() {
   }
   // /contact (formulaire natif BigCartel, sans backend ici) : renvoie vers
   // la vraie page Contact (Instagram + e-mail), celle de la navigation.
-  const contactUrl = `${BASE_PATH}/contact-914a3d`;
-  write('contact/index.html', '<!doctype html><meta charset="utf-8"><meta name="robots" content="noindex">'
-    + `<meta http-equiv="refresh" content="0;url=${contactUrl}"><link rel="canonical" href="${contactUrl}">`
-    + FAVICON_LINKS
-    + `<title>Contact | vgthmind</title><a href="${contactUrl}">Contact</a>`);
   page('cart/index.html', src.cart, Object.assign({}, base, {
     page: { name: 'Cart', permalink: 'cart', category: 'cart', full_url: '/cart' },
   }));
@@ -939,8 +967,13 @@ async function main() {
   // Adresses de dossiers (/assets/, /assets/products-sized/) : jamais une page, mais Google les trouve en remontant les chemins des
   // images et les signale en 404. Renvoyées vers la boutique (301) ; les fichiers eux-mêmes (images, vidéos) ne sont pas touchés.
   if (BASE_PATH === '') {
-    const dirs = ['/assets', '/assets/products', '/assets/products-sized', '/assets/products-og', '/assets/theme', '/assets/theme-sized', '/assets/media', '/assets/fonts'];
-    fs.appendFileSync(rel(OUT_DIR, '_redirects'), '# Dossiers sans page : pas de 404 dans la Search Console.\n' + dirs.map((d) => d + ' /products 301\n' + d + '/ /products 301').join('\n') + '\n');
+    const dirs = ['/assets', '/assets/products', '/assets/products-sized', '/assets/products-og', '/assets/theme', '/assets/theme-sized', '/assets/media', '/assets/fonts', '/assets/vg', '/assets/vendor', '/assets/mesures', '/assets/demande'];
+    const sub = ['320', '540', '800', '24'];
+    fs.appendFileSync(rel(OUT_DIR, '_redirects'), '# Dossiers sans page : une seule étape (301) vers la boutique, pas de 404 dans la Search Console.\n'
+      + dirs.concat(sub.map((n) => '/assets/products-sized/' + n)).map((d) => d + ' /products/ 301\n' + d + '/ /products/ 301').join('\n') + '\n'
+      + '# Anciennes adresses : une seule étape, vers la forme finale (avec « / »).\n'
+      + '/product/t-shirt-custom /product/custom-tee-shirt-col-en-v/ 301\n/product/t-shirt-custom/ /product/custom-tee-shirt-col-en-v/ 301\n'
+      + '/contact-914a3d /contact/ 301\n/contact-914a3d/ /contact/ 301\n');
   }
   // /favicon.ico a la racine du site (certains navigateurs le demandent d'office).
   fs.copyFileSync(rel(ROOT, 'assets', 'theme', 'favicon.ico'), rel(OUT_DIR, 'favicon.ico'));
@@ -989,17 +1022,23 @@ async function main() {
   // URLs rather than nothing.
   const SITE_ORIGIN = new URL(SHOP_SETTINGS.site_url).origin;
   // Catalogue date, not today's: an unchanged shop rebuilds identically.
-  const today = String(catalog.fetched_at || new Date().toISOString()).slice(0, 10);
-  const urls = [
-    `${BASE_PATH}/`, `${BASE_PATH}/products`,
-    ...catalog.categories.map((c) => `${BASE_PATH}/category/${c.permalink}`),
-    ...catalog.products.filter((p) => !p.hidden).map((p) => `${BASE_PATH}${p.url}`),
-    ...CUSTOM_PAGES.map((cp) => `${BASE_PATH}${cp.url}`),
-    ...LEGAL_PAGES.map((lp) => `${BASE_PATH}${lp.url}`),
-  ].map((u) => (u.endsWith('/') ? u : encodeURI(decodeURI(u)) + '/')); // adresses réellement servies (sans « / » : redirection 308)
+  const day = (v) => (/^\d{4}-\d{2}-\d{2}/.test(String(v || '')) ? String(v).slice(0, 10) : '');
+  const today = day(catalog.fetched_at) || new Date().toISOString().slice(0, 10);
+  const shown = catalog.products.filter((p) => !p.hidden);
+  // Date réelle de modification d'une pièce : updated_at (posé par l'admin à chaque enregistrement), sinon sa mise en ligne.
+  const pDay = (p) => day(p.updated_at) || day(p.created_at) || today;
+  const maxDay = (a) => a.reduce((m, d) => (d > m ? d : m), '') || today;
+  const xe2 = (t) => String(t == null ? '' : t).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  const entries = [
+    { u: '/', d: maxDay(shown.map(pDay)) }, { u: '/products/', d: maxDay(shown.map(pDay)) },
+    ...catalog.categories.filter((c) => !NOINDEX_CATS.has(c.permalink)).map((c) => ({ u: '/category/' + encodeURIComponent(c.permalink).toLowerCase() + '/', d: maxDay(shown.filter((p) => (p.categories || []).some((x) => x.permalink === c.permalink)).map(pDay)) })),
+    ...shown.map((p) => ({ u: slashPath(p.url), d: pDay(p), title: p.name, imgs: (p.images || []).map((im) => im.url).filter(Boolean).slice(0, 10).map((u) => (u.charAt(0) === '/' ? SITE_ORIGIN + BASE_PATH + u : u)) })),
+    ...[...CUSTOM_PAGES, ...LEGAL_PAGES].map((cp) => ({ u: slashPath(cp.url) })), // pages de texte : pas de lastmod inventé
+  ];
   const sitemap = '<?xml version="1.0" encoding="UTF-8"?>\n'
-    + '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'
-    + urls.map((u) => `  <url><loc>${SITE_ORIGIN}${u}</loc><lastmod>${today}</lastmod></url>`).join('\n')
+    + '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">\n'
+    + entries.map((e) => '  <url><loc>' + SITE_ORIGIN + BASE_PATH + e.u + '</loc>' + (e.d ? '<lastmod>' + e.d + '</lastmod>' : '')
+      + (e.imgs || []).map((im) => '<image:image><image:loc>' + xe2(im) + '</image:loc><image:title>' + xe2(e.title) + '</image:title></image:image>').join('') + '</url>').join('\n')
     + '\n</urlset>\n';
   write('sitemap.xml', sitemap);
 
@@ -1012,8 +1051,8 @@ async function main() {
     const og = SITE_ORIGIN + BASE_PATH + '/assets/products-og/' + encodeURIComponent(p.permalink) + '.jpg';
     return '    <item>\n'
       + `      <g:id>${xe(p.permalink)}</g:id>\n      <title>${xe(p.name)}</title>\n      <description>${xe(desc)}</description>\n`
-      + `      <link>${xe(SITE_ORIGIN + BASE_PATH + p.url)}</link>\n      <g:image_link>${xe(og)}</g:image_link>\n`
-      + `      <g:availability>${p.status === 'coming-soon' ? 'out of stock' : 'in stock'}</g:availability>\n`
+      + `      <link>${xe(SITE_ORIGIN + BASE_PATH + slashPath(p.url))}</link>\n      <g:image_link>${xe(og)}</g:image_link>\n`
+      + `      <g:availability>${p.status === 'coming-soon' || p.quantity === 0 ? 'out of stock' : 'in stock'}</g:availability>\n`
       + `      <g:price>${Number(p.price).toFixed(2)} EUR</g:price>\n      <g:condition>new</g:condition>\n      <g:brand>vgthmind</g:brand>\n      <g:identifier_exists>no</g:identifier_exists>\n`
       + '    </item>';
   });
