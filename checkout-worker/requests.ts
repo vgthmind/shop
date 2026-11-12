@@ -48,7 +48,7 @@ export interface ReqDeps {
   // Virement reçu : la « session » (même forme qu'une session Stripe payée) est rangée côté Worker et suit le circuit des commandes.
   transferPaid: (session: any) => Promise<void>;
   // « Virement reçu » annulé : kept = la trace reste avec un avoir (facture déjà émise ou vente déjà en compta).
-  transferCancelled: (sessionId: string) => Promise<{ kept: boolean }>;
+  transferCancelled: (sessionId: string) => Promise<{ kept: boolean; compta: boolean }>;
 }
 
 // --- Durable Object : une instance (« main »), appels traités l'un après l'autre (actions atomiques) ---
@@ -411,8 +411,8 @@ export async function requestRoutes(request: Request, env: ReqEnv, deps: ReqDeps
       if (b.undo) {
         const r = await act(env, deps, b.id, 'transferCancel', { which }, wb);
         if (!r.ok) return json({ error: r.error }, r.status || 400);
-        const out = r.info && r.info.session ? await deps.transferCancelled(String(r.info.session)) : { kept: false };
-        return json({ ok: true, request: decorate(r.rec), kept: out.kept });
+        const out = r.info && r.info.session ? await deps.transferCancelled(String(r.info.session)) : { kept: false, compta: false };
+        return json({ ok: true, request: decorate(r.rec), kept: out.kept, compta: out.compta });
       }
       const rec = await S.get(b.id);
       const t = rec && pendingTransfer(rec, which);

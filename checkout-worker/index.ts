@@ -576,19 +576,22 @@ async function transferPaid(env: Env, s: any) {
   await sendOrderEmails(env, s).catch((e) => alertAdmin(env, 'mail-' + s.id, "Un mail de commande n'est pas parti", `Commande ${s.id} : ${String(e && e.message ? e.message : e)}`));
 }
 // « Virement reçu » annulé. Facture déjà numérotée ou vente déjà en compta : la trace reste et un avoir total l'annule ; sinon tout est effacé.
-async function transferCancelled(env: Env, id: string): Promise<{ kept: boolean }> {
+async function transferCancelled(env: Env, id: string): Promise<{ kept: boolean; compta: boolean }> {
   const s = await virSession(env, id);
-  if (!s) return { kept: false };
+  if (!s) return { kept: false, compta: false };
   let numbered = false;
   try { numbered = !!(await stockStub(env).invoiceNumbers([id]))[id]; } catch (e) {}
-  if (numbered || (await env.HOLDS.get('compta:ok:' + id))) {
+  // compta : la ligne a pu partir vers le Sheet (plus d'une heure après le clic, ou déjà confirmée) -> à corriger à la main.
+  const sent = !!(await env.HOLDS.get('compta:ok:' + id)) || !!(await env.HOLDS.get('compta:q:' + id));
+  const compta = sent || (!!s.livemode && accountingConfigured(env as any) && Date.now() / 1000 - s.created >= 3600);
+  if (numbered || compta) {
     await env.HOLDS.put('refunded:' + id, JSON.stringify({ at: Math.floor(Date.now() / 1000), amount: (s.amount_total || 0) / 100, full: true }));
-    return { kept: true };
+    return { kept: true, compta };
   }
   const ref = await env.HOLDS.get('sref:' + id);
   if (ref) { await env.HOLDS.delete('ref:' + ref); await env.HOLDS.delete('sref:' + id); }
   for (const k of ['virorder:', 'reqsess:', 'mailed:', 'shipped:', 'preparing:']) await env.HOLDS.delete(k + id);
-  return { kept: false };
+  return { kept: false, compta: false };
 }
 // Compta : un virement reçu n'est écrit dans le Sheet qu'une heure après le clic (le temps d'annuler un clic par erreur).
 async function transferComptaCron(env: Env) {

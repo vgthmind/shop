@@ -295,7 +295,7 @@
       t.disabled = true; say('…');
       api('/admin/requests/transfer', { method: 'POST', body: JSON.stringify({ id: r.id, which: w, undo: undo }) }).then(function (d) {
         replace(d.request);
-        say(undo ? 'Annulé : ' + what + ' est de nouveau en « virement en attente ».' + (d.kept ? ' La facture était déjà émise ou la vente déjà en compta : un avoir total a été créé (visible dans Commandes), pense à corriger la compta à la main.' : '')
+        say(undo ? 'Annulé : ' + what + ' est de nouveau en « virement en attente ». Le mail de confirmation est déjà parti, préviens le client.' + (d.compta ? ' La ligne compta est à corriger à la main.' : '') + (d.kept ? ' Un avoir total a été créé (visible dans Commandes).' : '')
           : 'Virement reçu : ' + what + ' est marqué payé, le client a reçu le mail de confirmation.' + (w === 'balance' ? ' La commande est dans Commandes (à expédier).' : ''));
       }).catch(function (err) { t.disabled = false; say('Erreur : ' + err.message); });
       return;
