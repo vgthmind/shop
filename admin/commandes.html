@@ -159,14 +159,15 @@
     });
     $('orders').innerHTML = list.length ? list.map(function (o) {
       var dep = o.kind === 'deposit', rfd = !!(o.refunded && o.refunded.full), st = rfd ? ['ref', 'Remboursée'] : o.refunded ? ['ref', 'Remboursée en partie'] : dep ? ['sent', 'Acompte payé'] : o.shipped ? ['sent', 'Expédiée'] : o.preparing ? ['prep', 'En préparation'] : ['', 'À expédier'];
-      var first = o.items[0] || {}, isOpen = openId === o.id;
+      var first = o.items[0] || {}, isOpen = openId === o.id, vir = o.payment === 'transfer';
       return '<article class="order ord ' + st[0] + (o.refunded ? ' is-refunded' : '') + (isOpen ? ' open' : '') + '" data-id="' + esc(o.id) + '">'
         + '<div class="sum" role="button" tabindex="0" aria-expanded="' + isOpen + '">' + (first.image ? '<img class="th" src="' + esc(first.image) + '" alt="" loading="lazy">' : '<span class="th"></span>')
-        + '<div class="who"><b>' + esc(o.name || o.email) + '</b> <span class="pill ref0">' + esc(o.ref || '') + '</span>' + (o.request ? '<span class="pill ref0">Demande ' + esc(o.request) + '</span>' : '') + (o.livemode ? '' : '<span class="pill ref0">test</span>') + (o.name_incomplete ? '<span class="pill ref">Nom incomplet</span>' : '') + '<small>' + esc(first.name || '') + (o.items.length > 1 ? ' +' + (o.items.length - 1) : '') + ' · ' + esc(date(o.created)) + ' · ' + esc(countryName(o.address && o.address.country)) + '</small></div>'
+        + '<div class="who"><b>' + esc(o.name || o.email) + '</b> <span class="pill ref0">' + esc(o.ref || '') + '</span>' + (o.request ? '<span class="pill ref0">Demande ' + esc(o.request) + '</span>' : '') + (vir ? '<span class="pill ref0">Virement</span>' : '') + (o.livemode ? '' : '<span class="pill ref0">test</span>') + (o.name_incomplete ? '<span class="pill ref">Nom incomplet</span>' : '') + '<small>' + esc(first.name || '') + (o.items.length > 1 ? ' +' + (o.items.length - 1) : '') + ' · ' + esc(date(o.created)) + ' · ' + esc(countryName(o.address && o.address.country)) + '</small></div>'
         + '<div class="amt"><b>' + money(o.total) + '</b><br><span class="pill ' + st[0] + '">' + st[1] + '</span></div></div>'
         + '<div class="drawer"' + (isOpen ? '' : ' hidden') + '>'
         + '<header><div>'
         + (o.livemode ? '' : '<span class="tag test">test</span> ')
+        + (vir ? '<span class="tag">Virement</span> ' : '')
         + (o.name_incomplete ? '<span class="tag refunded">⚠ Nom incomplet : demander nom et prénom au client avant l’envoi</span> ' : '')
         + (o.invoice_no ? '<span class="tag">facturée ' + esc(o.invoice_no) + '</span> ' : '')
         + (o.refunded ? '<span class="tag refunded">' + (o.refunded.full ? 'Remboursée' : 'Remboursée en partie') + ' · ' + esc(String(o.refunded.amount).replace('.', ',')) + ' €</span> ' : '')
@@ -194,8 +195,9 @@
         + (dep ? '' : '<button type="button" data-print>Bon de commande</button>')
         + '<button type="button" data-invoice>Facture' + (o.invoice_no ? ' ' + esc(o.invoice_no) : '') + '</button>'
         + (o.refunded ? '<button type="button" data-credit>Voir l’avoir</button>' : '')
-        + (o.refunded && o.refunded.full ? '' : '<button type="button" data-refund>Rembourser…</button>')
-        + '<a class="btn" target="_blank" rel="noopener" href="https://dashboard.stripe.com/' + (o.livemode ? '' : 'test/') + 'checkout/sessions/' + esc(o.id) + '">Voir dans Stripe</a>'
+        + (vir ? '<span class="muted">Payée par virement : remboursement à faire depuis la banque.</span>'
+          : (o.refunded && o.refunded.full ? '' : '<button type="button" data-refund>Rembourser…</button>')
+          + '<a class="btn" target="_blank" rel="noopener" href="https://dashboard.stripe.com/' + (o.livemode ? '' : 'test/') + 'checkout/sessions/' + esc(o.id) + '">Voir dans Stripe</a>')
         + '</div></div></article>';
     }).join('') : '<p class="muted">Aucune commande ici.</p>';
   }

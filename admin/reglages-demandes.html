@@ -109,6 +109,17 @@
     </div>
     <p class="muted">La facture affiche « vgthmind », cette adresse, Vitry-sur-Seine, le SIRET et contact@vgthmind.org. Jamais de nom ni de prénom. Reste vide tant que tu ne l'as pas remplie : remplis-la AVANT la première facture réelle. Elle est gardée dans les données du site, pas dans le code.</p>
     </div>
+    <div class="set" id="virement">
+    <h3>Coordonnées de virement <span class="tag" id="b-state"></span></h3>
+    <p class="muted">Pour les devis des pièces sur demande (custom, sur-mesure, location, collab) : le client peut payer l’acompte et le solde par virement, sans frais, en plus de la carte. La boutique reste en carte uniquement. Tant que ces champs sont vides, le virement n’apparaît nulle part.</p>
+    <div class="form">
+      <label>Titulaire du compte<input type="text" id="b-holder" maxlength="70" autocomplete="off"></label>
+      <label>BIC (facultatif)<input type="text" id="b-bic" maxlength="11" autocomplete="off" style="text-transform:uppercase"></label>
+      <label style="grid-column:1/-1">IBAN<input type="text" id="b-iban" maxlength="42" autocomplete="off" spellcheck="false" placeholder="FR76 …" style="text-transform:uppercase"></label>
+    </div>
+    <div class="actions"><button type="button" class="main" id="save-bank">Enregistrer les coordonnées</button><button type="button" id="clear-bank" style="color:var(--err)">Vider (désactiver le virement)</button><span id="bmsg" class="muted" role="status"></span></div>
+    <p class="muted">Enregistrées à part, dans les données privées du site : jamais dans le code, ni dans les sauvegardes. L’IBAN n’est montré qu’au client, sur sa page privée, une fois le devis accepté et le virement choisi, ainsi que dans son mail, son devis PDF et ses factures.</p>
+    </div>
     <div class="set">
     <h3>Délais affichés sur la page « Proposer un projet »</h3>
     <p class="muted">En semaines. Le minimum est aussi la date la plus proche que le client peut choisir ; le maximum sert au délai indicatif affiché (identique au minimum = « 2 semaines »).</p>
@@ -144,6 +155,21 @@
     ['custom.tshirt', 'Custom · T-shirt'], ['custom.hoodie', 'Custom · Sweat / hoodie'], ['custom.veste', 'Custom · Veste / jean / jogging'], ['custom.autre', 'Custom · Autre pièce'], ['surmesure.short', 'Sur-mesure · Short'], ['surmesure.pantalon', 'Sur-mesure · Pantalon'], ['surmesure.haut', 'Sur-mesure · Haut'], ['surmesure.veste', 'Sur-mesure · Veste']];
   var NO_DEFAULT = {};
   function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+
+  // --- Coordonnées de virement (route à part : jamais mêlées aux autres réglages) ---------------
+  function showBank(b, msg) {
+    $('b-holder').value = b ? b.holder : ''; $('b-bic').value = b ? b.bic : '';
+    $('b-iban').value = b ? b.iban.replace(/(.{4})/g, '$1 ').trim() : '';
+    $('b-state').textContent = b ? 'Virement activé' : 'Virement désactivé'; $('b-state').className = 'tag ' + (b ? 'ok' : 'warn');
+    $('bmsg').textContent = msg || '';
+  }
+  function saveBank(v, msg) {
+    $('bmsg').textContent = 'Enregistrement…';
+    api('/admin/requests/bank', { method: 'POST', body: JSON.stringify(v) }).then(function (d) { showBank(d.bank, msg); }).catch(function (e) { $('bmsg').textContent = 'Refusé : ' + e.message; });
+  }
+  $('save-bank').addEventListener('click', function () { saveBank({ holder: $('b-holder').value, iban: $('b-iban').value, bic: $('b-bic').value }, 'Coordonnées enregistrées : le virement est proposé sur les devis.'); });
+  $('clear-bank').addEventListener('click', function () { if (confirm('Vider les coordonnées ? Le virement ne sera plus proposé nulle part.')) saveBank({ holder: '', iban: '', bic: '' }, 'Coordonnées effacées : virement désactivé.'); });
+  api('/admin/requests/bank').then(function (d) { showBank(d.bank); }).catch(function () {});
 
   // --- Réglages ------------------------------------------------------------------------------
   var cards = {};

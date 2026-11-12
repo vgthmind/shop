@@ -31,6 +31,19 @@
 .vgr .photos img{width:100%;border-radius:10px;background:#f4f2ec;display:block;animation:vgr-in .4s ease both;animation-delay:calc(var(--i,0) * 60ms)}
 .vgr .err{color:var(--err);min-height:1.2em;font-size:14px}
 .vgr .okmsg{color:var(--ok)}
+.vgr .box.vir{border:2px solid var(--ink)}
+.vgr .tag.vt{background:#c9741a;border-color:#c9741a;color:#fff;margin:0 0 10px}
+.vgr .bank{margin:10px 0}
+.vgr .bl{display:flex;gap:12px;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--line)}
+.vgr .bl>div{min-width:0}
+.vgr .bl .muted{display:block;font-size:12px}
+.vgr .bl b{display:block;font:600 16px 'IBM Plex Mono',monospace;overflow-wrap:anywhere}
+.vgr .bl.ref{background:#fff3cd;border:1px solid #e0b84a;border-radius:10px;padding:10px 12px;margin:6px 0}
+.vgr .cp{flex:none;min-height:44px;min-width:84px;padding:8px 14px;border-radius:999px;border:1px solid var(--ink);background:#fff;color:var(--ink);font:inherit;font-size:14px;font-weight:600;cursor:pointer}
+.vgr .cp.ok{background:var(--ok);border-color:var(--ok);color:#fff}
+.vgr .fld{display:block;margin:10px 0 0}
+.vgr .fld input{font:inherit;font-size:16px;padding:12px;border:1px solid var(--ink);border-radius:8px;width:100%;background:#fff;color:var(--ink);margin-top:4px}
+.vgr .two{display:grid;grid-template-columns:1fr 2fr;gap:10px}
 @media (max-width:520px){.vgr .row .btn{flex:1 1 auto;text-align:center}.vgr .photos{grid-template-columns:1fr 1fr}}
 @media (prefers-reduced-motion:reduce){.vgr .box,.vgr .photos img{animation:none!important}.vgr .btn{transition:none!important}}
 </style>

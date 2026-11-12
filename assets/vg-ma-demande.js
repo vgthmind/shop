@@ -50,6 +50,28 @@
       + '<p style="margin-top:10px"><a class="btn ghost" href="' + esc(pdfUrl()) + '" target="_blank" rel="noopener">' + esc(L('Download the quote (PDF)', 'Télécharger le devis (PDF)')) + '</a></p>';
   }
 
+  // Virement bancaire (sans frais) : coordonnées renvoyées par le Worker seulement une fois le virement choisi (lien privé).
+  var editBal = false;
+  function bankBox(t, dep) {
+    var b = data.bank; if (!b || !t) return '';
+    var rows = [[L('Exact amount', 'Montant exact'), eur(t.amount), Number(t.amount).toFixed(2), ''], [L('Reference to put on the transfer', 'Référence à mettre en libellé du virement'), t.ref, t.ref, ' ref'],
+      [L('Account holder', 'Titulaire'), b.holder, b.holder, ''], ['IBAN', b.iban, b.iban.replace(/\s/g, ''), '']];
+    if (b.bic) rows.push(['BIC', b.bic, b.bic, '']);
+    return '<div class="box vir" id="virement"><p class="tag vt">' + esc(L('Bank transfer pending', 'Virement en attente')) + '</p>'
+      + '<p>' + esc(dep ? L('Make a transfer of the exact amount below from your bank, with the reference. Your order starts when the funds arrive (usually 1 to 3 working days).', 'Fais un virement du montant exact ci-dessous depuis ta banque, avec la référence. Ta commande démarre à réception des fonds (en général 1 à 3 jours ouvrés).')
+        : L('Make a transfer of the exact amount below from your bank, with the reference. I ship your piece when the funds arrive (usually 1 to 3 working days).', 'Fais un virement du montant exact ci-dessous depuis ta banque, avec la référence. J’envoie ta pièce à réception des fonds (en général 1 à 3 jours ouvrés).')) + '</p>'
+      + '<div class="bank">' + rows.map(function (x) { return '<div class="bl' + x[3] + '"><div><span class="muted">' + esc(x[0]) + '</span><b>' + esc(x[1]) + '</b></div><button type="button" class="cp" data-copy="' + esc(x[2]) + '">' + esc(L('Copy', 'Copier')) + '</button></div>'; }).join('') + '</div>'
+      + (!dep && t.shipping ? '<p class="muted">' + esc(L('Including shipping: ', 'Dont livraison : ') + eur(t.shipping)) + '</p>' : '')
+      + '<p class="muted">' + esc(L('You also received these details by email. I’ll confirm by email as soon as the transfer is in.', 'Tu as aussi reçu ces informations par mail. Je te confirme par mail dès que le virement est arrivé.')) + '</p>';
+  }
+  function addrForm() {
+    var f = function (k, lab, ac, type, req) { return '<label class="fld"><span class="muted">' + esc(lab) + (req ? '' : ' ' + L('(optional)', '(facultatif)')) + '</span><input type="' + (type || 'text') + '" id="vgr-a-' + k + '" autocomplete="' + ac + '" maxlength="120"></label>'; };
+    return '<div id="vgr-addr" hidden><p style="margin:14px 0 4px"><b>' + esc(L('Delivery address', 'Adresse de livraison')) + '</b></p>'
+      + f('name', L('First and last name', 'Prénom et nom'), 'name', 'text', 1) + f('line1', L('Address', 'Adresse'), 'address-line1', 'text', 1) + f('line2', L('Address line 2', 'Complément d’adresse'), 'address-line2')
+      + '<div class="two">' + f('postal_code', L('Postcode', 'Code postal'), 'postal-code', 'text', 1) + f('city', L('City', 'Ville'), 'address-level2', 'text', 1) + '</div>' + f('phone', L('Phone (for the carrier)', 'Téléphone (pour le transporteur)'), 'tel', 'tel')
+      + '<div class="row"><button type="button" class="btn" id="vgr-bvir-ok">' + esc(L('Confirm and see the bank details', 'Valider et voir les coordonnées bancaires')) + '</button></div></div>';
+  }
+
   function draw(note) {
     var r = data, q = r.quote, h = '';
     var piece = PIECE[r.piece] ? ' · ' + t2(PIECE[r.piece]) : '';
@@ -70,12 +92,20 @@
       h += '<h2>' + esc(L('Your quote', 'Ton devis')) + '</h2><div class="box">' + quoteTable(q) + (q.message ? '<p style="white-space:pre-wrap;margin-top:12px">' + esc(q.message) + '</p>' : '') + '</div>';
       if (q.expired) {
         h += '<div class="box"><p>' + esc(L('This quote has expired. Write to me and I’ll send you an updated one.', 'Ce devis a expiré. Écris-moi et je t’en envoie un à jour.')) + '</p><div class="row"><a class="btn ghost" href="mailto:contact@vgthmind.org">contact@vgthmind.org</a></div></div>';
+      } else if (r.transfer && r.transfer.deposit && r.bank) {
+        h += bankBox(r.transfer.deposit, true) + '<div class="row"><button type="button" class="btn ghost" id="vgr-pay">' + esc(L('Pay by card instead', 'Payer par carte à la place') + ' · ' + eur(q.deposit)) + '</button></div><p class="err" id="vgr-err"></p></div>';
+      } else if (paid && r.transferOk) {
+        h += '<div class="box" id="acompte"><label class="check"><input type="checkbox" id="vgr-accept"><span>' + esc(r.consent) + cgvLink + '</span></label>'
+          + '<p style="margin:14px 0 0"><b>' + esc(L('Accept the quote and pay the deposit', 'Accepter le devis et payer l’acompte') + ' · ' + eur(q.deposit)) + '</b></p>'
+          + '<div class="row"><button type="button" class="btn" id="vgr-vir" disabled>' + esc(L('Bank transfer — no fees', 'Virement bancaire — sans frais')) + '</button><button type="button" class="btn ghost" id="vgr-pay" disabled>' + esc(L('Card', 'Carte bancaire')) + '</button></div>'
+          + '<p class="muted" style="margin-top:10px">' + esc(L('Bank transfer: the bank details appear right after, and your order starts when the funds arrive. Card: immediate payment.', 'Virement : les coordonnées s’affichent juste après, et ta commande démarre à réception des fonds. Carte : paiement immédiat.')) + '</p><p class="err" id="vgr-err"></p></div>';
       } else if (paid) {
         h += '<div class="box" id="acompte"><label class="check"><input type="checkbox" id="vgr-accept"><span>' + esc(r.consent) + cgvLink + '</span></label>'
           + '<div class="row"><button type="button" class="btn" id="vgr-pay" disabled>' + esc(L('Accept the quote and pay the deposit', 'Accepter le devis et payer l’acompte') + ' · ' + eur(q.deposit)) + '</button></div><p class="err" id="vgr-err"></p></div>';
       } else {
         h += '<div class="box" id="acompte"><label class="check"><input type="checkbox" id="vgr-accept"><span>' + esc(r.consent) + cgvLink + '</span></label><div class="row">'
-          + (q.deposit ? '<button type="button" class="btn" id="vgr-pay" disabled>' + esc(L('Accept and pay the optional deposit', 'Accepter et payer l’acompte facultatif') + ' · ' + eur(q.deposit)) + '</button><button type="button" class="btn ghost" id="vgr-acc" disabled>' + esc(L('Accept without paying the deposit now', 'Accepter sans payer l’acompte maintenant')) + '</button>'
+          + (q.deposit && r.transferOk ? '<button type="button" class="btn" id="vgr-vir" disabled>' + esc(L('Accept and pay the optional deposit by bank transfer — no fees', 'Accepter et payer l’acompte facultatif par virement — sans frais') + ' · ' + eur(q.deposit)) + '</button>' : '')
+          + (q.deposit ? '<button type="button" class="btn' + (r.transferOk ? ' ghost' : '') + '" id="vgr-pay" disabled>' + esc(L('Accept and pay the optional deposit', 'Accepter et payer l’acompte facultatif') + ' · ' + eur(q.deposit)) + '</button><button type="button" class="btn ghost" id="vgr-acc" disabled>' + esc(L('Accept without paying the deposit now', 'Accepter sans payer l’acompte maintenant')) + '</button>'
             : '<button type="button" class="btn" id="vgr-acc" disabled>' + esc(L('Accept the quote', 'Accepter le devis')) + '</button>')
           + '</div><p class="err" id="vgr-err"></p></div>';
       }
@@ -105,13 +135,20 @@
         + '<textarea id="vgr-retouch" rows="4" maxlength="1500" placeholder="' + esc(L('What should change?', 'Qu’est-ce qui doit changer ?')) + '"></textarea>'
         + '<div class="row"><button type="button" class="btn ghost" id="vgr-ret">' + esc(v.retouchesLeft > 0 ? L('Send my change request', 'Envoyer ma demande de retouche') : L('Ask for a quote', 'Demander un devis')) + '</button></div><p class="err" id="vgr-rerr"></p></div>';
     }
-    if (r.status === 'validation' && v && v.validatedAt && !r.balancePaid) {
+    if (r.status === 'validation' && v && v.validatedAt && !r.balancePaid && r.transfer && r.transfer.balance && r.bank && !editBal) {
+      h += '<h2 id="solde">' + esc(L('Balance', 'Solde')) + '</h2>' + bankBox(r.transfer.balance, false)
+        + '<div class="row"><button type="button" class="btn ghost" id="vgr-bedit">' + esc(L('Change the address or pay by card', 'Changer l’adresse ou payer par carte')) + '</button></div></div>';
+    } else if (r.status === 'validation' && v && v.validatedAt && !r.balancePaid) {
       var opts = ['FR', 'BE', 'CH', 'LU', 'DE', 'IT', 'ES', 'NL', 'GB', 'US', 'CA'];
       if (r.country && opts.indexOf(r.country) === -1) opts.unshift(r.country);
       var name = function (c) { try { return new Intl.DisplayNames([L('en', 'fr')], { type: 'region' }).of(c) || c; } catch (e) { return c; } };
       h += '<div class="box" id="solde"><p class="okmsg">' + esc(L('Piece approved, thank you!', 'Pièce validée, merci !')) + '</p><h2 style="margin-top:8px">' + esc(L('Balance', 'Solde')) + '</h2>'
         + '<label class="muted" for="vgr-country">' + esc(L('Shipping country', 'Pays de livraison')) + '</label><select id="vgr-country">' + opts.map(function (c) { return '<option value="' + c + '"' + (c === (r.country || 'FR') ? ' selected' : '') + '>' + esc(name(c)) + '</option>'; }).join('') + '</select>'
-        + '<div id="vgr-ship" style="margin-top:10px"></div><div class="row"><button type="button" class="btn" id="vgr-bal" disabled>' + esc(L('Pay the balance', 'Payer le solde')) + '</button></div><p class="err" id="vgr-berr"></p></div>';
+        + '<div id="vgr-ship" style="margin-top:10px"></div>'
+        + (r.transferOk
+          ? '<div class="row"><button type="button" class="btn" id="vgr-bvir" disabled>' + esc(L('Bank transfer — no fees', 'Virement bancaire — sans frais')) + '</button><button type="button" class="btn ghost" id="vgr-bal" disabled>' + esc(L('Card', 'Carte bancaire')) + '</button></div>' + addrForm()
+          : '<div class="row"><button type="button" class="btn" id="vgr-bal" disabled>' + esc(L('Pay the balance', 'Payer le solde')) + '</button></div>')
+        + '<p class="err" id="vgr-berr"></p></div>';
     }
     if (r.balancePaid) h += '<div class="box"><p>' + esc(L('Balance paid. You’ll receive the order confirmation, then the tracking number when it ships.', 'Solde payé. Tu reçois la confirmation de commande, puis le numéro de suivi à l’envoi.')) + '</p><div class="row"><a class="btn ghost" href="' + esc(SUIVI) + '">' + esc(L('Track my order', 'Suivre ma commande')) + '</a></div></div>';
     if (r.status === 'refusee') h += '<div class="box"><p>' + esc(L('This request is closed. Another idea?', 'Cette demande est close. Une autre idée ?')) + '</p><div class="row"><a class="btn ghost" href="' + esc(NEW) + '">' + esc(L('Start a project', 'Proposer un projet')) + '</a></div></div>';
@@ -122,11 +159,32 @@
 
   function wire() {
     var acc = document.getElementById('vgr-accept'), pay = document.getElementById('vgr-pay');
-    if (acc && pay) {
-      acc.addEventListener('change', function () { pay.disabled = !acc.checked; });
+    var vir = document.getElementById('vgr-vir');
+    if (acc && vir) {
+      acc.addEventListener('change', function () { vir.disabled = !acc.checked; });
+      vir.addEventListener('click', function () {
+        vir.disabled = true;
+        api('/requests/transfer', { which: 'deposit', accept: acc.checked === true }).then(function (j) {
+          if (j.ok) { data = j.request; draw(); var b = document.getElementById('virement'); if (b) b.scrollIntoView({ block: 'start' }); return; }
+          vir.disabled = false;
+          document.getElementById('vgr-err').textContent = j.error === 'quote_expired' ? L('This quote has expired.', 'Ce devis a expiré.') : L('Could not register the transfer, try again.', 'Le virement n’a pas pu être enregistré, réessaie.');
+        });
+      });
+    }
+    body.querySelectorAll('[data-copy]').forEach(function (b) {
+      b.addEventListener('click', function () {
+        var v = b.getAttribute('data-copy'), done = function () { var o = L('Copy', 'Copier'); b.textContent = L('Copied ✓', 'Copié ✓'); b.classList.add('ok'); setTimeout(function () { b.textContent = o; b.classList.remove('ok'); }, 1600); };
+        var old = function () { var ta = document.createElement('textarea'); ta.value = v; ta.setAttribute('readonly', ''); ta.style.cssText = 'position:fixed;top:0;left:0;opacity:0'; document.body.appendChild(ta); ta.select(); ta.setSelectionRange(0, v.length); try { document.execCommand('copy'); done(); } catch (e) {} ta.remove(); };
+        if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(v).then(done, old); else old();
+      });
+    });
+    var bedit = document.getElementById('vgr-bedit');
+    if (bedit) bedit.addEventListener('click', function () { editBal = true; draw(); var s = document.getElementById('solde'); if (s) s.scrollIntoView({ block: 'start' }); });
+    if (pay && (acc || (data.transfer && data.transfer.deposit))) {
+      if (acc) acc.addEventListener('change', function () { pay.disabled = !acc.checked; });
       pay.addEventListener('click', function () {
         pay.disabled = true;
-        api('/requests/deposit', { accept: acc.checked === true }).then(function (j) {
+        api('/requests/deposit', { accept: acc ? acc.checked === true : true }).then(function (j) { // virement déjà choisi : la mention a été acceptée à ce moment-là
           if (j.url) { location.href = j.url; return; }
           pay.disabled = false;
           document.getElementById('vgr-err').textContent = j.error === 'quote_expired' ? L('This quote has expired.', 'Ce devis a expiré.') : j.error === 'payments_off' ? L('Online payment is not open yet.', 'Le paiement en ligne n’est pas encore ouvert.') : L('Payment could not start, try again.', 'Le paiement n’a pas pu démarrer, réessaie.');
@@ -159,13 +217,26 @@
     });
     var cs = document.getElementById('vgr-country'), bal = document.getElementById('vgr-bal');
     if (cs && bal) {
+      var bvir = document.getElementById('vgr-bvir'), addr = document.getElementById('vgr-addr'), berr = document.getElementById('vgr-berr');
+      if (bvir && addr) {
+        bvir.addEventListener('click', function () { addr.hidden = false; var n = document.getElementById('vgr-a-name'); if (n && !n.value) n.value = data.name || ''; if (n) n.focus(); });
+        document.getElementById('vgr-bvir-ok').addEventListener('click', function () {
+          var ok = this, a = {}; ['name', 'line1', 'line2', 'postal_code', 'city', 'phone'].forEach(function (f) { a[f] = document.getElementById('vgr-a-' + f).value.trim(); });
+          if (a.name.length < 2 || a.line1.length < 3 || !a.postal_code || !a.city) { berr.textContent = L('Fill in your name, address, postcode and city.', 'Indique ton nom, ton adresse, ton code postal et ta ville.'); return; }
+          ok.disabled = true; berr.textContent = '';
+          api('/requests/transfer', { which: 'balance', country: cs.value, address: a }).then(function (j) {
+            if (j.ok) { data = j.request; editBal = false; draw(); var b = document.getElementById('solde'); if (b) b.scrollIntoView({ block: 'start' }); return; }
+            ok.disabled = false; berr.textContent = j.error === 'address_required' ? L('Fill in your name, address, postcode and city.', 'Indique ton nom, ton adresse, ton code postal et ta ville.') : L('Could not register the transfer, try again.', 'Le virement n’a pas pu être enregistré, réessaie.');
+          });
+        });
+      }
       var quote = function () {
-        bal.disabled = true; document.getElementById('vgr-ship').innerHTML = '<p class="muted">…</p>';
+        bal.disabled = true; if (bvir) bvir.disabled = true; document.getElementById('vgr-ship').innerHTML = '<p class="muted">…</p>';
         api('/requests/balance-quote', { country: cs.value }).then(function (j) {
           if (!j.ok) { document.getElementById('vgr-ship').innerHTML = '<p class="err">' + esc(j.message || L('Country not served.', 'Pays non livré.')) + '</p>'; return; }
           ship = j;
           document.getElementById('vgr-ship').innerHTML = '<table><tr><td>' + esc(L('Balance', 'Solde')) + '</td><td class="n">' + eur(j.balance) + '</td></tr><tr><td>' + esc(L('Shipping', 'Livraison')) + '</td><td class="n">' + (j.shipping ? eur(j.shipping) : L('Free', 'Offerte')) + '</td></tr><tr class="big"><td>' + esc(L('To pay', 'À payer')) + '</td><td class="n">' + eur(j.balance + j.shipping) + '</td></tr></table>';
-          bal.disabled = false;
+          bal.disabled = false; if (bvir) bvir.disabled = false;
         });
       };
       cs.addEventListener('change', quote); quote();

@@ -62,6 +62,7 @@
     .req.todo { border-left-color: #c9741a; } .req.ok { border-left-color: var(--ok); } .req.err { border-left-color: var(--err); }
     .tag.st.todo { color: #fff; background: #c9741a; border-color: #c9741a; } .tag.st.ok { color: #fff; background: var(--ok); border-color: var(--ok); } .tag.st.err { color: #fff; background: var(--err); border-color: var(--err); }
     .req.open > header { padding-bottom: 8px; }
+    .virbox { border: 2px solid #c9741a; border-radius: 14px; background: #fff8ec; padding: 4px 14px 12px; margin: 10px 0; }
     .req.open h3 { border-top: 1px solid var(--line); padding-top: 12px; }
     .meas { background: #fff; border: 1px solid var(--line); border-radius: 14px; padding: 4px 14px 10px; margin: 8px 0; }
     .meas h3 { border-top: 0 !important; padding-top: 0 !important; margin-top: 10px; }
@@ -150,13 +151,28 @@
   }
   function flags(r) {
     var f = [];
+    if (pendingT(r, 'deposit')) f.push('<span class="tag st todo">Virement en attente (acompte)</span>');
+    if (pendingT(r, 'balance')) f.push('<span class="tag st todo">Virement en attente (solde)</span>');
     if (r.forfeited) f.push('<span class="tag err">Acompte conservé (délai dépassé)</span>');
     if (r.validation && r.validation.retouches && r.validation.retouches.some(function (x) { return x.extra; }) && r.status === 'validation') f.push('<span class="tag warn">Retouche sur devis demandée</span>');
     if (r.validation && r.validation.validatedAt && r.status === 'validation') f.push('<span class="tag ok">Validée, solde à payer</span>');
     if (r.files.length) f.push('<span class="tag">' + r.files.length + ' fichier(s)</span>');
     return f.join(' ');
   }
-  function stCls(r) { return r.status === 'terminee' || r.status === 'envoyee' ? 'ok' : r.status === 'refusee' ? 'err' : r.status === 'nouvelle' || r.status === 'brouillon' ? 'todo' : ''; }
+  // Virement choisi par le client et pas encore reçu (acompte ou solde).
+  function pendingT(r, w) { var p = r[w]; return p && p.transfer && !p.paidAt ? p.transfer : null; }
+  function transferLine(r, w) {
+    var t = pendingT(r, w); if (!t) return '';
+    var a = t.address;
+    return '<div class="virbox"><p><span class="tag st todo">Virement en attente</span> <b>' + money(t.amount) + '</b>' + (w === 'balance' ? ' (dont port ' + money(t.shipping) + ')' : '') + ' · référence <b>' + esc(t.ref) + '</b> · choisi le ' + esc(date(t.at)) + '</p>'
+      + (a ? '<p class="muted">Livraison : ' + esc([a.name, a.line1, a.line2, a.postal_code + ' ' + a.city, country(t.country), a.phone].filter(Boolean).join(' · ')) + '</p>' : '')
+      + '<div class="actions"><button type="button" class="main" data-transfer="' + w + '">Virement reçu</button><span class="muted">À cliquer quand l’argent est sur ton compte : ' + (w === 'deposit' ? 'acompte marqué payé, mail de confirmation au client, fabrication lancée.' : 'solde marqué payé, mail de confirmation au client, commande dans Commandes (à expédier).') + '</span></div></div>';
+  }
+  function undoBtn(r, w) {
+    var p = r[w], can = p && p.paidAt && p.method === 'transfer' && (w === 'deposit' ? r.status === 'fabrication' && !r.validation : r.status === 'solde');
+    return (p && p.method === 'transfer' ? '<span class="tag">Virement</span> ' : '') + (can ? '<button type="button" data-transfer-undo="' + w + '" style="color:var(--err)">Annuler « Virement reçu »</button> ' : '');
+  }
+  function stCls(r) { return pendingT(r, 'deposit') || pendingT(r, 'balance') ? 'todo' : r.status === 'terminee' || r.status === 'envoyee' ? 'ok' : r.status === 'refusee' ? 'err' : r.status === 'nouvelle' || r.status === 'brouillon' ? 'todo' : ''; }
   function item(r) {
     var head = '<header data-open="' + r.id + '"><div><span class="tag ref">' + esc(r.id) + '</span> <span class="branch">' + esc(r.typeLabel) + '</span><br><strong>' + esc(r.client.name) + '</strong> <span class="muted">· ' + esc(country(r.client.country)) + ' · ' + esc(date(r.created)) + '</span></div>'
       + '<div><span class="tag st ' + stCls(r) + '">' + esc(LABEL[r.status] || r.status) + '</span> ' + flags(r) + '</div></header>';
@@ -175,7 +191,8 @@
         + '<ul class="muted">' + (q.lines || []).map(function (l) { return '<li>' + esc(l.label) + ' : ' + l.qty + ' × ' + money(l.unit) + ' = ' + money(l.amount) + '</li>'; }).join('') + '</ul>'
         + '<div class="actions"><button type="button" data-qpdf>Télécharger le PDF</button>' + ((!(r.deposit && r.deposit.paidAt) && r.status === 'devis') ? '<button type="button" data-act="cancelQuote" style="color:var(--err)">Annuler ce devis</button>' : '') + '</div>';
     }
-    if (r.deposit && r.deposit.paidAt) h += '<p><span class="tag ok">Acompte payé le ' + esc(date(r.deposit.paidAt)) + ' : ' + money(r.deposit.amount) + '</span> ' + (r.deposit.session ? '<button type="button" data-inv="' + esc(r.deposit.session) + '">Facture d’acompte</button>' : '') + '</p>';
+    if (r.deposit && r.deposit.paidAt) h += '<p><span class="tag ok">Acompte payé le ' + esc(date(r.deposit.paidAt)) + ' : ' + money(r.deposit.amount) + '</span> ' + (r.deposit.session ? '<button type="button" data-inv="' + esc(r.deposit.session) + '">Facture d’acompte</button> ' : '') + undoBtn(r, 'deposit') + '</p>';
+    else if (pendingT(r, 'deposit')) h += transferLine(r, 'deposit');
     else if (q && q.acceptedAt) h += '<p class="muted"><span class="tag ok">Devis accepté le ' + esc(date(q.acceptedAt)) + '</span> (case « j’accepte le devis et les CGV » cochée' + (r.deposit && r.deposit.acceptIp ? ', IP ' + esc(r.deposit.acceptIp) : '') + ')' + (paid ? ', paiement de l’acompte pas encore reçu' : '') + '. Il ne peut plus être modifié : tu peux seulement l’annuler, puis en refaire un.</p>';
     if (locked) return h;
     var rows = (q && q.lines && q.lines.length ? q.lines : []).slice(0, 12), n = Math.max(rows.length, 3), lines = '';
@@ -218,7 +235,7 @@
         h += '<p class="muted">Envoi n° ' + v.round + ' le ' + esc(date(v.sentAt)) + ' · retouches utilisées : ' + v.retouchesUsed + ' / ' + (settings ? settings.retouchesIncluded : 1) + (v.validatedAt ? ' · <b>validée le ' + esc(date(v.validatedAt)) + '</b>' : '') + '</p>'
           + (v.retouches.length ? '<ul>' + v.retouches.map(function (x) { return '<li>' + esc(date(x.at)) + (x.extra ? ' <span class="tag warn">sur devis</span>' : '') + ' : ' + esc(x.text) + '</li>'; }).join('') + '</ul>' : '');
       }
-      h += '<h3>3. Solde et envoi</h3>' + (r.balance && r.balance.paidAt ? '<p><span class="tag ok">Solde payé le ' + esc(date(r.balance.paidAt)) + ' : ' + money(r.balance.amount) + ' (dont port ' + money(r.balance.shipping) + ')</span> ' + (r.orderRef ? '<span class="tag">Commande ' + esc(r.orderRef) + '</span> ' : '') + (r.balance.session ? '<button type="button" data-inv="' + esc(r.balance.session) + '">Facture de solde</button> ' : '') + '→ suivi et mail « partie » : onglet <a href="commandes.html">Commandes</a>.</p>' : '<p class="muted">Le client paie le solde depuis sa page après avoir validé. La commande arrive ensuite dans l’onglet Commandes.</p>');
+      h += '<h3>3. Solde et envoi</h3>' + (r.balance && r.balance.paidAt ? '<p><span class="tag ok">Solde payé le ' + esc(date(r.balance.paidAt)) + ' : ' + money(r.balance.amount) + ' (dont port ' + money(r.balance.shipping) + ')</span> ' + (r.orderRef ? '<span class="tag">Commande ' + esc(r.orderRef) + '</span> ' : '') + (r.balance.session ? '<button type="button" data-inv="' + esc(r.balance.session) + '">Facture de solde</button> ' : '') + undoBtn(r, 'balance') + '→ suivi et mail « partie » : onglet <a href="commandes.html">Commandes</a>.</p>' : transferLine(r, 'balance') + '<p class="muted">Le client paie le solde depuis sa page après avoir validé. La commande arrive ensuite dans l’onglet Commandes.</p>');
     } else {
       h += '<p class="muted" style="margin-top:14px">Production visuelle / collab : pas de solde ni de validation automatiques. Le devis ci-dessus (acompte facultatif) se paie et s’accepte en ligne ; la caution par chèque, le contrat et le suivi restent à la main (statut ci-dessus).</p>';
     }
@@ -270,6 +287,18 @@
       var su = art.querySelector('[data-reply=subject]').value.trim(), me = art.querySelector('[data-reply=message]').value.trim();
       if (!su || me.length < 2) { say('Sujet et message obligatoires.'); return; }
       if (confirm('Envoyer ce mail à ' + r.client.email + ' ?')) act(r, 'reply', { subject: su, message: me }, 'Mail envoyé.');
+    }
+    if (t.hasAttribute('data-transfer') || t.hasAttribute('data-transfer-undo')) {
+      var undo = t.hasAttribute('data-transfer-undo'), w = t.getAttribute(undo ? 'data-transfer-undo' : 'data-transfer'), what = w === 'deposit' ? 'l’acompte' : 'le solde', tp = pendingT(r, w);
+      if (!confirm(undo ? 'Annuler « Virement reçu » pour ' + what + ' ? La demande repasse en « virement en attente ». Le client a déjà reçu le mail de confirmation : préviens-le toi-même.'
+        : 'Confirmer : le virement de ' + money(tp.amount) + ' (référence ' + tp.ref + ') est bien arrivé sur ton compte ? ' + r.client.email + ' reçoit le mail de confirmation.')) return;
+      t.disabled = true; say('…');
+      api('/admin/requests/transfer', { method: 'POST', body: JSON.stringify({ id: r.id, which: w, undo: undo }) }).then(function (d) {
+        replace(d.request);
+        say(undo ? 'Annulé : ' + what + ' est de nouveau en « virement en attente ».' + (d.kept ? ' La facture était déjà émise ou la vente déjà en compta : un avoir total a été créé (visible dans Commandes), pense à corriger la compta à la main.' : '')
+          : 'Virement reçu : ' + what + ' est marqué payé, le client a reçu le mail de confirmation.' + (w === 'balance' ? ' La commande est dans Commandes (à expédier).' : ''));
+      }).catch(function (err) { t.disabled = false; say('Erreur : ' + err.message); });
+      return;
     }
     if (t.hasAttribute('data-rmfinal')) { if (confirm('Retirer cette photo ?')) act(r, 'removeFinal', { key: t.getAttribute('data-rmfinal') }); }
     if (t.hasAttribute('data-inv')) { window.VGInvoice.openAsync(api('/admin/invoice?id=' + encodeURIComponent(t.getAttribute('data-inv'))).then(function (d) { return d.invoice; }), 'fr'); return; }

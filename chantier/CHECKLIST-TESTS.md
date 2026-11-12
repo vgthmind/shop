@@ -54,3 +54,17 @@ Déjà validés par vgthmind le 26/10 et retirés : connexion iPhone, compta (li
 ## G. Sauvegarde
 19. **PC** : Ouvre la boîte contact@ demain matin.
    → Attendu : Un mail de sauvegarde nocturne (3 h 30 UTC) avec le fichier JSON joint, ouvrable.
+
+## H. Paiement par virement des devis (après déploiement du Worker ET du site)
+- [ ] Admin > Réglages > Coordonnées de virement : saisir titulaire, IBAN, BIC ; un IBAN faux est refusé ; l'étiquette passe à « Virement activé ».
+- [ ] Champ vidé : aucun bouton « Virement » sur la page d'un devis (seulement la carte).
+- [ ] Page du devis (PC + iPhone) : case cochée, deux boutons « Virement bancaire — sans frais » (en avant) et « Carte bancaire ».
+- [ ] Clic « Virement » : encadré « Virement en attente » avec montant exact, référence DEV-…-A en évidence, titulaire, IBAN, BIC ; chaque bouton « Copier » marche (iPhone aussi).
+- [ ] Mail client reçu (montant, référence, coordonnées) et mail « Virement en attente » reçu par vgthmind.
+- [ ] Admin > Demandes : étiquette orange « Virement en attente (acompte) », bouton « Virement reçu ».
+- [ ] « Virement reçu » : étiquette verte « Acompte payé », mail « Acompte reçu » au client, statut « En fabrication », facture d'acompte « Réglée par virement ».
+- [ ] « Annuler « Virement reçu » » dans l'heure : retour à « Virement en attente », rien en compta.
+- [ ] Solde : pays, bouton « Virement », adresse de livraison, encadré avec référence DEV-…-S et port inclus ; « Virement reçu » : commande dans Commandes avec l'adresse, étiquette « Virement », mention « remboursement à faire depuis la banque » à la place du bouton Stripe.
+- [ ] PDF du devis : bloc « Paiement » avec coordonnées et références. Facture : coordonnées + mention du règlement.
+- [ ] Carte : parcours Stripe inchangé (acompte et solde) ; boutique : carte uniquement.
+- [ ] Compta (Sheet) : la ligne « Virement bancaire » arrive environ une heure après « Virement reçu ».
