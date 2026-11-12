@@ -158,7 +158,7 @@ export function quotePdf(q: QuotePdfInput): Uint8Array {
     para(`IBAN : ${q.bank.iban}`, 10, true, 0, 13);
     if (q.bank.bic) para(`BIC : ${q.bank.bic}`, 10, false, 0, 13);
     para(`${t.refs} : ${q.bank.refDeposit} (${t.refDep})${q.bank.refBalance ? `, ${q.bank.refBalance} (${t.refBal})` : ''}`, 10, false, 0, 13);
-    y -= 2; para(t.payName);
+    if (/^vgthmind$/i.test(q.bank.holder.trim())) { y -= 2; para(t.payName); } // seulement si le titulaire saisi est le nom commercial
     y -= 10;
   }
 
