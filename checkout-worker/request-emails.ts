@@ -154,9 +154,10 @@ export function transferEmail(rec: any, c: ReqMailCtx, bank: { holder: string; i
     ? (dep ? 'Ta commande démarre à réception des fonds (en général 1 à 3 jours ouvrés). Je te confirme par mail dès que le virement est arrivé.' : 'J’envoie ta pièce dès réception des fonds (en général 1 à 3 jours ouvrés). Je te confirme par mail dès que le virement est arrivé.')
     : (dep ? 'Your order starts when the funds arrive (usually 1 to 3 working days). I’ll confirm by email as soon as the transfer is in.' : 'I ship your piece as soon as the funds arrive (usually 1 to 3 working days). I’ll confirm by email as soon as the transfer is in.');
   const card = fr ? 'Tu préfères finalement la carte ? C’est toujours possible depuis la page de ta demande.' : 'Would you rather pay by card after all? You still can, from your request page.';
-  const inner = para(esc(t.hi(rec.client.name))) + para(esc(lead)) + amountsTable(rows) + para(esc(note), 'margin-top:14px') + para(esc(card), `color:${MUTED};font-size:13px`)
+  const payName = fr ? 'Ta banque peut afficher une alerte sur le nom du bénéficiaire : c’est normal, vgthmind est un nom commercial. Vérifie simplement que l’IBAN est bien celui indiqué ici.' : 'Your bank may show a warning about the payee name: this is normal, vgthmind is a trading name. Just check that the IBAN is the one shown here.';
+  const inner = para(esc(t.hi(rec.client.name))) + para(esc(lead)) + amountsTable(rows) + para(esc(payName), `color:${MUTED};font-size:13px;margin-top:12px`) + para(esc(note), 'margin-top:14px') + para(esc(card), `color:${MUTED};font-size:13px`)
     + button(c.pageUrl, t.view) + sign(rec.lang) + footer(rec.lang, c);
-  const text = [t.hi(rec.client.name), '', lead, '', ...rows.map(([k, v]) => `${k} : ${v}`), '', note, card, '', `${t.view} : ${c.pageUrl}`, '', 'vgthmind'].join('\n');
+  const text = [t.hi(rec.client.name), '', lead, '', ...rows.map(([k, v]) => `${k} : ${v}`), '', payName, '', note, card, '', `${t.view} : ${c.pageUrl}`, '', 'vgthmind'].join('\n');
   return { subject: testTag(c) + subject, html: shell(rec.lang, subject, inner), text };
 }
 

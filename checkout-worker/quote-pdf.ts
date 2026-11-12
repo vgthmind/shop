@@ -52,6 +52,7 @@ const T = {
     accepted: (d: string) => `Accepté en ligne le ${d}`, test: 'DEVIS DE TEST', version: 'version',
     pay: 'Paiement', payBody: 'Par virement bancaire (sans frais) ou par carte bancaire, au choix sur la page de la demande, après acceptation du devis en ligne. Par virement, la commande démarre à réception des fonds.',
     holder: 'Titulaire', refs: 'Référence à mettre en libellé', refDep: 'acompte', refBal: 'solde',
+    payName: 'Ta banque peut afficher une alerte sur le nom du bénéficiaire : c’est normal, vgthmind est un nom commercial. Vérifie simplement que l’IBAN est bien celui indiqué ici.',
   },
   en: {
     quote: 'QUOTE', date: 'Date', valid: 'Valid until', client: 'Customer', request: 'Request', desc: 'Description', qty: 'Qty', unit: 'Unit price', amount: 'Amount',
@@ -66,6 +67,7 @@ const T = {
     accepted: (d: string) => `Accepted online on ${d}`, test: 'TEST QUOTE', version: 'version',
     pay: 'Payment', payBody: 'By bank transfer (no fees) or by card, as you prefer, from the request page once the quote is accepted online. By bank transfer, the order starts when the funds are received.',
     holder: 'Account holder', refs: 'Reference to put on the transfer', refDep: 'deposit', refBal: 'balance',
+    payName: 'Your bank may show a warning about the payee name: this is normal, vgthmind is a trading name. Just check that the IBAN is the one shown here.',
   },
 };
 
@@ -149,13 +151,14 @@ export function quotePdf(q: QuotePdfInput): Uint8Array {
   para(t.c4); y -= 10;
 
   if (q.bank) {
-    need(90);
+    need(125);
     text(t.pay.toUpperCase(), M, y, 8, true, 0.45); y -= 13;
     para(t.payBody); y -= 2;
     para(`${t.holder} : ${q.bank.holder}`, 10, false, 0, 13);
     para(`IBAN : ${q.bank.iban}`, 10, true, 0, 13);
     if (q.bank.bic) para(`BIC : ${q.bank.bic}`, 10, false, 0, 13);
     para(`${t.refs} : ${q.bank.refDeposit} (${t.refDep})${q.bank.refBalance ? `, ${q.bank.refBalance} (${t.refBal})` : ''}`, 10, false, 0, 13);
+    y -= 2; para(t.payName);
     y -= 10;
   }
 

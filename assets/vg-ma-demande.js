@@ -62,6 +62,7 @@
         : L('Make a transfer of the exact amount below from your bank, with the reference. I ship your piece when the funds arrive (usually 1 to 3 working days).', 'Fais un virement du montant exact ci-dessous depuis ta banque, avec la référence. J’envoie ta pièce à réception des fonds (en général 1 à 3 jours ouvrés).')) + '</p>'
       + '<div class="bank">' + rows.map(function (x) { return '<div class="bl' + x[3] + '"><div><span class="muted">' + esc(x[0]) + '</span><b>' + esc(x[1]) + '</b></div><button type="button" class="cp" data-copy="' + esc(x[2]) + '">' + esc(L('Copy', 'Copier')) + '</button></div>'; }).join('') + '</div>'
       + (!dep && t.shipping ? '<p class="muted">' + esc(L('Including shipping: ', 'Dont livraison : ') + eur(t.shipping)) + '</p>' : '')
+      + '<p class="muted">' + esc(L('Your bank may show a warning about the payee name: this is normal, vgthmind is a trading name. Just check that the IBAN is the one shown here.', 'Ta banque peut afficher une alerte sur le nom du bénéficiaire : c’est normal, vgthmind est un nom commercial. Vérifie simplement que l’IBAN est bien celui indiqué ici.')) + '</p>'
       + '<p class="muted">' + esc(L('You also received these details by email. I’ll confirm by email as soon as the transfer is in.', 'Tu as aussi reçu ces informations par mail. Je te confirme par mail dès que le virement est arrivé.')) + '</p>';
   }
   function addrForm() {
