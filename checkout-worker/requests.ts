@@ -14,10 +14,11 @@
 // Routes admin (/admin/requests…) : liste, actions, photos de la pièce finie, fichiers, réglages, suppression.
 import { DurableObject } from 'cloudflare:workers';
 import {
-  applyAction, parseSubmission, newRequest, mergeSettings, checkSettings, priceFloors, dueStep, retention, clientView, fileKind,
+  applyAction, parseSubmission, newRequest, mergeSettings, checkSettings, priceFloors, dueStep, retention, clientView as clientViewCore, fileKind,
   FILE_LIMITS, DRAFT_GRACE_MS, DAY, PAID_TYPES, CARD_KEYS, TYPE_LABELS, answerLines, type Settings, type Effect, natureOf,
+  checkBank, pendingTransfer, transferRef, ibanPretty, type Bank,
 } from './requests-core';
-import { receivedEmail, newRequestAlert, quoteEmail, quoteAcceptedEmail, depositPaidEmail, validationEmail, balanceRequestEmail, replyEmail, type ReqMailCtx } from './request-emails';
+import { receivedEmail, newRequestAlert, quoteEmail, quoteAcceptedEmail, depositPaidEmail, validationEmail, balanceRequestEmail, replyEmail, transferEmail, type ReqMailCtx } from './request-emails';
 import { CONTACT_EMAIL, alertList } from './emails';
 import { checkTurnstile } from './turnstile';
 import { quotePdf, toBase64, type QuotePdfInput } from './quote-pdf';
@@ -44,6 +45,10 @@ export interface ReqDeps {
   shipping: (product: any, country: string) => Promise<any>;
   invoice: (sessionId: string) => Promise<{ ok: boolean; invoice?: any; error?: string; status?: number }>;
   catalog: () => Promise<any[]>;
+  // Virement reçu : la « session » (même forme qu'une session Stripe payée) est rangée côté Worker et suit le circuit des commandes.
+  transferPaid: (session: any) => Promise<void>;
+  // « Virement reçu » annulé : kept = la trace reste avec un avoir (facture déjà émise ou vente déjà en compta).
+  transferCancelled: (sessionId: string) => Promise<{ kept: boolean }>;
 }
 
 // --- Durable Object : une instance (« main »), appels traités l'un après l'autre (actions atomiques) ---
@@ -68,6 +73,9 @@ export class RequestsDO extends DurableObject {
   async restoreMissing(recs: any[]) { let n = 0; for (const r of recs) { if (r && typeof r.id === 'string' && /^[A-Za-z0-9_-]{3,40}$/.test(r.id) && !(await this.st().get('r:' + r.id))) { await this.st().put('r:' + r.id, r); n++; } } return n; }
   async settings(): Promise<Settings> { return mergeSettings(await this.st().get('settings')); }
   async setSettings(v: Settings) { await this.st().put('settings', v); }
+  // Coordonnées de virement : clé à part (jamais dans « settings », donc ni dans la liste admin ni dans les sauvegardes nocturnes).
+  async bank(): Promise<Bank | null> { return (await this.st().get('bank')) || null; }
+  async setBank(v: Bank | null) { if (v) await this.st().put('bank', v); else await this.st().delete('bank'); }
   async act(id: string, action: string, data: any, now: number) {
     const rec = await this.st().get('r:' + id);
     if (!rec) return { ok: false, error: 'not_found', status: 404 };
@@ -101,7 +109,9 @@ export async function quotePdfFor(env: ReqEnv, rec: any): Promise<Uint8Array | n
   const q = rec.quote;
   if (!q) return null;
   const settings: any = await stub(env).settings();
+  const bank = await stub(env).bank();
   const input: QuotePdfInput = {
+    bank: bank && q.deposit > 0 ? { holder: bank.holder, iban: ibanPretty(bank.iban), bic: bank.bic, refDeposit: transferRef(rec, 'deposit'), refBalance: q.optionalDeposit ? '' : transferRef(rec, 'balance') } : undefined,
     lang: rec.lang === 'fr' ? 'fr' : 'en', number: q.number || rec.id, version: q.version || 1, issuedAt: q.sentAt, validUntil: q.validUntil || q.sentAt + 30 * DAY,
     seller: { address: String(settings.sellerAddress || '').trim() }, client: { name: rec.client.name, email: rec.client.email, country: rec.client.country },
     requestId: rec.id, title: q.title, lines: q.lines || [{ label: q.title, qty: 1, unit: q.total, amount: q.total }], total: q.total, deposit: q.deposit, depositPct: q.depositPct,
@@ -116,6 +126,8 @@ export async function runEffects(env: ReqEnv, deps: ReqDeps, rec: any, effects: 
   const from = (env.MAIL_FROM || '').trim();
   const ctx = mailCtx(env, rec, wb);
   const settings = await stub(env).settings();
+  const bank = await stub(env).bank();
+  ctx.transfer = !!bank;
   for (const e of effects) {
     try {
       let m: { subject: string; html: string; text: string } | null = null;
@@ -129,6 +141,7 @@ export async function runEffects(env: ReqEnv, deps: ReqDeps, rec: any, effects: 
         if (pdf) attachments = [{ filename: pdfName(rec), content: toBase64(pdf) }];
       } else if (e.kind === 'mail:quoteAccepted') m = quoteAcceptedEmail(rec, ctx);
       else if (e.kind === 'mail:depositPaid') m = depositPaidEmail(rec, ctx);
+      else if (e.kind === 'mail:transfer') { if (bank) m = transferEmail(rec, ctx, { holder: bank.holder, iban: ibanPretty(bank.iban), bic: bank.bic }, e.data.which === 'balance' ? 'balance' : 'deposit'); }
       else if (e.kind === 'mail:validation' || e.kind === 'mail:validationReminder') {
         const left = Math.max(0, settings.retouchesIncluded - (rec.validation?.retouchesUsed || 0));
         m = validationEmail(rec, ctx, { retouchesLeft: left, forfeitDays: settings.forfeitDays }, e.kind === 'mail:validationReminder');
@@ -243,13 +256,38 @@ async function balanceCheckout(env: ReqEnv, deps: ReqDeps, rec: any, key: string
   const meta: Record<string, string> = {
     vg: '1', kind: 'balance', nature: natureOf(rec), request: rec.id, total: String(q.total), deposit: String(q.deposit), deposit_session: String(rec.deposit.session || ''),
     deposit_invoice: depInvoice && depInvoice.ok ? String(depInvoice.invoice.number) : '', deposit_date: String(Math.floor((rec.deposit.paidAt || Date.now()) / 1000)),
-    title: q.title.slice(0, 400), country,
+    title: q.title.slice(0, 400), country, quote: String(q.number || ''),
   };
   for (const [k, v] of Object.entries(meta)) { p.set(`metadata[${k}]`, v); p.set(`payment_intent_data[metadata][${k}]`, v); }
   const r = await deps.stripe(key, 'POST', '/v1/checkout/sessions', p);
   if (!r.ok) return { error: r.data.error?.message || 'Erreur Stripe' };
   await stub(env).act(rec.id, 'balanceSession', { session: r.data.id, shipping: ship.cents / 100, country }, Date.now());
   return { url: r.data.url };
+}
+
+// Virement reçu : « session » de la même forme qu'une session Stripe payée (factures, Commandes, mails, compta la lisent telle quelle).
+// Rien ne passe par Stripe ; metadata.payment = 'transfer'.
+async function transferSession(env: ReqEnv, deps: ReqDeps, rec: any, which: 'deposit' | 'balance', id: string, t: any) {
+  const q = rec.quote, fr = rec.lang === 'fr', cents = (n: number) => Math.round(n * 100);
+  const base = { vg: '1', nature: natureOf(rec), request: rec.id, total: String(q.total), title: String(q.title || '').slice(0, 400), quote: String(q.number || ''), payment: 'transfer', transfer_ref: String(t.ref || ''), lang: fr ? 'fr' : 'en' };
+  const common = { id, object: 'checkout.session', created: Math.floor(Date.now() / 1000), livemode: !isTest(env), currency: 'eur', payment_status: 'paid', status: 'complete', payment_intent: '', amount_total: cents(t.amount) };
+  if (which === 'deposit') {
+    return {
+      ...common, metadata: { ...base, kind: 'deposit', pct: String(q.depositPct) },
+      customer_details: { email: rec.client.email, name: rec.client.name, phone: '', address: { country: rec.client.country || '' } },
+      line_items: { data: [{ description: (fr ? `Acompte ${q.depositPct} % · ` : `Deposit ${q.depositPct}% · `) + q.title, quantity: 1, amount_total: cents(t.amount) }] },
+    };
+  }
+  const a = t.address || {}, address = { line1: a.line1 || '', line2: a.line2 || '', postal_code: a.postal_code || '', city: a.city || '', state: '', country: t.country || '' };
+  const depInvoice = rec.deposit && rec.deposit.session ? await deps.invoice(rec.deposit.session).catch(() => null) : null;
+  return {
+    ...common,
+    metadata: { ...base, kind: 'balance', deposit: String(q.deposit), deposit_session: String((rec.deposit && rec.deposit.session) || ''), deposit_invoice: depInvoice && depInvoice.ok ? String(depInvoice.invoice.number) : '', deposit_date: String(Math.floor(((rec.deposit && rec.deposit.paidAt) || Date.now()) / 1000)), country: t.country || '' },
+    customer_details: { email: rec.client.email, name: a.name || rec.client.name, phone: a.phone || '', address },
+    shipping_details: { name: a.name || rec.client.name, address },
+    shipping_cost: { amount_total: cents(t.shipping || 0) },
+    line_items: { data: [{ description: (fr ? 'Solde · ' : 'Balance · ') + q.title, quantity: 1, amount_total: cents(t.amount - (t.shipping || 0)) }] },
+  };
 }
 
 // Paiement Stripe d'une demande (webhook, page de la demande ou page Merci) : idempotent.
@@ -356,6 +394,34 @@ export async function requestRoutes(request: Request, env: ReqEnv, deps: ReqDeps
       const r = await act(env, deps, b.id, b.action, b, wb);
       if (r.ok) Object.assign(r.rec, { typeLabel: TYPE_LABELS[r.rec.type] || r.rec.type, answers: answerLines(r.rec, 'fr'), pageUrl: mailCtx(env, r.rec, wb).pageUrl });
       return r.ok ? json({ ok: true, request: r.rec }) : json({ error: r.error }, r.status || 400);
+    }
+    const decorate = (rec: any) => Object.assign(rec, { typeLabel: TYPE_LABELS[rec.type] || rec.type, answers: answerLines(rec, 'fr'), pageUrl: mailCtx(env, rec, wb).pageUrl });
+    // Coordonnées de virement (titulaire, IBAN, BIC) : vides = option virement absente partout.
+    if (path === '/admin/requests/bank' && request.method === 'GET') return json({ bank: await S.bank() });
+    if (path === '/admin/requests/bank' && request.method === 'POST') {
+      const r = checkBank(await body());
+      if (!r.ok) return json({ error: r.error }, 400);
+      await S.setBank(r.value);
+      return json({ ok: true, bank: r.value });
+    }
+    // « Virement reçu » (ou son annulation) sur l'acompte ou le solde : même suite qu'un paiement par carte.
+    if (path === '/admin/requests/transfer' && request.method === 'POST') {
+      const b = await body(), which = b.which === 'balance' ? 'balance' : 'deposit';
+      if (!isId(String(b.id || ''))) return json({ error: 'Requête invalide.' }, 400);
+      if (b.undo) {
+        const r = await act(env, deps, b.id, 'transferCancel', { which }, wb);
+        if (!r.ok) return json({ error: r.error }, r.status || 400);
+        const out = r.info && r.info.session ? await deps.transferCancelled(String(r.info.session)) : { kept: false };
+        return json({ ok: true, request: decorate(r.rec), kept: out.kept });
+      }
+      const rec = await S.get(b.id);
+      const t = rec && pendingTransfer(rec, which);
+      if (!t || !rec.quote) return json({ error: 'Aucun virement en attente sur cette demande.' }, 400);
+      const session = await transferSession(env, deps, rec, which, `cs_${isTest(env) ? 'test' : 'live'}_vir${hex(12)}`, t);
+      const r = await act(env, deps, b.id, 'transferReceived', { which, session: session.id }, wb);
+      if (!r.ok) return json({ error: r.error }, r.status || 400);
+      await deps.transferPaid(session);
+      return json({ ok: true, request: decorate(r.rec) });
     }
     if (path === '/admin/requests/quote.pdf' && request.method === 'GET') {
       const rec = isId(q('id')) ? await S.get(q('id')) : null;
@@ -479,6 +545,28 @@ export async function requestRoutes(request: Request, env: ReqEnv, deps: ReqDeps
   if (!(await allow(env, `rl:reqact:${ip}`, 60, 900))) return json({ error: 'rate_limited' }, 429);
   const settings = await S.settings();
   const key = deps.stripeKey();
+  // Vue client + virement : l'IBAN n'est renvoyé qu'au porteur du lien privé, et seulement une fois le virement choisi (devis accepté).
+  const bank = await S.bank();
+  const clientView = (r: any, st: Settings) => {
+    const v: any = clientViewCore(r, st);
+    v.transferOk = !!bank;
+    v.bank = bank && (v.transfer.deposit || v.transfer.balance) ? { holder: bank.holder, iban: ibanPretty(bank.iban), bic: bank.bic } : null;
+    return v;
+  };
+  if (path === '/requests/transfer') {
+    if (!bank) return json({ error: 'transfer_off' }, 503);
+    if (b.which === 'balance') {
+      if (rec.status !== 'validation' || !rec.validation || !rec.validation.validatedAt || !rec.quote) return json({ error: 'not_validated' }, 409);
+      const country = /^[A-Za-z]{2}$/.test(String(b.country || '')) ? String(b.country).toUpperCase() : '';
+      if (!country) return json({ error: 'country_required' }, 400);
+      const ship = await deps.shipping(balanceProduct(rec), country);
+      if (!ship.ok) return json({ error: ship.message || 'Pays non livré.', code: ship.error }, 400);
+      const r = await act(env, deps, rec.id, 'transferBalance', { country, shipping: ship.cents / 100, address: b.address }, wb);
+      return r.ok ? json({ ok: true, request: clientView(r.rec, settings) }) : json({ error: r.error }, r.status || 400);
+    }
+    const r = await act(env, deps, rec.id, 'transferDeposit', { accept: b.accept === true, ip }, wb);
+    return r.ok ? json({ ok: true, request: clientView(r.rec, settings) }) : json({ error: r.error }, r.status || 400);
+  }
 
   if (path === '/requests/confirm') {
     const r = await act(env, deps, rec.id, 'confirm', {}, wb);

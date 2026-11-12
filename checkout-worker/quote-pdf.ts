@@ -34,6 +34,8 @@ export interface QuotePdfInput {
   acceptedAt?: number;
   pageUrl: string;
   test?: boolean;
+  // Coordonnées de virement (seulement si elles sont saisies dans l'admin) et références à mettre en libellé.
+  bank?: { holder: string; iban: string; bic: string; refDeposit: string; refBalance: string };
 }
 
 const T = {
@@ -48,6 +50,8 @@ const T = {
     c4: 'Conditions générales de vente : voir le site vgthmind (page « Infos / Conditions générales »). Acceptation du devis en ligne, depuis la page de la demande.',
     accept: 'Pour accepter', acceptBody: 'Ouvre le lien ci-dessous, relis le devis, coche « j’accepte le devis et les conditions générales de vente »' ,
     accepted: (d: string) => `Accepté en ligne le ${d}`, test: 'DEVIS DE TEST', version: 'version',
+    pay: 'Paiement', payBody: 'Par virement bancaire (sans frais) ou par carte bancaire, au choix sur la page de la demande, après acceptation du devis en ligne. Par virement, la commande démarre à réception des fonds.',
+    holder: 'Titulaire', refs: 'Référence à mettre en libellé', refDep: 'acompte', refBal: 'solde',
   },
   en: {
     quote: 'QUOTE', date: 'Date', valid: 'Valid until', client: 'Customer', request: 'Request', desc: 'Description', qty: 'Qty', unit: 'Unit price', amount: 'Amount',
@@ -60,6 +64,8 @@ const T = {
     c4: 'Terms of sale: see the vgthmind website (“Info / Terms of sale” page). The quote is accepted online, from the request page.',
     accept: 'To accept', acceptBody: 'Open the link below, read the quote again and tick “I accept the quote and the terms of sale”',
     accepted: (d: string) => `Accepted online on ${d}`, test: 'TEST QUOTE', version: 'version',
+    pay: 'Payment', payBody: 'By bank transfer (no fees) or by card, as you prefer, from the request page once the quote is accepted online. By bank transfer, the order starts when the funds are received.',
+    holder: 'Account holder', refs: 'Reference to put on the transfer', refDep: 'deposit', refBal: 'balance',
   },
 };
 
@@ -141,6 +147,17 @@ export function quotePdf(q: QuotePdfInput): Uint8Array {
   para(t.c1); y -= 2; para(q.deposit > 0 ? (q.optionalDeposit ? t.c2o : t.c2) : ''); y -= 2;
   if (!q.optionalDeposit) { para(t.c3); y -= 2; }
   para(t.c4); y -= 10;
+
+  if (q.bank) {
+    need(90);
+    text(t.pay.toUpperCase(), M, y, 8, true, 0.45); y -= 13;
+    para(t.payBody); y -= 2;
+    para(`${t.holder} : ${q.bank.holder}`, 10, false, 0, 13);
+    para(`IBAN : ${q.bank.iban}`, 10, true, 0, 13);
+    if (q.bank.bic) para(`BIC : ${q.bank.bic}`, 10, false, 0, 13);
+    para(`${t.refs} : ${q.bank.refDeposit} (${t.refDep})${q.bank.refBalance ? `, ${q.bank.refBalance} (${t.refBal})` : ''}`, 10, false, 0, 13);
+    y -= 10;
+  }
 
   need(60);
   if (q.acceptedAt) { text(t.accepted(day(q.acceptedAt, q.lang)), M, y, 10, true, 0.1); y -= 14; }

@@ -32,7 +32,7 @@ const fakeStorage = () => {
 const queued = (raw) => { let q = Promise.resolve(); return new Proxy(raw, { get: (o, k) => (typeof o[k] === 'function' ? (...a) => { const r = q.then(() => o[k](...a)); q = r.catch(() => {}); return r; } : o[k]) }); };
 const makeKV = () => {
   const m = new Map();
-  return { get: async (k) => (k === 'shipping:config' ? JSON.stringify(config) : m.has(k) ? m.get(k) : null), put: async (k, v) => { m.set(k, v); }, delete: async (k) => { m.delete(k); }, list: async () => ({ keys: [] }) };
+  return { get: async (k) => (k === 'shipping:config' ? JSON.stringify(config) : m.has(k) ? m.get(k) : null), put: async (k, v) => { m.set(k, v); }, delete: async (k) => { m.delete(k); }, list: async (o) => ({ keys: [...m.keys()].filter((k) => !o || !o.prefix || k.startsWith(o.prefix)).map((name) => ({ name })) }) };
 };
 
 before(async () => {
@@ -548,4 +548,119 @@ test('solde demandé sans photos : acompte requis, validation implicite, mail av
   assert.equal((await getReq(id)).status, 'validation');
   const q = await J(await call('/requests/balance-quote', { id, k, country: 'FR' }));
   assert.equal(q.ok, true);
+});
+
+// --- Paiement par virement (0 frais) : acompte et solde ---------------------------------------------------------
+const BANK = { holder: 'Alex Vendeur', iban: 'FR76 3000 6000 0112 3456 7890 189', bic: 'AGRIFRPP' }; // IBAN d'exemple (clé valide), jamais un vrai
+const ADDR = { name: 'Alex Martin', line1: '1 rue A', line2: '', postal_code: '75001', city: 'Paris', phone: '0600000000' };
+async function untilQuote() {
+  const { id, k } = await submit();
+  await call('/requests/confirm', { id, k });
+  assert.equal((await admin('/admin/requests/act', { id, action: 'quote', total: 200, delay: '3 semaines' })).ok, true);
+  mails.length = 0;
+  return { id, k };
+}
+
+test('virement : coordonnées vides = option absente ; IBAN vérifié ; jamais dans les réglages ni la liste admin', async () => {
+  const { id, k } = await untilQuote();
+  assert.equal((await view(id, k)).transferOk, false);
+  assert.equal((await J(await call('/requests/transfer', { id, k, which: 'deposit', accept: true }))).error, 'transfer_off');
+  assert.equal((await admin('/admin/requests/bank', { ...BANK, iban: 'FR76 3000 6000 0112 3456 7890 188' })).status, 400, 'clé IBAN fausse');
+  assert.equal((await admin('/admin/requests/bank', BANK)).ok, true);
+  const v = await view(id, k);
+  assert.equal(v.transferOk, true);
+  assert.equal(v.bank, null, 'IBAN pas montré tant que le virement n’est pas choisi');
+  const list = await admin('/admin/requests', null, 'GET');
+  assert.doesNotMatch(JSON.stringify(list.settings), /FR76/);
+  assert.equal((await J(await call('/admin/requests/bank', null, 'GET'))).status, 401);
+  assert.equal((await admin('/admin/requests/bank', { holder: '', iban: '', bic: '' })).bank, null, 'vidé = désactivé');
+  assert.equal((await view(id, k)).transferOk, false);
+});
+
+test('virement, acompte : mention obligatoire, en attente + mails, « Virement reçu » = même suite que la carte, annulation', async () => {
+  await admin('/admin/requests/bank', BANK);
+  const { id, k } = await untilQuote();
+  assert.equal((await J(await call('/requests/transfer', { id, k, which: 'deposit' }))).error, 'consent_required');
+  const t = await J(await call('/requests/transfer', { id, k, which: 'deposit', accept: true }));
+  assert.equal(t.ok, true);
+  assert.equal(t.request.transfer.deposit.amount, 60);
+  assert.match(t.request.transfer.deposit.ref, /^DEV-\d{4}-001-A$/);
+  assert.equal(t.request.bank.iban, 'FR76 3000 6000 0112 3456 7890 189');
+  assert.equal(t.request.depositPaid, false);
+  const client = mails.find((m) => /Virement de l’acompte/.test(m.subject));
+  assert.ok(client && /FR76 3000 6000/.test(client.html) && /60,00/.test(client.html) && /-001-A/.test(client.html), 'mail client : montant, référence, coordonnées');
+  assert.ok(mails.some((m) => /Virement en attente \(acompte\)/.test(m.subject)), 'mail vendeur');
+  const n = mails.length;
+  await call('/requests/transfer', { id, k, which: 'deposit', accept: true });
+  assert.equal(mails.length, n, 'second clic : pas de nouveau mail');
+  let rec = await getReq(id);
+  assert.equal(rec.status, 'devis');
+  assert.ok(rec.deposit.transfer && rec.deposit.consent && rec.quote.acceptedAt);
+  const r = await admin('/admin/requests/transfer', { id, which: 'deposit' });
+  assert.equal(r.ok, true);
+  assert.equal(r.request.status, 'fabrication');
+  assert.equal(r.request.deposit.method, 'transfer');
+  assert.match(r.request.deposit.session, /^cs_test_vir[a-f0-9]{24}$/);
+  assert.ok(mails.some((m) => /Acompte reçu/.test(m.subject)), 'mail de confirmation au client');
+  assert.equal((await view(id, k)).bank, null, 'payé : IBAN plus renvoyé');
+  const inv = await J(await call('/requests/invoice', { id, k, which: 'deposit' }));
+  assert.equal(inv.ok, true);
+  assert.equal(inv.invoice.total, 60);
+  assert.match(inv.invoice.paid, /virement bancaire \(référence DEV-.*-A\)/);
+  assert.ok(inv.invoice.notes.some((x) => /IBAN FR76/.test(x) && /-S \(solde\)/.test(x)));
+  const orders = await admin('/orders', null, 'GET');
+  const o = orders.orders.find((x) => x.id === r.request.deposit.session);
+  assert.deepEqual([o.kind, o.payment, o.total], ['deposit', 'transfer', 60]);
+  // Annulation (clic par erreur) : retour à « virement en attente », plus de trace dans les commandes.
+  const u = await admin('/admin/requests/transfer', { id, which: 'deposit', undo: true });
+  assert.deepEqual([u.ok, u.kept, u.request.status], [true, false, 'devis']);
+  assert.ok(u.request.deposit.transfer && !u.request.deposit.paidAt);
+  assert.equal((await admin('/orders', null, 'GET')).orders.length, 0);
+  assert.equal((await view(id, k)).transfer.deposit.amount, 60);
+  // Le client peut encore payer par carte : le virement en attente tombe.
+  const dep = await J(await call('/requests/deposit', { id, k, accept: true }));
+  await webhook('checkout.session.completed', pay(dep.url.split('/').pop()));
+  rec = await getReq(id);
+  assert.ok(rec.deposit.paidAt && !rec.deposit.transfer && !rec.deposit.method);
+});
+
+test('virement, solde : adresse + port, « Virement reçu » -> commande à expédier, facture, mail de confirmation, annulation', async () => {
+  await admin('/admin/requests/bank', BANK);
+  const { id, k } = await untilDeposit();
+  assert.equal((await admin('/admin/requests/act', { id, action: 'requestBalance' })).ok, true);
+  mails.length = 0;
+  assert.equal((await J(await call('/requests/transfer', { id, k, which: 'balance', country: 'FR', address: { name: 'A' } }))).error, 'address_required');
+  const q = await J(await call('/requests/balance-quote', { id, k, country: 'FR' }));
+  const t = await J(await call('/requests/transfer', { id, k, which: 'balance', country: 'FR', address: ADDR }));
+  assert.equal(t.ok, true);
+  assert.equal(t.request.transfer.balance.amount, 140 + q.shipping);
+  assert.match(t.request.transfer.balance.ref, /-S$/);
+  assert.ok(mails.some((m) => /Virement du solde/.test(m.subject)) && mails.some((m) => /Virement en attente \(solde\)/.test(m.subject)));
+  mails.length = 0;
+  const r = await admin('/admin/requests/transfer', { id, which: 'balance' });
+  assert.equal(r.ok, true);
+  assert.deepEqual([r.request.status, r.request.balance.method, r.request.balance.amount], ['solde', 'transfer', 140 + q.shipping]);
+  assert.ok(mails.some((m) => String(m.to).includes('alex@example.com')), 'confirmation de commande au client');
+  const sid = r.request.balance.session;
+  const o = (await admin('/orders', null, 'GET')).orders.find((x) => x.id === sid);
+  assert.deepEqual([o.kind, o.payment, o.total, o.shipping, o.address.city, o.name], ['balance', 'transfer', 140 + q.shipping, q.shipping, 'Paris', 'Alex Martin']);
+  const inv = await J(await call('/requests/invoice', { id, k, which: 'balance' }));
+  assert.equal(inv.ok, true);
+  assert.equal(inv.invoice.deductions[0].amount, 60);
+  assert.match(inv.invoice.paid, /virement/);
+  const u = await admin('/admin/requests/transfer', { id, which: 'balance', undo: true });
+  assert.deepEqual([u.ok, u.request.status], [true, 'validation']);
+  // Expédition depuis Commandes : la demande passe en « Envoyée », plus d'annulation possible.
+  const again = await admin('/admin/requests/transfer', { id, which: 'balance' });
+  assert.equal((await admin('/orders/shipped', { id: again.request.balance.session, tracking: '6A123' })).ok, true);
+  assert.equal((await getReq(id)).status, 'envoyee');
+  assert.equal((await admin('/admin/requests/transfer', { id, which: 'balance', undo: true })).status, 400, 'partie : plus d’annulation');
+});
+
+test('virement : devis PDF avec coordonnées et références quand le champ est rempli', async () => {
+  const { id, k } = await untilQuote();
+  const size = async () => new Uint8Array(await (await call(`/requests/quote.pdf?id=${id}&k=${k}`, null, 'GET')).arrayBuffer()).length;
+  const before = await size();
+  await admin('/admin/requests/bank', BANK);
+  assert.ok((await size()) > before + 200);
 });

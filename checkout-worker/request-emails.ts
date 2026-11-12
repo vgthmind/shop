@@ -2,7 +2,7 @@
 import { esc, para, heading, button, link, shell, CONTACT_EMAIL, INSTAGRAM_URL, MUTED, LINE, FONT, INK, countryName } from './emails';
 import { answerLines, TYPE_LABELS, STATUS_LABELS } from './requests-core';
 
-export interface ReqMailCtx { pageUrl: string; adminUrl: string; cgvUrl: string; photoUrls?: string[]; test?: boolean }
+export interface ReqMailCtx { pageUrl: string; adminUrl: string; cgvUrl: string; photoUrls?: string[]; test?: boolean; transfer?: boolean }
 type Mail = { subject: string; html: string; text: string };
 
 const eur = (n: number, lang: string) => (Math.round(n * 100) / 100).toFixed(2).replace('.', lang === 'fr' ? ',' : '.') + ' €';
@@ -114,9 +114,10 @@ export function quoteEmail(rec: any, c: ReqMailCtx, reminder = false): Mail {
   const subject = reminder ? t.quoteRemind(rec.id, no) : t.quote(rec.id, no);
   const note = opt ? (q.deposit > 0 ? t.quoteNoteOpt : '') : t.quoteNote;
   const valid = q.validUntil ? t.valid(dayFmt(q.validUntil, rec.lang)) : '';
+  const payWays = c.transfer && q.deposit > 0 ? (rec.lang === 'fr' ? 'Paiement au choix sur la page de ta demande : virement bancaire (sans frais) ou carte bancaire.' : 'Pay the way you prefer from your request page: bank transfer (no fees) or card.') : '';
   const inner = para(esc(t.hi(rec.client.name))) + para(esc(reminder ? t.quoteRemindLead : opt ? t.quoteLeadOpt : t.quoteLead))
     + heading(`${q.title || rec.id}${no ? ' · ' + no : ''}`) + quoteBlock(rec) + (q.message && !reminder ? para(esc(q.message).replace(/\n/g, '<br>'), 'margin-top:16px') : '')
-    + (opt ? '' : para(esc(t.shipping), `color:${MUTED};font-size:13px;margin-top:12px`)) + (valid ? para(esc(valid), `color:${MUTED};font-size:13px;margin-top:10px`) : '') + button(c.pageUrl, opt ? t.seeQuote : t.payDeposit)
+    + (opt ? '' : para(esc(t.shipping), `color:${MUTED};font-size:13px;margin-top:12px`)) + (payWays ? para(esc(payWays), `color:${MUTED};font-size:13px;margin-top:10px`) : '') + (valid ? para(esc(valid), `color:${MUTED};font-size:13px;margin-top:10px`) : '') + button(c.pageUrl, opt ? t.seeQuote : t.payDeposit)
     + (note ? para(esc(note), `color:${MUTED};font-size:13px;margin-top:14px`) : '') + para(esc(t.pdf), `color:${MUTED};font-size:13px`) + sign(rec.lang) + footer(rec.lang, c);
   const lines = [
     t.hi(rec.client.name), '', reminder ? t.quoteRemindLead : opt ? t.quoteLeadOpt : t.quoteLead,
@@ -125,7 +126,7 @@ export function quoteEmail(rec: any, c: ReqMailCtx, reminder = false): Mail {
     ...(q.deposit > 0 && !opt ? [`${t.balance} : ${eur(q.total - q.deposit, rec.lang)}`] : []),
     `${t.delay} : ${q.delay}`,
     ...(q.message && !reminder ? ['', q.message] : []),
-    ...(opt ? [] : ['', t.shipping]), ...(valid ? ['', valid] : []),
+    ...(opt ? [] : ['', t.shipping]), ...(payWays ? ['', payWays] : []), ...(valid ? ['', valid] : []),
     '', `${opt ? t.seeQuote : t.payDeposit} : ${c.pageUrl}`, '', ...(note ? [note, ''] : []), t.pdf, '', 'vgthmind',
   ];
   const text = lines.join('\n');
@@ -136,6 +137,27 @@ export function depositPaidEmail(rec: any, c: ReqMailCtx): Mail {
   const t = tr(rec.lang), lead = t.depositPaidLead(eur(rec.deposit.amount, rec.lang), rec.quote.delay);
   const inner = para(esc(t.hi(rec.client.name))) + para(esc(lead)) + para(esc(t.invoice), `color:${MUTED};font-size:14px`) + button(c.pageUrl, t.view) + sign(rec.lang) + footer(rec.lang, c);
   return { subject: testTag(c) + t.depositPaid(rec.id), html: shell(rec.lang, t.depositPaid(rec.id), inner), text: `${t.hi(rec.client.name)}\n\n${lead}\n${t.invoice}\n${c.pageUrl}\n\nvgthmind` };
+}
+
+// Le client a choisi le virement (acompte ou solde) : récapitulatif avec montant exact, référence et coordonnées.
+export function transferEmail(rec: any, c: ReqMailCtx, bank: { holder: string; iban: string; bic: string }, which: 'deposit' | 'balance'): Mail {
+  const fr = rec.lang === 'fr', t = tr(rec.lang), dep = which === 'deposit', tf = (dep ? rec.deposit : rec.balance).transfer;
+  const subject = fr ? `${dep ? 'Virement de l’acompte' : 'Virement du solde'} : le récapitulatif (${rec.id})` : `Bank transfer for your ${dep ? 'deposit' : 'balance'}: the details (${rec.id})`;
+  const lead = fr ? `Tu as choisi de payer ${dep ? 'l’acompte' : 'le solde'} par virement bancaire, sans frais. Voici tout ce qu’il te faut :` : `You chose to pay the ${dep ? 'deposit' : 'balance'} by bank transfer, with no fees. Here is everything you need:`;
+  const rows: [string, string, boolean?][] = [
+    [fr ? 'Montant exact' : 'Exact amount', eur(tf.amount, rec.lang), true],
+    ...(!dep && tf.shipping ? [[fr ? 'dont livraison' : 'including shipping', eur(tf.shipping, rec.lang)] as [string, string]] : []),
+    [fr ? 'Référence à mettre en libellé' : 'Reference to put on the transfer', tf.ref],
+    [fr ? 'Titulaire' : 'Account holder', bank.holder], ['IBAN', bank.iban], ...(bank.bic ? [['BIC', bank.bic] as [string, string]] : []),
+  ];
+  const note = fr
+    ? (dep ? 'Ta commande démarre à réception des fonds (en général 1 à 3 jours ouvrés). Je te confirme par mail dès que le virement est arrivé.' : 'J’envoie ta pièce dès réception des fonds (en général 1 à 3 jours ouvrés). Je te confirme par mail dès que le virement est arrivé.')
+    : (dep ? 'Your order starts when the funds arrive (usually 1 to 3 working days). I’ll confirm by email as soon as the transfer is in.' : 'I ship your piece as soon as the funds arrive (usually 1 to 3 working days). I’ll confirm by email as soon as the transfer is in.');
+  const card = fr ? 'Tu préfères finalement la carte ? C’est toujours possible depuis la page de ta demande.' : 'Would you rather pay by card after all? You still can, from your request page.';
+  const inner = para(esc(t.hi(rec.client.name))) + para(esc(lead)) + amountsTable(rows) + para(esc(note), 'margin-top:14px') + para(esc(card), `color:${MUTED};font-size:13px`)
+    + button(c.pageUrl, t.view) + sign(rec.lang) + footer(rec.lang, c);
+  const text = [t.hi(rec.client.name), '', lead, '', ...rows.map(([k, v]) => `${k} : ${v}`), '', note, card, '', `${t.view} : ${c.pageUrl}`, '', 'vgthmind'].join('\n');
+  return { subject: testTag(c) + subject, html: shell(rec.lang, subject, inner), text };
 }
 
 export function validationEmail(rec: any, c: ReqMailCtx, s: { retouchesLeft: number; forfeitDays: number }, reminder = false): Mail {

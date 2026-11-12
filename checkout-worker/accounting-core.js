@@ -29,7 +29,7 @@ export function buildSaleRecord(session, { ref = '', lineItems = [] } = {}) {
     livemode: !!session.livemode,
     row: {
       date: parisDate(session.created), ref, designation, nature: session.metadata && session.metadata.nature === 'services' ? 'Prestation de services' : 'Vente de marchandises',
-      method: 'Carte bancaire (Stripe)',
+      method: session.metadata && session.metadata.payment === 'transfer' ? 'Virement bancaire' : 'Carte bancaire (Stripe)',
       items: Math.round((total - shipping) * 100) / 100, shipping, discount, total,
       payment_intent: typeof session.payment_intent === 'string' ? session.payment_intent : '',
     },

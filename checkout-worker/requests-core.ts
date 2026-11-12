@@ -311,6 +311,32 @@ export function mergeSettings(saved: any): Settings {
   return s;
 }
 
+// --- Virement bancaire (pièces sur demande seulement) -------------------------------------------------
+// Coordonnées saisies dans l'admin, gardées dans les données du Worker (jamais dans le dépôt, ni dans les réglages sauvegardés).
+export interface Bank { holder: string; iban: string; bic: string }
+export function ibanOk(raw: string): boolean {
+  const v = String(raw || '').replace(/\s+/g, '').toUpperCase();
+  if (!/^[A-Z]{2}\d{2}[A-Z0-9]{10,30}$/.test(v)) return false;
+  const moved = v.slice(4) + v.slice(0, 4);
+  let rem = 0;
+  for (const ch of moved) { const n = ch >= 'A' ? String(ch.charCodeAt(0) - 55) : ch; for (const d of n) rem = (rem * 10 + Number(d)) % 97; }
+  return rem === 1;
+}
+export const ibanPretty = (iban: string) => String(iban || '').replace(/\s+/g, '').toUpperCase().replace(/(.{4})/g, '$1 ').trim();
+// Tout vide = virement désactivé (null). Sinon titulaire + IBAN valides obligatoires, BIC facultatif mais vérifié.
+export function checkBank(b: any): { ok: true; value: Bank | null } | { ok: false; error: string } {
+  const holder = String(b?.holder ?? '').replace(/\s+/g, ' ').trim(), iban = String(b?.iban ?? '').replace(/\s+/g, '').toUpperCase(), bic = String(b?.bic ?? '').replace(/\s+/g, '').toUpperCase();
+  if (!holder && !iban && !bic) return { ok: true, value: null };
+  if (!holder || holder.length > 70 || /[<>]/.test(holder)) return { ok: false, error: 'Titulaire : obligatoire, 70 caractères au plus.' };
+  if (!ibanOk(iban)) return { ok: false, error: 'IBAN invalide (vérifie les chiffres : la clé de contrôle ne correspond pas).' };
+  if (bic && !/^[A-Z]{4}[A-Z]{2}[A-Z0-9]{2}([A-Z0-9]{3})?$/.test(bic)) return { ok: false, error: 'BIC invalide (8 ou 11 caractères).' };
+  return { ok: true, value: { holder, iban, bic } };
+}
+// Référence à mettre en libellé du virement : numéro du devis + A (acompte) ou S (solde).
+export function transferRef(rec: any, which: 'deposit' | 'balance'): string { return `${(rec.quote && rec.quote.number) || rec.id}-${which === 'deposit' ? 'A' : 'S'}`; }
+// Virement choisi par le client et pas encore reçu.
+export function pendingTransfer(rec: any, which: 'deposit' | 'balance') { const p = rec[which]; return p && p.transfer && !p.paidAt ? p.transfer : null; }
+
 // Montant de l'acompte et du solde (en euros, arrondis au centime).
 export function depositFor(total: number, pct: number) { return round2((total * pct) / 100); }
 
@@ -450,6 +476,7 @@ export function applyAction(input: any, action: string, d: any, s: Settings, now
     case 'depositPaid': {
       if (rec.deposit && rec.deposit.paidAt) return done(rec, now, null, [], { already: true });
       rec.deposit = { ...(rec.deposit || {}), session: d.session, paidAt: now, amount: round2(d.amount) };
+      delete rec.deposit.transfer; delete rec.deposit.method; // payé par carte : le virement en attente tombe
       rec.status = 'fabrication';
       rec.reminders = {};
       return done(rec, now, `Acompte payé : ${rec.deposit.amount} € (fabrication lancée)`, [{ kind: 'mail:depositPaid' }, { kind: 'alert', data: { subject: `Acompte payé : ${rec.id}`, detail: `${rec.client.name} a payé ${rec.deposit.amount} €. Fabrication lancée.` } }]);
@@ -501,9 +528,69 @@ export function applyAction(input: any, action: string, d: any, s: Settings, now
     case 'balancePaid': {
       if (rec.balance && rec.balance.paidAt) return done(rec, now, null, [], { already: true });
       rec.balance = { ...(rec.balance || {}), session: d.session, paidAt: now, amount: round2(d.amount), shipping: round2(d.shipping || 0) };
+      delete rec.balance.transfer; delete rec.balance.method;
       if (rec.validation && !rec.validation.validatedAt) rec.validation.validatedAt = now; // payer le solde vaut validation
       rec.status = 'solde'; rec.reminders = {};
       return done(rec, now, `Solde payé : ${rec.balance.amount} € (dont port ${rec.balance.shipping} €) : commande dans « Commandes »`, [{ kind: 'alert', data: { subject: `Solde payé : ${rec.id}`, detail: `${rec.client.name} a payé le solde. La commande est dans l'onglet Commandes (à expédier).` } }]);
+    }
+    // --- Virement bancaire ---
+    case 'transferDeposit': { // le client coche la mention puis choisit « virement » : acompte en attente de réception
+      if (rec.status !== 'devis' || !rec.quote || !(rec.quote.deposit > 0) || (!paid && !rec.quote.optionalDeposit)) return fail('not_payable', 409);
+      if (rec.deposit && rec.deposit.paidAt) return fail('already_paid', 409);
+      if (rec.deposit && rec.deposit.transfer) return done(rec, now, null, [], { already: true });
+      if (d.accept !== true) return fail('consent_required');
+      if (rec.quote.validUntil && now > rec.quote.validUntil && !rec.quote.acceptedAt) return fail('quote_expired', 409);
+      const text = paid ? consentText(rec.lang, rec.quote, s) : consentTextOptional(rec.lang, rec.quote);
+      const first = !(rec.deposit && rec.deposit.acceptedAt);
+      rec.quote.acceptedAt = rec.quote.acceptedAt || now;
+      const ref = transferRef(rec, 'deposit');
+      rec.deposit = { ...(rec.deposit || {}), ...(first ? { acceptedAt: now, acceptIp: clean(d.ip, 60), consent: text } : {}), amount: rec.quote.deposit, transfer: { at: now, amount: rec.quote.deposit, ref } };
+      if (first) rec.log.push({ at: now, what: 'Mention acceptée avant l’acompte : « ' + text + ' »' });
+      return done(rec, now, `Virement choisi pour l’acompte : ${rec.quote.deposit} € attendus, référence ${ref}`, [{ kind: 'mail:transfer', data: { which: 'deposit' } },
+        { kind: 'alert', data: { subject: `Virement en attente (acompte) : ${rec.id}`, detail: `${rec.client.name} a choisi de payer l’acompte par virement : ${rec.quote.deposit} €, référence ${ref}.\nQuand l’argent est sur ton compte, ouvre la demande et clique « Virement reçu ».` } }]);
+    }
+    case 'transferBalance': { // solde par virement : adresse de livraison saisie sur la page (pas de Stripe pour la demander)
+      if (!paid || rec.status !== 'validation' || !rec.validation || !rec.validation.validatedAt || !rec.quote) return fail('not_validated', 409);
+      if (rec.balance && rec.balance.paidAt) return fail('already_paid', 409);
+      const a = d.address || {};
+      const addr = { name: clean(a.name, 80), line1: clean(a.line1, 120), line2: clean(a.line2, 120), postal_code: clean(a.postal_code, 16), city: clean(a.city, 80), phone: clean(a.phone, 30) };
+      if (addr.name.length < 2 || addr.line1.length < 3 || !addr.postal_code || !addr.city) return fail('address_required');
+      const shipping = round2(Number(d.shipping) || 0), amount = round2(rec.quote.total - rec.quote.deposit + shipping), ref = transferRef(rec, 'balance');
+      const before = rec.balance && rec.balance.transfer;
+      rec.balance = { ...(rec.balance || {}), transfer: { at: now, amount, shipping, country: clean(d.country, 2), address: addr, ref } };
+      const same = before && before.amount === amount;
+      return done(rec, now, `Virement choisi pour le solde : ${amount} € attendus (dont port ${shipping} €), référence ${ref}`, same ? [] : [{ kind: 'mail:transfer', data: { which: 'balance' } },
+        { kind: 'alert', data: { subject: `Virement en attente (solde) : ${rec.id}`, detail: `${rec.client.name} a choisi de payer le solde par virement : ${amount} € (dont port ${shipping} €), référence ${ref}.\nQuand l’argent est sur ton compte, ouvre la demande et clique « Virement reçu ».` } }]);
+    }
+    case 'transferReceived': { // admin : l'argent est arrivé -> même suite qu'un paiement par carte
+      if (d.which === 'deposit') {
+        const t = pendingTransfer(rec, 'deposit');
+        if (!t || rec.status !== 'devis') return fail('Aucun virement d’acompte en attente.');
+        rec.deposit = { ...rec.deposit, session: d.session, paidAt: now, amount: round2(t.amount), method: 'transfer' };
+        rec.status = 'fabrication'; rec.reminders = {};
+        return done(rec, now, `Virement reçu : acompte ${rec.deposit.amount} € payé (${paid ? 'fabrication lancée' : 'projet en cours'})`, [{ kind: 'mail:depositPaid' }]);
+      }
+      const t = pendingTransfer(rec, 'balance');
+      if (!t || rec.status !== 'validation') return fail('Aucun virement de solde en attente.');
+      rec.balance = { ...rec.balance, session: d.session, paidAt: now, amount: round2(t.amount), shipping: round2(t.shipping || 0), country: t.country, method: 'transfer' };
+      rec.status = 'solde'; rec.reminders = {};
+      return done(rec, now, `Virement reçu : solde ${rec.balance.amount} € payé (dont port ${rec.balance.shipping} €) : commande dans « Commandes »`);
+    }
+    case 'transferCancel': { // admin : « Virement reçu » cliqué par erreur -> retour à « virement en attente »
+      if (d.which === 'deposit') {
+        if (!rec.deposit || !rec.deposit.paidAt || rec.deposit.method !== 'transfer') return fail('Cet acompte n’a pas été marqué « reçu par virement ».');
+        if (rec.status !== 'fabrication' || rec.validation || (rec.balance && (rec.balance.paidAt || rec.balance.transfer))) return fail('La demande a déjà avancé (photos, solde) : annulation impossible ici.');
+        const session = rec.deposit.session;
+        delete rec.deposit.paidAt; delete rec.deposit.session; delete rec.deposit.method;
+        rec.status = 'devis';
+        return done(rec, now, 'Virement d’acompte annulé (clic par erreur) : de nouveau en attente', [], { session });
+      }
+      if (!rec.balance || !rec.balance.paidAt || rec.balance.method !== 'transfer') return fail('Ce solde n’a pas été marqué « reçu par virement ».');
+      if (rec.status !== 'solde') return fail('La commande est déjà partie : annulation impossible ici.');
+      const session = rec.balance.session;
+      delete rec.balance.paidAt; delete rec.balance.session; delete rec.balance.method;
+      rec.status = 'validation';
+      return done(rec, now, 'Virement de solde annulé (clic par erreur) : de nouveau en attente', [], { session });
     }
     case 'shipped': {
       if (rec.status === 'envoyee' || CLOSED.includes(rec.status)) return done(rec, now, null);
@@ -589,6 +676,7 @@ export function retention(rec: any, now: number): { deleteAll: boolean; deleteFi
   return { deleteAll: false, deleteFiles: [] };
 }
 
+const tview = (t: any) => (t ? { amount: t.amount, ref: t.ref, at: t.at, shipping: t.shipping || 0, country: t.country || '' } : null);
 // Vue client (page « Ma demande ») : jamais les notes privées, l'IP, les fichiers du client ni le journal.
 export function clientView(rec: any, s: Settings) {
   const v = rec.validation;
@@ -601,6 +689,7 @@ export function clientView(rec: any, s: Settings) {
     validation: v ? { round: v.round, sentAt: v.sentAt, validatedAt: v.validatedAt || null, retouchesLeft: Math.max(0, s.retouchesIncluded - v.retouchesUsed), retouchesIncluded: s.retouchesIncluded } : null,
     photos: rec.status === 'validation' || rec.status === 'solde' || rec.status === 'envoyee' || rec.status === 'terminee' ? rec.finals.map((_f: any, i: number) => i) : [],
     balancePaid: !!(rec.balance && rec.balance.paidAt),
+    transfer: { deposit: tview(pendingTransfer(rec, 'deposit')), balance: tview(pendingTransfer(rec, 'balance')) },
     forfeitDays: s.forfeitDays,
   };
 }

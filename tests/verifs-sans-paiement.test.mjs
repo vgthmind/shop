@@ -123,7 +123,7 @@ test('E2 : la case « Vêtement fourni par le client » mène à « Prestation d
   const rc = read('checkout-worker/requests-core.ts');
   assert.match(rc, /clientGarment: rec\.type === 'custom' && \(d\.clientGarment === true \|\| d\.clientGarment === 'true'\)/);
   const rq = read('checkout-worker/requests.ts');
-  assert.equal((rq.match(/nature: natureOf\(rec\)/g) || []).length, 2, 'acompte ET solde portent la nature');
+  assert.equal((rq.match(/nature: natureOf\(rec\)/g) || []).length, 3, 'acompte ET solde (carte) et virement portent la nature');
   const { natureOf } = await import('../checkout-worker/requests-core.ts');
   const { buildSaleRecord } = await import('../checkout-worker/accounting-core.js');
   const row = (rec) => buildSaleRecord({ id: 'cs_1', created: 1_790_000_000, livemode: true, amount_total: 5000, metadata: { nature: natureOf(rec) } }).row.nature;

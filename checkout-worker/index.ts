@@ -45,6 +45,7 @@ import { buildInvoice, parisYear } from './invoice';
 export { TrafficDO } from './traffic';
 import { buildBackupMail } from './backup-mail';
 import { requestRoutes, requestsCron, backupRequests, onRequestPaid, onShipped, requestInvoiceParts, type ReqDeps } from './requests';
+import { ibanPretty } from './requests-core';
 export { RequestsDO } from './requests';
 import { pollShipments, cleanTracking, fetchSuivi, parseSuivi, STATE_LABEL_FR, type TrackInfo } from './laposte';
 import { customerEmail, sellerEmail, shippedEmail, deliveredEmail, parcelProblemEmail, REPLY_TO, CONTACT_EMAIL, alertList, FONT, esc, langFor, countryName, isNameIncomplete, type MailItem, type OrderData } from './emails';
@@ -496,6 +497,7 @@ export default {
     if (accountingConfigured(env as any)) ctx.waitUntil(comptaResyncOnce(env).catch(() => {}));
     // Suivi des colis La Poste : chaque colis n'est interrogé qu'une fois toutes les 11 h au plus (2 fois par jour maximum), quel que soit le cron.
     ctx.waitUntil(trackingCron(env).catch((e) => alertContact(env, 'track-cron', 'Suivi des colis en erreur', String(e && e.stack ? e.stack : e))));
+    ctx.waitUntil(transferComptaCron(env).catch(() => {}));
     ctx.waitUntil(requestsCron(env as any, reqDeps(env)).catch((e) => alertAdmin(env, 'req-cron', 'Cron des demandes en erreur', String(e && e.stack ? e.stack : e))));
   },
 };
@@ -548,6 +550,55 @@ async function testSessions(env: Env): Promise<any[]> {
   return out;
 }
 
+// Paiements par virement des pièces sur demande : « session » de forme Stripe rangée en KV (virorder:cs_live_vir…) au clic
+// « Virement reçu » de l'admin. Elle suit le circuit normal (Commandes, facture, mail « expédiée », suivi, compta) sans passer par Stripe.
+const isVirId = (id: string) => /^cs_(test|live)_vir[a-f0-9]{24}$/.test(id);
+async function virSession(env: Env, id: string): Promise<any | null> {
+  if (!isVirId(id)) return null;
+  const raw = await env.HOLDS.get('virorder:' + id);
+  try { return raw ? { ...JSON.parse(raw), id, payment_status: 'paid' } : null; } catch (e) { return null; }
+}
+async function virSessions(env: Env): Promise<any[]> {
+  const out: any[] = [];
+  try {
+    const l = await env.HOLDS.list({ prefix: 'virorder:' });
+    for (const k of l.keys) { const t = await virSession(env, k.name.slice('virorder:'.length)); if (t) out.push(t); }
+  } catch (e) {}
+  return out;
+}
+// Session rangée côté Worker (commande de démonstration ou virement), sinon null : à lire chez Stripe.
+async function kvSession(env: Env, id: string): Promise<any | null> { return (await testSession(env, id)) || (await virSession(env, id)); }
+
+async function transferPaid(env: Env, s: any) {
+  await env.HOLDS.put('virorder:' + s.id, JSON.stringify(s));
+  if (s.metadata?.kind !== 'balance') return;
+  await env.HOLDS.put('reqsess:' + s.id, String(s.metadata.request || ''));
+  await sendOrderEmails(env, s).catch((e) => alertAdmin(env, 'mail-' + s.id, "Un mail de commande n'est pas parti", `Commande ${s.id} : ${String(e && e.message ? e.message : e)}`));
+}
+// « Virement reçu » annulé. Facture déjà numérotée ou vente déjà en compta : la trace reste et un avoir total l'annule ; sinon tout est effacé.
+async function transferCancelled(env: Env, id: string): Promise<{ kept: boolean }> {
+  const s = await virSession(env, id);
+  if (!s) return { kept: false };
+  let numbered = false;
+  try { numbered = !!(await stockStub(env).invoiceNumbers([id]))[id]; } catch (e) {}
+  if (numbered || (await env.HOLDS.get('compta:ok:' + id))) {
+    await env.HOLDS.put('refunded:' + id, JSON.stringify({ at: Math.floor(Date.now() / 1000), amount: (s.amount_total || 0) / 100, full: true }));
+    return { kept: true };
+  }
+  const ref = await env.HOLDS.get('sref:' + id);
+  if (ref) { await env.HOLDS.delete('ref:' + ref); await env.HOLDS.delete('sref:' + id); }
+  for (const k of ['virorder:', 'reqsess:', 'mailed:', 'shipped:', 'preparing:']) await env.HOLDS.delete(k + id);
+  return { kept: false };
+}
+// Compta : un virement reçu n'est écrit dans le Sheet qu'une heure après le clic (le temps d'annuler un clic par erreur).
+async function transferComptaCron(env: Env) {
+  if (!accountingConfigured(env as any)) return;
+  for (const s of await virSessions(env)) {
+    if (!s.livemode || Date.now() / 1000 - s.created < 3600 || (await env.HOLDS.get('refunded:' + s.id))) continue;
+    await recordSale(env as any, s, await saleRef(env, s)).catch((e) => alertAdmin(env, 'compta-' + s.id, "Un virement n'est pas parti vers la compta", `Session ${s.id} : ${String(e && e.message ? e.message : e)}`));
+  }
+}
+
 // --- Suivi automatique des colis (API Suivi La Poste) -----------------------------------------------------------
 // Relève (cron horaire, mais 1 appel par colis toutes les 11 h au plus = 2 par jour max) : statut (en transit / point retrait / livrée / problème) rangé dans shipped:<session>.track.
 // Livrée -> mail court au client (une fois). Retour, adresse incorrecte, colis bloqué -> alerte à contact@ (une fois par incident).
@@ -558,7 +609,7 @@ async function trackingCron(env: Env) {
   const sk = stripeKey(env);
   const from = (env.MAIL_FROM || '').trim();
   const orderOf = async (id: string) => {
-    const ts = await testSession(env, id);
+    const ts = await kvSession(env, id);
     if (ts) return await buildOrder(env, ts);
     if (!sk.ok) return null;
     const full = await stripeCall(sk.value, 'GET', `/v1/checkout/sessions/${id}?${SESSION_EXPAND}`);
@@ -1180,7 +1231,8 @@ async function sendOrderEmails(env: Env, s: any) {
   const needClient = !!customerFrom && !done.client;
   if (!needAlert && !needClient) return;
 
-  const full = await stripeCall(env.STRIPE_SECRET_KEY, 'GET', `/v1/checkout/sessions/${s.id}?${SESSION_EXPAND}`);
+  const vir = await virSession(env, String(s.id));
+  const full = vir ? { ok: true, data: vir } : await stripeCall(env.STRIPE_SECRET_KEY, 'GET', `/v1/checkout/sessions/${s.id}?${SESSION_EXPAND}`);
   if (!full.ok) return;
   const order = await buildOrder(env, full.data);
 
@@ -1295,7 +1347,8 @@ async function oauthCallback(request: Request, env: Env): Promise<Response> {
 
 // La page de connexion réclame la session déposée sous son code secret (une seule lecture).
 async function oauthClaim(request: Request, env: Env, json: JsonFn): Promise<Response> {
-  if (!(await allow(env, 'rl:claim:' + (request.headers.get('CF-Connecting-IP') || 'x'), 300, 900))) return json({ error: 'Trop de demandes.' }, 429);
+  // Pas de compteur KV ici : la page interroge cette route toutes les ~1-2 s, et KV refuse plus d'1 écriture/s sur une même clé (429).
+  // Le code est un secret aléatoire de 128 bits, inutile de limiter les essais ; la route ne fait que lire.
   const code = new URL(request.url).searchParams.get('code') || '';
   if (!/^[a-f0-9]{32}$/.test(code)) return json({ error: 'Code invalide.' }, 400);
   const session = await env.HOLDS.get('lc:' + code);
@@ -1455,7 +1508,7 @@ async function listOrders(request: Request, env: Env, key: string, json: JsonFn)
     if (!r.data.has_more) break;
     after = r.data.data[r.data.data.length - 1].id;
   }
-  sessions.push(...(await testSessions(env)));
+  sessions.push(...(await testSessions(env)), ...(await virSessions(env)));
   // Remboursements : une seule lecture KV (liste des cles refunded:<session>), pas une par commande.
   const refunds = new Map<string, any>();
   try {
@@ -1493,6 +1546,7 @@ async function listOrders(request: Request, env: Env, key: string, json: JsonFn)
       ref,
       kind: s.metadata?.kind || 'order', // 'deposit' = acompte d'une demande (rien à expédier, mais compté dans l'export compta)
       request: s.metadata?.request || '',
+      payment: s.metadata?.payment === 'transfer' ? 'transfer' : 'card', // virement : pas de remboursement Stripe possible
       created: s.created,
       livemode: !!s.livemode,
       total: s.amount_total / 100,
@@ -1692,8 +1746,9 @@ async function trackOrder(request: Request, env: Env, key: string, json: JsonFn,
 
   const sessionId = await env.HOLDS.get('ref:' + ref);
   if (!sessionId || !isSessionId(sessionId)) return fail();
-  const tsx = await testSession(env, sessionId);
-  if (tsx && asInvoice) return fail();
+  const demo = await testSession(env, sessionId);
+  if (demo && asInvoice) return fail();
+  const tsx = demo || (await virSession(env, sessionId));
   const full = tsx ? { ok: true, data: tsx } : await stripeCall(key, 'GET', `/v1/checkout/sessions/${sessionId}?${SESSION_EXPAND}`);
   const s = full.data;
   if (!full.ok || s.payment_status !== 'paid') return fail();
@@ -1750,7 +1805,7 @@ async function sendShippedMail(request: Request, env: Env, key: string, json: Js
   const shipped = JSON.parse(raw);
   const newTracking = String(body.tracking || '').trim().slice(0, 100);
   if (newTracking && (cleanTracking(newTracking) || newTracking) !== shipped.tracking) { shipped.tracking = cleanTracking(newTracking) || newTracking; delete shipped.track; } // numéro saisi au moment d'envoyer le mail (oubli à « Marquer expédiée »)
-  const tsx = await testSession(env, id);
+  const tsx = await kvSession(env, id);
   const full = tsx ? { ok: true, data: tsx } : await stripeCall(key, 'GET', `/v1/checkout/sessions/${id}?${SESSION_EXPAND}`);
   if (!full.ok) return json({ error: full.data.error?.message || 'Erreur Stripe' }, 502);
   const order = await buildOrder(env, full.data);
@@ -1772,7 +1827,7 @@ async function invoiceFor(env: Env, key: string, sessionId: string, json: JsonFn
 // Numéro W-AAAA-NNN unique et suivi pour tous les paiements réels (même compteur).
 async function invoiceData(env: Env, key: string, sessionId: string, loaded?: any): Promise<{ ok: boolean; invoice?: any; error?: string; status?: number }> {
   if (!isSessionId(sessionId)) return { ok: false, error: 'Identifiant invalide.', status: 400 };
-  let s = loaded;
+  let s = loaded || (await virSession(env, sessionId));
   if (!s) {
     const full = await stripeCall(key, 'GET', `/v1/checkout/sessions/${sessionId}?${SESSION_EXPAND}`);
     if (!full.ok) return { ok: false, error: full.data.error?.message || 'Erreur Stripe', status: 502 };
@@ -1782,7 +1837,8 @@ async function invoiceData(env: Env, key: string, sessionId: string, loaded?: an
   const kind = s.metadata?.kind;
   // Adresse de l'émetteur : saisie par vgthmind dans Réglages (données du Worker, jamais dans le dépôt) ; vide = non affichée.
   let sellerAddress = '';
-  try { sellerAddress = String((await env.REQUESTS.get(env.REQUESTS.idFromName('main')).settings()).sellerAddress || '').trim(); } catch (e) {}
+  let bank: any = null;
+  try { const R = env.REQUESTS.get(env.REQUESTS.idFromName('main')); sellerAddress = String((await R.settings()).sellerAddress || '').trim(); if (kind === 'deposit' || kind === 'balance') bank = await R.bank(); } catch (e) {}
   const seller = { sellerAddress };
   const num = async (id: string, created: number, testRef: string) => (s.livemode ? await stockStub(env).invoiceNumber(id, parisYear(created)) : 'TEST-' + testRef);
   if (kind === 'deposit' || kind === 'balance') {
@@ -1793,6 +1849,10 @@ async function invoiceData(env: Env, key: string, sessionId: string, loaded?: an
     const parts = requestInvoiceParts(s, depNumber);
     const inv: any = buildInvoice(s, parts.lines as any, { number, ref, ...seller, vatAfter: env.VAT_MENTION_2027 });
     inv.title = parts.title; inv.titleEn = parts.titleEn; inv.deductions = parts.deductions; inv.notes = parts.notes; inv.kind = kind;
+    // Pièce sur demande : coordonnées de virement (si elles sont saisies dans l'admin) et référence ; mention du règlement par virement.
+    const qn = String(s.metadata.quote || '');
+    if (bank) inv.notes = [...(inv.notes || []), `${kind === 'deposit' ? 'Solde payable par virement bancaire (sans frais) ou par carte. ' : ''}Coordonnées de virement : ${bank.holder} · IBAN ${ibanPretty(bank.iban)}${bank.bic ? ' · BIC ' + bank.bic : ''}.${qn ? ` Référence : ${qn}-S (solde).` : ''}`];
+    if (s.metadata.payment === 'transfer') inv.paid = `Réglée par virement bancaire${s.metadata.transfer_ref ? ' (référence ' + s.metadata.transfer_ref + ')' : ''}.`;
     // Acompte ou solde remboursé : avoir lié à la facture, comme pour une commande de la boutique.
     const rfd = await env.HOLDS.get('refunded:' + sessionId);
     if (rfd) {
@@ -1824,6 +1884,8 @@ function reqDeps(env: Env): ReqDeps {
     shipping: (product, country) => checkoutShipping(env as any, [product], new Map([[product.permalink, 1]]), country === 'FR' ? 'fr' : 'intl', country),
     invoice: async (sessionId) => { const k = stripeKey(env); return k.ok ? invoiceData(env, k.value, sessionId) : { ok: false, error: k.error, status: 503 }; },
     catalog: () => loadCatalog(env),
+    transferPaid: (s) => transferPaid(env, s),
+    transferCancelled: (id) => transferCancelled(env, id),
   };
 }
 
@@ -1831,7 +1893,8 @@ function reqDeps(env: Env): ReqDeps {
 async function allow(env: Env, key: string, max: number, windowSec: number): Promise<boolean> {
   const n = Number(await env.HOLDS.get(key)) || 0;
   if (n >= max) return false;
-  await env.HOLDS.put(key, String(n + 1), { expirationTtl: Math.max(60, windowSec) });
+  // KV limite à 1 écriture/s par clé (429) : si le compteur ne peut pas être écrit, on laisse passer plutôt que de planter la requête.
+  try { await env.HOLDS.put(key, String(n + 1), { expirationTtl: Math.max(60, windowSec) }); } catch (e) { /* compteur non écrit */ }
   return true;
 }
 
