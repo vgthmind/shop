@@ -964,14 +964,10 @@ async function main() {
     }
     fs.writeFileSync(rel(OUT_DIR, '_redirects'), '# Généré par generator/build.js : anciennes adresses BigCartel.\n' + lines.join('\n') + '\n');
   }
-  // Adresses de dossiers (/assets/, /assets/products-sized/) : jamais une page, mais Google les trouve en remontant les chemins des
-  // images et les signale en 404. Renvoyées vers la boutique (301) ; les fichiers eux-mêmes (images, vidéos) ne sont pas touchés.
+  // Adresses de dossiers (/assets/, /assets/products-sized/) : jamais une page, jamais liées par le site. Elles répondent 404
+  // (pas de redirection : une redirection les garderait dans la Search Console comme « page avec redirection »).
   if (BASE_PATH === '') {
-    const dirs = ['/assets', '/assets/products', '/assets/products-sized', '/assets/products-og', '/assets/theme', '/assets/theme-sized', '/assets/media', '/assets/fonts', '/assets/vg', '/assets/vendor', '/assets/mesures', '/assets/demande'];
-    const sub = ['320', '540', '800', '24'];
-    fs.appendFileSync(rel(OUT_DIR, '_redirects'), '# Dossiers sans page : une seule étape (301) vers la boutique, pas de 404 dans la Search Console.\n'
-      + dirs.concat(sub.map((n) => '/assets/products-sized/' + n)).map((d) => d + ' /products/ 301\n' + d + '/ /products/ 301').join('\n') + '\n'
-      + '# Anciennes adresses : une seule étape, vers la forme finale (avec « / »).\n'
+    fs.appendFileSync(rel(OUT_DIR, '_redirects'), '# Anciennes adresses : une seule étape, vers la forme finale (avec « / »).\n'
       + '/product/t-shirt-custom /product/custom-tee-shirt-col-en-v/ 301\n/product/t-shirt-custom/ /product/custom-tee-shirt-col-en-v/ 301\n'
       + '/contact-914a3d /contact/ 301\n/contact-914a3d/ /contact/ 301\n');
   }

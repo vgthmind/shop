@@ -1,7 +1,8 @@
 // seo:check : contrôle SEO du site EN LIGNE (lecture seule). Code de sortie 1 s'il y a un problème.
 //   npm run seo:check                       (https://www.vgthmind.org)
 //   node outils/seo-check.mjs https://www.vgthmind.org [--json]
-// Contrôle : sitemap (200, sans redirection, canonical = soi-même, indexable, JSON-LD valide), liens internes sans redirection,
+// Contrôle : sitemap (200, sans redirection, sans 404, sans noindex, sans doublon avec/sans « / », sans page privée, canonical = soi-même,
+// JSON-LD valide), liens internes sans redirection, dossiers /assets/ en 404 et jamais liés,
 // fichiers de données en noindex, pages privées en noindex, anciennes adresses BigCartel (301 en une étape), 404 réelle,
 // doublons d'environnement (pages.dev, http, apex : l'apex dépend d'IONOS, signalé en avertissement seulement).
 const O = (process.argv[2] && /^https?:/.test(process.argv[2]) ? process.argv[2] : 'https://www.vgthmind.org').replace(/\/$/, '');
@@ -18,6 +19,18 @@ const sm = await smRes.text();
 const locs = [...sm.matchAll(/<loc>([^<]+)<\/loc>/g)].map((m) => m[1]);
 if (locs.length < 10) ko('sitemap.xml : seulement ' + locs.length + ' adresses');
 if (new Set(locs).size !== locs.length) ko('sitemap.xml : adresses en double');
+// Une seule forme par page : toujours avec « / » final, jamais la même adresse avec et sans, à la casse près.
+{ const seen = new Map();
+  for (const u of locs) {
+    if (!u.endsWith('/')) ko('sitemap.xml : adresse sans « / » final (' + u + ')');
+    if (/[?#]/.test(u)) ko('sitemap.xml : adresse avec paramètre ou ancre (' + u + ')');
+    const k = decodeURIComponent(u).toLowerCase().replace(/\/+$/, '');
+    if (seen.has(k)) ko('sitemap.xml : doublon avec/sans « / » ou de casse (' + seen.get(k) + ' et ' + u + ')'); else seen.set(k, u);
+  }
+}
+// Pages privées ou techniques : jamais dans le sitemap. /contact/, elle, doit y être (indexable).
+for (const u of locs) if (/^\/(suivi|cart|merci|paiement-annule|demande|admin|assets)(\/|$)/.test(u.replace(O, ''))) ko('sitemap.xml : page privée ou technique (' + u + ')');
+if (!locs.includes(O + '/contact/')) ko('sitemap.xml : /contact/ absente');
 const lastmods = [...sm.matchAll(/<lastmod>([^<]+)<\/lastmod>/g)].map((m) => m[1]);
 if (lastmods.length && new Set(lastmods).size === 1 && locs.length > 10) wa('sitemap.xml : un seul lastmod pour toutes les pages');
 for (const d of lastmods) if (d > new Date(Date.now() + 864e5).toISOString().slice(0, 10)) ko('sitemap.xml : lastmod dans le futur ' + d);
@@ -42,6 +55,7 @@ for (const { u, r, html } of pages) {
   if ((html.match(/<h1[\s>]/gi) || []).length !== 1) wa(path + ' : ' + (html.match(/<h1[\s>]/gi) || []).length + ' balises h1');
   if (!/<html[^>]*lang="fr"/i.test(html)) ko(path + ' : lang fr manquant');
   if (!/<meta name="description" content="[^"]{30,}/i.test(html)) ko(path + ' : meta description absente/trop courte');
+  for (const m of html.matchAll(/<a\b[^>]*?\bhref="(\/assets(?:\/[^"]*)?\/|\/assets)"/gi)) ko(path + ' : lien vers un dossier sans page (' + m[1] + ')');
   for (const m of html.matchAll(/<a\b[^>]*?\bhref="(\/[^"]*)"/gi)) { const h = m[1].replace(/&amp;/g, '&'); if (/^\/[A-Za-z0-9_%.\/?=&-]*$/.test(h) && !h.startsWith('//') && !/^\/(admin|assets)/.test(h) && h !== '/') internal.add(h); }
   // images sans alt
   const noAlt = [...html.matchAll(/<img\b(?![^>]*\balt=)[^>]*>/gi)].length;
@@ -118,7 +132,7 @@ const oneHop = async (from, expectTo) => {
 };
 await oneHop('/product/t-shirt-custom', '/product/custom-tee-shirt-col-en-v/');
 await oneHop('/contact-914a3d', '/contact/');
-for (const d of ['/assets/', '/assets/products-sized/', '/assets']) await oneHop(d, '/products/');
+for (const d of ['/assets/', '/assets/products-sized/', '/assets/theme/']) { const r = await get(O + d); if (r.status !== 404) ko(d + ' : statut ' + r.status + ' au lieu de 404 (dossier sans page)'); }
 for (const p of ['/products', '/contact', '/category/tops', '/product/ch_0006']) { const r = await get(O + p); if (r.status !== 308 && r.status !== 301) ko(p + ' (sans slash) : ' + r.status); else if (!new URL(r.headers.get('location'), O).href.endsWith('/')) ko(p + ' : redirection vers une forme sans slash'); }
 try {
   const { readFileSync } = await import('node:fs');
