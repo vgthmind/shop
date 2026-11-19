@@ -18,7 +18,7 @@ try {
   const { readdirSync, readFileSync } = await import('node:fs');
   const dir = new URL('../data/products/', import.meta.url);
   const vis = [];
-  for (const f of readdirSync(dir)) if (f.endsWith('.json')) { try { const p = JSON.parse(readFileSync(new URL(f, dir), 'utf8')); if (p.hidden && !p.scheduled) HIDDEN.add(p.permalink); else if (p.permalink) vis.push(p.permalink); } catch (e) {} }
+  for (const f of readdirSync(dir)) if (f.endsWith('.json')) { try { const p = JSON.parse(readFileSync(new URL(f, dir), 'utf8')); const k = p.permalink || p.slug; if (p.hidden && !p.scheduled) HIDDEN.add(k); else if (k && !p.archived) vis.push(k); } catch (e) {} }
   if (HIDDEN.has(SAMPLE) && vis.length) SAMPLE = vis.sort()[0];
 } catch (e) {}
 
