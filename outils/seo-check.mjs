@@ -11,6 +11,16 @@ const ko = (m) => bad.push(m), wa = (m) => warn.push(m);
 const get = async (u, o = {}) => { try { return await fetch(u, { redirect: 'manual', headers: { 'User-Agent': 'vgthmind-seo-check' }, ...o }); } catch (e) { return { status: 0, headers: new Headers(), text: async () => '', error: e.message }; } };
 const pool = async (items, fn, n = 8) => { const out = []; for (let i = 0; i < items.length; i += n) out.push(...await Promise.all(items.slice(i, i + n).map(fn))); return out; };
 const isRedir = (s) => [301, 302, 303, 307, 308].includes(s);
+// Pièces masquées (data/products/*.json, hidden sans programmation) : pas de fiche en ligne, 404 normale.
+const HIDDEN = new Set();
+let SAMPLE = 'ch_0006';
+try {
+  const { readdirSync, readFileSync } = await import('node:fs');
+  const dir = new URL('../data/products/', import.meta.url);
+  const vis = [];
+  for (const f of readdirSync(dir)) if (f.endsWith('.json')) { try { const p = JSON.parse(readFileSync(new URL(f, dir), 'utf8')); if (p.hidden && !p.scheduled) HIDDEN.add(p.permalink); else if (p.permalink) vis.push(p.permalink); } catch (e) {} }
+  if (HIDDEN.has(SAMPLE) && vis.length) SAMPLE = vis.sort()[0];
+} catch (e) {}
 
 // 1. Sitemap
 const smRes = await get(O + '/sitemap.xml');
@@ -130,15 +140,16 @@ const oneHop = async (from, expectTo) => {
   if (t.status !== 200) ko(from + ' -> ' + to + ' : ' + t.status + ' (chaîne de plus d\'une étape ou page absente)');
   if (expectTo && !to.endsWith(expectTo)) ko(from + ' -> ' + to + ' (attendu ' + expectTo + ')');
 };
-await oneHop('/product/t-shirt-custom', '/product/custom-tee-shirt-col-en-v/');
+if (!HIDDEN.has('custom-tee-shirt-col-en-v')) await oneHop('/product/t-shirt-custom', '/product/custom-tee-shirt-col-en-v/');
 await oneHop('/contact-914a3d', '/contact/');
 for (const d of ['/assets/', '/assets/products-sized/', '/assets/theme/']) { const r = await get(O + d); if (r.status !== 404) ko(d + ' : statut ' + r.status + ' au lieu de 404 (dossier sans page)'); }
-for (const p of ['/products', '/contact', '/category/tops', '/product/ch_0006']) { const r = await get(O + p); if (r.status !== 308 && r.status !== 301) ko(p + ' (sans slash) : ' + r.status); else if (!new URL(r.headers.get('location'), O).href.endsWith('/')) ko(p + ' : redirection vers une forme sans slash'); }
+for (const p of ['/products', '/contact', '/category/tops', '/product/' + SAMPLE]) { const r = await get(O + p); if (r.status !== 308 && r.status !== 301) ko(p + ' (sans slash) : ' + r.status); else if (!new URL(r.headers.get('location'), O).href.endsWith('/')) ko(p + ' : redirection vers une forme sans slash'); }
 try {
   const { readFileSync } = await import('node:fs');
   const old = JSON.parse(readFileSync(new URL('../archives/catalog.bigcartel-import.json', import.meta.url), 'utf8'));
   const list = Array.isArray(old) ? old : old.products || [];
   await pool(list, async (o) => {
+    if (HIDDEN.has(o.permalink)) return;
     const from = '/product/' + encodeURIComponent(o.permalink);
     const r = await get(O + from + '/');
     if (isRedir(r.status)) { const t = await get(new URL(r.headers.get('location'), O).href); if (t.status !== 200) ko(from + '/ : redirige vers une page ' + t.status); }
@@ -151,7 +162,7 @@ try {
 // 7. Doublons d'environnement
 if (O === 'https://www.vgthmind.org') {
   { const r = await get('http://www.vgthmind.org/'); if (r.status !== 301 && r.status !== 308) ko('http -> https : ' + r.status); }
-  { const r = await get('https://vgthmind-shop.pages.dev/product/ch_0006/'); if (r.status !== 301 && !/noindex/i.test(r.headers.get('x-robots-tag') || '')) ko('pages.dev indexable (' + r.status + ')'); }
+  { const r = await get('https://vgthmind-shop.pages.dev/product/' + SAMPLE + '/'); if (r.status !== 301 && !/noindex/i.test(r.headers.get('x-robots-tag') || '')) ko('pages.dev indexable (' + r.status + ')'); }
   { const r = await get('https://vgthmind.org/'); if (r.status !== 301) wa('apex vgthmind.org : ' + r.status + ' (à régler chez IONOS : redirection permanente 301 vers https://www.vgthmind.org)'); }
   { const r = await get('https://vgthmind.github.io/shop/'); const t = await r.text(); if (!/noindex/i.test(t)) ko('github.io/shop indexable'); }
 }
