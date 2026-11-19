@@ -149,6 +149,15 @@
     if (row && e.target.getAttribute('data-o') === 'lieu') { var s = row.getAttribute('data-slug'); (cfg.overrides[s] = cfg.overrides[s] || {}).lieu = e.target.value; setDirty(true); }
     if (e.target.id === 'intro') { cfg.intro = e.target.value; setDirty(true); }
     var ex = e.target.closest && e.target.closest('.extra[data-i]');
+    if (ex && e.target.hasAttribute('data-pieces')) {
+      var xx = cfg.extras[+ex.getAttribute('data-i')], MAP = { vendue: 'vendu', vendu: 'vendu', 'en boutique': 'boutique', boutique: 'boutique', 'sur demande': 'demande', disponible: 'dispo', dispo: 'dispo' };
+      xx.pieces = e.target.value.split('\n').map(function (l) { return l.trim(); }).filter(Boolean).map(function (l, k) {
+        var parts = l.split('|'), o = { id: 'p' + (k + 1), nom: parts[0].trim() }, st = MAP[String(parts[1] || '').trim().toLowerCase()];
+        if (st) o.statut = st; return o;
+      });
+      if (!xx.pieces.length) delete xx.pieces;
+      setDirty(true);
+    }
     if (ex && e.target.hasAttribute('data-f')) {
       var x = cfg.extras[+ex.getAttribute('data-i')], k = e.target.getAttribute('data-f');
       x[k] = e.target.value; if (k === 'nom') ex.querySelector('summary b').textContent = e.target.value || '(sans nom)';
@@ -165,6 +174,7 @@
         + '<div class="grid4"><label>Année<input data-f="annee" value="' + esc(x.annee) + '"></label>'
         + '<label>Collection<input data-f="collection" value="' + esc(x.collection) + '"></label><label>Tailles<input data-f="tailles" value="' + esc(x.tailles) + '" placeholder="ex. M/L"></label><label>Composition<input data-f="compo" value="' + esc(x.compo) + '" placeholder="ex. 100% coton"></label></div><label>Boutique (si en boutique)<input data-f="lieu" value="' + esc(x.lieu) + '"></label>'
         + '<label>Description<textarea data-f="description">' + esc(x.description) + '</textarea></label>'
+        + '<label>Pièces de la tenue (une par ligne ; ajoute « | vendue », « | en boutique » ou « | sur demande » si une pièce n\'a pas le statut de la tenue ; vide = pièce seule)<textarea data-pieces>' + esc((x.pieces || []).map(function (p) { return p.nom + (p.statut ? ' | ' + ({ vendu: 'vendue', boutique: 'en boutique', demande: 'sur demande', dispo: 'disponible' }[p.statut] || p.statut) : ''); }).join('\n')) + '</textarea></label>'
         + '<div><span class="muted">Photos (la 1re est la couverture)</span><div class="ph">' + ph.map(function (p, j) { return '<figure><img src="' + esc(p.replace(/\.webp$/, '-s.webp')) + '" alt=""><span>' + (j ? '<button type="button" class="ghost" data-first="' + j + '">1re</button> ' : '') + '<button type="button" class="ghost" data-rmph="' + j + '">×</button></span></figure>'; }).join('')
         + '<label style="align-self:center"><input type="file" accept="image/*" multiple data-up></label></div></div>'
         + '<div><button type="button" class="danger" data-del>Supprimer cette pièce du catalogue</button></div>'

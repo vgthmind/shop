@@ -149,6 +149,9 @@ dd{margin:0;white-space:pre-line}
 .li b{font:700 14px/1.2 var(--head);display:block}
 .li small{color:var(--muted);font-size:12px}
 .li button{border:0;background:none;color:var(--muted);font-size:13px;text-decoration:underline}
+.li .btn.sm{border:1px solid var(--ink);background:var(--ink);color:#fff;text-decoration:none;font-size:12.5px;padding:7px 14px;border-radius:9px}
+.li .btn.sm.on{background:#fff;color:var(--ink)}
+.li small{display:block}
 form{display:grid;gap:12px;margin-top:20px}
 .two{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 label{display:grid;gap:5px;font-size:13px;color:var(--soft)}
@@ -251,7 +254,10 @@ textarea{min-height:90px;resize:vertical}
 
   var data = null, items = [], byId = {}, sel = [], filt = { type: 'all', gamme: '', avail: false, mode: /[?&]mode=location/.test(location.search) ? 'location' : 'vente' };
   try { sel = (JSON.parse(localStorage.getItem(KEY) || '[]') || []).filter(function (x) { return x && x.id && MODES[x.m]; }); } catch (e) { sel = []; }
-  function selIdx(id, m) { for (var i = 0; i < sel.length; i++) if (sel[i].id === id && sel[i].m === (m || filt.mode)) return i; return -1; }
+  function selIdx(id, m, p) { for (var i = 0; i < sel.length; i++) if (sel[i].id === id && sel[i].m === (m || filt.mode) && (p === undefined || (sel[i].p || '') === p)) return i; return -1; }
+  function pieceOf(it, pid) { var ps = it.pieces || []; for (var i = 0; i < ps.length; i++) if (ps[i].id === pid) return ps[i]; return null; }
+  function pStatut(it, pc) { return (pc && pc.statut) || it.statut; }
+  function selName(x) { var it = byId[x.id], pc = x.p ? pieceOf(it, x.p) : null; return it.nom + (pc ? ' — ' + pc.nom : (it.pieces && it.pieces.length ? ' — tenue complète' : '')); }
   function saveSel() { try { localStorage.setItem(KEY, JSON.stringify(sel)); } catch (e) {} }
 
   function toast(t) { var el = $('toast'); el.textContent = t; el.classList.add('show'); clearTimeout(toast.t); toast.t = setTimeout(function () { el.classList.remove('show'); }, 1800); }
@@ -272,7 +278,8 @@ textarea{min-height:90px;resize:vertical}
       + '<h3 data-open="' + esc(it.id) + '">' + esc(it.nom) + '</h3>'
       + (it.tailles ? '<div class="size">' + esc(it.tailles) + '</div>' : (it.collection ? '<div class="size">' + esc(it.collection + (it.annee ? ' · ' + it.annee : '')) + '</div>' : ''))
       + (it.statut === 'boutique' && it.lieu ? '<div class="size">En dépôt : ' + esc(it.lieu) + '</div>' : '')
-      + '<div class="act">' + (selectable(it) ? '<button type="button" class="btn' + (on ? ' on' : '') + '" data-sel="' + esc(it.id) + '">' + (on ? '✓ Sélectionnée' : esc(selLabel(it))) + '</button>' : '<button type="button" class="btn ghost" data-open="' + esc(it.id) + '">Voir la pièce</button>') + '</div>'
+      + (it.pieces && it.pieces.length ? '<div class="size">' + it.pieces.length + ' pièces · tenue complète ou à la pièce</div>' : '')
+      + '<div class="act">' + (selectable(it) && it.pieces && it.pieces.length ? '<button type="button" class="btn' + (on ? ' on' : '') + '" data-open="' + esc(it.id) + '">' + (on ? '✓ Dans ma sélection' : 'Choisir les pièces') + '</button>' : selectable(it) ? '<button type="button" class="btn' + (on ? ' on' : '') + '" data-sel="' + esc(it.id) + '">' + (on ? '✓ Sélectionnée' : esc(selLabel(it))) + '</button>' : '<button type="button" class="btn ghost" data-open="' + esc(it.id) + '">Voir la pièce</button>') + '</div>'
       + '</div></article>';
   }
 
@@ -326,7 +333,7 @@ textarea{min-height:90px;resize:vertical}
   }
 
   function renderCart() {
-    sel = sel.filter(function (x) { return byId[x.id] && selectable(byId[x.id]) && hasOffer(byId[x.id], x.m); });
+    sel = sel.filter(function (x) { var it = byId[x.id]; if (!it || !selectable(it) || !hasOffer(it, x.m)) return false; if (x.p && !pieceOf(it, x.p)) return false; return true; });
     var n = sel.length;
     var hasLoc = sel.some(function (x) { return x.m === 'location'; }), hasV = sel.some(function (x) { return x.m === 'vente'; });
     $('locBox').hidden = !hasLoc; $('kindBox').hidden = !hasV && hasLoc;
@@ -334,21 +341,26 @@ textarea{min-height:90px;resize:vertical}
     $('cartCount').textContent = n + ' pièce' + (n > 1 ? 's' : '');
     $('cartThumbs').innerHTML = sel.slice(0, 4).map(function (x) { var p = byId[x.id].photos[0]; return p ? '<img src="' + esc(p.s) + '" alt="">' : ''; }).join('');
     var line = function (x) {
-      var it = byId[x.id], p = it.photos[0];
-      return '<div class="li"><img src="' + esc(p ? p.s : '') + '" alt=""><div><b>' + esc(it.nom) + '</b><small>' + esc((GAMMES[it.gamme] || {}).n || '') + ' · ' + (x.m === 'location' ? 'Location' : esc(ST[it.statut]) + (it.statut === 'vendu' ? ' (réédition)' : '')) + '</small></div><button type="button" data-unsel="' + esc(x.id) + '" data-m="' + x.m + '">Retirer</button></div>';
+      var it = byId[x.id], p = it.photos[0], stt = pStatut(it, x.p ? pieceOf(it, x.p) : null);
+      return '<div class="li"><img src="' + esc(p ? p.s : '') + '" alt=""><div><b>' + esc(selName(x)) + '</b><small>' + esc((GAMMES[it.gamme] || {}).n || '') + ' · ' + (x.m === 'location' ? 'Location' : esc(ST[stt]) + (stt === 'vendu' ? ' (réédition)' : '')) + '</small></div><button type="button" data-unsel="' + esc(x.id) + '" data-m="' + x.m + '" data-p="' + esc(x.p || '') + '">Retirer</button></div>';
     };
     var gv = sel.filter(function (x) { return x.m === 'vente'; }), gl = sel.filter(function (x) { return x.m === 'location'; });
     $('selList').innerHTML = n ? (gv.length ? (gl.length ? '<p class="grp">Vente / dépôt-vente</p>' : '') + gv.map(line).join('') : '') + (gl.length ? (gv.length ? '<p class="grp">Location</p>' : '') + gl.map(line).join('') : '') : '<p class="note">Aucune pièce sélectionnée. Cliquez sur « Sélectionner » sous les pièces qui vous intéressent.</p>';
   }
 
-  function toggleSel(id, m) {
-    m = m || filt.mode;
-    var i = selIdx(id, m);
-    if (i > -1) sel.splice(i, 1); else { sel.push({ id: id, m: m }); toast(m === 'location' ? 'Ajoutée à votre sélection (location)' : 'Ajoutée à votre sélection'); }
+  function toggleSel(id, m, p) {
+    m = m || filt.mode; p = p || '';
+    var i = selIdx(id, m, p);
+    if (i > -1) sel.splice(i, 1);
+    else {
+      // Tenue complète et pièces seules s'excluent : choisir l'une retire l'autre.
+      sel = sel.filter(function (x) { return !(x.id === id && x.m === m && (p ? !x.p : true)); });
+      sel.push({ id: id, m: m, p: p }); toast(m === 'location' ? 'Ajoutée à votre sélection (location)' : 'Ajoutée à votre sélection');
+    }
     saveSel(); renderCart();
     document.querySelectorAll('.card[data-id="' + CSS.escape(id) + '"]').forEach(function (c) {
-      var on = selIdx(id) > -1, b = c.querySelector('[data-sel]');
-      c.classList.toggle('sel', on); if (b) { b.classList.toggle('on', on); b.textContent = on ? '✓ Sélectionnée' : selLabel(byId[id]); }
+      var on = selIdx(id) > -1, it = byId[id], multi = it.pieces && it.pieces.length, b = c.querySelector(multi ? '.act .btn' : '[data-sel]');
+      c.classList.toggle('sel', on); if (b) { b.classList.toggle('on', on); b.textContent = on ? (multi ? '✓ Dans ma sélection' : '✓ Sélectionnée') : (multi ? 'Choisir les pièces' : selLabel(it)); }
     });
     if (cur && cur.id === id) paintInfoBtn();
   }
@@ -384,6 +396,16 @@ textarea{min-height:90px;resize:vertical}
   }
   function paintInfoBtn() {
     var b = ov && ov.querySelector('#infoBtn'); if (!b) return;
+    if (selectable(cur) && cur.pieces && cur.pieces.length) {
+      var row = function (pid, label, stt) {
+        var on2 = selIdx(cur.id, filt.mode, pid) > -1, ok = !(filt.mode === 'location' && (stt === 'vendu' || stt === 'boutique')) && stt !== 'boutique';
+        return '<div class="li" style="grid-template-columns:1fr auto"><div><b>' + esc(label) + '</b>' + (stt !== cur.statut || stt !== 'dispo' ? '<small>' + esc(ST[stt] || stt) + '</small>' : '') + '</div>'
+          + (ok ? '<button type="button" class="btn sm' + (on2 ? ' on' : '') + '" data-sel="' + esc(cur.id) + '" data-p="' + esc(pid) + '">' + (on2 ? '✓ Ajoutée' : (filt.mode === 'location' ? 'Louer' : stt === 'vendu' ? 'Réédition' : 'Ajouter')) + '</button>' : '<span class="note">indisponible</span>') + '</div>';
+      };
+      b.innerHTML = '<p class="grp" style="margin-top:0">Choisir</p>' + row('', 'Tenue complète', cur.statut)
+        + cur.pieces.map(function (pc) { return row(pc.id, pc.nom, pStatut(cur, pc)); }).join('');
+      return;
+    }
     var on = selIdx(cur.id) > -1;
     b.innerHTML = selectable(cur) ? '<button type="button" class="btn' + (on ? ' on' : '') + '" data-sel="' + esc(cur.id) + '" style="width:100%">' + (on ? '✓ Dans ma sélection' : esc(selLabel(cur))) + '</button>' : '<p class="note">Pièce actuellement en boutique' + (cur.lieu ? ' (' + esc(cur.lieu) + ')' : '') + '.</p>';
   }
@@ -406,8 +428,8 @@ textarea{min-height:90px;resize:vertical}
   document.addEventListener('click', function (e) {
     var t = e.target.closest('[data-sel],[data-open],[data-tab],[data-gamme],[data-nav],[data-go],[data-close],[data-unsel],[data-mode]');
     if (!t) { if (ov && e.target === ov) closeItem(); return; }
-    if (t.hasAttribute('data-sel')) return toggleSel(t.getAttribute('data-sel'));
-    if (t.hasAttribute('data-unsel')) return toggleSel(t.getAttribute('data-unsel'), t.getAttribute('data-m'));
+    if (t.hasAttribute('data-sel')) return toggleSel(t.getAttribute('data-sel'), null, t.getAttribute('data-p') || '');
+    if (t.hasAttribute('data-unsel')) return toggleSel(t.getAttribute('data-unsel'), t.getAttribute('data-m'), t.getAttribute('data-p') || '');
     if (t.hasAttribute('data-mode')) { filt.mode = t.getAttribute('data-mode'); filt.type = 'all'; try { history.replaceState(null, '', filt.mode === 'location' ? '?mode=location' : location.pathname); } catch (er) {} renderChrome(); render(); return; }
     if (t.hasAttribute('data-open')) return openItem(t.getAttribute('data-open'));
     if (t.hasAttribute('data-nav')) return show(idx + (+t.getAttribute('data-nav')));
@@ -443,7 +465,7 @@ textarea{min-height:90px;resize:vertical}
     ['shop', 'firstName', 'lastName', 'email'].forEach(function (k) { var ok = k === 'email' ? /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(f[k].value.trim()) : !!f[k].value.trim(); f[k].classList.toggle('bad', !ok); if (!ok) bad.push(k); });
     if (!sel.length) return msg('Votre sélection est vide.', true);
     if (bad.length) return msg('Merci de compléter les champs en rouge.', true);
-    var selection = sel.map(function (x, i) { var it = byId[x.id]; return (i + 1) + '. ' + (x.m === 'location' ? '[LOCATION] ' : '[VENTE] ') + it.nom + ' [' + x.id + '] — ' + ((GAMMES[it.gamme] || {}).n || '') + ' — ' + intentOf(it, x.m); }).join('\n');
+    var selection = sel.map(function (x, i) { var it = byId[x.id]; return (i + 1) + '. ' + (x.m === 'location' ? '[LOCATION] ' : '[VENTE] ') + selName(x) + ' [' + x.id + (x.p ? '/' + x.p : '') + '] — ' + ((GAMMES[it.gamme] || {}).n || '') + ' — ' + intentOf(it, x.m); }).join('\n');
     var body = { type: 'boutique', lang: 'fr', t: Date.now() - t0, website: f.website.value, shop: f.shop.value.trim(), firstName: f.firstName.value.trim(), lastName: f.lastName.value.trim(), email: f.email.value.trim(), country: f.country.value, shopCity: f.shopCity.value.trim(), shopKind: $('kindBox').hidden ? '' : f.shopKind.value, projectType: $('locBox').hidden ? '' : f.projectType.value.trim(), dates: $('locBox').hidden ? '' : f.dates.value.trim(), idea: f.idea.value.trim(), links: f.links.value.trim(), selection: selection };
     var btn = $('send'); btn.disabled = true; btn.textContent = 'Envoi…'; msg('');
     (window.vgTurnstile ? window.vgTurnstile.token() : Promise.resolve('')).then(function (tok) {
