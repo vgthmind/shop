@@ -457,14 +457,13 @@ textarea{min-height:90px;resize:vertical}
       return fetch(EP + '/requests/confirm', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: res.j.id, k: res.j.k }) }).catch(function () {}).then(function () { return res.j.id; });
     }).then(function (id) {
       sel = []; saveSel();
-      render();
+      render(); renderCart();
       $('selList').innerHTML = ''; f.idea.value = '';
       $('form').hidden = true;
       var d = document.createElement('div'); d.className = 'done';
       d.innerHTML = '<h3>Sélection envoyée ✓</h3><p class="note">Référence ' + esc(id) + '. Un e-mail de confirmation vient de partir. Je reviens vers vous très vite.</p><p style="margin-top:18px"><button type="button" class="btn ghost" id="again">Continuer à parcourir</button></p>';
       $('selList').appendChild(d);
       $('again').addEventListener('click', function () { d.remove(); $('form').hidden = false; closePanel(); });
-      renderCart();
     }).catch(function (err) { msg(err.message || 'Envoi impossible.', true); })
       .then(function () { btn.disabled = false; btn.textContent = 'Envoyer la sélection'; });
   });
