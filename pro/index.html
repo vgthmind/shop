@@ -1,0 +1,462 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<meta name="referrer" content="strict-origin-when-cross-origin">
+<title>vgthmind — Catalogue professionnel</title>
+<meta name="description" content="Catalogue professionnel vgthmind : pièces uniques et petites séries pour dépôt-vente et achat.">
+<meta property="og:title" content="vgthmind — Catalogue professionnel">
+<meta property="og:description" content="Pièces uniques et petites séries, faites main à Vitry-sur-Seine. Dépôt-vente ou achat.">
+<meta property="og:image" content="/assets/theme/cover.png">
+<link rel="icon" href="/assets/theme/favicon.svg" type="image/svg+xml">
+<link rel="icon" href="/assets/theme/favicon-32.png" type="image/png" sizes="32x32">
+<link rel="apple-touch-icon" href="/assets/theme/apple-touch-icon.png">
+<link rel="preload" href="/assets/fonts/space-grotesk-latin-700-normal.woff2" as="font" type="font/woff2" crossorigin>
+<style>
+@font-face{font-family:'Space Grotesk';font-weight:500;font-display:swap;src:url(/assets/fonts/space-grotesk-latin-500-normal.woff2) format('woff2')}
+@font-face{font-family:'Space Grotesk';font-weight:700;font-display:swap;src:url(/assets/fonts/space-grotesk-latin-700-normal.woff2) format('woff2')}
+@font-face{font-family:'Inter';font-weight:400;font-display:swap;src:url(/assets/fonts/inter-latin-400-normal.woff2) format('woff2')}
+@font-face{font-family:'Inter';font-weight:500;font-display:swap;src:url(/assets/fonts/inter-latin-500-normal.woff2) format('woff2')}
+@font-face{font-family:'IBM Plex Mono';font-weight:400;font-display:swap;src:url(/assets/fonts/ibm-plex-mono-latin-400-normal.woff2) format('woff2')}
+@font-face{font-family:'IBM Plex Mono';font-weight:500;font-display:swap;src:url(/assets/fonts/ibm-plex-mono-latin-500-normal.woff2) format('woff2')}
+:root{--bg:#eef0f2;--paper:#f7f8f9;--ink:#141517;--soft:#3d4045;--muted:#6f7379;--line:#d8dbde;--line2:#c7cbd0;--ok:#1f6b3a;--warn:#8a5a00;--shop:#2c4a8a;--sold:#8f939a;
+  --mono:'IBM Plex Mono',ui-monospace,monospace;--head:'Space Grotesk',system-ui,sans-serif;--body:'Inter',system-ui,-apple-system,'Segoe UI',sans-serif;--r:14px}
+*{box-sizing:border-box}[hidden]{display:none!important}
+html{-webkit-text-size-adjust:100%;scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 var(--body);-webkit-font-smoothing:antialiased}
+a{color:inherit}
+button{font:inherit;color:inherit;cursor:pointer}
+.wrap{max-width:1240px;margin:0 auto;padding:0 20px}
+.mono{font-family:var(--mono);font-size:11.5px;letter-spacing:.08em;text-transform:uppercase}
+/* En-tête */
+.top{padding:28px 0 8px;display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap}
+.brand{display:flex;align-items:center;gap:12px;text-decoration:none}
+.brand img{height:34px;width:auto}
+.brand span{font:700 20px/1 var(--head);letter-spacing:.02em}
+.links{display:flex;gap:6px;flex-wrap:wrap}
+.links a{font-family:var(--mono);font-size:11.5px;letter-spacing:.06em;text-transform:uppercase;text-decoration:none;padding:7px 11px;border:1px solid var(--line2);border-radius:99px;background:var(--paper);transition:background .15s,border-color .15s}
+.links a:hover{background:#fff;border-color:var(--ink)}
+.hero{padding:34px 0 26px;border-bottom:1px solid var(--line);display:grid;grid-template-columns:1.25fr 1fr;gap:36px;align-items:end}
+.hero h1{font:700 clamp(34px,5.4vw,64px)/.98 var(--head);letter-spacing:-.02em;margin:10px 0 0}
+.hero p{margin:0;color:var(--soft);font-size:16px;max-width:52ch}
+.terms{margin-top:14px!important;font-size:13.5px!important;color:var(--muted)!important}
+/* Gammes */
+.gammes{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;padding:22px 0}
+.gm{background:var(--paper);border:1px solid var(--line);border-radius:var(--r);padding:14px;text-align:left;transition:border-color .15s,transform .15s,background .15s}
+.gm:hover{border-color:var(--line2);transform:translateY(-1px)}
+.gm.on{border-color:var(--ink);background:#fff}
+.gm b{display:block;font:700 15px/1.2 var(--head);margin:6px 0 4px}
+.gm small{display:block;color:var(--muted);font-size:12.5px;line-height:1.35}
+.tier{display:inline-flex;gap:3px}.tier i{width:7px;height:7px;border-radius:50%;background:var(--line2)}.tier i.f{background:var(--ink)}
+/* Barre d'outils */
+.bar{position:sticky;top:0;z-index:20;background:rgba(238,240,242,.92);backdrop-filter:saturate(1.4) blur(10px);-webkit-backdrop-filter:saturate(1.4) blur(10px);border-bottom:1px solid var(--line)}
+.bar .wrap{display:flex;align-items:center;gap:10px;padding-top:10px;padding-bottom:10px}
+.tabs{display:flex;gap:4px;overflow-x:auto;scrollbar-width:none;flex:1;-webkit-mask-image:linear-gradient(90deg,#000 92%,transparent)}
+.tabs::-webkit-scrollbar{display:none}
+.tab{white-space:nowrap;border:1px solid transparent;background:none;padding:8px 13px;border-radius:99px;font-family:var(--mono);font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--soft)}
+.tab:hover{color:var(--ink)}.tab.on{background:var(--ink);color:#fff}
+.tab sup{font-size:10px;opacity:.6;margin-left:3px}
+.toggle{display:flex;align-items:center;gap:8px;white-space:nowrap;font-size:13px;color:var(--soft);user-select:none}
+.toggle input{accent-color:var(--ink);width:16px;height:16px}
+/* Sections */
+.sec{padding:34px 0 8px;scroll-margin-top:64px}
+.sec h2{font:700 26px/1 var(--head);margin:0 0 4px;letter-spacing:-.01em;display:flex;align-items:baseline;gap:10px}
+.sec h2 small{font-family:var(--mono);font-size:12px;color:var(--muted);font-weight:400;letter-spacing:.06em}
+.sub{margin:28px 0 12px;display:flex;align-items:center;gap:12px;color:var(--muted)}
+.sub:after{content:"";flex:1;height:1px;background:var(--line)}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(228px,1fr));gap:16px;margin-top:16px}
+/* Cartes */
+.card{background:var(--paper);border:1px solid var(--line);border-radius:var(--r);overflow:hidden;display:flex;flex-direction:column;transition:border-color .2s,box-shadow .2s,transform .2s;position:relative}
+.card:hover{border-color:var(--line2);box-shadow:0 10px 30px -18px rgba(20,21,23,.45);transform:translateY(-2px)}
+.card.sel{border-color:var(--ink);box-shadow:0 0 0 1px var(--ink)}
+.ph{position:relative;aspect-ratio:4/5;background:#fff;cursor:zoom-in;border:0;padding:0;display:block;width:100%}
+.ph img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;padding:10px;transition:opacity .35s}
+.ph img.cover{object-fit:cover;padding:0}
+.ph img+img{opacity:0}
+.card:hover .ph img+img{opacity:1}
+.ph .n{position:absolute;right:8px;bottom:8px;font-family:var(--mono);font-size:10.5px;background:rgba(255,255,255,.88);padding:2px 7px;border-radius:99px;color:var(--soft)}
+.card.dim .ph img{filter:grayscale(.85);opacity:.72}
+.st{position:absolute;left:8px;top:8px;z-index:2;font-family:var(--mono);font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;padding:4px 8px;border-radius:99px;background:#fff;border:1px solid var(--line)}
+.st:before{content:"";display:inline-block;width:6px;height:6px;border-radius:50%;margin-right:6px;vertical-align:1px;background:currentColor}
+.st.dispo{color:var(--ok)}.st.demande{color:var(--warn)}.st.boutique{color:var(--shop)}.st.vendu{color:var(--sold)}
+.body{padding:12px 14px 14px;display:flex;flex-direction:column;gap:6px;flex:1}
+.body h3{font:700 15.5px/1.25 var(--head);margin:0;cursor:pointer}
+.meta{display:flex;align-items:center;gap:8px;flex-wrap:wrap;color:var(--muted);font-size:12.5px}
+.gtag{display:inline-flex;align-items:center;gap:6px;font-family:var(--mono);font-size:10.5px;letter-spacing:.05em;text-transform:uppercase;color:var(--soft)}
+.size{font-size:12.5px;color:var(--soft);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.act{margin-top:auto;padding-top:8px;display:flex;gap:6px}
+.btn{border:1px solid var(--ink);background:var(--ink);color:#fff;border-radius:10px;padding:9px 12px;font-size:13px;font-weight:500;flex:1;transition:background .15s,color .15s,transform .1s}
+.btn:active{transform:scale(.98)}
+.btn.ghost{background:transparent;color:var(--ink)}
+.btn.ghost:hover{background:#fff}
+.btn.on{background:#fff;color:var(--ink)}
+.btn[disabled]{opacity:.45;cursor:not-allowed}
+.btn.sm{flex:0 0 auto;padding:9px 11px}
+.empty{padding:40px 0;color:var(--muted);text-align:center}
+/* Visionneuse */
+.ov{position:fixed;inset:0;z-index:50;background:rgba(14,15,17,.55);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;padding:20px;opacity:0;transition:opacity .2s}
+.ov.show{opacity:1}
+.dlg{background:var(--paper);border-radius:18px;max-width:1080px;width:100%;max-height:calc(100vh - 40px);overflow:auto;display:grid;grid-template-columns:1.2fr 1fr;box-shadow:0 30px 80px -20px rgba(0,0,0,.5);transform:translateY(8px);transition:transform .2s}
+.ov.show .dlg{transform:none}
+.gal{background:#fff;position:relative;display:flex;flex-direction:column;min-height:0}
+.gal .main{position:relative;aspect-ratio:4/5;max-height:calc(100vh - 140px);width:100%}
+.gal .main img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;padding:18px}
+.gal .main img.cover{object-fit:contain;padding:0}
+.nav{position:absolute;top:50%;transform:translateY(-50%);width:42px;height:42px;border-radius:50%;border:1px solid var(--line);background:rgba(255,255,255,.92);font-size:20px;line-height:1;display:flex;align-items:center;justify-content:center}
+.nav.p{left:12px}.nav.n{right:12px}
+.thumbs{display:flex;gap:6px;padding:10px;overflow-x:auto;border-top:1px solid var(--line)}
+.thumbs button{flex:0 0 58px;height:72px;border:1px solid var(--line);border-radius:8px;background:#fff;padding:3px;opacity:.6}
+.thumbs button.on{opacity:1;border-color:var(--ink)}
+.thumbs img{width:100%;height:100%;object-fit:contain}
+.info{padding:26px 26px 22px;display:flex;flex-direction:column;gap:14px;position:relative}
+.x{position:absolute;right:14px;top:14px;width:36px;height:36px;border-radius:50%;border:1px solid var(--line);background:#fff;font-size:18px;line-height:1}
+.info h2{font:700 28px/1.05 var(--head);margin:0;padding-right:40px;letter-spacing:-.01em}
+.info .row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.info .st{position:static}
+dl{margin:0;display:grid;grid-template-columns:auto 1fr;gap:8px 14px;font-size:14px}
+dt{font-family:var(--mono);font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);padding-top:2px}
+dd{margin:0;white-space:pre-line}
+.desc{white-space:pre-line;color:var(--soft);font-size:14.5px;margin:0}
+.ext{display:flex;gap:8px;flex-wrap:wrap}
+.ext a{font-size:13px;text-decoration:none;border:1px solid var(--line2);border-radius:99px;padding:7px 12px;background:#fff}
+.ext a:hover{border-color:var(--ink)}
+.note{font-size:12.5px;color:var(--muted);margin:0}
+/* Sélection */
+.cart{position:fixed;left:50%;bottom:18px;transform:translate(-50%,140%);z-index:30;background:var(--ink);color:#fff;border-radius:99px;padding:8px 8px 8px 20px;display:flex;align-items:center;gap:14px;box-shadow:0 16px 40px -12px rgba(0,0,0,.55);transition:transform .3s cubic-bezier(.2,.9,.3,1.2)}
+.cart.show{transform:translate(-50%,0)}
+.cart b{font-family:var(--head)}
+.cart .thumbsrow{display:flex}
+.cart .thumbsrow img{width:30px;height:30px;border-radius:50%;object-fit:contain;background:#fff;border:2px solid var(--ink);margin-left:-8px}
+.cart .thumbsrow img:first-child{margin-left:0}
+.cart button{border:0;background:#fff;color:var(--ink);border-radius:99px;padding:10px 16px;font-weight:500}
+.panel{position:fixed;top:0;right:0;bottom:0;z-index:60;width:min(480px,100%);background:var(--paper);box-shadow:-20px 0 60px -20px rgba(0,0,0,.4);transform:translateX(105%);transition:transform .3s ease;display:flex;flex-direction:column}
+.panel.show{transform:none}
+.panel header{padding:20px 22px 14px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center}
+.panel header h2{font:700 22px/1 var(--head);margin:0}
+.panel .scroll{overflow:auto;padding:16px 22px 24px;flex:1}
+.li{display:grid;grid-template-columns:56px 1fr auto;gap:12px;align-items:center;padding:10px 0;border-bottom:1px solid var(--line)}
+.li img{width:56px;height:68px;object-fit:contain;background:#fff;border-radius:8px;border:1px solid var(--line)}
+.li b{font:700 14px/1.2 var(--head);display:block}
+.li small{color:var(--muted);font-size:12px}
+.li button{border:0;background:none;color:var(--muted);font-size:13px;text-decoration:underline}
+form{display:grid;gap:12px;margin-top:20px}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+label{display:grid;gap:5px;font-size:13px;color:var(--soft)}
+input,select,textarea{font:inherit;font-size:16px;border:1px solid var(--line2);background:#fff;border-radius:10px;padding:10px 12px;color:var(--ink);width:100%}
+input:focus,select:focus,textarea:focus{outline:2px solid var(--ink);outline-offset:-1px}
+textarea{min-height:90px;resize:vertical}
+.bad{border-color:#b3261e!important}
+.trap{position:absolute;left:-9999px}
+.msg{font-size:13.5px;min-height:1.3em;margin:0}
+.msg.err{color:#b3261e}
+.done{text-align:center;padding:40px 10px}
+.done h3{font:700 24px/1.1 var(--head);margin:0 0 8px}
+.foot{padding:50px 0 120px;margin-top:40px;border-top:1px solid var(--line);display:flex;justify-content:space-between;gap:20px;flex-wrap:wrap;color:var(--muted);font-size:13px}
+.toast{position:fixed;left:50%;top:16px;transform:translate(-50%,-90px);background:var(--ink);color:#fff;padding:9px 16px;border-radius:99px;font-size:13px;z-index:70;transition:transform .25s}
+.toast.show{transform:translate(-50%,0)}
+@media (max-width:900px){.hero{grid-template-columns:1fr;gap:16px}.gammes{grid-template-columns:repeat(2,1fr)}.gammes .gm:last-child{grid-column:span 2}.dlg{grid-template-columns:1fr}.gal .main{max-height:62vh}}
+@media (max-width:560px){.gammes{display:flex;overflow-x:auto;scrollbar-width:none;margin:0 -14px;padding:18px 14px}.gammes::-webkit-scrollbar{display:none}.gm{flex:0 0 62%}.gm small{display:none}.hero h1{font-size:38px}.wrap{padding:0 14px}.grid{grid-template-columns:repeat(2,1fr);gap:10px}.body{padding:10px}.body h3{font-size:14px}.act .btn{font-size:12px;padding:8px}.toggle span{font-size:0}.toggle span:after{content:'Dispo';font-size:12px}.ov{padding:0;align-items:flex-end}.dlg{border-radius:18px 18px 0 0;max-height:94vh}.two{grid-template-columns:1fr}.cart{width:calc(100% - 24px);justify-content:space-between}}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <a class="brand" href="/" target="_blank" rel="noopener"><img src="/assets/theme/logo.png" alt="" width="45" height="34"><span>vgthmind</span></a>
+    <nav class="links" id="links"></nav>
+  </header>
+  <section class="hero">
+    <div><div class="mono">Catalogue professionnel · <span id="maj"></span></div><h1>Pièces uniques<br>&amp; petites séries</h1></div>
+    <div><p id="intro"></p><p class="terms">Prix professionnels et conditions (dépôt-vente ou achat) communiqués sur demande. Chaque pièce est unique sauf mention « petite série ».</p></div>
+  </section>
+  <div class="gammes" id="gammes" role="group" aria-label="Gammes"></div>
+</div>
+<div class="bar"><div class="wrap">
+  <div class="tabs" id="tabs" role="tablist"></div>
+  <label class="toggle"><input type="checkbox" id="onlyAvail"><span>Disponibles seulement</span></label>
+</div></div>
+<main class="wrap" id="list"><p class="empty">Chargement du catalogue…</p></main>
+<footer class="wrap foot">
+  <div>vgthmind · Vitry-sur-Seine, France · <a href="mailto:contact@vgthmind.org">contact@vgthmind.org</a></div>
+  <div>Catalogue réservé aux professionnels — merci de ne pas le diffuser.</div>
+</footer>
+
+<div class="cart" id="cart"><div class="thumbsrow" id="cartThumbs"></div><b id="cartCount"></b><button type="button" id="openPanel">Envoyer ma sélection</button></div>
+
+<aside class="panel" id="panel" aria-label="Ma sélection" aria-hidden="true">
+  <header><h2>Ma sélection</h2><button type="button" class="x" id="closePanel" aria-label="Fermer">×</button></header>
+  <div class="scroll">
+    <div id="selList"></div>
+    <form id="form" novalidate>
+      <p class="note">Envoyez votre sélection : je reviens vers vous avec disponibilités, tailles, prix professionnels et conditions.</p>
+      <label>Nom de la boutique *<input name="shop" autocomplete="organization" required maxlength="120"></label>
+      <div class="two"><label>Prénom *<input name="firstName" autocomplete="given-name" required maxlength="60"></label><label>Nom *<input name="lastName" autocomplete="family-name" required maxlength="60"></label></div>
+      <label>E-mail professionnel *<input name="email" type="email" autocomplete="email" required maxlength="200"></label>
+      <div class="two"><label>Ville / adresse<input name="shopCity" autocomplete="address-level2" maxlength="200"></label>
+        <label>Pays *<select name="country" required><option value="FR">France</option><option value="BE">Belgique</option><option value="CH">Suisse</option><option value="LU">Luxembourg</option><option value="CA">Canada</option><option value="DE">Allemagne</option><option value="IT">Italie</option><option value="ES">Espagne</option><option value="NL">Pays-Bas</option><option value="GB">Royaume-Uni</option><option value="US">États-Unis</option><option value="JP">Japon</option></select></label></div>
+      <label>Formule envisagée<select name="shopKind"><option>Dépôt-vente</option><option>Achat ferme</option><option>À discuter</option></select></label>
+      <label>Message<textarea name="idea" maxlength="3000" placeholder="Tailles souhaitées, quantités, rééditions, délais, questions…"></textarea></label>
+      <label>Site / Instagram de la boutique<input name="links" maxlength="800" placeholder="https://…"></label>
+      <div class="trap" aria-hidden="true"><label>Ne pas remplir<input name="website" tabindex="-1" autocomplete="off"></label></div>
+      <button class="btn" type="submit" id="send">Envoyer la sélection</button>
+      <p class="msg" id="msg" role="status" aria-live="polite"></p>
+    </form>
+  </div>
+</aside>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script>window.VG_TURNSTILE_KEY = "__TURNSTILE_KEY__";</script>
+<script src="/assets/vg-turnstile.js" defer></script>
+<script>
+(function () {
+  'use strict';
+  var EP = 'https://vgthmind-shop-checkout.vgthm66.workers.dev';
+  var TYPES = [['ensembles', 'Ensembles de collection'], ['hauts', 'Hauts'], ['bas', 'Bas'], ['accessoires', 'Accessoires'], ['musique', 'Musique & merch'], ['surmesure', 'Sur-mesure & scène']];
+  var GAMMES = {
+    'collection': { n: 'Pièces de collection', d: 'Grosses pièces, costumes de scène. Positionnement haut de gamme.', t: 4 },
+    'couture-peinture': { n: 'Couture + peinture', d: 'Cousu de A à Z puis peint à l’aérographe.', t: 3 },
+    'couture': { n: 'Couture', d: 'Patron, coupe et couture faits main, tissus sélectionnés.', t: 3 },
+    'custom': { n: 'Custom / upcycling', d: 'Seconde main peinte à l’aérographe. Gamme accessible.', t: 2 },
+    'serie': { n: 'Petites séries', d: 'Accessoires produits en petites quantités.', t: 1 }
+  };
+  var GORDER = ['collection', 'couture-peinture', 'couture', 'custom', 'serie'];
+  var ST = { dispo: 'Disponible', demande: 'Sur demande', boutique: 'Déjà en boutique', vendu: 'Vendue' };
+  var SRANK = { dispo: 0, demande: 1, boutique: 2, vendu: 3 };
+  var LINKS = [['site', 'Boutique en ligne'], ['portfolio', 'Portfolio'], ['instagram', 'Instagram'], ['youtube', 'YouTube']];
+  var KEY = 'vg-pro-selection';
+
+  var $ = function (id) { return document.getElementById(id); };
+  function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+  function tier(n) { var h = '<span class="tier" aria-hidden="true">'; for (var i = 1; i <= 4; i++) h += '<i' + (i <= n ? ' class="f"' : '') + '></i>'; return h + '</span>'; }
+  function isCover(src) { return /catalogue-pro\//.test(src) && !/vgtape-(sac|armes)|short-graffiti/.test(src); }
+
+  var data = null, items = [], byId = {}, sel = [], filt = { type: 'all', gamme: '', avail: false };
+  try { sel = JSON.parse(localStorage.getItem(KEY) || '[]') || []; } catch (e) { sel = []; }
+  function saveSel() { try { localStorage.setItem(KEY, JSON.stringify(sel)); } catch (e) {} }
+
+  function toast(t) { var el = $('toast'); el.textContent = t; el.classList.add('show'); clearTimeout(toast.t); toast.t = setTimeout(function () { el.classList.remove('show'); }, 1800); }
+
+  // ---------- Rendu ----------
+  function selectable(it) { return it.statut !== 'boutique'; }
+  function selLabel(it) { return it.statut === 'vendu' ? 'Demander une réédition' : it.statut === 'demande' ? 'Demander' : 'Sélectionner'; }
+  function intentOf(it) { return it.statut === 'vendu' ? 'réédition' : it.statut === 'demande' ? 'sur demande' : 'disponible'; }
+
+  function card(it) {
+    var p = it.photos || [], on = sel.indexOf(it.id) > -1, g = GAMMES[it.gamme] || {};
+    var img = function (ph, i) { return ph ? '<img src="' + esc(ph.s) + '" alt="' + (i ? '' : esc(it.nom)) + '" loading="lazy" decoding="async"' + (isCover(ph.s) ? ' class="cover"' : '') + '>' : ''; };
+    return '<article class="card' + (on ? ' sel' : '') + (it.statut === 'vendu' || it.statut === 'boutique' ? ' dim' : '') + '" data-id="' + esc(it.id) + '">'
+      + '<span class="st ' + esc(it.statut) + '">' + esc(ST[it.statut] || it.statut) + '</span>'
+      + '<button type="button" class="ph" data-open="' + esc(it.id) + '" aria-label="Voir ' + esc(it.nom) + '">' + img(p[0], 0) + img(p[1], 1) + (p.length > 1 ? '<span class="n">' + p.length + ' photos</span>' : '') + '</button>'
+      + '<div class="body"><div class="gtag">' + tier(g.t || 0) + esc(g.n || '') + '</div>'
+      + '<h3 data-open="' + esc(it.id) + '">' + esc(it.nom) + '</h3>'
+      + (it.tailles ? '<div class="size">' + esc(it.tailles) + '</div>' : (it.collection ? '<div class="size">' + esc(it.collection + (it.annee ? ' · ' + it.annee : '')) + '</div>' : ''))
+      + (it.statut === 'boutique' && it.lieu ? '<div class="size">En dépôt : ' + esc(it.lieu) + '</div>' : '')
+      + '<div class="act">' + (selectable(it) ? '<button type="button" class="btn' + (on ? ' on' : '') + '" data-sel="' + esc(it.id) + '">' + (on ? '✓ Sélectionnée' : esc(selLabel(it))) + '</button>' : '<button type="button" class="btn ghost" data-open="' + esc(it.id) + '">Voir la pièce</button>') + '</div>'
+      + '</div></article>';
+  }
+
+  function visible(it) {
+    if (filt.gamme && it.gamme !== filt.gamme) return false;
+    if (filt.avail && it.statut !== 'dispo' && it.statut !== 'demande') return false;
+    return true;
+  }
+  function sortItems(a, b) {
+    return (SRANK[a.statut] - SRANK[b.statut]) || (GORDER.indexOf(a.gamme) - GORDER.indexOf(b.gamme)) || ((a.position || 999) - (b.position || 999)) || String(a.nom).localeCompare(String(b.nom));
+  }
+
+  function render() {
+    var h = '', any = false;
+    TYPES.forEach(function (t) {
+      if (filt.type !== 'all' && filt.type !== t[0]) return;
+      var list = items.filter(function (it) { return it.type === t[0] && visible(it); }).sort(sortItems);
+      if (!list.length) return;
+      any = true;
+      var live = list.filter(function (it) { return it.statut === 'dispo' || it.statut === 'demande'; });
+      var shop = list.filter(function (it) { return it.statut === 'boutique'; });
+      var past = list.filter(function (it) { return it.statut === 'vendu'; });
+      h += '<section class="sec" id="s-' + t[0] + '"><h2>' + esc(t[1]) + ' <small>' + list.length + '</small></h2>';
+      if (live.length) h += '<div class="grid">' + live.map(card).join('') + '</div>';
+      if (shop.length) h += '<div class="sub mono">Déjà placées en boutique</div><div class="grid">' + shop.map(card).join('') + '</div>';
+      if (past.length) h += '<div class="sub mono">Déjà vendues — réédition possible sur demande</div><div class="grid">' + past.map(card).join('') + '</div>';
+      h += '</section>';
+    });
+    $('list').innerHTML = any ? h : '<p class="empty">Aucune pièce pour ce filtre.</p>';
+  }
+
+  function renderChrome() {
+    var counts = { all: 0 }; items.forEach(function (it) { if (visible(it)) { counts.all++; counts[it.type] = (counts[it.type] || 0) + 1; } });
+    $('tabs').innerHTML = [['all', 'Tout']].concat(TYPES).filter(function (t) { return t[0] === 'all' || counts[t[0]]; }).map(function (t) {
+      return '<button type="button" role="tab" class="tab' + (filt.type === t[0] ? ' on' : '') + '" data-tab="' + t[0] + '" aria-selected="' + (filt.type === t[0]) + '">' + esc(t[1].replace(' de collection', '')) + '<sup>' + (counts[t[0]] || 0) + '</sup></button>';
+    }).join('');
+    $('gammes').innerHTML = GORDER.map(function (k) {
+      var g = GAMMES[k], n = items.filter(function (it) { return it.gamme === k; }).length;
+      return n ? '<button type="button" class="gm' + (filt.gamme === k ? ' on' : '') + '" data-gamme="' + k + '" aria-pressed="' + (filt.gamme === k) + '">' + tier(g.t) + '<b>' + esc(g.n) + '</b><small>' + esc(g.d) + '</small></button>' : '';
+    }).join('');
+  }
+
+  function renderCart() {
+    sel = sel.filter(function (id) { return byId[id] && selectable(byId[id]); });
+    var n = sel.length;
+    $('cart').classList.toggle('show', n > 0 && !$('panel').classList.contains('show'));
+    $('cartCount').textContent = n + ' pièce' + (n > 1 ? 's' : '');
+    $('cartThumbs').innerHTML = sel.slice(0, 4).map(function (id) { var p = byId[id].photos[0]; return p ? '<img src="' + esc(p.s) + '" alt="">' : ''; }).join('');
+    $('selList').innerHTML = n ? sel.map(function (id) {
+      var it = byId[id], p = it.photos[0];
+      return '<div class="li"><img src="' + esc(p ? p.s : '') + '" alt=""><div><b>' + esc(it.nom) + '</b><small>' + esc((GAMMES[it.gamme] || {}).n || '') + ' · ' + esc(ST[it.statut]) + (it.statut === 'vendu' ? ' (réédition)' : '') + '</small></div><button type="button" data-unsel="' + esc(id) + '">Retirer</button></div>';
+    }).join('') : '<p class="note">Aucune pièce sélectionnée. Cliquez sur « Sélectionner » sous les pièces qui vous intéressent.</p>';
+  }
+
+  function toggleSel(id) {
+    var i = sel.indexOf(id);
+    if (i > -1) sel.splice(i, 1); else { sel.push(id); toast('Ajoutée à votre sélection'); }
+    saveSel(); renderCart();
+    document.querySelectorAll('.card[data-id="' + CSS.escape(id) + '"]').forEach(function (c) {
+      var on = sel.indexOf(id) > -1, b = c.querySelector('[data-sel]');
+      c.classList.toggle('sel', on); if (b) { b.classList.toggle('on', on); b.textContent = on ? '✓ Sélectionnée' : selLabel(byId[id]); }
+    });
+    if (cur && cur.id === id) paintInfoBtn();
+  }
+
+  // ---------- Fiche (visionneuse) ----------
+  var cur = null, idx = 0, ov = null;
+  function openItem(id, push) {
+    cur = byId[id]; if (!cur) return; idx = 0;
+    var g = GAMMES[cur.gamme] || {}, p = cur.photos || [];
+    ov = document.createElement('div'); ov.className = 'ov'; ov.setAttribute('role', 'dialog'); ov.setAttribute('aria-modal', 'true'); ov.setAttribute('aria-label', cur.nom);
+    var rows = [['Tailles', cur.tailles], ['Composition', cur.compo], ['Collection', [cur.collection, cur.annee].filter(Boolean).join(' · ')], ['En dépôt', cur.statut === 'boutique' ? cur.lieu : '']].filter(function (r) { return r[1]; });
+    var ext = '';
+    if (cur.lien) ext += '<a href="' + esc(cur.lien) + '" target="_blank" rel="noopener">▶ Voir portée (Instagram)</a>';
+    if (cur.page && cur.statut === 'dispo') ext += '<a href="' + esc(cur.page) + '" target="_blank" rel="noopener">Fiche sur le site</a>';
+    if (cur.collection === 'VGTAPE') ext += '<a href="https://www.youtube.com/@vgthmind/videos" target="_blank" rel="noopener">Clips VGTAPE (YouTube)</a>';
+    ov.innerHTML = '<div class="dlg"><div class="gal"><div class="main" id="gmain"></div>'
+      + (p.length > 1 ? '<button type="button" class="nav p" data-nav="-1" aria-label="Photo précédente">‹</button><button type="button" class="nav n" data-nav="1" aria-label="Photo suivante">›</button>' : '')
+      + (p.length > 1 ? '<div class="thumbs">' + p.map(function (ph, i) { return '<button type="button" data-go="' + i + '" aria-label="Photo ' + (i + 1) + '"><img src="' + esc(ph.s) + '" alt="" loading="lazy"></button>'; }).join('') + '</div>' : '')
+      + '</div><div class="info"><button type="button" class="x" data-close aria-label="Fermer">×</button>'
+      + '<div class="row"><span class="st ' + esc(cur.statut) + '">' + esc(ST[cur.statut]) + '</span><span class="gtag">' + tier(g.t || 0) + esc(g.n || '') + '</span></div>'
+      + '<h2>' + esc(cur.nom) + '</h2>'
+      + (cur.description ? '<p class="desc">' + esc(cur.description) + '</p>' : '')
+      + (rows.length ? '<dl>' + rows.map(function (r) { return '<dt>' + esc(r[0]) + '</dt><dd>' + esc(r[1]) + '</dd>'; }).join('') + '</dl>' : '')
+      + (ext ? '<div class="ext">' + ext + '</div>' : '')
+      + '<div id="infoBtn"></div>'
+      + '<p class="note">Prix professionnel et conditions sur demande.' + (cur.statut === 'vendu' ? ' Cette pièce est vendue : elle peut être refaite dans le même esprit (chaque pièce reste unique).' : '') + '</p>'
+      + '</div></div>';
+    document.body.appendChild(ov); document.body.style.overflow = 'hidden';
+    requestAnimationFrame(function () { ov.classList.add('show'); });
+    show(0); paintInfoBtn();
+    if (push !== false) try { history.pushState({ p: cur.id }, '', '#' + encodeURIComponent(cur.id)); } catch (e) {}
+    ov.querySelector('.x').focus();
+  }
+  function paintInfoBtn() {
+    var b = ov && ov.querySelector('#infoBtn'); if (!b) return;
+    var on = sel.indexOf(cur.id) > -1;
+    b.innerHTML = selectable(cur) ? '<button type="button" class="btn' + (on ? ' on' : '') + '" data-sel="' + esc(cur.id) + '" style="width:100%">' + (on ? '✓ Dans ma sélection' : esc(selLabel(cur))) + '</button>' : '<p class="note">Pièce actuellement en boutique' + (cur.lieu ? ' (' + esc(cur.lieu) + ')' : '') + '.</p>';
+  }
+  function show(i) {
+    var p = cur.photos || []; if (!p.length) return;
+    idx = (i + p.length) % p.length;
+    var m = ov.querySelector('#gmain');
+    m.innerHTML = '<img src="' + esc(p[idx].l) + '" alt="' + esc(cur.nom) + ' — photo ' + (idx + 1) + '"' + (isCover(p[idx].l) ? ' class="cover"' : '') + '>';
+    ov.querySelectorAll('[data-go]').forEach(function (b) { b.classList.toggle('on', +b.getAttribute('data-go') === idx); });
+    if (p[idx + 1]) { var pre = new Image(); pre.src = p[idx + 1].l; }
+  }
+  function closeItem(fromPop) {
+    if (!ov) return; var o = ov; ov = null; cur = null;
+    o.classList.remove('show'); setTimeout(function () { o.remove(); }, 200);
+    if (!$('panel').classList.contains('show')) document.body.style.overflow = '';
+    if (!fromPop && location.hash) try { history.back(); } catch (e) {}
+  }
+
+  // ---------- Événements ----------
+  document.addEventListener('click', function (e) {
+    var t = e.target.closest('[data-sel],[data-open],[data-tab],[data-gamme],[data-nav],[data-go],[data-close],[data-unsel]');
+    if (!t) { if (ov && e.target === ov) closeItem(); return; }
+    if (t.hasAttribute('data-sel')) return toggleSel(t.getAttribute('data-sel'));
+    if (t.hasAttribute('data-unsel')) return toggleSel(t.getAttribute('data-unsel'));
+    if (t.hasAttribute('data-open')) return openItem(t.getAttribute('data-open'));
+    if (t.hasAttribute('data-nav')) return show(idx + (+t.getAttribute('data-nav')));
+    if (t.hasAttribute('data-go')) return show(+t.getAttribute('data-go'));
+    if (t.hasAttribute('data-close')) return closeItem();
+    if (t.hasAttribute('data-tab')) { filt.type = t.getAttribute('data-tab'); renderChrome(); render(); window.scrollTo({ top: $('list').offsetTop - 60, behavior: 'smooth' }); return; }
+    if (t.hasAttribute('data-gamme')) { var g = t.getAttribute('data-gamme'); filt.gamme = filt.gamme === g ? '' : g; if (filt.type !== 'all') filt.type = 'all'; renderChrome(); render(); return; }
+  });
+  document.addEventListener('keydown', function (e) {
+    if (ov) { if (e.key === 'Escape') closeItem(); else if (e.key === 'ArrowLeft') show(idx - 1); else if (e.key === 'ArrowRight') show(idx + 1); }
+    else if (e.key === 'Escape' && $('panel').classList.contains('show')) closePanel();
+  });
+  // Balayage sur mobile dans la visionneuse
+  var sx = null;
+  document.addEventListener('touchstart', function (e) { if (ov && e.target.closest('#gmain')) sx = e.touches[0].clientX; }, { passive: true });
+  document.addEventListener('touchend', function (e) { if (ov && sx !== null) { var dx = e.changedTouches[0].clientX - sx; if (Math.abs(dx) > 40) show(idx + (dx < 0 ? 1 : -1)); } sx = null; }, { passive: true });
+  window.addEventListener('popstate', function () { if (ov && !location.hash) closeItem(true); else if (!ov && location.hash) openItem(decodeURIComponent(location.hash.slice(1)), false); });
+  $('onlyAvail').addEventListener('change', function () { filt.avail = this.checked; renderChrome(); render(); });
+
+  function openPanel() { $('panel').classList.add('show'); $('panel').setAttribute('aria-hidden', 'false'); document.body.style.overflow = 'hidden'; renderCart(); setTimeout(function () { var f = $('form').shop; if (f && !f.value && sel.length) f.focus(); }, 320); }
+  function closePanel() { $('panel').classList.remove('show'); $('panel').setAttribute('aria-hidden', 'true'); document.body.style.overflow = ''; renderCart(); }
+  $('openPanel').addEventListener('click', openPanel);
+  $('closePanel').addEventListener('click', closePanel);
+
+  // ---------- Envoi de la sélection (Worker : demande « boutique », visible dans l'admin > Demandes) ----------
+  var t0 = Date.now();
+  try { var saved = JSON.parse(localStorage.getItem(KEY + '-form') || 'null'); if (saved) Object.keys(saved).forEach(function (k) { if ($('form')[k] && k !== 'website') $('form')[k].value = saved[k]; }); } catch (e) {}
+  $('form').addEventListener('input', function () { var f = $('form'), o = {}; ['shop', 'firstName', 'lastName', 'email', 'shopCity', 'country', 'shopKind', 'links'].forEach(function (k) { o[k] = f[k].value; }); try { localStorage.setItem(KEY + '-form', JSON.stringify(o)); } catch (e) {} });
+  function msg(t, err) { var m = $('msg'); m.textContent = t || ''; m.className = 'msg' + (err ? ' err' : ''); }
+  $('form').addEventListener('submit', function (e) {
+    e.preventDefault();
+    var f = $('form'), bad = [];
+    ['shop', 'firstName', 'lastName', 'email'].forEach(function (k) { var ok = k === 'email' ? /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(f[k].value.trim()) : !!f[k].value.trim(); f[k].classList.toggle('bad', !ok); if (!ok) bad.push(k); });
+    if (!sel.length) return msg('Votre sélection est vide.', true);
+    if (bad.length) return msg('Merci de compléter les champs en rouge.', true);
+    var selection = sel.map(function (id, i) { var it = byId[id]; return (i + 1) + '. ' + it.nom + ' [' + id + '] — ' + ((GAMMES[it.gamme] || {}).n || '') + ' — ' + intentOf(it); }).join('\n');
+    var body = { type: 'boutique', lang: 'fr', t: Date.now() - t0, website: f.website.value, shop: f.shop.value.trim(), firstName: f.firstName.value.trim(), lastName: f.lastName.value.trim(), email: f.email.value.trim(), country: f.country.value, shopCity: f.shopCity.value.trim(), shopKind: f.shopKind.value, idea: f.idea.value.trim(), links: f.links.value.trim(), selection: selection };
+    var btn = $('send'); btn.disabled = true; btn.textContent = 'Envoi…'; msg('');
+    (window.vgTurnstile ? window.vgTurnstile.token() : Promise.resolve('')).then(function (tok) {
+      body.cf = tok;
+      return fetch(EP + '/requests', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+    }).then(function (r) { return r.json().then(function (j) { return { s: r.status, j: j }; }); }).then(function (res) {
+      if (!res.j || !res.j.ok) {
+        var err = res.j && res.j.error;
+        throw new Error(err === 'rate_limited' ? 'Trop d’envois, réessayez dans une heure ou écrivez à contact@vgthmind.org.' : err === 'captcha' ? 'Vérification anti-robot échouée, rechargez la page et réessayez.' : err === 'closed' ? 'Envoi momentanément indisponible : écrivez à contact@vgthmind.org.' : 'Envoi impossible (' + (err || res.s) + '). Réessayez ou écrivez à contact@vgthmind.org.');
+      }
+      return fetch(EP + '/requests/confirm', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: res.j.id, k: res.j.k }) }).catch(function () {}).then(function () { return res.j.id; });
+    }).then(function (id) {
+      sel = []; saveSel();
+      document.querySelectorAll('.card.sel').forEach(function (c) { c.classList.remove('sel'); var b = c.querySelector('[data-sel]'); if (b) { b.classList.remove('on'); b.textContent = selLabel(byId[c.getAttribute('data-id')]); } });
+      $('selList').innerHTML = ''; f.idea.value = '';
+      $('form').hidden = true;
+      var d = document.createElement('div'); d.className = 'done';
+      d.innerHTML = '<h3>Sélection envoyée ✓</h3><p class="note">Référence ' + esc(id) + '. Un e-mail de confirmation vient de partir. Je reviens vers vous très vite.</p><p style="margin-top:18px"><button type="button" class="btn ghost" id="again">Continuer à parcourir</button></p>';
+      $('selList').appendChild(d);
+      $('again').addEventListener('click', function () { d.remove(); $('form').hidden = false; closePanel(); });
+      renderCart();
+    }).catch(function (err) { msg(err.message || 'Envoi impossible.', true); })
+      .then(function () { btn.disabled = false; btn.textContent = 'Envoyer la sélection'; });
+  });
+
+  // ---------- Chargement ----------
+  function applyStock(stock) {
+    if (!stock) return;
+    items.forEach(function (it) {
+      if (it.src !== 'site' || it.statut === 'boutique' || !(it.id in stock)) return;
+      it.statut = stock[it.id] > 0 ? 'dispo' : 'vendu';
+    });
+  }
+  fetch('catalogue.json', { cache: 'no-cache' }).then(function (r) { return r.json(); }).then(function (d) {
+    data = d; items = d.items || []; items.forEach(function (it) { byId[it.id] = it; });
+    $('intro').textContent = d.intro || '';
+    $('maj').textContent = 'mis à jour le ' + new Date(d.genere).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' });
+    var L = d.liens || {};
+    $('links').innerHTML = LINKS.filter(function (l) { return L[l[0]]; }).map(function (l) { return '<a href="' + esc(L[l[0]]) + '" target="_blank" rel="noopener">' + esc(l[1]) + ' ↗</a>'; }).join('') + (L.mail ? '<a href="mailto:' + esc(L.mail) + '">Contact</a>' : '');
+    renderChrome(); render(); renderCart();
+    if (location.hash) openItem(decodeURIComponent(location.hash.slice(1)), false);
+    // Stock réel (ventes du site) : met à jour « Disponible » / « Vendue » en direct.
+    return fetch(EP + '/stock').then(function (r) { return r.ok ? r.json() : null; }).then(function (j) {
+      if (j && j.stock) { applyStock(j.stock); renderChrome(); render(); renderCart(); }
+    }).catch(function () {});
+  }).catch(function () { $('list').innerHTML = '<p class="empty">Le catalogue n’a pas pu se charger. Rechargez la page.</p>'; });
+})();
+</script>
+</body>
+</html>

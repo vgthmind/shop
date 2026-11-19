@@ -30,6 +30,13 @@
 /admin/*
   ! Content-Security-Policy
 
+# Catalogue pro (lien envoyé aux boutiques) : jamais indexé.
+/pro/*
+  X-Robots-Tag: noindex, nofollow
+  Cache-Control: no-cache
+/assets/catalogue-pro/*
+  Cache-Control: public, max-age=604800, stale-while-revalidate=2592000
+
 # Fichiers de données / techniques : jamais indexés par Google (ils restent lisibles : le site, le flux Instagram et Meta s'en servent).
 # Pas de Disallow dans robots.txt pour eux : Google doit pouvoir lire ce noindex.
 /products.json

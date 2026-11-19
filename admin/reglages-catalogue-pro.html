@@ -1,0 +1,252 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="robots" content="noindex, nofollow">
+  <title>Catalogue pro — admin vgthmind</title>
+  <style>
+    :root { --bg: #f4f2ec; --ink: #171717; --muted: #6b6860; --line: rgba(0,0,0,.12); --ok: #1f7a3a; --bad: #b3261e; }
+    * { box-sizing: border-box; }
+    [hidden] { display: none !important; }
+    body { margin: 0; background: var(--bg); color: var(--ink); font: 16px/1.45 system-ui, -apple-system, "Segoe UI", sans-serif; }
+    main { max-width: 980px; margin: 0 auto; padding: 20px 16px 120px; }
+    nav a { color: inherit; margin-right: 14px; }
+    h1 { font-size: 20px; letter-spacing: .08em; text-transform: uppercase; }
+    h2 { font-size: 16px; letter-spacing: .06em; text-transform: uppercase; margin: 28px 0 6px; }
+    .muted { color: var(--muted); font-size: 14px; }
+    .card { background: rgba(255,255,255,.75); border: 1px solid var(--line); border-radius: 12px; padding: 14px; margin: 12px 0; }
+    button { font: inherit; padding: 9px 14px; border-radius: 10px; border: 1px solid var(--ink); background: var(--ink); color: #fff; cursor: pointer; transition: transform .1s, opacity .15s; }
+    button:active { transform: scale(.97); }
+    button.ghost { background: transparent; color: var(--ink); }
+    button.danger { background: transparent; color: var(--bad); border-color: var(--bad); }
+    button[disabled] { opacity: .5; cursor: wait; }
+    input, select, textarea { font: inherit; font-size: 15px; border: 1px solid rgba(0,0,0,.2); border-radius: 8px; padding: 7px 9px; background: #fff; width: 100%; }
+    textarea { min-height: 70px; }
+    label { display: grid; gap: 4px; font-size: 13px; color: var(--muted); }
+    .row { display: grid; grid-template-columns: 64px 1fr 170px 190px; gap: 10px; align-items: center; padding: 8px 0; border-top: 1px solid var(--line); }
+    .row:first-child { border-top: 0; }
+    .row img, .ph img { width: 64px; height: 78px; object-fit: contain; background: #fff; border-radius: 8px; border: 1px solid var(--line); }
+    .row .lieu { grid-column: 2 / -1; }
+    .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .grid4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+    .extra { border: 1px solid var(--line); border-radius: 12px; background: #fff; margin: 10px 0; }
+    .extra > summary { list-style: none; cursor: pointer; display: flex; gap: 12px; align-items: center; padding: 10px; }
+    .extra > summary::-webkit-details-marker { display: none; }
+    .extra > summary img { width: 48px; height: 60px; object-fit: cover; border-radius: 6px; background: #eee; }
+    .extra > summary b { flex: 1; }
+    .extra .in { padding: 0 12px 14px; display: grid; gap: 10px; }
+    .tag { font-size: 12px; padding: 2px 8px; border-radius: 99px; border: 1px solid var(--line); color: var(--muted); }
+    .ph { display: flex; gap: 8px; flex-wrap: wrap; align-items: flex-start; }
+    .ph figure { margin: 0; display: grid; gap: 4px; justify-items: center; }
+    .ph figure button { padding: 2px 8px; font-size: 12px; }
+    .bar { position: fixed; left: 0; right: 0; bottom: 0; background: rgba(244,242,236,.95); backdrop-filter: blur(8px); border-top: 1px solid var(--line); padding: 10px 16px calc(10px + env(safe-area-inset-bottom)); display: flex; gap: 10px; justify-content: center; align-items: center; z-index: 5; }
+    #msg { min-height: 1.4em; margin: 0; font-size: 14px; }
+    .dirty { color: #8a5a00; font-weight: 600; }
+    @media (max-width: 700px) { .row { grid-template-columns: 56px 1fr; } .row select { grid-column: 2; } .grid4 { grid-template-columns: 1fr 1fr; } .grid2 { grid-template-columns: 1fr; } }
+  </style>
+<link rel="icon" href="../assets/theme/admin/favicon.svg?v=3" type="image/svg+xml">
+<link rel="apple-touch-icon" sizes="180x180" href="../assets/theme/admin/apple-touch-icon.png?v=3">
+</head>
+<body>
+<main>
+  <nav class="vg-back"><a href="reglages.html">← Réglages</a></nav>
+  <h1>Catalogue pro</h1>
+  <p class="muted">Le catalogue pour les boutiques : <a href="/pro/" target="_blank" rel="noopener"><strong>vgthmind.org/pro</strong></a> (non référencé, accessible seulement avec le lien). Les pièces du site y sont reprises <strong>automatiquement</strong> (disponible / vendue en direct). Ici tu règles leur gamme, tu marques celles qui sont en boutique, et tu ajoutes les pièces hors site (collections, archives, sur-mesure). Les boutiques envoient leur sélection : elle arrive dans <a href="demandes.html">Demandes</a> et par mail.</p>
+  <p><button type="button" class="ghost" id="copy">Copier le lien à envoyer</button> <a href="/pro/" target="_blank" rel="noopener"><button type="button" class="ghost">Ouvrir le catalogue ↗</button></a></p>
+
+  <div id="login-box" class="card" hidden>
+    <p>Autorise l'admin à écrire sur GitHub pour modifier le catalogue (une fois par session).</p>
+    <button type="button" id="login">Autoriser les modifications</button>
+  </div>
+
+  <div id="app" hidden>
+    <h2>Texte d'accueil</h2>
+    <div class="card"><label>Présentation en haut du catalogue<textarea id="intro" data-k="intro"></textarea></label></div>
+
+    <h2>Pièces du site</h2>
+    <p class="muted">Pièce masquée sur le site parce qu'elle est en dépôt : choisis « En boutique » (elle reste visible dans le catalogue, non sélectionnable). « Masquer du catalogue » la retire du catalogue seulement.</p>
+    <div class="card" id="site"></div>
+
+    <h2>Pièces hors site</h2>
+    <p class="muted">Collections, archives, sur-mesure, petites séries à produire. Photos : envoyées tout de suite (format web léger fait ici) ; le reste est enregistré avec le bouton du bas.</p>
+    <div id="extras"></div>
+    <button type="button" class="ghost" id="add">+ Ajouter une pièce</button>
+  </div>
+  <p id="msg" role="status" aria-live="polite"></p>
+</main>
+<div class="bar" id="bar" hidden><span id="state" class="muted">Rien à enregistrer</span><button type="button" id="save">Enregistrer le catalogue</button></div>
+<script src="studio-publish.js"></script>
+<script src="vg-admin-auth.js"></script>
+<script src="vg-admin-ui.js"></script>
+<script>
+(function () {
+  'use strict';
+  var FILE = 'data/catalogue-pro.json', DIR = 'assets/catalogue-pro', PDIR = 'data/products', BRANCH = 'main';
+  var TYPES = [['ensembles', 'Ensemble'], ['hauts', 'Haut'], ['bas', 'Bas'], ['accessoires', 'Accessoire'], ['musique', 'Musique / merch'], ['surmesure', 'Sur-mesure / scène']];
+  var GAMMES = [['collection', 'Pièce de collection'], ['couture-peinture', 'Couture + peinture'], ['couture', 'Couture'], ['custom', 'Custom / upcycling'], ['serie', 'Petite série']];
+  var STATUTS = [['dispo', 'Disponible'], ['demande', 'Sur demande'], ['boutique', 'En boutique'], ['vendu', 'Vendue (réédition possible)']];
+  var $ = function (id) { return document.getElementById(id); };
+  function esc(s) { return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
+  function say(t, bad) { var m = $('msg'); m.textContent = t || ''; m.style.color = bad ? 'var(--bad)' : ''; }
+  function opts(list, v) { return list.map(function (o) { return '<option value="' + o[0] + '"' + (o[0] === v ? ' selected' : '') + '>' + esc(o[1]) + '</option>'; }).join(''); }
+  var api = function (m, p, b) { return VGStudioPublish.api(m, p, b); };
+  function enc(p) { return encodeURIComponent(p).replace(/%2F/g, '/'); }
+  function fromB64(str) { var bin = atob(str.replace(/\s/g, '')), a = new Uint8Array(bin.length); for (var i = 0; i < bin.length; i++) a[i] = bin.charCodeAt(i); return new TextDecoder().decode(a); }
+  function toB64(text) { var bytes = new TextEncoder().encode(text), s = '', i; for (i = 0; i < bytes.length; i += 0x8000) s += String.fromCharCode.apply(null, bytes.subarray(i, i + 0x8000)); return btoa(s); }
+  function slug(t) { return String(t).normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 40) || 'piece'; }
+
+  var cfg = null, sha = null, pieces = [], dirty = false;
+  function setDirty(v) { dirty = v; $('bar').hidden = false; $('state').textContent = v ? 'Modifications non enregistrées' : 'Tout est enregistré'; $('state').className = v ? 'dirty' : 'muted'; }
+  window.addEventListener('beforeunload', function (e) { if (dirty) { e.preventDefault(); e.returnValue = ''; } });
+
+  async function load() {
+    say('Chargement…');
+    try {
+      var f = await api('GET', '/contents/' + FILE + '?ref=' + BRANCH);
+      sha = f.sha; cfg = JSON.parse(fromB64(f.content));
+    } catch (e) { cfg = { intro: '', liens: {}, overrides: {}, extras: [] }; sha = null; }
+    cfg.overrides = cfg.overrides || {}; cfg.extras = cfg.extras || [];
+    var list = await api('GET', '/contents/' + PDIR + '?ref=' + BRANCH);
+    pieces = await Promise.all(list.filter(function (x) { return /\.json$/.test(x.name); }).map(function (x) {
+      return api('GET', '/contents/' + enc(x.path) + '?ref=' + BRANCH).then(function (c) { var p = JSON.parse(fromB64(c.content)); p.slug = x.name.replace(/\.json$/, ''); return p; });
+    }));
+    pieces = pieces.filter(function (p) { return !p.archived; }).sort(function (a, b) { return String(a.name).localeCompare(String(b.name)); });
+    $('login-box').hidden = true; $('app').hidden = false;
+    $('intro').value = cfg.intro || '';
+    renderSite(); renderExtras(); setDirty(false); say('');
+  }
+
+  function renderSite() {
+    $('site').innerHTML = pieces.map(function (p) {
+      var o = cfg.overrides[p.slug] || {}, st = o.masquer ? 'masquer' : (o.statut === 'boutique' ? 'boutique' : 'auto');
+      var img = (p.images || [])[0] ? '/assets/products-sized/320/' + encodeURIComponent(p.slug) + '/0.webp' : '';
+      return '<div class="row" data-slug="' + esc(p.slug) + '"><img src="' + esc(img) + '" alt="" loading="lazy">'
+        + '<div><strong>' + esc(p.name) + '</strong><br><span class="tag">' + (p.hidden ? 'masquée sur le site' : (p.quantity === 0 ? 'vendue' : 'en ligne')) + '</span></div>'
+        + '<select data-o="gamme" aria-label="Gamme">' + opts(GAMMES, o.gamme || ((p.categories || []).indexOf('customsupcycling') > -1 ? 'custom' : 'couture')) + '</select>'
+        + '<select data-o="statut" aria-label="Statut dans le catalogue">' + opts([['auto', 'Statut du site (auto)'], ['boutique', 'En boutique'], ['masquer', 'Masquer du catalogue']], st) + '</select>'
+        + '<input class="lieu" data-o="lieu" placeholder="Boutique (ex. Bobby — Paris 2e)" value="' + esc(o.lieu || '') + '"' + (st === 'boutique' ? '' : ' hidden') + '>'
+        + '</div>';
+    }).join('');
+  }
+  $('site') && document.addEventListener('change', function (e) {
+    var row = e.target.closest && e.target.closest('.row[data-slug]'); if (!row) return;
+    var s = row.getAttribute('data-slug'), o = cfg.overrides[s] = cfg.overrides[s] || {}, k = e.target.getAttribute('data-o');
+    if (k === 'gamme') o.gamme = e.target.value;
+    if (k === 'statut') {
+      delete o.masquer; if (o.statut === 'boutique') delete o.statut;
+      if (e.target.value === 'boutique') o.statut = 'boutique';
+      if (e.target.value === 'masquer') o.masquer = true;
+      row.querySelector('.lieu').hidden = e.target.value !== 'boutique';
+    }
+    setDirty(true);
+  });
+  document.addEventListener('input', function (e) {
+    var row = e.target.closest && e.target.closest('.row[data-slug]');
+    if (row && e.target.getAttribute('data-o') === 'lieu') { var s = row.getAttribute('data-slug'); (cfg.overrides[s] = cfg.overrides[s] || {}).lieu = e.target.value; setDirty(true); }
+    if (e.target.id === 'intro') { cfg.intro = e.target.value; setDirty(true); }
+    var ex = e.target.closest && e.target.closest('.extra[data-i]');
+    if (ex && e.target.hasAttribute('data-f')) {
+      var x = cfg.extras[+ex.getAttribute('data-i')], k = e.target.getAttribute('data-f');
+      x[k] = e.target.value; if (k === 'nom') ex.querySelector('summary b').textContent = e.target.value || '(sans nom)';
+      setDirty(true);
+    }
+  });
+
+  function renderExtras() {
+    $('extras').innerHTML = cfg.extras.map(function (x, i) {
+      var ph = x.photos || [];
+      return '<details class="extra" data-i="' + i + '"' + (x._open ? ' open' : '') + '><summary><img src="' + esc(ph[0] ? ph[0].replace(/\.webp$/, '-s.webp') : '') + '" alt=""><b>' + esc(x.nom || '(sans nom)') + '</b><span class="tag">' + esc((STATUTS.find(function (s) { return s[0] === x.statut; }) || [0, ''])[1]) + '</span></summary><div class="in">'
+        + '<div class="grid2"><label>Nom<input data-f="nom" value="' + esc(x.nom) + '"></label><label>Lien Instagram / vidéo (portée)<input data-f="lien" value="' + esc(x.lien) + '" placeholder="https://www.instagram.com/…"></label></div>'
+        + '<div class="grid4"><label>Type<select data-f="type">' + opts(TYPES, x.type) + '</select></label><label>Gamme<select data-f="gamme">' + opts(GAMMES, x.gamme) + '</select></label><label>Statut<select data-f="statut">' + opts(STATUTS, x.statut) + '</select></label><label>Année<input data-f="annee" value="' + esc(x.annee) + '"></label></div>'
+        + '<div class="grid4"><label>Collection<input data-f="collection" value="' + esc(x.collection) + '"></label><label>Tailles<input data-f="tailles" value="' + esc(x.tailles) + '" placeholder="ex. M/L"></label><label>Composition<input data-f="compo" value="' + esc(x.compo) + '" placeholder="ex. 100% coton"></label><label>Boutique (si en boutique)<input data-f="lieu" value="' + esc(x.lieu) + '"></label></div>'
+        + '<label>Description<textarea data-f="description">' + esc(x.description) + '</textarea></label>'
+        + '<div><span class="muted">Photos (la 1re est la couverture)</span><div class="ph">' + ph.map(function (p, j) { return '<figure><img src="' + esc(p.replace(/\.webp$/, '-s.webp')) + '" alt=""><span>' + (j ? '<button type="button" class="ghost" data-first="' + j + '">1re</button> ' : '') + '<button type="button" class="ghost" data-rmph="' + j + '">×</button></span></figure>'; }).join('')
+        + '<label style="align-self:center"><input type="file" accept="image/*" multiple data-up></label></div></div>'
+        + '<div><button type="button" class="danger" data-del>Supprimer cette pièce du catalogue</button></div>'
+        + '</div></details>';
+    }).join('') || '<p class="muted">Aucune pièce hors site.</p>';
+  }
+  document.addEventListener('change', function (e) {
+    var ex = e.target.closest && e.target.closest('.extra[data-i]'); if (!ex) return;
+    var i = +ex.getAttribute('data-i'), x = cfg.extras[i];
+    if (e.target.hasAttribute('data-f')) { x[e.target.getAttribute('data-f')] = e.target.value; setDirty(true); if (e.target.getAttribute('data-f') === 'statut') { x._open = true; renderExtras(); } }
+    if (e.target.hasAttribute('data-up')) upload(i, e.target);
+  });
+  document.addEventListener('click', function (e) {
+    var ex = e.target.closest && e.target.closest('.extra[data-i]'); if (!ex) return;
+    var i = +ex.getAttribute('data-i'), x = cfg.extras[i];
+    if (e.target.hasAttribute('data-del')) { if (!confirm('Retirer « ' + (x.nom || 'cette pièce') + ' » du catalogue ? (ses photos restent stockées)')) return; cfg.extras.splice(i, 1); renderExtras(); setDirty(true); }
+    if (e.target.hasAttribute('data-rmph')) { x.photos.splice(+e.target.getAttribute('data-rmph'), 1); x._open = true; renderExtras(); setDirty(true); }
+    if (e.target.hasAttribute('data-first')) { var j = +e.target.getAttribute('data-first'); x.photos.unshift(x.photos.splice(j, 1)[0]); x._open = true; renderExtras(); setDirty(true); }
+  });
+  document.addEventListener('error', function (e) { if (e.target && e.target.tagName === 'IMG') e.target.style.visibility = 'hidden'; }, true);
+  $('add').addEventListener('click', function () {
+    cfg.extras.unshift({ id: 'piece-' + Date.now().toString(36), nom: '', type: 'ensembles', gamme: 'collection', statut: 'dispo', photos: [], description: '', annee: String(new Date().getFullYear()), collection: '', lien: '', tailles: '', compo: '', _open: true });
+    renderExtras(); setDirty(true); var f = document.querySelector('.extra[data-i="0"] [data-f="nom"]'); if (f) f.focus();
+  });
+
+  // Photo -> 2 WebP (1400 px et 540 px) faits dans le navigateur, puis envoyés sur GitHub.
+  function toWebp(file, max, q) {
+    return new Promise(function (ok, ko) {
+      var img = new Image(), u = URL.createObjectURL(file);
+      img.onload = function () {
+        var r = Math.min(1, max / Math.max(img.naturalWidth, img.naturalHeight)), c = document.createElement('canvas');
+        c.width = Math.round(img.naturalWidth * r); c.height = Math.round(img.naturalHeight * r);
+        var g = c.getContext('2d'); g.fillStyle = '#fff'; g.fillRect(0, 0, c.width, c.height); g.drawImage(img, 0, 0, c.width, c.height);
+        URL.revokeObjectURL(u);
+        c.toBlob(function (b) { if (!b) return ko(new Error('Conversion impossible')); var fr = new FileReader(); fr.onload = function () { ok(String(fr.result).split(',')[1]); }; fr.readAsDataURL(b); }, 'image/webp', q);
+      };
+      img.onerror = function () { URL.revokeObjectURL(u); ko(new Error(file.name + ' : format non lu (sur iPhone, choisis « Le plus compatible » ou envoie un JPEG).')); };
+      img.src = u;
+    });
+  }
+  async function upload(i, input) {
+    var x = cfg.extras[i], files = Array.prototype.slice.call(input.files || []); if (!files.length) return;
+    if (!x.id || /^piece-/.test(x.id) && x.nom) x.id = slug(x.nom) + '-' + Date.now().toString(36).slice(-4);
+    input.disabled = true; x.photos = x.photos || [];
+    try {
+      for (var k = 0; k < files.length; k++) {
+        say('Photo ' + (k + 1) + '/' + files.length + ' : préparation…');
+        var big = await toWebp(files[k], 1400, 0.82), small = await toWebp(files[k], 540, 0.74), n = Date.now().toString(36);
+        var base = DIR + '/' + x.id + '/' + n;
+        say('Photo ' + (k + 1) + '/' + files.length + ' : envoi…');
+        await api('PUT', '/contents/' + base + '.webp', { message: 'Catalogue pro : photo ' + x.id, content: big, branch: BRANCH });
+        await api('PUT', '/contents/' + base + '-s.webp', { message: 'Catalogue pro : miniature ' + x.id, content: small, branch: BRANCH });
+        x.photos.push('/' + base + '.webp');
+      }
+      x._open = true; renderExtras(); setDirty(true);
+      say('Photos envoyées. Pense à « Enregistrer le catalogue ».');
+    } catch (e) { say('Erreur photo : ' + e.message, true); }
+    input.disabled = false;
+  }
+
+  $('save').addEventListener('click', async function () {
+    var b = this; b.disabled = true; b.textContent = 'Enregistrement…'; say('');
+    try {
+      var out = JSON.parse(JSON.stringify(cfg));
+      out.extras.forEach(function (x) { delete x._open; if (!x.id) x.id = slug(x.nom); });
+      Object.keys(out.overrides).forEach(function (k) { if (!Object.keys(out.overrides[k]).length) delete out.overrides[k]; });
+      var body = { message: 'Catalogue pro : mise à jour', content: toB64(JSON.stringify(out, null, 1) + '\n'), branch: BRANCH };
+      if (sha) body.sha = sha;
+      var r = await api('PUT', '/contents/' + FILE, body);
+      sha = r && r.content && r.content.sha || sha;
+      setDirty(false); b.textContent = '✓ Enregistré'; say('Enregistré. Le catalogue se met à jour tout seul (1 à 2 min).');
+      setTimeout(function () { b.textContent = 'Enregistrer le catalogue'; }, 2500);
+    } catch (e) { b.textContent = 'Enregistrer le catalogue'; say('Erreur : ' + e.message + (/409|sha/i.test(e.message) ? ' (le fichier a changé ailleurs : recharge la page)' : ''), true); }
+    b.disabled = false;
+  });
+
+  $('copy').addEventListener('click', function () {
+    var url = location.origin + '/pro/', b = this;
+    (navigator.clipboard ? navigator.clipboard.writeText(url) : Promise.reject()).then(function () { b.textContent = '✓ Lien copié'; }, function () { prompt('Lien du catalogue :', url); })
+      .then(function () { setTimeout(function () { b.textContent = 'Copier le lien à envoyer'; }, 2000); });
+  });
+  $('login').addEventListener('click', function () { VGStudioPublish.login().then(load).catch(function (e) { say(e.message, true); }); });
+  $('login-box').hidden = false;
+  if (VGStudioPublish.connected()) load().catch(function (e) { say('Erreur : ' + e.message, true); });
+})();
+</script>
+<script src="vg-admin-cursor.js"></script>
+</body>
+</html>

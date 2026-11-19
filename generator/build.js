@@ -995,6 +995,8 @@ async function main() {
   if (BASE_PATH === '') { fs.mkdirSync(rel(OUT_DIR, '.well-known'), { recursive: true }); fs.writeFileSync(rel(OUT_DIR, '.well-known', 'security.txt'), ['Contact: mailto:contact@vgthmind.org', 'Expires: ' + new Date(Date.now() + 365 * 864e5).toISOString().replace(/\.\d+Z$/, 'Z'), 'Preferred-Languages: fr, en', 'Canonical: ' + SHOP_SETTINGS.site_url + '/.well-known/security.txt', ''].join('\n')); }
   // Admin (pages maison) : servi tel quel sous /admin/, jamais passé par le préfixe /shop.
   fs.cpSync(rel(ROOT, 'admin'), rel(OUT_DIR, 'admin'), { recursive: true });
+  // Catalogue pro (/pro/) : page privée pour les boutiques, hors sitemap, noindex.
+  require('./catalogue-pro').write(ROOT, OUT_DIR);
   {
     // Adresse du site (réglage central) dans le script de connexion : page de connexion après « Se déconnecter », et renvoi
     // vers le bon site si l'admin est ouvert depuis une autre adresse (ancien aperçu, favori…).

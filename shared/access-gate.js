@@ -11,6 +11,7 @@ export function isExempt(pathname, search) {
   if (p === '/admin' || p.startsWith('/admin/')) return true;
   if (p.startsWith('/assets/')) return true;
   if (['/favicon.ico', '/site.webmanifest', '/robots.txt', '/products.json', '/site-config.json', '/merci', '/paiement-annule', '/suivi', '/acces'].includes(p)) return true;
+  if (p === '/pro' || p.startsWith('/pro/')) return true; // catalogue pro (lien envoyé aux boutiques)
   if (/^\/(apple-touch-icon|favicon)[\w.-]*$/.test(p)) return true;
   if (p === '/demande') { const q = new URLSearchParams(search || ''); return !!(q.get('id') && q.get('k')); }
   return false;

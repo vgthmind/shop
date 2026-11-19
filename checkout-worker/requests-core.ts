@@ -4,11 +4,11 @@
 
 // Parcours du formulaire : « Une pièce pour moi » (custom ou sur-mesure), « Une production visuelle » (location
 // d'une pièce existante ou création pour le projet), « Une collab ».
-export const TYPES = ['custom', 'surmesure', 'production', 'collab'] as const;
+export const TYPES = ['custom', 'surmesure', 'production', 'collab', 'boutique'] as const;
 export type ReqType = (typeof TYPES)[number];
 export const PAID_TYPES: string[] = ['custom', 'surmesure']; // devis + acompte + solde par Stripe ; le reste : réponse à la main
-export const TYPE_LABELS: Record<string, string> = { custom: 'Pièce pour moi · Custom', surmesure: 'Pièce pour moi · Sur-mesure', production: 'Production visuelle', collab: 'Collab' };
-export const BRANCH: Record<string, string> = { custom: 'piece', surmesure: 'piece', production: 'production', collab: 'collab' };
+export const TYPE_LABELS: Record<string, string> = { custom: 'Pièce pour moi · Custom', surmesure: 'Pièce pour moi · Sur-mesure', production: 'Production visuelle', collab: 'Collab', boutique: 'Boutique · Sélection catalogue pro' };
+export const BRANCH: Record<string, string> = { custom: 'piece', surmesure: 'piece', production: 'production', collab: 'collab', boutique: 'boutique' };
 
 // Libellés des réponses (admin, mails) : clé du champ -> [FR, EN].
 export const FIELD_LABELS: Record<string, [string, string]> = {
@@ -18,6 +18,7 @@ export const FIELD_LABELS: Record<string, [string, string]> = {
   deadline: ['Date souhaitée', 'Wanted by'], prodKind: ['Besoin', 'Need'], projectType: ['Type de projet', 'Project type'],
   dates: ['Dates', 'Dates'], place: ['Lieu', 'Location'], count: ['Nombre de pièces', 'Number of pieces'], artist: ['Artiste (nom ou lien)', 'Artist (name or link)'],
   collabType: ['Type de collab', 'Collab type'], links: ['Liens (chaîne, réseaux)', 'Links (channel, socials)'], link: ['Lien vers des fichiers', 'Link to files'],
+  shop: ['Boutique', 'Shop'], shopCity: ['Ville / adresse', 'City / address'], shopKind: ['Formule souhaitée', 'Preferred terms'], selection: ['Pièces sélectionnées', 'Selected pieces'],
 };
 export const CHOICE_LABELS: Record<string, [string, string]> = {
   know: ['Je sais ce que je veux', 'I know what I want'], guide: ['J’ai une envie, guide-moi', 'I have an idea, guide me'],
@@ -35,6 +36,7 @@ export const FIELDS_BY_TYPE: Record<string, string[]> = {
   surmesure: ['piece', 'paint', 'mode', 'idea', 'mood', 'colors', 'refs', 'measures', 'budget', 'deadline', 'link'],
   production: ['prodKind', 'projectType', 'dates', 'deadline', 'place', 'count', 'artist', 'budget', 'idea', 'refs', 'link'],
   collab: ['collabType', 'links', 'idea', 'refs', 'link'],
+  boutique: ['shop', 'shopCity', 'shopKind', 'selection', 'idea', 'links'],
 };
 
 // Statuts (ordre d'affichage dans l'admin). « brouillon » : formulaire reçu, fichiers en cours d'envoi.
@@ -175,6 +177,10 @@ export function parseSubmission(body: any, lead: Settings['leadWeeks'] = DEFAULT
       collabType: clean(body?.collabType, 150),
       links: block(body?.links, 800),
       link: clean(body?.link, 500),
+      shop: clean(body?.shop, 120),
+      shopCity: clean(body?.shopCity, 200),
+      shopKind: clean(body?.shopKind, 120),
+      selection: block(body?.selection, 6000),
     } as Record<string, any>,
     photosConsent: !!(body && body.photosConsent),
   };
@@ -198,6 +204,9 @@ export function parseSubmission(body: any, lead: Settings['leadWeeks'] = DEFAULT
     if (!x.prodKind) f.push('prodKind');
     if (!x.projectType) f.push('projectType');
     if (!x.dates) f.push('dates');
+  } else if (v.type === 'boutique') {
+    if (!x.shop) f.push('shop');
+    if (!x.selection) f.push('selection');
   } else if (v.type === 'collab') {
     if (!x.collabType) f.push('collabType');
     if (x.idea.length < 10) f.push('idea');
