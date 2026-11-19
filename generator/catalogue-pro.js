@@ -56,13 +56,14 @@ function build(root) {
       tailles: o.tailles || lines.filter((l) => /^taille/i.test(l)).join(' · '),
       compo: o.compo || lines.filter((l) => /%/.test(l)).join(' · '),
       lien: o.lien || p.reel_url || '', page: `/product/${encodeURIComponent(slug)}/`,
-      unique: !!p.unique, quantite: typeof p.quantity === 'number' ? p.quantity : null, position: p.position || 999,
+      unique: !!p.unique, quantite: typeof p.quantity === 'number' ? p.quantity : null, position: o.position || p.position || 999,
       annee: o.annee || String(p.created_at || '').slice(0, 4), collection: o.collection || '',
+      offre: o.offre || 'vente',
     });
   }
   for (const x of cfg.extras || []) {
     if (!x || !x.id || x.masquer) continue;
-    items.push(Object.assign({ position: 999 }, x, { src: 'extra', photos: extraPhotos(x.photos) }));
+    items.push(Object.assign({ position: 999, offre: 'vente' }, x, { src: 'extra', photos: extraPhotos(x.photos) }));
   }
   return {
     genere: new Date().toISOString(),

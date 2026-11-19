@@ -42,6 +42,14 @@ button{font:inherit;color:inherit;cursor:pointer}
 .hero h1{font:700 clamp(34px,5.4vw,64px)/.98 var(--head);letter-spacing:-.02em;margin:10px 0 0}
 .hero p{margin:0;color:var(--soft);font-size:16px;max-width:52ch}
 .terms{margin-top:14px!important;font-size:13.5px!important;color:var(--muted)!important}
+/* Vente / location */
+.modes{display:flex;gap:8px;padding:22px 0 0;flex-wrap:wrap}
+.mode{flex:1;min-width:240px;text-align:left;border:1px solid var(--line2);background:var(--paper);border-radius:var(--r);padding:14px 16px;transition:border-color .15s,background .15s}
+.mode b{display:block;font:700 18px/1.15 var(--head)}
+.mode small{display:block;color:var(--muted);font-size:13px;margin-top:3px}
+.mode.on{background:var(--ink);color:#fff;border-color:var(--ink)}
+.mode.on small{color:#c7cbd0}
+.grp{font-family:var(--mono);font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin:16px 0 0}
 /* Gammes */
 .gammes{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;padding:22px 0}
 .gm{background:var(--paper);border:1px solid var(--line);border-radius:var(--r);padding:14px;text-align:left;transition:border-color .15s,transform .15s,background .15s}
@@ -74,10 +82,10 @@ button{font:inherit;color:inherit;cursor:pointer}
 .ph{position:relative;aspect-ratio:4/5;background:#fff;cursor:zoom-in;border:0;padding:0;display:block;width:100%}
 .ph img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;padding:10px;transition:opacity .35s}
 .ph img.cover{object-fit:cover;padding:0}
-.ph img+img{opacity:0}
+.ph img+img{opacity:0;background:#fff}
 .card:hover .ph img+img{opacity:1}
 .ph .n{position:absolute;right:8px;bottom:8px;font-family:var(--mono);font-size:10.5px;background:rgba(255,255,255,.88);padding:2px 7px;border-radius:99px;color:var(--soft)}
-.card.dim .ph img{filter:grayscale(.85);opacity:.72}
+.card.dim .ph{filter:grayscale(.85);opacity:.7}
 .st{position:absolute;left:8px;top:8px;z-index:2;font-family:var(--mono);font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;padding:4px 8px;border-radius:99px;background:#fff;border:1px solid var(--line)}
 .st:before{content:"";display:inline-block;width:6px;height:6px;border-radius:50%;margin-right:6px;vertical-align:1px;background:currentColor}
 .st.dispo{color:var(--ok)}.st.demande{color:var(--warn)}.st.boutique{color:var(--shop)}.st.vendu{color:var(--sold)}
@@ -169,8 +177,12 @@ textarea{min-height:90px;resize:vertical}
   </header>
   <section class="hero">
     <div><div class="mono">Catalogue professionnel · <span id="maj"></span></div><h1>Pièces uniques<br>&amp; petites séries</h1></div>
-    <div><p id="intro"></p><p class="terms">Prix professionnels et conditions (dépôt-vente ou achat) communiqués sur demande. Chaque pièce est unique sauf mention « petite série ».</p></div>
+    <div><p id="intro"></p><p class="terms" id="terms"></p></div>
   </section>
+  <div class="modes" role="tablist" aria-label="Vente ou location">
+    <button type="button" class="mode on" data-mode="vente" role="tab" aria-selected="true"><b>Vente &amp; dépôt-vente</b><small>Pour les boutiques : pièces à acheter ou à prendre en dépôt</small></button>
+    <button type="button" class="mode" data-mode="location" role="tab" aria-selected="false"><b>Location</b><small>Clips, scène, shootings, expositions : pièces de collection à louer</small></button>
+  </div>
   <div class="gammes" id="gammes" role="group" aria-label="Gammes"></div>
 </div>
 <div class="bar"><div class="wrap">
@@ -190,13 +202,14 @@ textarea{min-height:90px;resize:vertical}
   <div class="scroll">
     <div id="selList"></div>
     <form id="form" novalidate>
-      <p class="note">Envoyez votre sélection : je reviens vers vous avec disponibilités, tailles, prix professionnels et conditions.</p>
-      <label>Nom de la boutique *<input name="shop" autocomplete="organization" required maxlength="120"></label>
+      <p class="note">Envoyez votre sélection : je reviens vers vous avec disponibilités, tailles, prix professionnels et conditions (vente, dépôt-vente ou location).</p>
+      <label>Boutique / société / artiste *<input name="shop" autocomplete="organization" required maxlength="120"></label>
       <div class="two"><label>Prénom *<input name="firstName" autocomplete="given-name" required maxlength="60"></label><label>Nom *<input name="lastName" autocomplete="family-name" required maxlength="60"></label></div>
       <label>E-mail professionnel *<input name="email" type="email" autocomplete="email" required maxlength="200"></label>
       <div class="two"><label>Ville / adresse<input name="shopCity" autocomplete="address-level2" maxlength="200"></label>
         <label>Pays *<select name="country" required><option value="FR">France</option><option value="BE">Belgique</option><option value="CH">Suisse</option><option value="LU">Luxembourg</option><option value="CA">Canada</option><option value="DE">Allemagne</option><option value="IT">Italie</option><option value="ES">Espagne</option><option value="NL">Pays-Bas</option><option value="GB">Royaume-Uni</option><option value="US">États-Unis</option><option value="JP">Japon</option></select></label></div>
-      <label>Formule envisagée<select name="shopKind"><option>Dépôt-vente</option><option>Achat ferme</option><option>À discuter</option></select></label>
+      <label id="kindBox">Formule envisagée (vente)<select name="shopKind"><option>Dépôt-vente</option><option>Achat ferme</option><option>À discuter</option></select></label>
+      <div class="two" id="locBox" hidden><label>Projet (location)<input name="projectType" maxlength="150" placeholder="Clip, concert, shooting, expo…"></label><label>Dates (location)<input name="dates" maxlength="200" placeholder="ex. 12-14 mars 2027"></label></div>
       <label>Message<textarea name="idea" maxlength="3000" placeholder="Tailles souhaitées, quantités, rééditions, délais, questions…"></textarea></label>
       <label>Site / Instagram de la boutique<input name="links" maxlength="800" placeholder="https://…"></label>
       <div class="trap" aria-hidden="true"><label>Ne pas remplir<input name="website" tabindex="-1" autocomplete="off"></label></div>
@@ -226,29 +239,34 @@ textarea{min-height:90px;resize:vertical}
   var ST = { dispo: 'Disponible', demande: 'Sur demande', boutique: 'Déjà en boutique', vendu: 'Vendue' };
   var SRANK = { dispo: 0, demande: 1, boutique: 2, vendu: 3 };
   var LINKS = [['site', 'Boutique en ligne'], ['portfolio', 'Portfolio'], ['instagram', 'Instagram'], ['youtube', 'YouTube']];
-  var KEY = 'vg-pro-selection';
+  var KEY = 'vg-pro-selection2';
+  var MODES = { vente: 'Vente', location: 'Location' };
+  var TERMS = { vente: 'Prix professionnels et conditions (dépôt-vente ou achat) communiqués sur demande. Chaque pièce est unique sauf mention « petite série ».', location: 'Location à la journée ou au projet (clips, scène, shootings, expositions). Tarif, caution et conditions communiqués sur demande selon le projet.' };
+  function hasOffer(it, m) { return String(it.offre || 'vente').split('+').indexOf(m) > -1; }
 
   var $ = function (id) { return document.getElementById(id); };
   function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
   function tier(n) { var h = '<span class="tier" aria-hidden="true">'; for (var i = 1; i <= 4; i++) h += '<i' + (i <= n ? ' class="f"' : '') + '></i>'; return h + '</span>'; }
   function isCover(src) { return /catalogue-pro\//.test(src) && !/vgtape-(sac|armes)|short-graffiti/.test(src); }
 
-  var data = null, items = [], byId = {}, sel = [], filt = { type: 'all', gamme: '', avail: false };
-  try { sel = JSON.parse(localStorage.getItem(KEY) || '[]') || []; } catch (e) { sel = []; }
+  var data = null, items = [], byId = {}, sel = [], filt = { type: 'all', gamme: '', avail: false, mode: /[?&]mode=location/.test(location.search) ? 'location' : 'vente' };
+  try { sel = (JSON.parse(localStorage.getItem(KEY) || '[]') || []).filter(function (x) { return x && x.id && MODES[x.m]; }); } catch (e) { sel = []; }
+  function selIdx(id, m) { for (var i = 0; i < sel.length; i++) if (sel[i].id === id && sel[i].m === (m || filt.mode)) return i; return -1; }
   function saveSel() { try { localStorage.setItem(KEY, JSON.stringify(sel)); } catch (e) {} }
 
   function toast(t) { var el = $('toast'); el.textContent = t; el.classList.add('show'); clearTimeout(toast.t); toast.t = setTimeout(function () { el.classList.remove('show'); }, 1800); }
 
   // ---------- Rendu ----------
   function selectable(it) { return it.statut !== 'boutique'; }
-  function selLabel(it) { return it.statut === 'vendu' ? 'Demander une réédition' : it.statut === 'demande' ? 'Demander' : 'Sélectionner'; }
-  function intentOf(it) { return it.statut === 'vendu' ? 'réédition' : it.statut === 'demande' ? 'sur demande' : 'disponible'; }
+  function selLabel(it) { return filt.mode === 'location' ? 'Ajouter (location)' : it.statut === 'vendu' ? 'Demander une réédition' : it.statut === 'demande' ? 'Demander' : 'Sélectionner'; }
+  function intentOf(it, m) { return m === 'location' ? 'location' : it.statut === 'vendu' ? 'réédition' : it.statut === 'demande' ? 'sur demande' : 'disponible'; }
+  function stLabel(it) { return filt.mode === 'location' && it.statut === 'dispo' ? 'Disponible à la location' : ST[it.statut] || it.statut; }
 
   function card(it) {
-    var p = it.photos || [], on = sel.indexOf(it.id) > -1, g = GAMMES[it.gamme] || {};
+    var p = it.photos || [], on = selIdx(it.id) > -1, g = GAMMES[it.gamme] || {};
     var img = function (ph, i) { return ph ? '<img src="' + esc(ph.s) + '" alt="' + (i ? '' : esc(it.nom)) + '" loading="lazy" decoding="async"' + (isCover(ph.s) ? ' class="cover"' : '') + '>' : ''; };
     return '<article class="card' + (on ? ' sel' : '') + (it.statut === 'vendu' || it.statut === 'boutique' ? ' dim' : '') + '" data-id="' + esc(it.id) + '">'
-      + '<span class="st ' + esc(it.statut) + '">' + esc(ST[it.statut] || it.statut) + '</span>'
+      + '<span class="st ' + esc(it.statut) + '">' + esc(stLabel(it)) + '</span>'
       + '<button type="button" class="ph" data-open="' + esc(it.id) + '" aria-label="Voir ' + esc(it.nom) + '">' + img(p[0], 0) + img(p[1], 1) + (p.length > 1 ? '<span class="n">' + p.length + ' photos</span>' : '') + '</button>'
       + '<div class="body"><div class="gtag">' + tier(g.t || 0) + esc(g.n || '') + '</div>'
       + '<h3 data-open="' + esc(it.id) + '">' + esc(it.nom) + '</h3>'
@@ -259,6 +277,8 @@ textarea{min-height:90px;resize:vertical}
   }
 
   function visible(it) {
+    if (!hasOffer(it, filt.mode)) return false;
+    if (filt.mode === 'location' && (it.statut === 'vendu' || it.statut === 'boutique')) return false;
     if (filt.gamme && it.gamme !== filt.gamme) return false;
     if (filt.avail && it.statut !== 'dispo' && it.statut !== 'demande') return false;
     return true;
@@ -278,7 +298,10 @@ textarea{min-height:90px;resize:vertical}
       var shop = list.filter(function (it) { return it.statut === 'boutique'; });
       var past = list.filter(function (it) { return it.statut === 'vendu'; });
       h += '<section class="sec" id="s-' + t[0] + '"><h2>' + esc(t[1]) + ' <small>' + list.length + '</small></h2>';
-      if (live.length) h += '<div class="grid">' + live.map(card).join('') + '</div>';
+      if (live.length && t[0] === 'ensembles') {
+        var cols = []; live.forEach(function (it) { var c = it.collection || 'Autres pièces'; if (cols.indexOf(c) < 0) cols.push(c); });
+        cols.forEach(function (c) { h += '<div class="sub mono">' + esc(c) + '</div><div class="grid">' + live.filter(function (it) { return (it.collection || 'Autres pièces') === c; }).map(card).join('') + '</div>'; });
+      } else if (live.length) h += '<div class="grid">' + live.map(card).join('') + '</div>';
       if (shop.length) h += '<div class="sub mono">Déjà placées en boutique</div><div class="grid">' + shop.map(card).join('') + '</div>';
       if (past.length) h += '<div class="sub mono">Déjà vendues — réédition possible sur demande</div><div class="grid">' + past.map(card).join('') + '</div>';
       h += '</section>';
@@ -287,34 +310,44 @@ textarea{min-height:90px;resize:vertical}
   }
 
   function renderChrome() {
+    if (filt.gamme && !items.some(function (it) { return it.gamme === filt.gamme && hasOffer(it, filt.mode); })) filt.gamme = '';
+    document.querySelectorAll('[data-mode]').forEach(function (b) { var on = b.getAttribute('data-mode') === filt.mode; b.classList.toggle('on', on); b.setAttribute('aria-selected', on); });
+    $('terms').textContent = TERMS[filt.mode];
     var counts = { all: 0 }; items.forEach(function (it) { if (visible(it)) { counts.all++; counts[it.type] = (counts[it.type] || 0) + 1; } });
     $('tabs').innerHTML = [['all', 'Tout']].concat(TYPES).filter(function (t) { return t[0] === 'all' || counts[t[0]]; }).map(function (t) {
       return '<button type="button" role="tab" class="tab' + (filt.type === t[0] ? ' on' : '') + '" data-tab="' + t[0] + '" aria-selected="' + (filt.type === t[0]) + '">' + esc(t[1].replace(' de collection', '')) + '<sup>' + (counts[t[0]] || 0) + '</sup></button>';
     }).join('');
+    var ng = GORDER.filter(function (k) { return items.some(function (it) { return it.gamme === k && hasOffer(it, filt.mode); }); }).length;
+    $('gammes').hidden = ng < 2;
     $('gammes').innerHTML = GORDER.map(function (k) {
-      var g = GAMMES[k], n = items.filter(function (it) { return it.gamme === k; }).length;
+      var g = GAMMES[k], n = items.filter(function (it) { return it.gamme === k && hasOffer(it, filt.mode); }).length;
       return n ? '<button type="button" class="gm' + (filt.gamme === k ? ' on' : '') + '" data-gamme="' + k + '" aria-pressed="' + (filt.gamme === k) + '">' + tier(g.t) + '<b>' + esc(g.n) + '</b><small>' + esc(g.d) + '</small></button>' : '';
     }).join('');
   }
 
   function renderCart() {
-    sel = sel.filter(function (id) { return byId[id] && selectable(byId[id]); });
+    sel = sel.filter(function (x) { return byId[x.id] && selectable(byId[x.id]) && hasOffer(byId[x.id], x.m); });
     var n = sel.length;
+    var hasLoc = sel.some(function (x) { return x.m === 'location'; }), hasV = sel.some(function (x) { return x.m === 'vente'; });
+    $('locBox').hidden = !hasLoc; $('kindBox').hidden = !hasV && hasLoc;
     $('cart').classList.toggle('show', n > 0 && !$('panel').classList.contains('show'));
     $('cartCount').textContent = n + ' pièce' + (n > 1 ? 's' : '');
-    $('cartThumbs').innerHTML = sel.slice(0, 4).map(function (id) { var p = byId[id].photos[0]; return p ? '<img src="' + esc(p.s) + '" alt="">' : ''; }).join('');
-    $('selList').innerHTML = n ? sel.map(function (id) {
-      var it = byId[id], p = it.photos[0];
-      return '<div class="li"><img src="' + esc(p ? p.s : '') + '" alt=""><div><b>' + esc(it.nom) + '</b><small>' + esc((GAMMES[it.gamme] || {}).n || '') + ' · ' + esc(ST[it.statut]) + (it.statut === 'vendu' ? ' (réédition)' : '') + '</small></div><button type="button" data-unsel="' + esc(id) + '">Retirer</button></div>';
-    }).join('') : '<p class="note">Aucune pièce sélectionnée. Cliquez sur « Sélectionner » sous les pièces qui vous intéressent.</p>';
+    $('cartThumbs').innerHTML = sel.slice(0, 4).map(function (x) { var p = byId[x.id].photos[0]; return p ? '<img src="' + esc(p.s) + '" alt="">' : ''; }).join('');
+    var line = function (x) {
+      var it = byId[x.id], p = it.photos[0];
+      return '<div class="li"><img src="' + esc(p ? p.s : '') + '" alt=""><div><b>' + esc(it.nom) + '</b><small>' + esc((GAMMES[it.gamme] || {}).n || '') + ' · ' + (x.m === 'location' ? 'Location' : esc(ST[it.statut]) + (it.statut === 'vendu' ? ' (réédition)' : '')) + '</small></div><button type="button" data-unsel="' + esc(x.id) + '" data-m="' + x.m + '">Retirer</button></div>';
+    };
+    var gv = sel.filter(function (x) { return x.m === 'vente'; }), gl = sel.filter(function (x) { return x.m === 'location'; });
+    $('selList').innerHTML = n ? (gv.length ? (gl.length ? '<p class="grp">Vente / dépôt-vente</p>' : '') + gv.map(line).join('') : '') + (gl.length ? (gv.length ? '<p class="grp">Location</p>' : '') + gl.map(line).join('') : '') : '<p class="note">Aucune pièce sélectionnée. Cliquez sur « Sélectionner » sous les pièces qui vous intéressent.</p>';
   }
 
-  function toggleSel(id) {
-    var i = sel.indexOf(id);
-    if (i > -1) sel.splice(i, 1); else { sel.push(id); toast('Ajoutée à votre sélection'); }
+  function toggleSel(id, m) {
+    m = m || filt.mode;
+    var i = selIdx(id, m);
+    if (i > -1) sel.splice(i, 1); else { sel.push({ id: id, m: m }); toast(m === 'location' ? 'Ajoutée à votre sélection (location)' : 'Ajoutée à votre sélection'); }
     saveSel(); renderCart();
     document.querySelectorAll('.card[data-id="' + CSS.escape(id) + '"]').forEach(function (c) {
-      var on = sel.indexOf(id) > -1, b = c.querySelector('[data-sel]');
+      var on = selIdx(id) > -1, b = c.querySelector('[data-sel]');
       c.classList.toggle('sel', on); if (b) { b.classList.toggle('on', on); b.textContent = on ? '✓ Sélectionnée' : selLabel(byId[id]); }
     });
     if (cur && cur.id === id) paintInfoBtn();
@@ -330,18 +363,18 @@ textarea{min-height:90px;resize:vertical}
     var ext = '';
     if (cur.lien) ext += '<a href="' + esc(cur.lien) + '" target="_blank" rel="noopener">▶ Voir portée (Instagram)</a>';
     if (cur.page && cur.statut === 'dispo') ext += '<a href="' + esc(cur.page) + '" target="_blank" rel="noopener">Fiche sur le site</a>';
-    if (cur.collection === 'VGTAPE') ext += '<a href="https://www.youtube.com/@vgthmind/videos" target="_blank" rel="noopener">Clips VGTAPE (YouTube)</a>';
+    if (/^VGTAPE/.test(cur.collection || '')) ext += '<a href="https://www.youtube.com/@vgthmind/videos" target="_blank" rel="noopener">Clips VGTAPE (YouTube)</a>';
     ov.innerHTML = '<div class="dlg"><div class="gal"><div class="main" id="gmain"></div>'
       + (p.length > 1 ? '<button type="button" class="nav p" data-nav="-1" aria-label="Photo précédente">‹</button><button type="button" class="nav n" data-nav="1" aria-label="Photo suivante">›</button>' : '')
       + (p.length > 1 ? '<div class="thumbs">' + p.map(function (ph, i) { return '<button type="button" data-go="' + i + '" aria-label="Photo ' + (i + 1) + '"><img src="' + esc(ph.s) + '" alt="" loading="lazy"></button>'; }).join('') + '</div>' : '')
       + '</div><div class="info"><button type="button" class="x" data-close aria-label="Fermer">×</button>'
-      + '<div class="row"><span class="st ' + esc(cur.statut) + '">' + esc(ST[cur.statut]) + '</span><span class="gtag">' + tier(g.t || 0) + esc(g.n || '') + '</span></div>'
+      + '<div class="row"><span class="st ' + esc(cur.statut) + '">' + esc(stLabel(cur)) + '</span><span class="gtag">' + tier(g.t || 0) + esc(g.n || '') + '</span></div>'
       + '<h2>' + esc(cur.nom) + '</h2>'
       + (cur.description ? '<p class="desc">' + esc(cur.description) + '</p>' : '')
       + (rows.length ? '<dl>' + rows.map(function (r) { return '<dt>' + esc(r[0]) + '</dt><dd>' + esc(r[1]) + '</dd>'; }).join('') + '</dl>' : '')
       + (ext ? '<div class="ext">' + ext + '</div>' : '')
       + '<div id="infoBtn"></div>'
-      + '<p class="note">Prix professionnel et conditions sur demande.' + (cur.statut === 'vendu' ? ' Cette pièce est vendue : elle peut être refaite dans le même esprit (chaque pièce reste unique).' : '') + '</p>'
+      + '<p class="note">' + (filt.mode === 'location' ? 'Tarif de location, caution et conditions sur demande.' : 'Prix professionnel et conditions sur demande.' + (hasOffer(cur, 'location') ? ' Aussi disponible en location.' : '')) + (filt.mode === 'vente' && cur.statut === 'vendu' ? ' Cette pièce est vendue : elle peut être refaite dans le même esprit (chaque pièce reste unique).' : '') + '</p>'
       + '</div></div>';
     document.body.appendChild(ov); document.body.style.overflow = 'hidden';
     requestAnimationFrame(function () { ov.classList.add('show'); });
@@ -351,7 +384,7 @@ textarea{min-height:90px;resize:vertical}
   }
   function paintInfoBtn() {
     var b = ov && ov.querySelector('#infoBtn'); if (!b) return;
-    var on = sel.indexOf(cur.id) > -1;
+    var on = selIdx(cur.id) > -1;
     b.innerHTML = selectable(cur) ? '<button type="button" class="btn' + (on ? ' on' : '') + '" data-sel="' + esc(cur.id) + '" style="width:100%">' + (on ? '✓ Dans ma sélection' : esc(selLabel(cur))) + '</button>' : '<p class="note">Pièce actuellement en boutique' + (cur.lieu ? ' (' + esc(cur.lieu) + ')' : '') + '.</p>';
   }
   function show(i) {
@@ -371,10 +404,11 @@ textarea{min-height:90px;resize:vertical}
 
   // ---------- Événements ----------
   document.addEventListener('click', function (e) {
-    var t = e.target.closest('[data-sel],[data-open],[data-tab],[data-gamme],[data-nav],[data-go],[data-close],[data-unsel]');
+    var t = e.target.closest('[data-sel],[data-open],[data-tab],[data-gamme],[data-nav],[data-go],[data-close],[data-unsel],[data-mode]');
     if (!t) { if (ov && e.target === ov) closeItem(); return; }
     if (t.hasAttribute('data-sel')) return toggleSel(t.getAttribute('data-sel'));
-    if (t.hasAttribute('data-unsel')) return toggleSel(t.getAttribute('data-unsel'));
+    if (t.hasAttribute('data-unsel')) return toggleSel(t.getAttribute('data-unsel'), t.getAttribute('data-m'));
+    if (t.hasAttribute('data-mode')) { filt.mode = t.getAttribute('data-mode'); filt.type = 'all'; try { history.replaceState(null, '', filt.mode === 'location' ? '?mode=location' : location.pathname); } catch (er) {} renderChrome(); render(); return; }
     if (t.hasAttribute('data-open')) return openItem(t.getAttribute('data-open'));
     if (t.hasAttribute('data-nav')) return show(idx + (+t.getAttribute('data-nav')));
     if (t.hasAttribute('data-go')) return show(+t.getAttribute('data-go'));
@@ -409,8 +443,8 @@ textarea{min-height:90px;resize:vertical}
     ['shop', 'firstName', 'lastName', 'email'].forEach(function (k) { var ok = k === 'email' ? /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(f[k].value.trim()) : !!f[k].value.trim(); f[k].classList.toggle('bad', !ok); if (!ok) bad.push(k); });
     if (!sel.length) return msg('Votre sélection est vide.', true);
     if (bad.length) return msg('Merci de compléter les champs en rouge.', true);
-    var selection = sel.map(function (id, i) { var it = byId[id]; return (i + 1) + '. ' + it.nom + ' [' + id + '] — ' + ((GAMMES[it.gamme] || {}).n || '') + ' — ' + intentOf(it); }).join('\n');
-    var body = { type: 'boutique', lang: 'fr', t: Date.now() - t0, website: f.website.value, shop: f.shop.value.trim(), firstName: f.firstName.value.trim(), lastName: f.lastName.value.trim(), email: f.email.value.trim(), country: f.country.value, shopCity: f.shopCity.value.trim(), shopKind: f.shopKind.value, idea: f.idea.value.trim(), links: f.links.value.trim(), selection: selection };
+    var selection = sel.map(function (x, i) { var it = byId[x.id]; return (i + 1) + '. ' + (x.m === 'location' ? '[LOCATION] ' : '[VENTE] ') + it.nom + ' [' + x.id + '] — ' + ((GAMMES[it.gamme] || {}).n || '') + ' — ' + intentOf(it, x.m); }).join('\n');
+    var body = { type: 'boutique', lang: 'fr', t: Date.now() - t0, website: f.website.value, shop: f.shop.value.trim(), firstName: f.firstName.value.trim(), lastName: f.lastName.value.trim(), email: f.email.value.trim(), country: f.country.value, shopCity: f.shopCity.value.trim(), shopKind: $('kindBox').hidden ? '' : f.shopKind.value, projectType: $('locBox').hidden ? '' : f.projectType.value.trim(), dates: $('locBox').hidden ? '' : f.dates.value.trim(), idea: f.idea.value.trim(), links: f.links.value.trim(), selection: selection };
     var btn = $('send'); btn.disabled = true; btn.textContent = 'Envoi…'; msg('');
     (window.vgTurnstile ? window.vgTurnstile.token() : Promise.resolve('')).then(function (tok) {
       body.cf = tok;
@@ -423,7 +457,7 @@ textarea{min-height:90px;resize:vertical}
       return fetch(EP + '/requests/confirm', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: res.j.id, k: res.j.k }) }).catch(function () {}).then(function () { return res.j.id; });
     }).then(function (id) {
       sel = []; saveSel();
-      document.querySelectorAll('.card.sel').forEach(function (c) { c.classList.remove('sel'); var b = c.querySelector('[data-sel]'); if (b) { b.classList.remove('on'); b.textContent = selLabel(byId[c.getAttribute('data-id')]); } });
+      render();
       $('selList').innerHTML = ''; f.idea.value = '';
       $('form').hidden = true;
       var d = document.createElement('div'); d.className = 'done';

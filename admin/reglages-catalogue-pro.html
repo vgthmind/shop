@@ -24,7 +24,7 @@
     input, select, textarea { font: inherit; font-size: 15px; border: 1px solid rgba(0,0,0,.2); border-radius: 8px; padding: 7px 9px; background: #fff; width: 100%; }
     textarea { min-height: 70px; }
     label { display: grid; gap: 4px; font-size: 13px; color: var(--muted); }
-    .row { display: grid; grid-template-columns: 64px 1fr 170px 190px; gap: 10px; align-items: center; padding: 8px 0; border-top: 1px solid var(--line); }
+    .row { display: grid; grid-template-columns: 64px 1fr 150px 150px 170px; gap: 10px; align-items: center; padding: 8px 0; border-top: 1px solid var(--line); }
     .row:first-child { border-top: 0; }
     .row img, .ph img { width: 64px; height: 78px; object-fit: contain; background: #fff; border-radius: 8px; border: 1px solid var(--line); }
     .row .lieu { grid-column: 2 / -1; }
@@ -65,7 +65,7 @@
     <div class="card"><label>Présentation en haut du catalogue<textarea id="intro" data-k="intro"></textarea></label></div>
 
     <h2>Pièces du site</h2>
-    <p class="muted">Pièce masquée sur le site parce qu'elle est en dépôt : choisis « En boutique » (elle reste visible dans le catalogue, non sélectionnable). « Masquer du catalogue » la retire du catalogue seulement.</p>
+    <p class="muted">« Vente / location » : où la pièce apparaît dans le catalogue (onglet Vente, onglet Location, ou les deux). Pièce masquée sur le site parce qu'elle est en dépôt : choisis « En boutique » (elle reste visible dans le catalogue, non sélectionnable). « Masquer du catalogue » la retire du catalogue seulement.</p>
     <div class="card" id="site"></div>
 
     <h2>Pièces hors site</h2>
@@ -85,6 +85,7 @@
   var FILE = 'data/catalogue-pro.json', DIR = 'assets/catalogue-pro', PDIR = 'data/products', BRANCH = 'main';
   var TYPES = [['ensembles', 'Ensemble'], ['hauts', 'Haut'], ['bas', 'Bas'], ['accessoires', 'Accessoire'], ['musique', 'Musique / merch'], ['surmesure', 'Sur-mesure / scène']];
   var GAMMES = [['collection', 'Pièce de collection'], ['couture-peinture', 'Couture + peinture'], ['couture', 'Couture'], ['custom', 'Custom / upcycling'], ['serie', 'Petite série']];
+  var OFFRES = [['vente', 'Vente'], ['location', 'Location'], ['vente+location', 'Vente + location']];
   var STATUTS = [['dispo', 'Disponible'], ['demande', 'Sur demande'], ['boutique', 'En boutique'], ['vendu', 'Vendue (réédition possible)']];
   var $ = function (id) { return document.getElementById(id); };
   function esc(s) { return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
@@ -124,6 +125,7 @@
       return '<div class="row" data-slug="' + esc(p.slug) + '"><img src="' + esc(img) + '" alt="" loading="lazy">'
         + '<div><strong>' + esc(p.name) + '</strong><br><span class="tag">' + (p.hidden ? 'masquée sur le site' : (p.quantity === 0 ? 'vendue' : 'en ligne')) + '</span></div>'
         + '<select data-o="gamme" aria-label="Gamme">' + opts(GAMMES, o.gamme || ((p.categories || []).indexOf('customsupcycling') > -1 ? 'custom' : 'couture')) + '</select>'
+        + '<select data-o="offre" aria-label="Vente ou location">' + opts(OFFRES, o.offre || 'vente') + '</select>'
         + '<select data-o="statut" aria-label="Statut dans le catalogue">' + opts([['auto', 'Statut du site (auto)'], ['boutique', 'En boutique'], ['masquer', 'Masquer du catalogue']], st) + '</select>'
         + '<input class="lieu" data-o="lieu" placeholder="Boutique (ex. Bobby — Paris 2e)" value="' + esc(o.lieu || '') + '"' + (st === 'boutique' ? '' : ' hidden') + '>'
         + '</div>';
@@ -133,6 +135,7 @@
     var row = e.target.closest && e.target.closest('.row[data-slug]'); if (!row) return;
     var s = row.getAttribute('data-slug'), o = cfg.overrides[s] = cfg.overrides[s] || {}, k = e.target.getAttribute('data-o');
     if (k === 'gamme') o.gamme = e.target.value;
+    if (k === 'offre') { if (e.target.value === 'vente') delete o.offre; else o.offre = e.target.value; }
     if (k === 'statut') {
       delete o.masquer; if (o.statut === 'boutique') delete o.statut;
       if (e.target.value === 'boutique') o.statut = 'boutique';
@@ -158,8 +161,9 @@
       var ph = x.photos || [];
       return '<details class="extra" data-i="' + i + '"' + (x._open ? ' open' : '') + '><summary><img src="' + esc(ph[0] ? ph[0].replace(/\.webp$/, '-s.webp') : '') + '" alt=""><b>' + esc(x.nom || '(sans nom)') + '</b><span class="tag">' + esc((STATUTS.find(function (s) { return s[0] === x.statut; }) || [0, ''])[1]) + '</span></summary><div class="in">'
         + '<div class="grid2"><label>Nom<input data-f="nom" value="' + esc(x.nom) + '"></label><label>Lien Instagram / vidéo (portée)<input data-f="lien" value="' + esc(x.lien) + '" placeholder="https://www.instagram.com/…"></label></div>'
-        + '<div class="grid4"><label>Type<select data-f="type">' + opts(TYPES, x.type) + '</select></label><label>Gamme<select data-f="gamme">' + opts(GAMMES, x.gamme) + '</select></label><label>Statut<select data-f="statut">' + opts(STATUTS, x.statut) + '</select></label><label>Année<input data-f="annee" value="' + esc(x.annee) + '"></label></div>'
-        + '<div class="grid4"><label>Collection<input data-f="collection" value="' + esc(x.collection) + '"></label><label>Tailles<input data-f="tailles" value="' + esc(x.tailles) + '" placeholder="ex. M/L"></label><label>Composition<input data-f="compo" value="' + esc(x.compo) + '" placeholder="ex. 100% coton"></label><label>Boutique (si en boutique)<input data-f="lieu" value="' + esc(x.lieu) + '"></label></div>'
+        + '<div class="grid4"><label>Type<select data-f="type">' + opts(TYPES, x.type) + '</select></label><label>Gamme<select data-f="gamme">' + opts(GAMMES, x.gamme) + '</select></label><label>Statut<select data-f="statut">' + opts(STATUTS, x.statut) + '</select></label><label>Vente / location<select data-f="offre">' + opts(OFFRES, x.offre || 'vente') + '</select></label></div>'
+        + '<div class="grid4"><label>Année<input data-f="annee" value="' + esc(x.annee) + '"></label>'
+        + '<label>Collection<input data-f="collection" value="' + esc(x.collection) + '"></label><label>Tailles<input data-f="tailles" value="' + esc(x.tailles) + '" placeholder="ex. M/L"></label><label>Composition<input data-f="compo" value="' + esc(x.compo) + '" placeholder="ex. 100% coton"></label></div><label>Boutique (si en boutique)<input data-f="lieu" value="' + esc(x.lieu) + '"></label>'
         + '<label>Description<textarea data-f="description">' + esc(x.description) + '</textarea></label>'
         + '<div><span class="muted">Photos (la 1re est la couverture)</span><div class="ph">' + ph.map(function (p, j) { return '<figure><img src="' + esc(p.replace(/\.webp$/, '-s.webp')) + '" alt=""><span>' + (j ? '<button type="button" class="ghost" data-first="' + j + '">1re</button> ' : '') + '<button type="button" class="ghost" data-rmph="' + j + '">×</button></span></figure>'; }).join('')
         + '<label style="align-self:center"><input type="file" accept="image/*" multiple data-up></label></div></div>'
@@ -182,7 +186,7 @@
   });
   document.addEventListener('error', function (e) { if (e.target && e.target.tagName === 'IMG') e.target.style.visibility = 'hidden'; }, true);
   $('add').addEventListener('click', function () {
-    cfg.extras.unshift({ id: 'piece-' + Date.now().toString(36), nom: '', type: 'ensembles', gamme: 'collection', statut: 'dispo', photos: [], description: '', annee: String(new Date().getFullYear()), collection: '', lien: '', tailles: '', compo: '', _open: true });
+    cfg.extras.unshift({ id: 'piece-' + Date.now().toString(36), nom: '', type: 'ensembles', gamme: 'collection', statut: 'dispo', offre: 'vente', photos: [], description: '', annee: String(new Date().getFullYear()), collection: '', lien: '', tailles: '', compo: '', _open: true });
     renderExtras(); setDirty(true); var f = document.querySelector('.extra[data-i="0"] [data-f="nom"]'); if (f) f.focus();
   });
 

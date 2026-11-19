@@ -17,6 +17,7 @@ test('catalogue pro : pièces du site + hors site, statuts et gammes', () => {
     assert.ok(['collection', 'couture-peinture', 'couture', 'custom', 'serie'].includes(it.gamme), it.id + ' gamme');
     assert.ok(['dispo', 'demande', 'boutique', 'vendu'].includes(it.statut), it.id + ' statut');
     assert.ok(it.photos.length > 0, it.id + ' photo');
+    assert.ok(['vente', 'location', 'vente+location'].includes(it.offre), it.id + ' offre');
   }
   assert.ok(!ids.includes('test') && !ids.includes('test1e'), 'pièces de test exclues');
   const cfg = require('../data/catalogue-pro.json');
@@ -36,5 +37,5 @@ test('demande « boutique » : boutique et sélection obligatoires', async () =>
   const bad = core.parseSubmission({ type: 'boutique', firstName: 'A', lastName: 'B', email: 'a@b.fr', country: 'FR' });
   assert.equal(bad.ok, false);
   assert.ok(bad.fields.includes('shop') && bad.fields.includes('selection'));
-  assert.equal(core.TYPE_LABELS.boutique, 'Boutique · Sélection catalogue pro');
+  assert.equal(core.TYPE_LABELS.boutique, 'Pro · Sélection catalogue (vente / location)');
 });

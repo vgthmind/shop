@@ -7,7 +7,7 @@
 export const TYPES = ['custom', 'surmesure', 'production', 'collab', 'boutique'] as const;
 export type ReqType = (typeof TYPES)[number];
 export const PAID_TYPES: string[] = ['custom', 'surmesure']; // devis + acompte + solde par Stripe ; le reste : réponse à la main
-export const TYPE_LABELS: Record<string, string> = { custom: 'Pièce pour moi · Custom', surmesure: 'Pièce pour moi · Sur-mesure', production: 'Production visuelle', collab: 'Collab', boutique: 'Boutique · Sélection catalogue pro' };
+export const TYPE_LABELS: Record<string, string> = { custom: 'Pièce pour moi · Custom', surmesure: 'Pièce pour moi · Sur-mesure', production: 'Production visuelle', collab: 'Collab', boutique: 'Pro · Sélection catalogue (vente / location)' };
 export const BRANCH: Record<string, string> = { custom: 'piece', surmesure: 'piece', production: 'production', collab: 'collab', boutique: 'boutique' };
 
 // Libellés des réponses (admin, mails) : clé du champ -> [FR, EN].
@@ -18,7 +18,7 @@ export const FIELD_LABELS: Record<string, [string, string]> = {
   deadline: ['Date souhaitée', 'Wanted by'], prodKind: ['Besoin', 'Need'], projectType: ['Type de projet', 'Project type'],
   dates: ['Dates', 'Dates'], place: ['Lieu', 'Location'], count: ['Nombre de pièces', 'Number of pieces'], artist: ['Artiste (nom ou lien)', 'Artist (name or link)'],
   collabType: ['Type de collab', 'Collab type'], links: ['Liens (chaîne, réseaux)', 'Links (channel, socials)'], link: ['Lien vers des fichiers', 'Link to files'],
-  shop: ['Boutique', 'Shop'], shopCity: ['Ville / adresse', 'City / address'], shopKind: ['Formule souhaitée', 'Preferred terms'], selection: ['Pièces sélectionnées', 'Selected pieces'],
+  shop: ['Boutique / société / artiste', 'Shop / company / artist'], shopCity: ['Ville / adresse', 'City / address'], shopKind: ['Formule souhaitée', 'Preferred terms'], selection: ['Pièces sélectionnées', 'Selected pieces'],
 };
 export const CHOICE_LABELS: Record<string, [string, string]> = {
   know: ['Je sais ce que je veux', 'I know what I want'], guide: ['J’ai une envie, guide-moi', 'I have an idea, guide me'],
@@ -36,7 +36,7 @@ export const FIELDS_BY_TYPE: Record<string, string[]> = {
   surmesure: ['piece', 'paint', 'mode', 'idea', 'mood', 'colors', 'refs', 'measures', 'budget', 'deadline', 'link'],
   production: ['prodKind', 'projectType', 'dates', 'deadline', 'place', 'count', 'artist', 'budget', 'idea', 'refs', 'link'],
   collab: ['collabType', 'links', 'idea', 'refs', 'link'],
-  boutique: ['shop', 'shopCity', 'shopKind', 'selection', 'idea', 'links'],
+  boutique: ['shop', 'shopCity', 'shopKind', 'selection', 'projectType', 'dates', 'idea', 'links'],
 };
 
 // Statuts (ordre d'affichage dans l'admin). « brouillon » : formulaire reçu, fichiers en cours d'envoi.

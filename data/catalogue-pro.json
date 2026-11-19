@@ -1,6 +1,6 @@
 {
  "_note": "Catalogue pro (vgthmind.org/pro/). Modifié depuis l'admin : Réglages > Catalogue pro. Les pièces du site sont reprises automatiquement ; « overrides » = gamme/statut propres au catalogue ; « extras » = pièces hors site (collections, archives, sur-mesure).",
- "intro": "Pièces uniques et petites séries, conçues et fabriquées à la main à Vitry-sur-Seine : patronage, couture, aérographe, upcycling. Dépôt-vente ou achat : sélectionnez les pièces qui vous intéressent et envoyez-moi votre sélection.",
+ "intro": "Pièces uniques et petites séries, conçues et fabriquées à la main à Vitry-sur-Seine : patronage, couture, aérographe, upcycling. Vente et dépôt-vente pour les boutiques, location des pièces de collection pour les clips, la scène et les shootings.",
  "liens": {
   "portfolio": "https://vgthmind.github.io/",
   "instagram": "https://www.instagram.com/vgthmind/",
@@ -57,7 +57,12 @@
    "gamme": "couture-peinture"
   },
   "gp_0002": {
-   "gamme": "collection"
+   "gamme": "collection",
+   "offre": "vente+location",
+   "collection": "VGTHM (collection 02)",
+   "annee": "2023",
+   "nom": "VGTHM · Pantalon GP_0002 — satin duchesse à pics",
+   "position": 16
   },
   "pantalon-dd001": {
    "gamme": "couture"
@@ -108,103 +113,115 @@
  "extras": [
   {
    "id": "vgtape-sa001",
-   "nom": "SA001 — ensemble technique argent",
+   "nom": "VGTAPE · SA001 — Ensemble technique argent",
    "type": "ensembles",
    "gamme": "collection",
    "statut": "dispo",
    "photos": [
     "/assets/catalogue-pro/vgtape-sa001/0.webp"
    ],
-   "description": "Ensemble technique imperméable argent : veste technique à empiècements + jogging coupe droite.\nCollection VGTAPE — une tenue par clip de la mixtape (mai 2025). Pièces vendables seules ou en ensemble.",
+   "description": "Ensemble technique imperméable argent : veste technique à empiècements + jogging coupe droite.\nCollection VGTAPE — une tenue par clip de la mixtape (mai 2025). Selon les pièces : à la vente (seules ou en ensemble) et/ou en location pour clips, scène, shootings.",
    "annee": "2025",
-   "collection": "VGTAPE",
+   "collection": "VGTAPE (collection 03)",
    "lien": "https://www.instagram.com/reel/DL7q9b4oagv/",
    "tailles": "",
-   "compo": ""
+   "compo": "",
+   "offre": "vente+location",
+   "position": 2
   },
   {
    "id": "vgtape-gc001",
-   "nom": "GC001 — ensemble noir ghillie",
+   "nom": "VGTAPE · GC001 — Ensemble noir ghillie",
    "type": "ensembles",
    "gamme": "collection",
    "statut": "dispo",
    "photos": [
     "/assets/catalogue-pro/vgtape-gc001/0.webp"
    ],
-   "description": "Longsleeve noir texturé semi-transparent, veste en cuir découpée à zip torsadé (plusieurs nuances de noir), jogging ghillie coupe droite noir.\nCollection VGTAPE — une tenue par clip de la mixtape (mai 2025). Pièces vendables seules ou en ensemble.",
+   "description": "Longsleeve noir texturé semi-transparent, veste en cuir découpée à zip torsadé (plusieurs nuances de noir), jogging ghillie coupe droite noir.\nCollection VGTAPE — une tenue par clip de la mixtape (mai 2025). Selon les pièces : à la vente (seules ou en ensemble) et/ou en location pour clips, scène, shootings.",
    "annee": "2025",
-   "collection": "VGTAPE",
+   "collection": "VGTAPE (collection 03)",
    "lien": "https://www.instagram.com/reel/DL-Pti1ILMK/",
    "tailles": "",
-   "compo": ""
+   "compo": "",
+   "offre": "vente+location",
+   "position": 3
   },
   {
    "id": "vgtape-bp001",
-   "nom": "BP001 — ensemble nylon bleu",
+   "nom": "VGTAPE · BP001 — Ensemble nylon bleu",
    "type": "ensembles",
    "gamme": "collection",
    "statut": "dispo",
    "photos": [
     "/assets/catalogue-pro/vgtape-bp001/0.webp"
    ],
-   "description": "Ensemble en nylon bleu : doudoune surpiquée + jogging coupe droite.\nCollection VGTAPE — une tenue par clip de la mixtape (mai 2025). Pièces vendables seules ou en ensemble.",
+   "description": "Ensemble en nylon bleu : doudoune surpiquée + jogging coupe droite.\nCollection VGTAPE — une tenue par clip de la mixtape (mai 2025). Selon les pièces : à la vente (seules ou en ensemble) et/ou en location pour clips, scène, shootings.",
    "annee": "2025",
-   "collection": "VGTAPE",
+   "collection": "VGTAPE (collection 03)",
    "lien": "https://www.instagram.com/reel/DL5GL8qI5HP/",
    "tailles": "",
-   "compo": ""
+   "compo": "",
+   "offre": "vente+location",
+   "position": 4
   },
   {
    "id": "vgtape-01",
-   "nom": "VGTAPE — tenue 01",
+   "nom": "VGTAPE · Tenue 01 — Gilet gris à capuche",
    "type": "ensembles",
    "gamme": "collection",
    "statut": "dispo",
    "photos": [
     "/assets/catalogue-pro/vgtape-01/0.webp"
    ],
-   "description": "Gilet sans manches gris à capuche et zip apparent, pantalon assorti.\nCollection VGTAPE — une tenue par clip de la mixtape (mai 2025). Pièces vendables seules ou en ensemble.",
+   "description": "Gilet sans manches gris à capuche et zip apparent, pantalon assorti.\nCollection VGTAPE — une tenue par clip de la mixtape (mai 2025). Selon les pièces : à la vente (seules ou en ensemble) et/ou en location pour clips, scène, shootings.",
    "annee": "2025",
-   "collection": "VGTAPE",
+   "collection": "VGTAPE (collection 03)",
    "lien": "",
    "tailles": "",
-   "compo": ""
+   "compo": "",
+   "offre": "vente+location",
+   "position": 1
   },
   {
    "id": "vgtape-05",
-   "nom": "VGTAPE — tenue 05",
+   "nom": "VGTAPE · Tenue 05 — Veste noire effet cuir",
    "type": "ensembles",
    "gamme": "collection",
    "statut": "dispo",
    "photos": [
     "/assets/catalogue-pro/vgtape-05/0.webp"
    ],
-   "description": "Veste noire ajustée effet cuir à capuche, pantalon large noir.\nCollection VGTAPE — une tenue par clip de la mixtape (mai 2025). Pièces vendables seules ou en ensemble.",
+   "description": "Veste noire ajustée effet cuir à capuche, pantalon large noir.\nCollection VGTAPE — une tenue par clip de la mixtape (mai 2025). Selon les pièces : à la vente (seules ou en ensemble) et/ou en location pour clips, scène, shootings.",
    "annee": "2025",
-   "collection": "VGTAPE",
+   "collection": "VGTAPE (collection 03)",
    "lien": "",
    "tailles": "",
-   "compo": ""
+   "compo": "",
+   "offre": "vente+location",
+   "position": 5
   },
   {
    "id": "vgtape-06",
-   "nom": "VGTAPE — tenue 06",
+   "nom": "VGTAPE · Tenue 06 — Ensemble ghillie camouflage",
    "type": "ensembles",
    "gamme": "collection",
    "statut": "dispo",
    "photos": [
     "/assets/catalogue-pro/vgtape-06/0.webp"
    ],
-   "description": "Ensemble à franges/découpes façon ghillie, motif camouflage noir et gris.\nCollection VGTAPE — une tenue par clip de la mixtape (mai 2025). Pièces vendables seules ou en ensemble.",
+   "description": "Ensemble à franges/découpes façon ghillie, motif camouflage noir et gris.\nCollection VGTAPE — une tenue par clip de la mixtape (mai 2025). Selon les pièces : à la vente (seules ou en ensemble) et/ou en location pour clips, scène, shootings.",
    "annee": "2025",
-   "collection": "VGTAPE",
+   "collection": "VGTAPE (collection 03)",
    "lien": "",
    "tailles": "",
-   "compo": ""
+   "compo": "",
+   "offre": "vente+location",
+   "position": 6
   },
   {
    "id": "vgtape-sac",
-   "nom": "Sac à dos créature — VGTAPE",
+   "nom": "VGTAPE · Sac à dos créature",
    "type": "accessoires",
    "gamme": "collection",
    "statut": "dispo",
@@ -213,17 +230,19 @@
    ],
    "description": "Sac à dos mi-créature mi-accessoire, patronné comme un vêtement. Pièce de scène de la collection VGTAPE.",
    "annee": "2025",
-   "collection": "VGTAPE",
+   "collection": "VGTAPE (collection 03)",
    "lien": "",
    "tailles": "",
-   "compo": ""
+   "compo": "",
+   "offre": "vente+location",
+   "position": 7
   },
   {
    "id": "vgtape-armes",
-   "nom": "Armes en tissu — VGTAPE",
+   "nom": "VGTAPE · Armes de scène en tissu (×5)",
    "type": "accessoires",
    "gamme": "collection",
-   "statut": "demande",
+   "statut": "dispo",
    "photos": [
     "/assets/catalogue-pro/vgtape-armes/0.webp",
     "/assets/catalogue-pro/vgtape-armes/1.webp",
@@ -231,189 +250,213 @@
     "/assets/catalogue-pro/vgtape-armes/3.webp",
     "/assets/catalogue-pro/vgtape-armes/4.webp"
    ],
-   "description": "Série de 5 accessoires de scène en tissu rembourré (lance-roquette, fusils…), avec chaîne. Vente, location ou exposition sur demande.",
+   "description": "Série de 5 accessoires de scène en tissu rembourré (lance-roquette, fusils…), avec chaîne. À la vente ou en location (clips, scène, expositions).",
    "annee": "2025",
-   "collection": "VGTAPE",
+   "collection": "VGTAPE (collection 03)",
    "lien": "",
    "tailles": "",
-   "compo": ""
+   "compo": "",
+   "offre": "vente+location",
+   "position": 8
   },
   {
    "id": "vgthm-01",
-   "nom": "VGTHM — tenue 01",
+   "nom": "VGTHM · Tenue 01 — Hoodie gris à ailerons, pantalon à franges",
    "type": "ensembles",
    "gamme": "collection",
-   "statut": "demande",
+   "statut": "dispo",
    "photos": [
     "/assets/catalogue-pro/vgthm-01/0.webp",
     "/assets/catalogue-pro/vgthm-01/1.webp"
    ],
-   "description": "Hoodie gris à ailerons et zip apparent, pantalon large à longues franges noires.\nCollection VGTHM (mai 2023) : 5 tenues de même silhouette, chacune travaillée dans une matière et une texture différentes.",
+   "description": "Hoodie gris à ailerons et zip apparent, pantalon large à longues franges noires.\nCollection VGTHM (mai 2023) : 5 tenues de même silhouette, chacune travaillée dans une matière et une texture différentes.\nPièce d'archive, disponible en location uniquement (clips, scène, shootings, expositions).",
    "annee": "2023",
-   "collection": "VGTHM",
+   "collection": "VGTHM (collection 02)",
    "lien": "https://www.instagram.com/reel/CsyvGjlIaY2/",
    "tailles": "",
-   "compo": ""
+   "compo": "",
+   "offre": "location",
+   "position": 11
   },
   {
    "id": "vgthm-02",
-   "nom": "VGTHM — tenue 02",
+   "nom": "VGTHM · Tenue 02 — Haut tissé à franges, pantalon satin à pics",
    "type": "ensembles",
    "gamme": "collection",
-   "statut": "demande",
+   "statut": "dispo",
    "photos": [
     "/assets/catalogue-pro/vgthm-02/0.webp"
    ],
-   "description": "Haut en tissage déstructuré à franges, pantalon large noir satiné à pics.\nCollection VGTHM (mai 2023) : 5 tenues de même silhouette, chacune travaillée dans une matière et une texture différentes.",
+   "description": "Haut en tissage déstructuré à franges, pantalon large noir satiné à pics.\nCollection VGTHM (mai 2023) : 5 tenues de même silhouette, chacune travaillée dans une matière et une texture différentes.\nPièce d'archive, disponible en location uniquement (clips, scène, shootings, expositions).",
    "annee": "2023",
-   "collection": "VGTHM",
+   "collection": "VGTHM (collection 02)",
    "lien": "https://www.instagram.com/reel/CsyvGjlIaY2/",
    "tailles": "",
-   "compo": ""
+   "compo": "",
+   "offre": "location",
+   "position": 12
   },
   {
    "id": "vgthm-03",
-   "nom": "VGTHM — tenue 03",
+   "nom": "VGTHM · Tenue 03 — Hoodie marbré, jean large à pics",
    "type": "ensembles",
    "gamme": "collection",
-   "statut": "demande",
+   "statut": "dispo",
    "photos": [
     "/assets/catalogue-pro/vgthm-03/0.webp"
    ],
-   "description": "Hoodie peint/marbré bleu-vert à capuche à oreilles, jean large surpiqué à pics.\nCollection VGTHM (mai 2023) : 5 tenues de même silhouette, chacune travaillée dans une matière et une texture différentes.",
+   "description": "Hoodie peint/marbré bleu-vert à capuche à oreilles, jean large surpiqué à pics.\nCollection VGTHM (mai 2023) : 5 tenues de même silhouette, chacune travaillée dans une matière et une texture différentes.\nPièce d'archive, disponible en location uniquement (clips, scène, shootings, expositions).",
    "annee": "2023",
-   "collection": "VGTHM",
+   "collection": "VGTHM (collection 02)",
    "lien": "https://www.instagram.com/reel/CsyvGjlIaY2/",
    "tailles": "",
-   "compo": ""
+   "compo": "",
+   "offre": "location",
+   "position": 13
   },
   {
    "id": "vgthm-04",
-   "nom": "VGTHM — tenue 04",
+   "nom": "VGTHM · Tenue 04 — Hoodie noir à ailerons, pantalon texturé",
    "type": "ensembles",
    "gamme": "collection",
-   "statut": "demande",
+   "statut": "dispo",
    "photos": [
     "/assets/catalogue-pro/vgthm-04/0.webp"
    ],
-   "description": "Hoodie noir à ailerons, pantalon large noir texturé.\nCollection VGTHM (mai 2023) : 5 tenues de même silhouette, chacune travaillée dans une matière et une texture différentes.",
+   "description": "Hoodie noir à ailerons, pantalon large noir texturé.\nCollection VGTHM (mai 2023) : 5 tenues de même silhouette, chacune travaillée dans une matière et une texture différentes.\nPièce d'archive, disponible en location uniquement (clips, scène, shootings, expositions).",
    "annee": "2023",
-   "collection": "VGTHM",
+   "collection": "VGTHM (collection 02)",
    "lien": "https://www.instagram.com/reel/CsyvGjlIaY2/",
    "tailles": "",
-   "compo": ""
+   "compo": "",
+   "offre": "location",
+   "position": 14
   },
   {
    "id": "vgthm-05",
-   "nom": "VGTHM — tenue 05",
+   "nom": "VGTHM · Tenue 05 — Ensemble molleton gris clair à pics",
    "type": "ensembles",
    "gamme": "collection",
-   "statut": "demande",
+   "statut": "dispo",
    "photos": [
     "/assets/catalogue-pro/vgthm-05/0.webp"
    ],
-   "description": "Hoodie molleton gris clair à ailerons, pantalon assorti à pics.\nCollection VGTHM (mai 2023) : 5 tenues de même silhouette, chacune travaillée dans une matière et une texture différentes.",
+   "description": "Hoodie molleton gris clair à ailerons, pantalon assorti à pics.\nCollection VGTHM (mai 2023) : 5 tenues de même silhouette, chacune travaillée dans une matière et une texture différentes.\nPièce d'archive, disponible en location uniquement (clips, scène, shootings, expositions).",
    "annee": "2023",
-   "collection": "VGTHM",
+   "collection": "VGTHM (collection 02)",
    "lien": "https://www.instagram.com/reel/CsyvGjlIaY2/",
    "tailles": "",
-   "compo": ""
+   "compo": "",
+   "offre": "location",
+   "position": 15
   },
   {
    "id": "ch1-01",
-   "nom": "Première collection — tenue 01",
+   "nom": "Collection 01 · Tenue 01 — Veste irisée, jean à empiècements",
    "type": "ensembles",
    "gamme": "collection",
-   "statut": "demande",
+   "statut": "dispo",
    "photos": [
     "/assets/catalogue-pro/ch1-01/0.webp"
    ],
-   "description": "Première collection (2022), primée au Festival de Dinan : silhouettes amples, matières techniques, zips tordus. Pièces d'archive : disponibilité ou réédition sur demande.",
+   "description": "Première collection (2022), primée au Festival de Dinan : silhouettes amples, matières techniques, zips tordus.\nPièce d'archive, disponible en location uniquement (clips, scène, shootings, expositions).",
    "annee": "2022",
-   "collection": "Première collection",
+   "collection": "Collection 01 (fin d'études, Lisaa)",
    "lien": "",
    "tailles": "",
-   "compo": ""
+   "compo": "",
+   "offre": "location",
+   "position": 21
   },
   {
    "id": "ch1-02",
-   "nom": "Première collection — tenue 02",
+   "nom": "Collection 01 · Tenue 02 — Haut résille, pantalon argent",
    "type": "ensembles",
    "gamme": "collection",
-   "statut": "demande",
+   "statut": "dispo",
    "photos": [
     "/assets/catalogue-pro/ch1-02/0.webp"
    ],
-   "description": "Première collection (2022), primée au Festival de Dinan : silhouettes amples, matières techniques, zips tordus. Pièces d'archive : disponibilité ou réédition sur demande.",
+   "description": "Première collection (2022), primée au Festival de Dinan : silhouettes amples, matières techniques, zips tordus.\nPièce d'archive, disponible en location uniquement (clips, scène, shootings, expositions).",
    "annee": "2022",
-   "collection": "Première collection",
+   "collection": "Collection 01 (fin d'études, Lisaa)",
    "lien": "",
    "tailles": "",
-   "compo": ""
+   "compo": "",
+   "offre": "location",
+   "position": 22
   },
   {
    "id": "ch1-03",
-   "nom": "Première collection — tenue 03",
+   "nom": "Collection 01 · Tenue 03 — Sweat chiné oversize",
    "type": "ensembles",
    "gamme": "collection",
-   "statut": "demande",
+   "statut": "dispo",
    "photos": [
     "/assets/catalogue-pro/ch1-03/0.webp"
    ],
-   "description": "Première collection (2022), primée au Festival de Dinan : silhouettes amples, matières techniques, zips tordus. Pièces d'archive : disponibilité ou réédition sur demande.",
+   "description": "Première collection (2022), primée au Festival de Dinan : silhouettes amples, matières techniques, zips tordus.\nPièce d'archive, disponible en location uniquement (clips, scène, shootings, expositions).",
    "annee": "2022",
-   "collection": "Première collection",
+   "collection": "Collection 01 (fin d'études, Lisaa)",
    "lien": "",
    "tailles": "",
-   "compo": ""
+   "compo": "",
+   "offre": "location",
+   "position": 23
   },
   {
    "id": "ch1-04",
-   "nom": "Première collection — tenue 04",
+   "nom": "Collection 01 · Tenue 04 — Cagoule maille, ensemble irisé",
    "type": "ensembles",
    "gamme": "collection",
-   "statut": "demande",
+   "statut": "dispo",
    "photos": [
     "/assets/catalogue-pro/ch1-04/0.webp"
    ],
-   "description": "Première collection (2022), primée au Festival de Dinan : silhouettes amples, matières techniques, zips tordus. Pièces d'archive : disponibilité ou réédition sur demande.",
+   "description": "Première collection (2022), primée au Festival de Dinan : silhouettes amples, matières techniques, zips tordus.\nPièce d'archive, disponible en location uniquement (clips, scène, shootings, expositions).",
    "annee": "2022",
-   "collection": "Première collection",
+   "collection": "Collection 01 (fin d'études, Lisaa)",
    "lien": "",
    "tailles": "",
-   "compo": ""
+   "compo": "",
+   "offre": "location",
+   "position": 24
   },
   {
    "id": "ch1-05",
-   "nom": "Première collection — tenue 05",
+   "nom": "Collection 01 · Tenue 05 — Doudoune argent, pantalon fourrure",
    "type": "ensembles",
    "gamme": "collection",
-   "statut": "demande",
+   "statut": "dispo",
    "photos": [
     "/assets/catalogue-pro/ch1-05/0.webp"
    ],
-   "description": "Première collection (2022), primée au Festival de Dinan : silhouettes amples, matières techniques, zips tordus. Pièces d'archive : disponibilité ou réédition sur demande.",
+   "description": "Première collection (2022), primée au Festival de Dinan : silhouettes amples, matières techniques, zips tordus.\nPièce d'archive, disponible en location uniquement (clips, scène, shootings, expositions).",
    "annee": "2022",
-   "collection": "Première collection",
+   "collection": "Collection 01 (fin d'études, Lisaa)",
    "lien": "",
    "tailles": "",
-   "compo": ""
+   "compo": "",
+   "offre": "location",
+   "position": 25
   },
   {
    "id": "ch1-06",
-   "nom": "Première collection — tenue 06",
+   "nom": "Collection 01 · Tenue 06 — Capuche holographique, veste marine",
    "type": "ensembles",
    "gamme": "collection",
-   "statut": "demande",
+   "statut": "dispo",
    "photos": [
     "/assets/catalogue-pro/ch1-06/0.webp"
    ],
-   "description": "Première collection (2022), primée au Festival de Dinan : silhouettes amples, matières techniques, zips tordus. Pièces d'archive : disponibilité ou réédition sur demande.",
+   "description": "Première collection (2022), primée au Festival de Dinan : silhouettes amples, matières techniques, zips tordus.\nPièce d'archive, disponible en location uniquement (clips, scène, shootings, expositions).",
    "annee": "2022",
-   "collection": "Première collection",
+   "collection": "Collection 01 (fin d'études, Lisaa)",
    "lien": "",
    "tailles": "",
-   "compo": ""
+   "compo": "",
+   "offre": "location",
+   "position": 26
   },
   {
    "id": "short-graffiti",
@@ -429,7 +472,8 @@
    "collection": "",
    "lien": "",
    "tailles": "",
-   "compo": ""
+   "compo": "",
+   "offre": "vente"
   },
   {
    "id": "bonnet",
@@ -445,7 +489,8 @@
    "collection": "",
    "lien": "",
    "tailles": "",
-   "compo": ""
+   "compo": "",
+   "offre": "vente"
   },
   {
    "id": "gilet-robot",
@@ -463,7 +508,8 @@
    "collection": "",
    "lien": "https://www.instagram.com/reel/Dak-9JENb19/",
    "tailles": "",
-   "compo": ""
+   "compo": "",
+   "offre": "vente"
   },
   {
    "id": "veste-leds",
@@ -483,7 +529,8 @@
    "collection": "",
    "lien": "",
    "tailles": "",
-   "compo": ""
+   "compo": "",
+   "offre": "vente"
   }
  ]
 }
