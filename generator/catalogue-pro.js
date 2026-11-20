@@ -16,6 +16,13 @@ function frPart(desc) {
   return fr.replace(/\*?SOLD ?OUT\*?/gi, '').replace(/\n{2,}/g, '\n').trim();
 }
 
+// Partie anglaise de la description du site (bloc avant le français), pour la version anglaise du catalogue.
+function enPart(desc) {
+  const parts = String(desc || '').replace(/\r/g, '').split(/\n\s*\n/).map((s) => s.trim()).filter(Boolean);
+  if (parts.length < 2) return '';
+  return parts[0].replace(/\*?SOLD ?OUT\*?/gi, '').replace(/\n{2,}/g, '\n').trim();
+}
+
 function sitePhotos(root, slug, images) {
   return (images || []).map((src, i) => {
     const s = path.join(root, 'assets', 'products-sized', '540', slug, i + '.webp');
@@ -59,6 +66,7 @@ function build(root) {
       unique: !!p.unique, quantite: typeof p.quantity === 'number' ? p.quantity : null, position: o.position || p.position || 999,
       annee: o.annee || String(p.created_at || '').slice(0, 4), collection: o.collection || '',
       offre: o.offre || 'vente',
+      en: { nom: o.nom_en || '', description: o.description_en || enPart(p.description).split('\n').filter((l) => !/^size|%/i.test(l.trim())).join('\n') },
     });
   }
   for (const x of cfg.extras || []) {
@@ -87,4 +95,4 @@ function write(root, outDir) {
   if (fs.existsSync(assets)) fs.cpSync(assets, path.join(outDir, 'assets', 'catalogue-pro'), { recursive: true });
 }
 
-module.exports = { build, write, frPart };
+module.exports = { build, write, frPart, enPart };

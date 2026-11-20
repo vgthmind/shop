@@ -62,7 +62,8 @@
    "collection": "VGTHM (collection 02)",
    "annee": "2023",
    "nom": "VGTHM · Pantalon GP_0002 — satin duchesse à pics",
-   "position": 16
+   "position": 16,
+   "nom_en": "VGTHM · Trousers GP_0002 — duchess satin with spikes"
   },
   "pantalon-dd001": {
    "gamme": "couture"
@@ -142,7 +143,14 @@
      "id": "p2",
      "nom": "Jogging argent coupe droite"
     }
-   ]
+   ],
+   "en": {
+    "description": "Silver waterproof technical set: panelled technical jacket, straight-cut jogging trousers.\nVGTAPE collection (2025): one look per music video from the mixtape. For sale (full look or piece by piece) and for rent for music videos, stage and shoots.",
+    "pieces": [
+     "Silver panelled technical jacket",
+     "Silver straight-cut jogging trousers"
+    ]
+   }
   },
   {
    "id": "vgtape-gc001",
@@ -183,7 +191,15 @@
      "id": "p3",
      "nom": "Jogging ghillie noir coupe droite"
     }
-   ]
+   ],
+   "en": {
+    "description": "Black textured semi-sheer long-sleeve, cut-out leather jacket with twisted zip in several shades of black, black straight-cut ghillie jogging trousers.\nVGTAPE collection (2025): one look per music video from the mixtape. For sale (full look or piece by piece) and for rent for music videos, stage and shoots.",
+    "pieces": [
+     "Black textured semi-sheer long-sleeve",
+     "Cut-out leather jacket, twisted zip",
+     "Black straight-cut ghillie jogging trousers"
+    ]
+   }
   },
   {
    "id": "vgtape-bp001",
@@ -219,11 +235,18 @@
      "id": "p2",
      "nom": "Jogging noir coupe droite"
     }
-   ]
+   ],
+   "en": {
+    "description": "Waterproof technical set: black and green jacket with special cuts, black straight-cut jogging trousers.\nVGTAPE collection (2025): one look per music video from the mixtape. For sale (full look or piece by piece) and for rent for music videos, stage and shoots.",
+    "pieces": [
+     "Black/green technical jacket with cut-outs",
+     "Black straight-cut jogging trousers"
+    ]
+   }
   },
   {
    "id": "vgtape-01",
-   "nom": "VGTAPE · Tenue 01",
+   "nom": "VGTAPE · Tenue 01 (BP001)",
    "type": "ensembles",
    "gamme": "collection",
    "statut": "dispo",
@@ -238,7 +261,7 @@
     "/assets/catalogue-pro/vgtape-01/07.webp",
     "/assets/catalogue-pro/vgtape-01/08.webp"
    ],
-   "description": "Gilet sans manches gris à capuche et zip apparent, pantalon assorti.\nCollection VGTAPE (2025) : une tenue par clip de la mixtape. En vente (tenue complète ou pièce par pièce) et en location pour clips, scène et shootings.",
+   "description": "Ensemble en nylon bleu : doudoune surpiquée, jogging coupe droite.\nCollection VGTAPE (2025) : une tenue par clip de la mixtape. En vente (tenue complète ou pièce par pièce) et en location pour clips, scène et shootings.",
    "annee": "2025",
    "collection": "VGTAPE (collection 03)",
    "lien": "",
@@ -249,17 +272,24 @@
    "pieces": [
     {
      "id": "p1",
-     "nom": "Gilet sans manches à capuche"
+     "nom": "Doudoune surpiquée en nylon bleu"
     },
     {
      "id": "p2",
-     "nom": "Pantalon"
+     "nom": "Jogging coupe droite"
     }
-   ]
+   ],
+   "en": {
+    "description": "Blue nylon set: quilted puffer jacket, straight-cut jogging trousers.\nVGTAPE collection (2025): one look per music video from the mixtape. For sale (full look or piece by piece) and for rent for music videos, stage and shoots.",
+    "pieces": [
+     "Blue nylon quilted puffer jacket",
+     "Straight-cut jogging trousers"
+    ]
+   }
   },
   {
    "id": "vgtape-05",
-   "nom": "VGTAPE · Tenue 05",
+   "nom": "VGTAPE · Tenue 05 (TS001)",
    "type": "ensembles",
    "gamme": "collection",
    "statut": "dispo",
@@ -289,11 +319,18 @@
      "id": "p2",
      "nom": "Pantalon"
     }
-   ]
+   ],
+   "en": {
+    "description": "Fitted black hooded jacket with a textured leather effect, black trousers.\nVGTAPE collection (2025): one look per music video from the mixtape. For sale (full look or piece by piece) and for rent for music videos, stage and shoots.",
+    "pieces": [
+     "Leather-effect hooded jacket",
+     "Trousers"
+    ]
+   }
   },
   {
    "id": "vgtape-06",
-   "nom": "VGTAPE · Tenue 06",
+   "nom": "VGTAPE · Tenue 06 (GS001)",
    "type": "ensembles",
    "gamme": "collection",
    "statut": "dispo",
@@ -327,7 +364,14 @@
      "id": "p2",
      "nom": "Pantalon ghillie"
     }
-   ]
+   ],
+   "en": {
+    "description": "Ghillie-style cut-out set, black and grey camouflage.\nVGTAPE collection (2025): one look per music video from the mixtape. For sale (full look or piece by piece) and for rent for music videos, stage and shoots.",
+    "pieces": [
+     "Hooded ghillie top",
+     "Ghillie trousers"
+    ]
+   }
   },
   {
    "id": "vgtape-sac",
@@ -347,7 +391,11 @@
    "tailles": "",
    "compo": "",
    "offre": "vente+location",
-   "position": 7
+   "position": 7,
+   "en": {
+    "nom": "VGTAPE · Creature backpack",
+    "description": "Half-creature, half-accessory backpack, patterned like a garment. Stage piece from the VGTAPE collection."
+   }
   },
   {
    "id": "vgtape-armes",
@@ -375,7 +423,11 @@
    "tailles": "",
    "compo": "",
    "offre": "vente+location",
-   "position": 8
+   "position": 8,
+   "en": {
+    "nom": "VGTAPE · Fabric stage weapons (×5)",
+    "description": "Set of 5 stage props in padded fabric (rocket launcher, rifles…), with chain. For sale or rent (music videos, stage, exhibitions)."
+   }
   },
   {
    "id": "vgthm-01",
@@ -412,7 +464,14 @@
      "id": "p2",
      "nom": "Pantalon PT_01 · sergé gris texturé de mailles"
     }
-   ]
+   ],
+   "en": {
+    "description": "Zip hoodie in heavy grey fleece. Wide trousers in grey cotton twill, hand-textured with wool knits, white duchess satin pockets.\nVGTHM collection (May 2023): five looks on the same silhouette, each playing on a different fabric and texture. Hoodies size M/L, trousers 40/42 EU. Rental only (music videos, stage, shoots, exhibitions).",
+    "pieces": [
+     "Zip hoodie ZT_01 · heavy grey fleece",
+     "Trousers PT_01 · grey twill textured with knits"
+    ]
+   }
   },
   {
    "id": "vgthm-02",
@@ -446,7 +505,14 @@
      "id": "p2",
      "nom": "Pantalon PG_01 · satin duchesse noir"
     }
-   ]
+   ],
+   "en": {
+    "description": "Zip hoodie in heavy black fleece covered with hand-deconstructed wool. Wide trousers in black duchess satin, white duchess satin pockets.\nVGTHM collection (May 2023): five looks on the same silhouette, each playing on a different fabric and texture. Hoodies size M/L, trousers 40/42 EU. Rental only (music videos, stage, shoots, exhibitions).",
+    "pieces": [
+     "Zip hoodie ZG_01 · black fleece and deconstructed wool",
+     "Trousers PG_01 · black duchess satin"
+    ]
+   }
   },
   {
    "id": "vgthm-03",
@@ -488,7 +554,14 @@
      "id": "p2",
      "nom": "Pantalon PV_01 · denim bleu épais"
     }
-   ]
+   ],
+   "en": {
+    "description": "Zip hoodie in light white fleece, hand-painted with spray paint and marker (with @easyblued_). Wide trousers in heavy blue denim, white duchess satin pockets.\nVGTHM collection (May 2023): five looks on the same silhouette, each playing on a different fabric and texture. Hoodies size M/L, trousers 40/42 EU. Rental only (music videos, stage, shoots, exhibitions).",
+    "pieces": [
+     "Zip hoodie ZV_01 · painted white fleece",
+     "Trousers PV_01 · heavy blue denim"
+    ]
+   }
   },
   {
    "id": "vgthm-04",
@@ -524,7 +597,14 @@
      "id": "p2",
      "nom": "Pantalon PH_01 · coton texturé"
     }
-   ]
+   ],
+   "en": {
+    "description": "Zip hoodie in light black neoprene. Wide trousers in textured cotton, white duchess satin pockets.\nVGTHM collection (May 2023): five looks on the same silhouette, each playing on a different fabric and texture. Hoodies size M/L, trousers 40/42 EU. Rental only (music videos, stage, shoots, exhibitions).",
+    "pieces": [
+     "Zip hoodie ZH_01 · black neoprene",
+     "Trousers PH_01 · textured cotton"
+    ]
+   }
   },
   {
    "id": "vgthm-05",
@@ -563,7 +643,14 @@
      "id": "p2",
      "nom": "Pantalon PM_01 · laine Hermès"
     }
-   ]
+   ],
+   "en": {
+    "description": "100% Hermès wool set: zip hoodie and wide trousers, white duchess satin pockets.\nVGTHM collection (May 2023): five looks on the same silhouette, each playing on a different fabric and texture. Hoodies size M/L, trousers 40/42 EU. Rental only (music videos, stage, shoots, exhibitions).",
+    "pieces": [
+     "Zip hoodie ZM_01 · Hermès wool",
+     "Trousers PM_01 · Hermès wool"
+    ]
+   }
   },
   {
    "id": "ch1-01",
@@ -596,7 +683,14 @@
      "id": "p2",
      "nom": "Jean"
     }
-   ]
+   ],
+   "en": {
+    "description": "First collection (2022), award-winning graduation collection shown at the Dinan Festival. Rental only (music videos, stage, shoots, exhibitions).",
+    "pieces": [
+     "Jacket",
+     "Jeans"
+    ]
+   }
   },
   {
    "id": "ch1-02",
@@ -629,7 +723,14 @@
      "id": "p2",
      "nom": "Pantalon argent"
     }
-   ]
+   ],
+   "en": {
+    "description": "First collection (2022), award-winning graduation collection shown at the Dinan Festival. Rental only (music videos, stage, shoots, exhibitions).",
+    "pieces": [
+     "Mesh top",
+     "Silver trousers"
+    ]
+   }
   },
   {
    "id": "ch1-03",
@@ -660,7 +761,14 @@
      "id": "p2",
      "nom": "Pantalon"
     }
-   ]
+   ],
+   "en": {
+    "description": "First collection (2022), award-winning graduation collection shown at the Dinan Festival. Rental only (music videos, stage, shoots, exhibitions).",
+    "pieces": [
+     "Top",
+     "Trousers"
+    ]
+   }
   },
   {
    "id": "ch1-04",
@@ -692,7 +800,15 @@
      "id": "p3",
      "nom": "Pantalon"
     }
-   ]
+   ],
+   "en": {
+    "description": "First collection (2022), award-winning graduation collection shown at the Dinan Festival. Rental only (music videos, stage, shoots, exhibitions).",
+    "pieces": [
+     "Knit balaclava",
+     "Top",
+     "Trousers"
+    ]
+   }
   },
   {
    "id": "ch1-05",
@@ -720,7 +836,14 @@
      "id": "p2",
      "nom": "Pantalon"
     }
-   ]
+   ],
+   "en": {
+    "description": "First collection (2022), award-winning graduation collection shown at the Dinan Festival. Rental only (music videos, stage, shoots, exhibitions).",
+    "pieces": [
+     "Puffer jacket",
+     "Trousers"
+    ]
+   }
   },
   {
    "id": "ch1-06",
@@ -754,7 +877,15 @@
      "id": "p3",
      "nom": "Pantalon"
     }
-   ]
+   ],
+   "en": {
+    "description": "First collection (2022), award-winning graduation collection shown at the Dinan Festival. Rental only (music videos, stage, shoots, exhibitions).",
+    "pieces": [
+     "Holographic hood",
+     "Jacket",
+     "Trousers"
+    ]
+   }
   },
   {
    "id": "short-graffiti",
@@ -771,7 +902,11 @@
    "lien": "",
    "tailles": "",
    "compo": "",
-   "offre": "vente"
+   "offre": "vente",
+   "en": {
+    "nom": "Black graffiti shorts",
+    "description": "Shorts sewn then airbrush-painted, white graffiti pattern on black. Sold — can be remade in the same spirit."
+   }
   },
   {
    "id": "bonnet",
@@ -788,7 +923,11 @@
    "lien": "",
    "tailles": "",
    "compo": "",
-   "offre": "vente"
+   "offre": "vente",
+   "en": {
+    "nom": "Beanie (small run)",
+    "description": "Beanie made in small runs. Quantities and colours on request."
+   }
   },
   {
    "id": "gilet-robot",
@@ -807,7 +946,11 @@
    "lien": "https://www.instagram.com/reel/Dak-9JENb19/",
    "tailles": "",
    "compo": "",
-   "offre": "vente"
+   "offre": "vente",
+   "en": {
+    "nom": "Sound-system vest (custom-made)",
+    "description": "Custom commission for a humanoid robot: audio system built into the structure, pockets and technical lining for the electronics. An example of what vgthmind makes to order."
+   }
   },
   {
    "id": "veste-leds",
@@ -828,7 +971,11 @@
    "lien": "",
    "tailles": "",
    "compo": "",
-   "offre": "vente"
+   "offre": "vente",
+   "en": {
+    "nom": "LED tailored jacket (custom-made)",
+    "description": "Wiring and LEDs built into the lining of a classic tailored jacket: wearable every day, a stage piece once switched on. Made to order."
+   }
   }
  ]
 }
