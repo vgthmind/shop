@@ -266,7 +266,7 @@ const encPath = (p) => { let d = p; try { d = decodeURI(p); } catch (e) { /* dé
 const slashPath = (p) => { const [path0, ...q] = String(p).split(/(?=[?#])/); const a = encPath(path0); return (/\/$/.test(a) || /\.[A-Za-z0-9]{1,6}$/.test(a) ? a : a + '/') + q.join(''); };
 // Liens internes <a href="/x"> -> "/x/" : aucun lien du site ne doit déclencher une redirection (Search Console : « Page avec redirection »).
 function slashLinks(html) {
-  return html.replace(/(<a\b[^>]*?\bhref=")(\/[^"]*)(")/gi, (m, a, h, c) => (h === '/' || h.startsWith('//') || /^\/(admin|assets)(\/|$)/.test(h) ? m : a + slashPath(h) + c));
+  return html.replace(/(<a\b[^>]*?\bhref=")(\/[^"]*)(")/gi, (m, a, h, c) => (h === '/' || h.startsWith('//') || /[\s'+]/.test(h) /* concaténation JS dans un script : pas une adresse */ || /^\/(admin|assets)(\/|$)/.test(h) ? m : a + slashPath(h) + c));
 }
 function read(p) { return fs.readFileSync(p, 'utf8'); }
 
