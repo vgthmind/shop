@@ -187,9 +187,10 @@ export function parseSubmission(body: any, lead: Settings['leadWeeks'] = DEFAULT
   const f: string[] = [];
   const x = v.fields;
   if (!v.type) f.push('type');
-  if (!v.client.first) f.push('firstName');
-  if (!v.client.last) f.push('lastName');
-  v.client.name = `${v.client.first} ${v.client.last}`.trim();
+  // Catalogue pro : seul le nom de la boutique est obligatoire (prénom / nom facultatifs, nom affiché = boutique à défaut).
+  if (v.type !== 'boutique' && !v.client.first) f.push('firstName');
+  if (v.type !== 'boutique' && !v.client.last) f.push('lastName');
+  v.client.name = `${v.client.first} ${v.client.last}`.trim() || (v.type === 'boutique' ? clean(body?.shop, 120) : '');
   delete v.client.first; delete v.client.last;
   if (!EMAIL_RE.test(v.client.email)) f.push('email');
   if (!v.client.country) f.push('country');

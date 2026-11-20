@@ -37,5 +37,9 @@ test('demande « boutique » : boutique et sélection obligatoires', async () =>
   const bad = core.parseSubmission({ type: 'boutique', firstName: 'A', lastName: 'B', email: 'a@b.fr', country: 'FR' });
   assert.equal(bad.ok, false);
   assert.ok(bad.fields.includes('shop') && bad.fields.includes('selection'));
+  const noName = core.parseSubmission({ type: 'boutique', email: 'a@b.fr', country: 'FR', shop: 'Shop', selection: '1. X' });
+  assert.equal(noName.ok, true, 'prénom / nom facultatifs pour le catalogue pro');
+  assert.equal(noName.value.client.name, 'Shop');
+  assert.equal(core.parseSubmission({ type: 'collab', email: 'a@b.fr', country: 'FR', collabType: 'x', idea: '0123456789' }).ok, false, 'nom toujours obligatoire ailleurs');
   assert.equal(core.TYPE_LABELS.boutique, 'Pro · Sélection catalogue (vente / location)');
 });
