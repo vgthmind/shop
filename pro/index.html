@@ -24,7 +24,7 @@
   --mono:'IBM Plex Mono',ui-monospace,monospace;--head:'Space Grotesk','Inter',system-ui,sans-serif;--body:'Inter',system-ui,-apple-system,'Segoe UI',sans-serif}
 *{box-sizing:border-box}[hidden]{display:none!important}
 html{-webkit-text-size-adjust:100%}
-body{margin:0;background:var(--paper);color:var(--ink);font:15px/1.55 var(--body);-webkit-font-smoothing:antialiased}
+body{margin:0;overflow-x:hidden;background:var(--paper);color:var(--ink);font:15px/1.55 var(--body);-webkit-font-smoothing:antialiased}
 a{color:inherit}
 button{font:inherit;color:inherit;cursor:pointer;background:none;border:0;padding:0}
 img{display:block}
@@ -43,7 +43,8 @@ img{display:block}
 .intro{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);gap:56px;padding:44px 0 40px;border-bottom:1px solid var(--line)}
 .intro h1{font:700 clamp(30px,4.2vw,52px)/1.02 var(--head);letter-spacing:-.015em;margin:14px 0 18px;text-transform:uppercase}
 .intro p{margin:0 0 12px;color:var(--soft);max-width:60ch}
-.intro .strip{display:flex;gap:6px;margin-top:22px;height:118px}
+.intro>div{min-width:0}
+.intro .strip{display:flex;gap:6px;margin-top:22px;height:118px;overflow:hidden}
 .intro .strip img{height:100%;width:auto;flex:1;min-width:0;object-fit:cover;background:var(--white)}
 .steps{list-style:none;margin:0;padding:0;border-top:1px solid var(--ink)}
 .steps li{display:grid;grid-template-columns:44px 1fr;padding:14px 0;border-bottom:1px solid var(--line)}
