@@ -73,7 +73,10 @@ async function gate(context) {
 
   // Accueil sous verrou : la vraie page d'accueil, avec les réglages d'accès injectés pour l'écran « Entrer ».
   const res = await next();
-  const out = new Response(res.body, { status: 200, headers: res.headers });
+  // Fermé = fermeture temporaire : 503 + Retry-After (Google garde les pages indexées et revient plus tard). Sous code : 200 (accès privé).
+  const closed = state.mode === 'closed';
+  const out = new Response(res.body, { status: closed ? 503 : 200, headers: res.headers });
+  if (closed) out.headers.set('Retry-After', '3600');
   for (const h of ['ETag', 'Last-Modified', 'Content-Length']) out.headers.delete(h);
   for (const [k, v] of Object.entries(NO_STORE)) out.headers.set(k, v);
   return new HTMLRewriter().on('head', { element(el) { el.append(gateScript(state), { html: true }); } }).transform(out);

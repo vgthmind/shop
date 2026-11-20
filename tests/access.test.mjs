@@ -75,7 +75,8 @@ test('admin : lecture, écriture, validation ; refus sans session', async () => 
 test('fermé : l\'accueil montre l\'écran « Entrer » sans cache ni indexation ; les autres pages renvoient à l\'accueil', async () => {
   reset(); await setMode('closed', { msg_fr: 'Retour lundi', msg_en: 'Back Monday' });
   const home = await visit('/');
-  assert.equal(home.res.status, 200);
+  assert.equal(home.res.status, 503);
+  assert.equal(home.res.headers.get('Retry-After'), '3600');
   const html = await home.res.text();
   assert.match(html, /window\.VG_GATE=\{"mode":"closed","msg_fr":"Retour lundi","msg_en":"Back Monday"\}/);
   assert.match(html, /name="robots" content="noindex/);
