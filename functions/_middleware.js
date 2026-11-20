@@ -69,10 +69,17 @@ async function gate(context) {
   if (!state) return next();
   const action = decide({ pathname: url.pathname, search: url.search, method: request.method, mode: state.mode, ok: state.ok === true });
   if (action === 'pass') return next();
-  if (action === 'redirect') return new Response(null, { status: 302, headers: { Location: '/', ...NO_STORE } });
+  // Fermé : toute page publique (GET/HEAD) répond directement 503 + Retry-After avec la page fermée (pas de 302). Plans de site : inchangés.
+  let homeFetch = null;
+  if (action === 'redirect') {
+    const isMap = /^\/(sitemap|products)\.xml$/.test(url.pathname);
+    if (state.mode === 'closed' && !isMap && (request.method === 'GET' || request.method === 'HEAD') && context.env && context.env.ASSETS) {
+      homeFetch = () => context.env.ASSETS.fetch(new Request(new URL('/', url), { method: 'GET' }));
+    } else return new Response(null, { status: 302, headers: { Location: '/', ...NO_STORE } });
+  }
 
   // Accueil sous verrou : la vraie page d'accueil, avec les réglages d'accès injectés pour l'écran « Entrer ».
-  const res = await next();
+  const res = homeFetch ? await homeFetch() : await next();
   // Fermé = fermeture temporaire : 503 + Retry-After (Google garde les pages indexées et revient plus tard). Sous code : 200 (accès privé).
   const closed = state.mode === 'closed';
   const out = new Response(res.body, { status: closed ? 503 : 200, headers: res.headers });

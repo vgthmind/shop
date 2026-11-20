@@ -37,7 +37,7 @@ const HOME = '<!doctype html><html><head><title>vgthmind</title></head><body><ma
 const visit = async (path, { method = 'GET', cookie = '', body } = {}) => {
   mw.resetStateCache(); let reached = false;
   const request = new Request(SITE + path, { method, headers: cookie ? { Cookie: cookie } : {}, body });
-  const res = await mw.onRequest({ request, next: async () => { reached = true; return new Response(HOME, { headers: { 'Content-Type': 'text/html', ETag: '"x"' } }); } });
+  const res = await mw.onRequest({ request, env: { ASSETS: { fetch: async () => { reached = true; return new Response(HOME, { headers: { 'Content-Type': 'text/html', ETag: '"x"' } }); } } }, next: async () => { reached = true; return new Response(HOME, { headers: { 'Content-Type': 'text/html', ETag: '"x"' } }); } });
   return { res, reached };
 };
 const setMode = async (mode, extra = {}) => { const r = await admin({ mode, ...extra }); assert.equal(r.status, 200, await r.clone().text()); return r.json(); };
@@ -87,7 +87,8 @@ test('fermé : l\'accueil montre l\'écran « Entrer » sans cache ni indexation
   assert.equal(home.res.headers.get('ETag'), null);
   for (const p of GATED) {
     const { res, reached } = await visit(p);
-    assert.equal(reached, false, p); assert.equal(res.status, 302, p); assert.equal(res.headers.get('Location'), '/', p);
+    if (/^\/(sitemap|products)\.xml$/.test(p)) { assert.equal(reached, false, p); assert.equal(res.status, 302, p); assert.equal(res.headers.get('Location'), '/', p); }
+    else { assert.equal(res.status, 503, p); assert.equal(res.headers.get('Retry-After'), '3600', p); assert.match(await res.text(), /VG_GATE/, p); }
     assert.match(res.headers.get('Cache-Control'), /no-store/, p); assert.match(res.headers.get('X-Robots-Tag'), /noindex/, p);
   }
   assert.equal((await visit('/', { method: 'POST' })).res.status, 302);
@@ -137,7 +138,7 @@ test('fermer le site déconnecte les visiteurs entrés ; le cookie ne rouvre pas
   const ck = cookieOf((await enterCode('sesame1')).res);
   assert.ok((await visit('/products', { cookie: ck })).reached);
   await setMode('closed');
-  assert.equal((await visit('/products', { cookie: ck })).res.status, 302);
+  assert.equal((await visit('/products', { cookie: ck })).res.status, 503);
   assert.equal((await enterCode('sesame1')).res.status, 401, 'fermé : aucun code ne marche');
   await setMode('code');
   assert.equal((await visit('/products', { cookie: ck })).res.status, 302, 'l\'ancien cookie reste invalide après fermeture');
