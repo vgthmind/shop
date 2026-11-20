@@ -125,7 +125,7 @@
     "/assets/catalogue-pro/vgtape-sa001/04.webp",
     "/assets/catalogue-pro/vgtape-sa001/05.webp"
    ],
-   "description": "Ensemble technique imperméable argent : veste technique à empiècements, jogging coupe droite.\nCollection VGTAPE (mai 2025), une tenue par clip de la mixtape. À la vente (tenue complète ou pièce par pièce) et en location pour clips, scène, shootings.",
+   "description": "Ensemble technique imperméable argent : veste technique à empiècements, jogging coupe droite.\nCollection VGTAPE (2025) : une tenue par clip de la mixtape. En vente (tenue complète ou pièce par pièce) et en location pour clips, scène et shootings.",
    "annee": "2025",
    "collection": "VGTAPE (collection 03)",
    "lien": "https://www.instagram.com/reel/DL7q9b4oagv/",
@@ -136,11 +136,11 @@
    "pieces": [
     {
      "id": "p1",
-     "nom": "Veste technique à empiècements"
+     "nom": "Veste technique argent à empiècements"
     },
     {
      "id": "p2",
-     "nom": "Jogging coupe droite"
+     "nom": "Jogging argent coupe droite"
     }
    ]
   },
@@ -162,7 +162,7 @@
     "/assets/catalogue-pro/vgtape-gc001/08.webp",
     "/assets/catalogue-pro/vgtape-gc001/09.webp"
    ],
-   "description": "Longsleeve noir texturé semi-transparent, veste en cuir découpée à zip torsadé (plusieurs nuances de noir), jogging ghillie coupe droite.\nCollection VGTAPE (mai 2025), une tenue par clip de la mixtape. À la vente (tenue complète ou pièce par pièce) et en location pour clips, scène, shootings.",
+   "description": "Longsleeve noir texturé semi-transparent, veste en cuir découpée à zip torsadé dans plusieurs nuances de noir, jogging ghillie noir coupe droite.\nCollection VGTAPE (2025) : une tenue par clip de la mixtape. En vente (tenue complète ou pièce par pièce) et en location pour clips, scène et shootings.",
    "annee": "2025",
    "collection": "VGTAPE (collection 03)",
    "lien": "https://www.instagram.com/reel/DL-Pti1ILMK/",
@@ -173,7 +173,7 @@
    "pieces": [
     {
      "id": "p1",
-     "nom": "Longsleeve texturé semi-transparent"
+     "nom": "Longsleeve noir texturé semi-transparent"
     },
     {
      "id": "p2",
@@ -181,13 +181,13 @@
     },
     {
      "id": "p3",
-     "nom": "Jogging ghillie"
+     "nom": "Jogging ghillie noir coupe droite"
     }
    ]
   },
   {
    "id": "vgtape-bp001",
-   "nom": "VGTAPE · Tenue 04 (BP001)",
+   "nom": "VGTAPE · Tenue 04 (MJ001)",
    "type": "ensembles",
    "gamme": "collection",
    "statut": "dispo",
@@ -202,7 +202,7 @@
     "/assets/catalogue-pro/vgtape-bp001/07.webp",
     "/assets/catalogue-pro/vgtape-bp001/08.webp"
    ],
-   "description": "Ensemble en nylon bleu : doudoune surpiquée, jogging coupe droite.\nCollection VGTAPE (mai 2025), une tenue par clip de la mixtape. À la vente (tenue complète ou pièce par pièce) et en location pour clips, scène, shootings.",
+   "description": "Ensemble technique imperméable : veste noir et vert à découpes, jogging noir coupe droite.\nCollection VGTAPE (2025) : une tenue par clip de la mixtape. En vente (tenue complète ou pièce par pièce) et en location pour clips, scène et shootings.",
    "annee": "2025",
    "collection": "VGTAPE (collection 03)",
    "lien": "https://www.instagram.com/reel/DL5GL8qI5HP/",
@@ -213,11 +213,11 @@
    "pieces": [
     {
      "id": "p1",
-     "nom": "Doudoune surpiquée"
+     "nom": "Veste technique noir/vert à découpes"
     },
     {
      "id": "p2",
-     "nom": "Jogging coupe droite"
+     "nom": "Jogging noir coupe droite"
     }
    ]
   },
@@ -238,7 +238,7 @@
     "/assets/catalogue-pro/vgtape-01/07.webp",
     "/assets/catalogue-pro/vgtape-01/08.webp"
    ],
-   "description": "Gilet sans manches gris à capuche et zip apparent, pantalon assorti.\nCollection VGTAPE (mai 2025), une tenue par clip de la mixtape. À la vente (tenue complète ou pièce par pièce) et en location pour clips, scène, shootings.",
+   "description": "Gilet sans manches gris à capuche et zip apparent, pantalon assorti.\nCollection VGTAPE (2025) : une tenue par clip de la mixtape. En vente (tenue complète ou pièce par pièce) et en location pour clips, scène et shootings.",
    "annee": "2025",
    "collection": "VGTAPE (collection 03)",
    "lien": "",
@@ -272,7 +272,7 @@
     "/assets/catalogue-pro/vgtape-05/05.webp",
     "/assets/catalogue-pro/vgtape-05/06.webp"
    ],
-   "description": "Veste noire ajustée à capuche, effet cuir texturé, pantalon noir.\nCollection VGTAPE (mai 2025), une tenue par clip de la mixtape. À la vente (tenue complète ou pièce par pièce) et en location pour clips, scène, shootings.",
+   "description": "Veste noire ajustée à capuche, effet cuir texturé, pantalon noir.\nCollection VGTAPE (2025) : une tenue par clip de la mixtape. En vente (tenue complète ou pièce par pièce) et en location pour clips, scène et shootings.",
    "annee": "2025",
    "collection": "VGTAPE (collection 03)",
    "lien": "",
@@ -310,7 +310,7 @@
     "/assets/catalogue-pro/vgtape-06/09.webp",
     "/assets/catalogue-pro/vgtape-06/10.webp"
    ],
-   "description": "Ensemble à découpes façon ghillie, camouflage noir et gris.\nCollection VGTAPE (mai 2025), une tenue par clip de la mixtape. À la vente (tenue complète ou pièce par pièce) et en location pour clips, scène, shootings.",
+   "description": "Ensemble à découpes façon ghillie, camouflage noir et gris.\nCollection VGTAPE (2025) : une tenue par clip de la mixtape. En vente (tenue complète ou pièce par pièce) et en location pour clips, scène et shootings.",
    "annee": "2025",
    "collection": "VGTAPE (collection 03)",
    "lien": "",
@@ -379,7 +379,7 @@
   },
   {
    "id": "vgthm-01",
-   "nom": "VGTHM · Tenue 01",
+   "nom": "VGTHM · Tenue 03",
    "type": "ensembles",
    "gamme": "collection",
    "statut": "dispo",
@@ -395,22 +395,22 @@
     "/assets/catalogue-pro/vgthm-01/08.webp",
     "/assets/catalogue-pro/vgthm-01/09.webp"
    ],
-   "description": "Hoodie gris à ailerons et zip apparent, pantalon large à longues franges.\nCollection VGTHM (mai 2023) : 5 tenues de même silhouette, chacune dans une matière et une texture différentes. Location uniquement (clips, scène, shootings, expositions).",
+   "description": "Hoodie zippé en molleton gris épais. Pantalon large en sergé de coton gris, texturé à la main avec des mailles de laine, poches en satin duchesse blanc.\nCollection VGTHM (mai 2023) : cinq tenues sur la même silhouette, chacune jouant sur une matière et une texture différentes. Hoodies taille M/L, pantalons 40/42 EU. Location uniquement (clips, scène, shootings, expositions).",
    "annee": "2023",
    "collection": "VGTHM (collection 02)",
    "lien": "https://www.instagram.com/reel/CsyvGjlIaY2/",
    "tailles": "",
    "compo": "",
    "offre": "location",
-   "position": 11,
+   "position": 13,
    "pieces": [
     {
      "id": "p1",
-     "nom": "Hoodie à ailerons"
+     "nom": "Hoodie zippé ZT_01 · molleton gris épais"
     },
     {
      "id": "p2",
-     "nom": "Pantalon à franges"
+     "nom": "Pantalon PT_01 · sergé gris texturé de mailles"
     }
    ]
   },
@@ -429,7 +429,7 @@
     "/assets/catalogue-pro/vgthm-02/05.webp",
     "/assets/catalogue-pro/vgthm-02/06.webp"
    ],
-   "description": "Haut en tissage déstructuré à franges, pantalon large noir satiné à pics.\nCollection VGTHM (mai 2023) : 5 tenues de même silhouette, chacune dans une matière et une texture différentes. Location uniquement (clips, scène, shootings, expositions).",
+   "description": "Hoodie zippé en molleton noir épais recouvert de laine déstructurée à la main. Pantalon large en satin duchesse noir, poches en satin duchesse blanc.\nCollection VGTHM (mai 2023) : cinq tenues sur la même silhouette, chacune jouant sur une matière et une texture différentes. Hoodies taille M/L, pantalons 40/42 EU. Location uniquement (clips, scène, shootings, expositions).",
    "annee": "2023",
    "collection": "VGTHM (collection 02)",
    "lien": "https://www.instagram.com/reel/CsyvGjlIaY2/",
@@ -440,17 +440,17 @@
    "pieces": [
     {
      "id": "p1",
-     "nom": "Haut tissé à franges"
+     "nom": "Hoodie zippé ZG_01 · molleton noir et laine déstructurée"
     },
     {
      "id": "p2",
-     "nom": "Pantalon large à pics"
+     "nom": "Pantalon PG_01 · satin duchesse noir"
     }
    ]
   },
   {
    "id": "vgthm-03",
-   "nom": "VGTHM · Tenue 03",
+   "nom": "VGTHM · Tenue 01",
    "type": "ensembles",
    "gamme": "collection",
    "statut": "dispo",
@@ -471,22 +471,22 @@
     "/assets/catalogue-pro/vgthm-03/13.webp",
     "/assets/catalogue-pro/vgthm-03/14.webp"
    ],
-   "description": "Hoodie peint/marbré à capuche, jean large surpiqué à pics.\nCollection VGTHM (mai 2023) : 5 tenues de même silhouette, chacune dans une matière et une texture différentes. Location uniquement (clips, scène, shootings, expositions).",
+   "description": "Hoodie zippé en molleton blanc léger, peint à la bombe et au marqueur à la main (avec @easyblued_). Pantalon large en denim bleu épais, poches en satin duchesse blanc.\nCollection VGTHM (mai 2023) : cinq tenues sur la même silhouette, chacune jouant sur une matière et une texture différentes. Hoodies taille M/L, pantalons 40/42 EU. Location uniquement (clips, scène, shootings, expositions).",
    "annee": "2023",
    "collection": "VGTHM (collection 02)",
    "lien": "https://www.instagram.com/reel/CsyvGjlIaY2/",
    "tailles": "",
    "compo": "",
    "offre": "location",
-   "position": 13,
+   "position": 11,
    "pieces": [
     {
      "id": "p1",
-     "nom": "Hoodie marbré à capuche"
+     "nom": "Hoodie zippé ZV_01 · molleton blanc peint"
     },
     {
      "id": "p2",
-     "nom": "Jean large surpiqué à pics"
+     "nom": "Pantalon PV_01 · denim bleu épais"
     }
    ]
   },
@@ -507,7 +507,7 @@
     "/assets/catalogue-pro/vgthm-04/07.webp",
     "/assets/catalogue-pro/vgthm-04/08.webp"
    ],
-   "description": "Hoodie noir à ailerons, pantalon large noir texturé.\nCollection VGTHM (mai 2023) : 5 tenues de même silhouette, chacune dans une matière et une texture différentes. Location uniquement (clips, scène, shootings, expositions).",
+   "description": "Hoodie zippé en néoprène noir léger. Pantalon large en coton texturé, poches en satin duchesse blanc.\nCollection VGTHM (mai 2023) : cinq tenues sur la même silhouette, chacune jouant sur une matière et une texture différentes. Hoodies taille M/L, pantalons 40/42 EU. Location uniquement (clips, scène, shootings, expositions).",
    "annee": "2023",
    "collection": "VGTHM (collection 02)",
    "lien": "https://www.instagram.com/reel/CsyvGjlIaY2/",
@@ -518,11 +518,11 @@
    "pieces": [
     {
      "id": "p1",
-     "nom": "Hoodie à ailerons"
+     "nom": "Hoodie zippé ZH_01 · néoprène noir"
     },
     {
      "id": "p2",
-     "nom": "Pantalon texturé"
+     "nom": "Pantalon PH_01 · coton texturé"
     }
    ]
   },
@@ -546,7 +546,7 @@
     "/assets/catalogue-pro/vgthm-05/10.webp",
     "/assets/catalogue-pro/vgthm-05/11.webp"
    ],
-   "description": "Ensemble molleton gris clair : hoodie à ailerons, pantalon à pics.\nCollection VGTHM (mai 2023) : 5 tenues de même silhouette, chacune dans une matière et une texture différentes. Location uniquement (clips, scène, shootings, expositions).",
+   "description": "Ensemble 100 % laine Hermès : hoodie zippé et pantalon large, poches en satin duchesse blanc.\nCollection VGTHM (mai 2023) : cinq tenues sur la même silhouette, chacune jouant sur une matière et une texture différentes. Hoodies taille M/L, pantalons 40/42 EU. Location uniquement (clips, scène, shootings, expositions).",
    "annee": "2023",
    "collection": "VGTHM (collection 02)",
    "lien": "https://www.instagram.com/reel/CsyvGjlIaY2/",
@@ -557,11 +557,11 @@
    "pieces": [
     {
      "id": "p1",
-     "nom": "Hoodie molleton à ailerons"
+     "nom": "Hoodie zippé ZM_01 · laine Hermès"
     },
     {
      "id": "p2",
-     "nom": "Pantalon molleton à pics"
+     "nom": "Pantalon PM_01 · laine Hermès"
     }
    ]
   },

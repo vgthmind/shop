@@ -97,7 +97,7 @@ img{display:block}
 .ph img+img{opacity:0;transition:opacity .3s}
 @media (hover:hover){.card:hover .ph img+img{opacity:1}}
 .ph .n{position:absolute;right:8px;bottom:8px;font-family:var(--mono);font-size:10.5px;color:var(--soft);background:rgba(255,255,255,.9);padding:1px 6px}
-.card.dim .ph img{filter:grayscale(1);opacity:.55}
+.card.dim .ph{filter:grayscale(1);opacity:.6}
 .body{padding:11px 12px 12px;display:flex;flex-direction:column;gap:5px;flex:1;border-top:1px solid var(--hair)}
 .row1{display:flex;justify-content:space-between;gap:8px;font-family:var(--mono);font-size:11px;letter-spacing:.03em;text-transform:uppercase;color:var(--muted)}
 .st:before{content:"";display:inline-block;width:6px;height:6px;border-radius:50%;margin-right:5px;vertical-align:1px;background:currentColor}
@@ -126,6 +126,9 @@ img{display:block}
 .hint{font-size:12px;color:var(--muted);margin:0}
 .empty{padding:50px 0;color:var(--muted);text-align:center}
 /* Demande libre */
+.ask{display:flex;align-items:center;justify-content:space-between;gap:16px;border:1px solid var(--ink);border-top:0;padding:12px 18px;background:var(--white)}
+.ask p{margin:0;font-size:14px;color:var(--soft)}.ask b{color:var(--ink);font-weight:500}
+.ask .add{width:auto;white-space:nowrap;padding:9px 14px}
 .free{display:grid;grid-template-columns:1fr auto;gap:24px;align-items:center;border:1px solid var(--ink);padding:22px 24px;margin:44px 0 0;background:var(--white)}
 .free h2{font:700 20px/1.1 var(--head);text-transform:uppercase;margin:0 0 6px}
 .free p{margin:0;color:var(--soft);font-size:14px;max-width:70ch}
@@ -208,7 +211,7 @@ textarea{min-height:84px;resize:vertical}
 .toast{position:fixed;left:50%;bottom:76px;transform:translate(-50%,120px);opacity:0;background:var(--ink);color:#fff;padding:9px 16px;font-size:13px;z-index:70;transition:transform .22s,opacity .22s}
 .toast.show{transform:translate(-50%,0);opacity:1}
 @media (max-width:920px){.intro{grid-template-columns:1fr;gap:30px;padding-top:30px}.dlg{grid-template-columns:1fr}.gal .main{max-height:60vh}}
-@media (max-width:600px){.wrap{padding:0 14px}.top nav{gap:12px}.top nav a.hide-s{display:none}.intro .strip{height:84px}.gam button{grid-template-columns:120px 1fr}
+@media (max-width:600px){.ask{flex-direction:column;align-items:stretch}.ask .add{white-space:normal}.wrap{padding:0 14px}.top nav{gap:12px}.top nav a.hide-s{display:none}.intro .strip{height:84px}.gam button{grid-template-columns:120px 1fr}
   .modes{grid-template-columns:1fr}.mode{border-right:0;border-bottom:1px solid var(--ink)}.mode:last-child{border-bottom:0}
   .grid{grid-template-columns:repeat(2,minmax(0,1fr))}.body{padding:9px}.body h3{font-size:14px}.pc{padding:7px;font-size:12.5px}.pc small{display:none}.add{font-size:12.5px;padding:8px 6px}
   .chk span{display:none}.chk:after{content:'Dispo';font-size:12.5px}
@@ -246,6 +249,7 @@ textarea{min-height:84px;resize:vertical}
     <button type="button" class="mode on" data-mode="vente" role="tab" aria-selected="true"><b>Vente · dépôt-vente</b><small>Pour les boutiques : achat ferme ou dépôt, petites séries</small></button>
     <button type="button" class="mode" data-mode="location" role="tab" aria-selected="false"><b>Location</b><small>Clips, scène, shootings, expositions : pièces de collection</small></button>
   </div>
+  <div class="ask" id="ask"><p><b>Vous cherchez autre chose ?</b> Restock d’une pièce, reproduction d’un modèle vendu, petite série à votre logo ou à votre texte.</p><button type="button" class="add ghost" data-free>Faire une demande libre</button></div>
 </div>
 
 <div class="bar"><div class="wrap">
@@ -258,7 +262,7 @@ textarea{min-height:84px;resize:vertical}
   <div id="list"><p class="empty">Chargement du catalogue…</p></div>
   <section class="free" id="free">
     <div><h2>Une demande hors catalogue ?</h2><p>Restock d’une pièce, reproduction d’un modèle vendu, petite série à votre logo ou à votre texte, couleurs au choix : décrivez-le, vous pourrez joindre une image ou un logo à l’envoi.</p></div>
-    <button type="button" class="add" id="addFree">Ajouter une demande libre</button>
+    <button type="button" class="add" data-free>Faire une demande libre</button>
   </section>
 </main>
 
@@ -367,7 +371,7 @@ textarea{min-height:84px;resize:vertical}
     var p = it.photos || [], on = anyFor(it.id, filt.mode), pr = parts(it), g = GAMMES[it.gamme] || {};
     var img = function (ph, i) { return ph ? '<img src="' + esc(ph.s) + '" alt="' + (i ? '' : esc(fullName(it))) + '" loading="lazy" decoding="async"' + (isCover(ph.s) ? ' class="cover"' : '') + '>' : ''; };
     var act;
-    if (!canSel(it)) act = '<p class="hint">' + (it.statut === 'boutique' ? 'Déjà en boutique' + (it.lieu ? ' : ' + esc(it.lieu) : '') : 'Indisponible') + '</p>';
+    if (!canSel(it)) act = '<p class="hint">' + (it.statut === 'boutique' ? 'Déjà placée en boutique' : 'Indisponible') + '</p>';
     else if (pieces(it)) act = pieceRows(it);
     else act = '<button type="button" class="add' + (on ? ' on' : '') + '" data-sel="' + esc(it.id) + '" data-p="">' + (on ? '✓ Dans ma sélection' : esc(addLabel(it))) + '</button>';
     return '<article class="card' + (on ? ' sel' : '') + (it.statut === 'vendu' || it.statut === 'boutique' ? ' dim' : '') + '" data-id="' + esc(it.id) + '">'
@@ -421,7 +425,7 @@ textarea{min-height:84px;resize:vertical}
     $('gam').innerHTML = gh;
     $('filt').hidden = !filt.gamme;
     if (filt.gamme) $('filt').innerHTML = 'Gamme : <b>' + esc(GAMMES[filt.gamme].n) + '</b> · ' + esc(TERMS[filt.mode]) + '<button type="button" data-gamme="' + filt.gamme + '">Tout afficher</button>';
-    $('free').hidden = filt.mode !== 'vente';
+    $('free').hidden = $('ask').hidden = filt.mode !== 'vente';
   }
 
   // ---------- Sélection ----------
@@ -479,7 +483,7 @@ textarea{min-height:84px;resize:vertical}
     cur = byId[id]; if (!cur) return; idx = 0;
     var p = cur.photos || [], pr = parts(cur), g = GAMMES[cur.gamme] || {};
     ov = document.createElement('div'); ov.className = 'ov'; ov.setAttribute('role', 'dialog'); ov.setAttribute('aria-modal', 'true'); ov.setAttribute('aria-label', fullName(cur));
-    var rows = [['Gamme', g.n], ['Collection', COLS[pr.col] ? COLS[pr.col][0] : [cur.collection, cur.annee].filter(Boolean).join(' · ')], ['Réf. ensemble', pr.ref], ['Tailles', cur.tailles], ['Composition', cur.compo], ['En dépôt', cur.statut === 'boutique' ? cur.lieu : '']].filter(function (r) { return r[1]; });
+    var rows = [['Gamme', g.n], ['Collection', COLS[pr.col] ? COLS[pr.col][0] : [cur.collection, cur.annee].filter(Boolean).join(' · ')], ['Réf. ensemble', pr.ref], ['Tailles', cur.tailles], ['Composition', cur.compo]].filter(function (r) { return r[1]; });
     var ext = '';
     if (cur.lien) ext += '<a href="' + esc(cur.lien) + '" target="_blank" rel="noopener">Voir portée sur Instagram ↗</a>';
     if (cur.page && cur.statut === 'dispo') ext += '<a href="' + esc(cur.page) + '" target="_blank" rel="noopener">Fiche sur le site ↗</a>';
@@ -503,7 +507,7 @@ textarea{min-height:84px;resize:vertical}
   }
   function paintChoice() {
     var b = ov && ov.querySelector('#choice'); if (!b) return;
-    if (!canSel(cur)) { b.innerHTML = '<p class="note">' + (cur.statut === 'boutique' ? 'Pièce actuellement en boutique' + (cur.lieu ? ' (' + esc(cur.lieu) + ')' : '') + '.' : '') + '</p>'; return; }
+    if (!canSel(cur)) { b.innerHTML = '<p class="note">' + (cur.statut === 'boutique' ? 'Pièce actuellement placée en boutique.' : '') + '</p>'; return; }
     if (pieces(cur)) { b.innerHTML = '<p class="hint" style="margin-bottom:6px">Cochez la tenue complète ou seulement les pièces voulues :</p>' + pieceRows(cur); return; }
     var on = anyFor(cur.id, filt.mode);
     b.innerHTML = '<button type="button" class="add' + (on ? ' on' : '') + '" data-sel="' + esc(cur.id) + '" data-p="">' + (on ? '✓ Dans ma sélection' : esc(addLabel(cur))) + '</button>';
@@ -543,7 +547,7 @@ textarea{min-height:84px;resize:vertical}
     if (n !== null && sel[+n]) sel[+n].n = e.target.value.slice(0, 600);
     save();
   });
-  $('addFree').addEventListener('click', function () { sel.push({ id: FREE, m: 'vente', p: '', open: true }); save(); openPanel(); });
+  document.querySelectorAll('[data-free]').forEach(function (b) { b.addEventListener('click', function () { if (!sel.some(function (x) { return x.id === FREE && !x.n; })) sel.push({ id: FREE, m: 'vente', p: '', open: true }); save(); openPanel(); setTimeout(function () { var t = $('selList').querySelector('[data-n="' + (sel.length - 1) + '"]'); if (t) t.focus(); }, 320); }); });
   document.addEventListener('keydown', function (e) {
     if (ov) { if (e.key === 'Escape') closeItem(); else if (e.key === 'ArrowLeft') show(idx - 1); else if (e.key === 'ArrowRight') show(idx + 1); }
     else if (e.key === 'Escape' && $('panel').classList.contains('show')) closePanel();
