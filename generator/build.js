@@ -210,12 +210,7 @@ const SITE_ORIGIN_URL = new URL(SHOP_SETTINGS.site_url).origin; // suit site_url
 const BC_IMAGE_MAP = [
   [/https:\/\/assets\.bigcartel\.com\/theme_images\/142638069\/Cover\.png(\?[^"'\s)]*)?/g, () => `${SITE_ORIGIN_URL}${BASE_PATH}/assets/theme/bc/cover-og.jpg`],
   [/https:\/\/assets\.bigcartel\.com\/theme_images\/122404563\/Illustration_sans_titre\+_1_\.PNG(\?[^"'\s)]*)?/g, () => `${BASE_PATH}/assets/theme/bc/logo-illustration.png`],
-  // Icones des transitions / du menu : etaient servies par le depot vgthmind.github.io
-  // (cart-icon.png pesait 100 Ko, info-icon.png 373 Ko) ; copies allegees dans assets/theme/icons/.
-  [/https:\/\/vgthmind\.github\.io\/assets\/bigcartel\/((?:cart|products|info|contact|studio|suivi)-icon\.png)/g, (m, f) => `${BASE_PATH}/assets/theme/icons/${f}`],
   [/https:\/\/assets\.bigcartel\.com\/product_images\/405517188\/cover\+clean\.png(\?[^"'\s)]*)?/g, () => `${BASE_PATH}/assets/products/cd-vgtape/0.png`],
-  // Vidéos (reels, clip_N.mp4, dossier studio/) : copies dans assets/media/ (voir LOCAL_MEDIA).
-  ...(LOCAL_MEDIA ? [[/https:\/\/vgthmind\.github\.io\/assets\/bigcartel\/(reels\/|clip_\d+\.mp4|studio\/)/g, (m, f) => `${BASE_PATH}/assets/media/${f}`]] : []),
 ];
 function localizeBigCartelImages(text) {
   if (typeof text !== 'string' || (text.indexOf('assets.bigcartel.com') === -1 && text.indexOf('/assets/bigcartel/') === -1)) return text;
@@ -640,20 +635,20 @@ function injectAround(html, parts, product, relPath) {
   ].join('\n');
   html = html.replace(/<\/head>/i, () => `${headExtra}\n</head>`);
   // The Layout's <link rel="preload"> must name the file the Body really
-  // runs (our wrapped copy), as on BigCartel. Left on vgthmind.github.io it
+  // runs (our wrapped copy), as on BigCartel. Left on the old host it
   // preloaded a file nobody runs: our copy was only fetched after jQuery /
   // api.js / theme.js, so on iPhone the Body scripts (the "← Produits" link
   // above the product title...) ran well after the arrival and the title
   // and price jumped.
   html = html.replace(
-    /(<link rel="preload" as="script" href=")https:\/\/vgthmind\.github\.io\/assets\/bigcartel\/vg-transitions-dev\.js[^"]*(")/,
+    /(<link rel="preload" as="script" href=")\/assets\/vg\/vg-transitions-dev\.js[^"]*(")/,
     (m, a, b) => `${a}${LOCAL_DEV_JS}?v=${DEV_JS_VERSION}${b}`);
   html = html.replace(
-    /https:\/\/vgthmind\.github\.io\/assets\/bigcartel\/vg-transitions-dev\.css\?v=[^"]*/g,
+    /\/assets\/vg\/vg-transitions-dev\.css\?v=[^"]*/g,
     () => `${LOCAL_DEV_CSS}?v=${DEV_CSS_VERSION}`);
   // Body code before </body>, its dev-JS <script src> pointed at our wrapped copy.
   const body = wrapInlineScripts(parts.bodyCode).replace(
-    /<script src="https:\/\/vgthmind\.github\.io\/assets\/bigcartel\/vg-transitions-dev\.js[^"]*"><\/script>/,
+    /<script src="\/assets\/vg\/vg-transitions-dev\.js[^"]*"><\/script>/,
     `<script src="${LOCAL_DEV_JS}?v=${DEV_JS_VERSION}"></script>`);
   // Front-end cart, after the Body/dev-JS scripts (step 3, see
   // assets/vg-shop-cart.js - not part of the real draft).
@@ -736,9 +731,7 @@ async function main() {
     // The Body reads products-config.json (portfolio) for, among others,
     // unique_mode: served from /shop/ with "force-no" added for the pieces
     // the admin gives more than one in stock (no "Unique piece" badge).
-    bodyCode: read(rel(CUSTOM_DIR, 'body.html')).replace(
-      "fetch('https://vgthmind.github.io/assets/bigcartel/products-config.json')",
-      "fetch('/assets/vg/products-config.json')"),
+    bodyCode: read(rel(CUSTOM_DIR, 'body.html')),
   };
   // Colour, reel and badge now live in each data/products/<slug>.json (written
   // by the admin piece wizard): no more portfolio-hosted products-config.json.

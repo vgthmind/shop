@@ -10,7 +10,7 @@
   // Adresse du site = réglage central (site_url dans data/shop-settings.json), écrite ici par generator/build.js.
   var SITE_URL = '__VG_SITE_URL__';
   if (SITE_URL.indexOf('__') === 0) SITE_URL = location.origin; // source non construite (essais locaux)
-  // Admin ouvert depuis une autre adresse que le site (ancien aperçu github.io, favori d'avant…) : renvoi vers la bonne,
+  // Admin ouvert depuis une autre adresse que le site (ancien aperçu GitHub Pages, favori d'avant…) : renvoi vers la bonne,
   // où la connexion est exigée. Rien n'est affiché ni chargé ici.
   try {
     if (!/^(localhost|127\.0\.0\.1)$/.test(location.hostname) && location.origin !== new URL(SITE_URL).origin) {

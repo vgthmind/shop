@@ -1,5 +1,5 @@
 <script>
-window.__vgConfig = fetch('https://vgthmind.github.io/assets/bigcartel/products-config.json')
+window.__vgConfig = fetch('/assets/vg/products-config.json')
   .then(function (r) { return r.ok ? r.json() : {}; })
   .catch(function () { return {}; })
   .then(function (c) { var x = window.__vgConfigExtra; if (x) for (var k in x) c[k] = x[k]; return c; });
@@ -84,24 +84,24 @@ window.__vgConfig = fetch('https://vgthmind.github.io/assets/bigcartel/products-
     'cache-cou': 'reel/DRr_YfqjIuF/'
   };
   var REEL_VIDEO_MAP = {
-    'ch_0002': 'https://vgthmind.github.io/assets/bigcartel/reels/ch_0002.mp4',
-    'ch_0003': 'https://vgthmind.github.io/assets/bigcartel/reels/ch_0003.mp4',
-    'ch_0004': 'https://vgthmind.github.io/assets/bigcartel/reels/ch_0004.mp4',
-    'ch_0005': 'https://vgthmind.github.io/assets/bigcartel/reels/ch_0005.mp4',
-    'ch_0006': 'https://vgthmind.github.io/assets/bigcartel/reels/ch_0006.mp4',
-    'sa': 'https://vgthmind.github.io/assets/bigcartel/reels/sa.mp4',
-    'sma_0001': 'https://vgthmind.github.io/assets/bigcartel/reels/sma_0001.mp4',
-    'sma_0003': 'https://vgthmind.github.io/assets/bigcartel/reels/sma_0003.mp4',
-    'sma_0004': 'https://vgthmind.github.io/assets/bigcartel/reels/sma_0004.mp4',
-    'custom-hoodie': 'https://vgthmind.github.io/assets/bigcartel/reels/custom-hoodie.mp4',
-    'custom-tee-shirt-col-en-v': 'https://vgthmind.github.io/assets/bigcartel/reels/custom-tee-shirt-col-en-v.mp4',
-    'pantalon-rouge-framboise': 'https://vgthmind.github.io/assets/bigcartel/reels/pantalon-rouge-framboise.mp4',
-    'pantalon-denim-bleu': 'https://vgthmind.github.io/assets/bigcartel/reels/pantalon-denim-bleu.mp4',
-    'ja_0001': 'https://vgthmind.github.io/assets/bigcartel/reels/ja_0001.mp4',
-    'cd-vgtape': 'https://vgthmind.github.io/assets/bigcartel/reels/cd-vgtape.mp4',
-    'gp_0002': 'https://vgthmind.github.io/assets/bigcartel/reels/gp_0002.mp4',
-    'short-coupe-évasée': 'https://vgthmind.github.io/assets/bigcartel/reels/short-coupe-evasee.mp4',
-    'cache-cou': 'https://vgthmind.github.io/assets/bigcartel/reels/cache-cou.mp4'
+    'ch_0002': '/assets/media/reels/ch_0002.mp4',
+    'ch_0003': '/assets/media/reels/ch_0003.mp4',
+    'ch_0004': '/assets/media/reels/ch_0004.mp4',
+    'ch_0005': '/assets/media/reels/ch_0005.mp4',
+    'ch_0006': '/assets/media/reels/ch_0006.mp4',
+    'sa': '/assets/media/reels/sa.mp4',
+    'sma_0001': '/assets/media/reels/sma_0001.mp4',
+    'sma_0003': '/assets/media/reels/sma_0003.mp4',
+    'sma_0004': '/assets/media/reels/sma_0004.mp4',
+    'custom-hoodie': '/assets/media/reels/custom-hoodie.mp4',
+    'custom-tee-shirt-col-en-v': '/assets/media/reels/custom-tee-shirt-col-en-v.mp4',
+    'pantalon-rouge-framboise': '/assets/media/reels/pantalon-rouge-framboise.mp4',
+    'pantalon-denim-bleu': '/assets/media/reels/pantalon-denim-bleu.mp4',
+    'ja_0001': '/assets/media/reels/ja_0001.mp4',
+    'cd-vgtape': '/assets/media/reels/cd-vgtape.mp4',
+    'gp_0002': '/assets/media/reels/gp_0002.mp4',
+    'short-coupe-évasée': '/assets/media/reels/short-coupe-evasee.mp4',
+    'cache-cou': '/assets/media/reels/cache-cou.mp4'
   };
   (window.__vgConfig || Promise.resolve({})).then(function (cfg) {
     var reelUrl = null;
@@ -199,7 +199,7 @@ window.__vgConfig = fetch('https://vgthmind.github.io/assets/bigcartel/products-
   }
 })();
 </script>
-<script src="https://vgthmind.github.io/assets/bigcartel/vg-transitions-dev.js?v=2026-10-05-1"></script>
+<script src="/assets/vg/vg-transitions-dev.js?v=2026-10-05-1"></script>
 
 <script>
 (function () {
