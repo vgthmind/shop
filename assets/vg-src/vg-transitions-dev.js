@@ -712,7 +712,7 @@ window.__vgProducts = window.__vgProducts || fetch('/products.json').then(functi
 /* l'application, supprimer le bloc <script> correspondant du Body (voir */
 /* APPLIQUER_LOT_A.md), ce fichier prend le relais seul. */
 (function () {
-  if (location.pathname !== '/') return;
+  if (location.pathname !== '/' && !(window.VG_GATE && window.VG_GATE.mode === 'closed')) return; // fermé : l'écran « Bientôt de retour » s'affiche sur toute page (servie en 503)
   // Une seule fois par visite : drapeau pose des l'affichage (un rechargement ne la relance pas, meme
   // avant le clic), en sessionStorage + en localStorage avec une duree de 30 min (Safari iOS peut
   // perdre le sessionStorage : appli installee relancee, onglet restaure).
