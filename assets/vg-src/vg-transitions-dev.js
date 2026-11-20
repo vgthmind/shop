@@ -749,7 +749,7 @@ window.__vgProducts = window.__vgProducts || fetch('/products.json').then(functi
       splash.appendChild(msg);
       var links = document.createElement('p');
       links.className = 'vg-gate-links';
-      var L = [['Instagram', 'Instagram', 'https://www.instagram.com/vgthmind'], ['Portfolio', 'Portfolio', 'https://vgthmind.github.io/'], ['Catalogue pro', 'Trade catalogue', '/pro/'], ['contact@vgthmind.org', 'contact@vgthmind.org', 'mailto:contact@vgthmind.org']];
+      var L = [['Instagram', 'Instagram', 'https://www.instagram.com/vgthmind'], ['contact@vgthmind.org', 'contact@vgthmind.org', 'mailto:contact@vgthmind.org']];
       links.innerHTML = L.map(function (x) { return '<a href="' + x[2] + '"' + (x[2].charAt(0) === 'h' ? ' target="_blank" rel="noopener"' : '') + '>' + (fr ? x[0] : x[1]) + '</a>'; }).join('');
       splash.appendChild(links);
       return;
