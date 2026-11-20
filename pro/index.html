@@ -332,7 +332,7 @@ textarea{min-height:84px;resize:vertical}
   var ST_EN = { dispo: 'Available', demande: 'On request', boutique: 'In a shop', vendu: 'Sold' };
   var ST = ST_FR;
   var SRANK = { dispo: 0, demande: 1, boutique: 2, vendu: 3 };
-  var LINKS = [['portfolio', 'Portfolio', 'Portfolio'], ['instagram', 'Instagram', 'Instagram'], ['youtube', 'YouTube', 'YouTube'], ['site', 'Boutique en ligne', 'Online shop']];
+  var LINKS = [['portfolio', 'Portfolio', 'Portfolio'], ['instagram', 'Instagram', 'Instagram'], ['youtube', 'YouTube', 'YouTube']];
   var KEY = 'vg-pro-selection3';
   var TERMS_FR = { vente: 'Prix professionnels et conditions communiqués sur demande.', location: 'Location à la journée ou au projet. Tarif, caution et conditions sur demande.' };
   var TERMS_EN = { vente: 'Trade prices and terms on request.', location: 'Rental by the day or per project. Rate, deposit and terms on request.' };
@@ -523,7 +523,6 @@ textarea{min-height:84px;resize:vertical}
     var rows = [[L('Gamme', 'Range'), g.n], ['Collection', COLS[pr.col] ? COLS[pr.col][0] : [cur.collection, cur.annee].filter(Boolean).join(' · ')], [L('Réf. ensemble', 'Set ref.'), pr.ref], [L('Tailles', 'Sizes'), sizes(cur.tailles)], [L('Composition', 'Fabric'), cur.compo]].filter(function (r) { return r[1]; });
     var ext = '';
     if (cur.lien) ext += '<a href="' + esc(cur.lien) + '" target="_blank" rel="noopener">' + L('Voir portée sur Instagram ↗', 'See it worn on Instagram ↗') + '</a>';
-    if (cur.page && cur.statut === 'dispo') ext += '<a href="' + esc(cur.page) + '" target="_blank" rel="noopener">' + L('Fiche sur le site ↗', 'Product page ↗') + '</a>';
     if (pr.col === 'VGTAPE') ext += '<a href="https://www.youtube.com/@vgthmind/videos" target="_blank" rel="noopener">' + L('Les clips VGTAPE ↗', 'VGTAPE music videos ↗') + '</a>';
     ov.innerHTML = '<div class="dlg"><div class="gal"><div class="main" id="gmain"></div>'
       + (p.length > 1 ? '<button type="button" class="nav p" data-nav="-1" aria-label="Photo précédente">‹</button><button type="button" class="nav n" data-nav="1" aria-label="Photo suivante">›</button><div class="thumbs">' + p.map(function (ph, i) { return '<button type="button" data-go="' + i + '" aria-label="Photo ' + (i + 1) + '"><img src="' + esc(ph.s) + '" alt="" loading="lazy"></button>'; }).join('') + '</div>' : '')
