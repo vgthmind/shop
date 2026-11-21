@@ -211,7 +211,7 @@
     note.innerHTML = (series
       ? L('Already in your cart in the maximum quantity.', 'Déjà dans ton panier, en quantité maximale.')
       : L('Already in your cart (one-of-a-kind piece).', 'Déjà dans ton panier (pièce unique).'))
-      + ' <a href="/cart">' + L('View cart', 'Voir le panier') + '</a>';
+      + ' <a href="/cart/">' + L('View cart', 'Voir le panier') + '</a>';
   }
 
   // --- "Add to cart" : le click (capturé par vg-transitions-dev.js, qui

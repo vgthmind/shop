@@ -957,11 +957,12 @@ async function main() {
     }
     fs.writeFileSync(rel(OUT_DIR, '_redirects'), '# Généré par generator/build.js : anciennes adresses BigCartel.\n' + lines.join('\n') + '\n');
   }
-  // Adresses de dossiers (/assets/, /assets/products-sized/) : jamais une page, jamais liées par le site. Elles répondent 404
-  // (pas de redirection : une redirection les garderait dans la Search Console comme « page avec redirection »).
+  // Dossier /assets/ : jamais une page, jamais lié par le site -> 301 vers l'accueil (seule l'adresse exacte du dossier est visée, pas les fichiers dedans).
+  // /product/t-shirt-custom : ancienne pièce BigCartel sans fiche actuelle (custom-tee-shirt-col-en-v est masquée, sans page) -> liste des pièces.
   if (BASE_PATH === '') {
     fs.appendFileSync(rel(OUT_DIR, '_redirects'), '# Anciennes adresses : une seule étape, vers la forme finale (avec « / »).\n'
-      + '/product/t-shirt-custom /product/custom-tee-shirt-col-en-v/ 301\n/product/t-shirt-custom/ /product/custom-tee-shirt-col-en-v/ 301\n'
+      + '/product/t-shirt-custom /products/ 301\n/product/t-shirt-custom/ /products/ 301\n'
+      + '/assets / 301\n/assets/ / 301\n'
       + '/contact-914a3d /contact/ 301\n/contact-914a3d/ /contact/ 301\n');
   }
   // /favicon.ico a la racine du site (certains navigateurs le demandent d'office).
