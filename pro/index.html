@@ -364,13 +364,13 @@ textarea{min-height:84px;resize:vertical}
   function pcName(it, pc) { var i = (it.pieces || []).indexOf(pc); return (lang === 'en' && it.en && it.en.pieces && it.en.pieces[i]) || pc.nom; }
   function sizes(t) {
     if (lang !== 'en') return t;
-    return String(t || '').replace(/^Taille Unique$/i, 'One size').replace(/Taille et modèle unique (légères variations selon l[’']épaisseur du tissu).?/, 'One size and one-off design (slight variations depending on fabric thickness).')
-      .replace(/(s*tour de taille (?:de|entre) (d+) (?:à|et) (d+) ?cm environ)/i, '(waist $1 to $2 cm approx.)').replace(/(≈(d+) ?cm de tour de (?:taille|ceinture))/, '(≈$1 cm waist)')
+    return String(t || '').replace(/^Taille Unique$/i, 'One size').replace(/Taille et modèle unique \(légères variations selon l[’']épaisseur du tissu\)\.?/, 'One size and one-off design (slight variations depending on fabric thickness).')
+      .replace(/\(\s*tour de taille (?:de|entre) (\d+) (?:à|et) (\d+) ?cm environ\)/i, '(waist $1 to $2 cm approx.)').replace(/\(≈(\d+) ?cm de tour de (?:taille|ceinture)\)/, '(≈$1 cm waist)')
       .replace(/ élastique/, ' elastic').replace(/Tailles/g, 'Sizes').replace(/Taille/g, 'Size');
   }
   function compo(t) {
     if (lang !== 'en' || !t) return t;
-    var W = [[/^Tissu : Coton bleu 100% recouvert d[’']une couche plastique PVC réflective blanche brûlée.?$/, 'Fabric: 100% blue cotton coated with a burnt white reflective PVC layer.'], [/Bord côte/g, 'Ribbed edge'], [/Poches/g, 'Pockets'], [/satin de soie blanc/g, 'white silk satin'], [/Velour de coton/g, 'Cotton velour'], [/Satin Duchesse Gris Reflet Bleu/g, 'Duchess satin, blue-grey sheen'], [/Cotton Molleton Gris Texturé/g, 'Textured grey cotton fleece'], [/Soie Gaufrée Bleu gris/g, 'Embossed blue-grey silk'], [/Laine/g, 'Wool'], [/[Éé]lasthanne/gi, 'elastane'], [/Polyester/g, 'polyester'], [/coton/gi, 'cotton']];
+    var W = [[/^Tissu : Coton bleu 100% recouvert d[’']une couche plastique PVC réflective blanche brûlée\.?$/, 'Fabric: 100% blue cotton coated with a burnt white reflective PVC layer.'], [/Bord côte/g, 'Ribbed edge'], [/Poches/g, 'Pockets'], [/satin de soie blanc/g, 'white silk satin'], [/Velour de coton/g, 'Cotton velour'], [/Satin Duchesse Gris Reflet Bleu/g, 'Duchess satin, blue-grey sheen'], [/Cotton Molleton Gris Texturé/g, 'Textured grey cotton fleece'], [/Soie Gaufrée Bleu gris/g, 'Embossed blue-grey silk'], [/Laine/g, 'Wool'], [/[Éé]lasthanne/gi, 'elastane'], [/Polyester/g, 'polyester'], [/coton/gi, 'cotton']];
     W.forEach(function (w) { t = t.replace(w[0], w[1]); });
     return t;
   }
