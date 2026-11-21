@@ -6,9 +6,9 @@
 <meta name="robots" content="noindex, nofollow">
 <meta name="referrer" content="strict-origin-when-cross-origin">
 <title>vgthmind — Catalogue professionnel</title>
-<meta name="description" content="Catalogue professionnel vgthmind : vêtements faits main à Vitry-sur-Seine. Vente, dépôt-vente, location et petites séries.">
+<meta name="description" id="metaDesc" content="Catalogue professionnel vgthmind : vêtements faits main à Vitry-sur-Seine. Je dessine, fais le patron, coupe, couds et finis chaque pièce moi-même.">
 <meta property="og:title" content="vgthmind — Catalogue professionnel">
-<meta property="og:description" content="Vêtements faits main à Vitry-sur-Seine : pièces uniques, petites séries, tenues de scène. Vente, dépôt-vente, location.">
+<meta property="og:description" id="ogDesc" content="Catalogue professionnel vgthmind : vêtements faits main à Vitry-sur-Seine. Je dessine, fais le patron, coupe, couds et finis chaque pièce moi-même.">
 <meta property="og:image" content="/assets/theme/cover.png">
 <link rel="icon" href="/assets/theme/favicon.svg" type="image/svg+xml">
 <link rel="icon" href="/assets/theme/favicon-32.png" type="image/png" sizes="32x32">
@@ -131,9 +131,6 @@ img{display:block}
 .hint{font-size:12px;color:var(--muted);margin:0}
 .empty{padding:50px 0;color:var(--muted);text-align:center}
 /* Demande libre */
-.ask{display:flex;align-items:center;justify-content:space-between;gap:16px;border:1px solid var(--ink);border-top:0;padding:12px 18px;background:var(--white)}
-.ask p{margin:0;font-size:14px;color:var(--soft)}.ask b{color:var(--ink);font-weight:500}
-.ask .add{width:auto;white-space:nowrap;padding:9px 14px}
 .free{display:grid;grid-template-columns:1fr auto;gap:24px;align-items:center;border:1px solid var(--ink);padding:22px 24px;margin:44px 0 0;background:var(--white)}
 .free h2{font:700 20px/1.1 var(--head);text-transform:uppercase;margin:0 0 6px}
 .free p{margin:0;color:var(--soft);font-size:14px;max-width:70ch}
@@ -205,7 +202,9 @@ textarea{min-height:84px;resize:vertical}
 .kinds label:has(input:checked){border-color:var(--ink)}
 .files input{padding:8px;font-size:13px}
 .bad{border-color:#b3261e!important;outline-color:#b3261e}
-.trap{position:absolute;left:-9999px}
+.trap{display:none!important}
+.hint2{font-size:12px;color:var(--muted)}
+.nojs{padding:40px 0;text-align:center;color:var(--soft)}
 .msg{font-size:13.5px;min-height:1.3em;margin:0}
 .msg.err{color:#b3261e}
 .send{border:1px solid var(--ink);background:var(--ink);color:#fff;padding:13px;font-weight:500;font-size:15px}
@@ -216,10 +215,10 @@ textarea{min-height:84px;resize:vertical}
 .toast{position:fixed;left:50%;bottom:76px;transform:translate(-50%,120px);opacity:0;background:var(--ink);color:#fff;padding:9px 16px;font-size:13px;z-index:70;transition:transform .22s,opacity .22s}
 .toast.show{transform:translate(-50%,0);opacity:1}
 @media (max-width:920px){.intro{grid-template-columns:1fr;gap:30px;padding-top:30px}.dlg{grid-template-columns:1fr}.gal .main{max-height:60vh}}
-@media (max-width:600px){.top{flex-wrap:wrap}.hr{width:100%;justify-content:space-between;gap:10px}.lng{border:0;padding:0}.ask{flex-direction:column;align-items:stretch}.ask .add{white-space:normal}.wrap{padding:0 14px}.top nav{gap:12px}.top nav a.hide-s{display:none}.intro .strip{height:84px}.gam button{grid-template-columns:120px 1fr}
+@media (max-width:600px){.top{flex-wrap:wrap}.hr{width:100%;justify-content:space-between;gap:10px}.lng{border:0;padding:0}.wrap{padding:0 14px}.top nav{gap:12px}.top nav a.hide-s{display:none}.intro .strip{height:84px}.gam button{grid-template-columns:120px 1fr}
   .modes{grid-template-columns:1fr}.mode{border-right:0;border-bottom:1px solid var(--ink)}.mode:last-child{border-bottom:0}
   .grid{grid-template-columns:repeat(2,minmax(0,1fr))}.body{padding:9px}.body h3{font-size:14px}.pc{padding:7px;font-size:12.5px}.pc small{display:none}.add{font-size:12.5px;padding:8px 6px}
-  .chk span{display:none}.chk:after{content:'Dispo';font-size:12.5px}
+  .chk span{display:none}.chk:after{content:attr(data-short);font-size:12.5px}
   .free{grid-template-columns:1fr;padding:18px}.ov{padding:0;align-items:flex-end}.dlg{max-height:94vh}.two{grid-template-columns:1fr}
   .cart{width:calc(100% - 20px);justify-content:space-between;bottom:10px}.cart .th{display:none}}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
@@ -228,8 +227,8 @@ textarea{min-height:84px;resize:vertical}
 <body>
 <div class="wrap">
   <header class="top">
-    <a class="brand" href="/" target="_blank" rel="noopener"><img src="/assets/theme/logo.png" alt="" width="35" height="26"><b>vgthmind</b></a>
-    <div class="hr"><nav id="links"></nav><div class="lng m" role="group" aria-label="Langue / Language"><button type="button" data-lang="fr">FR</button><button type="button" data-lang="en">EN</button><a href="#" data-translate data-en="Other language">Autre langue</a></div></div>
+    <a class="brand" href="/" target="_blank" rel="noopener"><img src="/assets/theme/logo.png" alt="vgthmind" width="35" height="26"><b>vgthmind</b></a>
+    <div class="hr"><nav id="links"></nav><div class="lng m" role="group" aria-label="Langue / Language"><button type="button" data-lang="fr">FR</button><button type="button" data-lang="en">EN</button><a href="https://translate.google.com/translate?sl=fr&amp;tl=en" id="otherLang" target="_blank" rel="noopener" data-translate data-en="Other language">Autre langue</a></div></div>
   </header>
 
   <section class="intro">
@@ -250,23 +249,23 @@ textarea{min-height:84px;resize:vertical}
     </div>
   </section>
 
-  <div class="modes" role="tablist" aria-label="Vente ou location">
+  <div class="modes" role="tablist" aria-label="Vente ou location" data-en-aria="Sale or rental">
     <button type="button" class="mode on" data-mode="vente" role="tab" aria-selected="true"><b data-en="Sale · consignment">Vente · dépôt-vente</b><small data-en="For shops: wholesale or consignment, small runs">Pour les boutiques : achat ferme ou dépôt, petites séries</small></button>
     <button type="button" class="mode" data-mode="location" role="tab" aria-selected="false"><b data-en="Rental">Location</b><small data-en="Music videos, stage, shoots, exhibitions: collection pieces">Clips, scène, shootings, expositions : pièces de collection</small></button>
   </div>
-  <div class="ask" id="ask"><p><b data-en="Looking for something else?">Vous cherchez autre chose ?</b> <span data-en="Restock of a piece, a remake of a sold design, a small run with your logo or text.">Restock d’une pièce, reproduction d’un modèle vendu, petite série à votre logo ou à votre texte.</span></p><button type="button" class="add ghost" data-free data-en="Make a custom request">Faire une demande libre</button></div>
 </div>
 
 <div class="bar"><div class="wrap">
   <div class="tabs" id="tabs" role="tablist"></div>
-  <label class="chk"><input type="checkbox" id="onlyAvail"><span data-en="Available only">Disponibles seulement</span></label>
+  <label class="chk" data-short="Dispo"><input type="checkbox" id="onlyAvail"><span data-en="Available only">Disponibles seulement</span></label>
 </div></div>
 
 <main class="wrap">
   <div class="filt" id="filt" hidden></div>
+  <noscript><style>#list{display:none}</style><p class="nojs">Activez JavaScript pour voir le catalogue, ou écrivez à <a href="mailto:contact@vgthmind.org">contact@vgthmind.org</a>.<br><span class="mt">Enable JavaScript to view the catalogue, or write to <a href="mailto:contact@vgthmind.org">contact@vgthmind.org</a>.</span></p></noscript>
   <div id="list"><p class="empty">Chargement… / Loading…</p></div>
   <section class="free" id="free">
-    <div><h2 data-en="A request outside the catalogue?">Une demande hors catalogue ?</h2><p data-en="Restock a piece, remake a sold design, a small run with your logo or text, colours of your choice: describe it, and you can attach an image or logo when sending.">Restock d’une pièce, reproduction d’un modèle vendu, petite série à votre logo ou à votre texte, couleurs au choix : décrivez-le, vous pourrez joindre une image ou un logo à l’envoi.</p></div>
+    <div><h2 data-en="A request outside the catalogue?">Une demande hors catalogue ?</h2><p data-en="Restock a piece, remake a sold design, a small run with your logo or text, colours of your choice: describe it, and you can attach an image or logo when sending.">Réassort d’une pièce, reproduction d’un modèle vendu, petite série à votre logo ou à votre texte, couleurs au choix : décrivez-le, vous pourrez joindre une image ou un logo à l’envoi.</p></div>
     <button type="button" class="add" data-free data-en="Make a custom request">Faire une demande libre</button>
   </section>
 </main>
@@ -278,24 +277,24 @@ textarea{min-height:84px;resize:vertical}
 
 <div class="cart" id="cart"><div class="th" id="cartThumbs"></div><b id="cartCount"></b><button type="button" id="openPanel" data-en="Review and send →">Voir et envoyer →</button></div>
 <div class="shade" id="shade"></div>
-<aside class="panel" id="panel" aria-label="Ma sélection" aria-hidden="true">
-  <header><h2 data-en="My selection">Ma sélection</h2><button type="button" class="close" id="closePanel" aria-label="Fermer">×</button></header>
+<aside class="panel" id="panel" aria-label="Ma sélection" data-en-aria="My selection" aria-hidden="true">
+  <header><h2 data-en="My selection">Ma sélection</h2><button type="button" class="close" id="closePanel" aria-label="Fermer" data-en-aria="Close">×</button></header>
   <div class="scroll">
     <div id="selList"></div>
     <form id="form" novalidate>
       <h3 data-en="Your details">Vos coordonnées</h3>
       <label><span data-en="Shop / company / artist *">Boutique / société / artiste *</span><input name="shop" autocomplete="organization" required maxlength="120"></label>
-      <label><span><span data-en="Email *">E-mail *</span><em data-en="so I can reply">pour vous répondre</em></span><input name="email" type="email" autocomplete="email" required maxlength="200"></label>
-      <div class="two"><label><span><span data-en="First name">Prénom</span><em data-en="optional">facultatif</em></span><input name="firstName" autocomplete="given-name" maxlength="60"></label><label><span><span data-en="Last name">Nom</span><em data-en="optional">facultatif</em></span><input name="lastName" autocomplete="family-name" maxlength="60"></label></div>
-      <div class="two"><label><span data-en="City">Ville</span><input name="shopCity" autocomplete="address-level2" maxlength="200"></label>
-        <label><span data-en="Country">Pays</span><select name="country"><option value="FR">France</option><option value="BE">Belgique</option><option value="CH">Suisse</option><option value="LU">Luxembourg</option><option value="CA">Canada</option><option value="DE">Allemagne</option><option value="IT">Italie</option><option value="ES">Espagne</option><option value="NL">Pays-Bas</option><option value="GB">Royaume-Uni</option><option value="US">États-Unis</option><option value="JP">Japon</option></select></label></div>
-      <div><label style="margin-bottom:6px" data-en="What are you looking for?">Formule envisagée</label>
+      <label><span data-en="Email *">E-mail *</span><input name="email" type="email" autocomplete="email" required maxlength="200"></label>
+      <div class="two"><label><span><span data-en="First name">Prénom</span><em data-en="(optional)">(facultatif)</em></span><input name="firstName" autocomplete="given-name" maxlength="60"></label><label><span><span data-en="Last name">Nom</span><em data-en="(optional)">(facultatif)</em></span><input name="lastName" autocomplete="family-name" maxlength="60"></label></div>
+      <div class="two"><label><span><span data-en="City">Ville</span><em data-en="(optional)">(facultatif)</em></span><input name="shopCity" autocomplete="address-level2" maxlength="200"></label>
+        <label><span><span data-en="Country">Pays</span><em data-en="(optional)">(facultatif)</em></span><select name="country"><option value="FR" data-en="France">France</option><option value="BE" data-en="Belgium">Belgique</option><option value="CH" data-en="Switzerland">Suisse</option><option value="LU" data-en="Luxembourg">Luxembourg</option><option value="CA" data-en="Canada">Canada</option><option value="DE" data-en="Germany">Allemagne</option><option value="IT" data-en="Italy">Italie</option><option value="ES" data-en="Spain">Espagne</option><option value="NL" data-en="Netherlands">Pays-Bas</option><option value="GB" data-en="United Kingdom">Royaume-Uni</option><option value="US" data-en="United States">États-Unis</option><option value="JP" data-en="Japan">Japon</option></select></label></div>
+      <div><label style="margin-bottom:6px"><span><span data-en="What are you looking for?">Formule envisagée</span><em data-en="(optional)">(facultatif)</em></span></label>
         <div class="kinds" id="kinds"><label><input type="checkbox" value="Dépôt-vente"><span data-en="Consignment">Dépôt-vente</span></label><label><input type="checkbox" value="Achat ferme"><span data-en="Wholesale">Achat ferme</span></label><label><input type="checkbox" value="Location"><span data-en="Rental">Location</span></label><label><input type="checkbox" value="À discuter"><span data-en="To discuss">À discuter</span></label></div></div>
-      <div class="two" id="locBox" hidden><label><span data-en="Project (rental)">Projet (location)</span><input name="projectType" maxlength="150" placeholder="Clip, concert, shooting…" data-en-ph="Music video, concert, shoot…"></label><label><span data-en="Dates">Dates</span><input name="dates" maxlength="200" placeholder="ex. 12-14 mars 2027" data-en-ph="e.g. 12-14 March 2027"></label></div>
-      <label><span data-en="Instagram or website">Instagram ou site</span><input name="links" maxlength="800" placeholder="@votreboutique ou https://…" data-en-ph="@yourshop or https://…"></label>
-      <label><span>Message</span><textarea name="idea" maxlength="3000" placeholder="Tailles, délais, questions…" data-en-ph="Sizes, lead times, questions…"></textarea></label>
-      <label class="files" id="filesBox" hidden><span><span data-en="Attach images">Joindre des images</span><em data-en="logo, reference, artwork · 8 max, 10 MB each">logo, référence, visuel · 8 max, 10 Mo chacune</em></span><input type="file" id="files" accept="image/*" multiple></label>
-      <div class="trap" aria-hidden="true"><label>Ne pas remplir<input name="website" tabindex="-1" autocomplete="off"></label></div>
+      <div class="two" id="locBox" hidden><label><span><span data-en="Project (rental)">Projet (location)</span><em data-en="(optional)">(facultatif)</em></span><input name="projectType" maxlength="150" placeholder="Clip, concert, shooting…" data-en-ph="Music video, concert, shoot…"></label><label><span><span data-en="Dates">Dates</span><em data-en="(optional)">(facultatif)</em></span><input name="dates" maxlength="200" placeholder="ex. 12-14 mars 2027" data-en-ph="e.g. 12-14 March 2027"></label></div>
+      <label><span><span data-en="Instagram or website">Instagram ou site</span><em data-en="(optional)">(facultatif)</em></span><input name="links" maxlength="800" placeholder="@votreboutique ou https://…" data-en-ph="@yourshop or https://…"></label>
+      <label><span><span>Message</span><em data-en="(optional)">(facultatif)</em></span><textarea name="idea" maxlength="3000" placeholder="Tailles, délais, questions…" data-en-ph="Sizes, lead times, questions…"></textarea></label>
+      <label class="files" id="filesBox" hidden><span><span data-en="Attach images">Joindre des images</span><em data-en="(optional)">(facultatif)</em></span><input type="file" id="files" accept="image/*" multiple><span class="hint2" data-en="Logo, reference, artwork · 8 max, 10 MB each">Logo, référence, visuel · 8 max, 10 Mo chacune</span></label>
+      <div class="trap" aria-hidden="true" hidden><input name="website" tabindex="-1" autocomplete="off" aria-hidden="true"></div>
       <button class="send" type="submit" id="send" data-en="Send my selection">Envoyer ma sélection</button>
       <p class="msg" id="msg" role="status" aria-live="polite"></p>
     </form>
@@ -346,6 +345,11 @@ textarea{min-height:84px;resize:vertical}
     document.documentElement.lang = lang;
     document.querySelectorAll('[data-en]').forEach(function (el) { if (el.dataset.fr === undefined) el.dataset.fr = el.textContent; el.textContent = lang === 'en' ? el.getAttribute('data-en') : el.dataset.fr; });
     document.querySelectorAll('[data-en-ph]').forEach(function (el) { if (el.dataset.frPh === undefined) el.dataset.frPh = el.placeholder; el.placeholder = lang === 'en' ? el.getAttribute('data-en-ph') : el.dataset.frPh; });
+    document.querySelectorAll('[data-en-aria]').forEach(function (el) { if (el.dataset.frAria === undefined) el.dataset.frAria = el.getAttribute('aria-label'); el.setAttribute('aria-label', lang === 'en' ? el.getAttribute('data-en-aria') : el.dataset.frAria); });
+    var DESC = L('Catalogue professionnel vgthmind : vêtements faits main à Vitry-sur-Seine. Je dessine, fais le patron, coupe, couds et finis chaque pièce moi-même.', 'vgthmind trade catalogue: handmade clothing from Vitry-sur-Seine, France. I design, draft the pattern, cut, sew and finish every piece myself.');
+    $('metaDesc').setAttribute('content', DESC); $('ogDesc').setAttribute('content', DESC);
+    document.querySelector('.chk').setAttribute('data-short', L('Dispo', 'Available'));
+    var ol = $('otherLang'); if (ol) { var tl = (navigator.language || 'en').split('-')[0].toLowerCase(); if (!tl || tl === 'fr') tl = 'en'; ol.href = 'https://translate.google.com/translate?sl=fr&tl=' + encodeURIComponent(tl) + '&u=' + encodeURIComponent(location.href.split('#')[0]); }
     document.querySelectorAll('[data-lang]').forEach(function (b) { b.setAttribute('aria-pressed', b.getAttribute('data-lang') === lang); });
     document.title = L('vgthmind — Catalogue professionnel', 'vgthmind — Trade catalogue');
   }
@@ -461,7 +465,7 @@ textarea{min-height:84px;resize:vertical}
     $('gam').innerHTML = gh;
     $('filt').hidden = !filt.gamme;
     if (filt.gamme) $('filt').innerHTML = L('Gamme : ', 'Range: ') + '<b>' + esc(G(filt.gamme).n) + '</b> · ' + esc(TERM(filt.mode)) + '<button type="button" data-gamme="' + filt.gamme + '">' + L('Tout afficher', 'Show all') + '</button>';
-    $('free').hidden = $('ask').hidden = filt.mode !== 'vente';
+    $('free').hidden = filt.mode !== 'vente';
   }
 
   // ---------- Sélection ----------
@@ -471,7 +475,7 @@ textarea{min-height:84px;resize:vertical}
     return fullName(it) + (pc ? ' — ' + pcName(it, pc) : (pieces(it) ? L(' — tenue complète', ' — full look') : ''));
   }
   var KLABEL_EN = { piece: '', serie: 'Small run', reedition: 'Remake', location: 'Rental', libre: 'Restock, remake or run' };
-  var KLABEL_FR, KLABEL = KLABEL_FR = { piece: '', serie: 'Petite série', reedition: 'Réédition / reproduction', location: 'Location', libre: 'Restock, reproduction ou série' };
+  var KLABEL_FR, KLABEL = KLABEL_FR = { piece: '', serie: 'Petite série', reedition: 'Réédition / reproduction', location: 'Location', libre: 'Réassort, reproduction ou série' };
   function renderCart() {
     sel = sel.filter(function (x) { if (x.id === FREE) return true; var it = byId[x.id]; return it && hasOffer(it, x.m) && (!x.p || pieceOf(it, x.p)) && pSt(it, x.p ? pieceOf(it, x.p) : null) !== 'boutique'; });
     var n = sel.length, open = $('panel').classList.contains('show');
@@ -483,7 +487,7 @@ textarea{min-height:84px;resize:vertical}
     $('cartThumbs').innerHTML = sel.slice(0, 4).map(function (x) { var p = byId[x.id] && byId[x.id].photos[0]; return p ? '<img src="' + esc(p.s) + '" alt="">' : ''; }).join('');
     if (!open || $('form').hidden) return;
     var line = function (x) {
-      var i = sel.indexOf(x), it = byId[x.id], p = it && it.photos[0], k = kindOf(x), g = it ? (GAMMES[it.gamme] || {}).n : '';
+      var i = sel.indexOf(x), it = byId[x.id], p = it && it.photos[0], k = kindOf(x), g = it ? G(it.gamme).n : '';
       var qty = k === 'serie' || k === 'reedition' || k === 'libre';
       var note = qty || x.n || x.open;
       return '<div class="li">' + (p ? '<img src="' + esc(p.s) + '" alt="">' : '<div class="ph0">+</div>')
@@ -525,8 +529,8 @@ textarea{min-height:84px;resize:vertical}
     if (cur.lien) ext += '<a href="' + esc(cur.lien) + '" target="_blank" rel="noopener">' + L('Voir portée sur Instagram ↗', 'See it worn on Instagram ↗') + '</a>';
     if (pr.col === 'VGTAPE') ext += '<a href="https://www.youtube.com/@vgthmind/videos" target="_blank" rel="noopener">' + L('Les clips VGTAPE ↗', 'VGTAPE music videos ↗') + '</a>';
     ov.innerHTML = '<div class="dlg"><div class="gal"><div class="main" id="gmain"></div>'
-      + (p.length > 1 ? '<button type="button" class="nav p" data-nav="-1" aria-label="Photo précédente">‹</button><button type="button" class="nav n" data-nav="1" aria-label="Photo suivante">›</button><div class="thumbs">' + p.map(function (ph, i) { return '<button type="button" data-go="' + i + '" aria-label="Photo ' + (i + 1) + '"><img src="' + esc(ph.s) + '" alt="" loading="lazy"></button>'; }).join('') + '</div>' : '')
-      + '</div><div class="info"><button type="button" class="close" data-close aria-label="Fermer">×</button>'
+      + (p.length > 1 ? '<button type="button" class="nav p" data-nav="-1" aria-label="' + L('Photo précédente', 'Previous photo') + '">‹</button><button type="button" class="nav n" data-nav="1" aria-label="' + L('Photo suivante', 'Next photo') + '">›</button><div class="thumbs">' + p.map(function (ph, i) { return '<button type="button" data-go="' + i + '" aria-label="' + L('Photo ', 'Photo ') + (i + 1) + '"><img src="' + esc(ph.s) + '" alt="" loading="lazy"></button>'; }).join('') + '</div>' : '')
+      + '</div><div class="info"><button type="button" class="close" data-close aria-label="' + L('Fermer', 'Close') + '">×</button>'
       + '<div class="row1"><span class="st ' + esc(cur.statut) + '">' + esc(stText(cur)) + '</span></div>'
       + '<h2>' + esc(pr.col ? pr.col + ' · ' + pr.title : pr.title) + '</h2>'
       + (desc(cur) ? '<p class="desc">' + esc(desc(cur)) + '</p>' : '')
@@ -551,7 +555,7 @@ textarea{min-height:84px;resize:vertical}
   function show(i) {
     var p = cur.photos || []; if (!p.length) return;
     idx = (i + p.length) % p.length;
-    ov.querySelector('#gmain').innerHTML = '<img src="' + esc(p[idx].l) + '" alt="' + esc(fullName(cur)) + ', photo ' + (idx + 1) + '"' + (isCover(p[idx].l) ? ' class="cover"' : '') + '>';
+    ov.querySelector('#gmain').innerHTML = '<img src="' + esc(p[idx].l) + '" alt="' + esc(fullName(cur)) + ', ' + L('photo ', 'photo ') + (idx + 1) + '"' + (isCover(p[idx].l) ? ' class="cover"' : '') + '>';
     ov.querySelectorAll('[data-go]').forEach(function (b) { b.classList.toggle('on', +b.getAttribute('data-go') === idx); });
     if (p[idx + 1]) { var pre = new Image(); pre.src = p[idx + 1].l; }
   }
@@ -682,8 +686,6 @@ textarea{min-height:84px;resize:vertical}
   }
   document.addEventListener('click', function (e) {
     var b = e.target.closest('[data-lang]'); if (b) { setLang(b.getAttribute('data-lang')); return; }
-    var t = e.target.closest('[data-translate]');
-    if (t) { e.preventDefault(); var tl = (navigator.language || 'en').split('-')[0]; if (tl === 'fr') tl = 'en'; window.open('https://translate.google.com/translate?sl=fr&tl=' + encodeURIComponent(tl) + '&u=' + encodeURIComponent(location.href.split('#')[0]), '_blank', 'noopener'); }
   });
   applyStatic();
 
