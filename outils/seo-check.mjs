@@ -7,6 +7,8 @@
 // doublons d'environnement (pages.dev, http, apex : l'apex dépend d'IONOS, signalé en avertissement seulement).
 const O = (process.argv[2] && /^https?:/.test(process.argv[2]) ? process.argv[2] : 'https://www.vgthmind.org').replace(/\/$/, '');
 const bad = [], warn = [];
+let locs = []; // déclaré avant tout appel possible de finish()
+let fermé = false;
 const ko = (m) => bad.push(m), wa = (m) => warn.push(m);
 const get = async (u, o = {}) => { try { return await fetch(u, { redirect: 'manual', headers: { 'User-Agent': 'vgthmind-seo-check' }, ...o }); } catch (e) { return { status: 0, headers: new Headers(), text: async () => '', error: e.message }; } };
 const pool = async (items, fn, n = 8) => { const out = []; for (let i = 0; i < items.length; i += n) out.push(...await Promise.all(items.slice(i, i + n).map(fn))); return out; };
@@ -24,9 +26,25 @@ try {
 
 // 1. Sitemap
 const smRes = await get(O + '/sitemap.xml');
-if (smRes.status !== 200) { ko('sitemap.xml : statut ' + smRes.status); finish(); }
+if (smRes.status !== 200) {
+  // Site fermé (accès « Fermé » dans l'admin) : la racine répond 503 et le sitemap redirige vers « / ». Ce n'est pas une panne.
+  const home = await get(O + '/');
+  if (home.status === 503) {
+    fermé = true;
+    console.log('Site FERMÉ (/ répond 503, sitemap.xml -> ' + smRes.status + ') : contrôle du sitemap et des pages publiques sauté, seul /pro est vérifié.');
+    const r = await get(O + '/pro/'); const html = r.status === 200 ? await r.text() : '';
+    if (r.status !== 200) ko('/pro/ : statut ' + r.status);
+    else {
+      if (!/<html[^>]*lang="fr"/i.test(html)) ko('/pro/ : lang fr manquant');
+      if (!/noindex/i.test((html.match(/<meta name="robots" content="([^"]*)"/i) || [])[1] || '') && !/noindex/i.test(r.headers.get('x-robots-tag') || '')) ko('/pro/ : pas de noindex');
+      if (!/<meta name="description"[^>]*content="[^"]{30,}/i.test(html)) ko('/pro/ : meta description absente/trop courte');
+      const h1 = (html.match(/<h1[\s>]/gi) || []).length; if (h1 !== 1) wa('/pro/ : ' + h1 + ' balises h1');
+    }
+  } else ko('sitemap.xml : statut ' + smRes.status);
+  finish();
+}
 const sm = await smRes.text();
-const locs = [...sm.matchAll(/<loc>([^<]+)<\/loc>/g)].map((m) => m[1]);
+locs =[...sm.matchAll(/<loc>([^<]+)<\/loc>/g)].map((m) => m[1]);
 if (locs.length < 10) ko('sitemap.xml : seulement ' + locs.length + ' adresses');
 if (new Set(locs).size !== locs.length) ko('sitemap.xml : adresses en double');
 // Une seule forme par page : toujours avec « / » final, jamais la même adresse avec et sans, à la casse près.
@@ -169,9 +187,9 @@ if (O === 'https://www.vgthmind.org') {
 
 finish();
 function finish() {
-  if (process.argv.includes('--json')) console.log(JSON.stringify({ site: O, pages: locs?.length, problemes: bad, avertissements: warn }, null, 2));
+  if (process.argv.includes('--json')) console.log(JSON.stringify({ site: O, pages: locs.length, ferme: fermé, problemes: bad, avertissements: warn }, null, 2));
   else {
-    console.log(`seo:check ${O} : ${typeof locs !== 'undefined' ? locs.length : 0} pages du sitemap`);
+    console.log(`seo:check ${O} : ${locs.length} pages du sitemap${fermé ? ' (site fermé)' : ''}`);
     for (const m of warn) console.log('  avert. ' + m);
     for (const m of bad) console.log('  PROBLÈME ' + m);
     console.log(bad.length ? `${bad.length} problème(s)` : 'OK : aucun problème');
