@@ -31,7 +31,7 @@ export async function runFiches() {
   });
   await new Promise((r) => srv.listen(0, '127.0.0.1', r));
   const base = 'http://127.0.0.1:' + srv.address().port;
-  const items = fs.readdirSync(path.join(ROOT, 'data', 'products')).filter((f) => f.endsWith('.json')).map((f) => JSON.parse(fs.readFileSync(path.join(ROOT, 'data', 'products', f), 'utf8'))).filter((p) => p.slug && !/^test/.test(p.slug));
+  const items = fs.readdirSync(path.join(ROOT, 'data', 'products')).filter((f) => f.endsWith('.json')).map((f) => JSON.parse(fs.readFileSync(path.join(ROOT, 'data', 'products', f), 'utf8'))).filter((p) => p.slug && !/^test/.test(p.slug) && !p.hidden && !p.archived); // masquées : pas de fiche publique
   const problems = [];
   try {
     for (const [view, opts] of Object.entries(VIEWS)) {
