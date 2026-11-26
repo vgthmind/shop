@@ -5,19 +5,16 @@
   "portfolio": "https://vgthmind.github.io/",
   "instagram": "https://www.instagram.com/vgthmind/",
   "youtube": "https://www.youtube.com/@vgthmind",
-  "site": "https://www.vgthmind.org/",
   "mail": "contact@vgthmind.org"
  },
  "overrides": {
   "ch_0002": {
    "gamme": "custom",
-   "statut": "boutique",
-   "lieu": "Bobby — Paris 2e"
+   "statut": "boutique"
   },
   "ch_0003": {
    "gamme": "custom",
-   "statut": "boutique",
-   "lieu": "Bobby — Paris 2e"
+   "statut": "boutique"
   },
   "ch_0004": {
    "gamme": "custom"
@@ -27,13 +24,12 @@
   },
   "ch_0006": {
    "gamme": "custom",
-   "statut": "boutique",
-   "lieu": "Bobby — Paris 2e"
+   "statut": "boutique"
   },
   "custom-tee-shirt-col-en-v": {
    "gamme": "custom",
    "statut": "boutique",
-   "lieu": "Bobby — Paris 2e"
+   "nom_en": "Custom V-neck tee"
   },
   "custom-hoodie": {
    "gamme": "custom"
@@ -75,7 +71,8 @@
    "gamme": "couture"
   },
   "pantalon-rouge-framboise": {
-   "gamme": "couture"
+   "gamme": "couture",
+   "nom_en": "Raspberry red trousers"
   },
   "pantalon-vc001": {
    "gamme": "couture"
@@ -99,7 +96,8 @@
    "gamme": "couture"
   },
   "cache-cou": {
-   "gamme": "serie"
+   "gamme": "serie",
+   "nom_en": "Neck warmer"
   },
   "cd-vgtape": {
    "gamme": "serie"

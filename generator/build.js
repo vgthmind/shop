@@ -926,7 +926,7 @@ async function main() {
   fs.cpSync(rel(ROOT, 'assets', 'theme'), rel(OUT_DIR, 'assets', 'theme'), { recursive: true });
   const ogSrc = rel(ROOT, 'assets', 'products-og');
   if (fs.existsSync(ogSrc)) fs.cpSync(ogSrc, rel(OUT_DIR, 'assets', 'products-og'), { recursive: true });
-  if (LOCAL_MEDIA) fs.cpSync(rel(ROOT, 'assets', 'media'), rel(OUT_DIR, 'assets', 'media'), { recursive: true });
+  if (LOCAL_MEDIA && fs.existsSync(rel(ROOT, 'assets', 'media'))) fs.cpSync(rel(ROOT, 'assets', 'media'), rel(OUT_DIR, 'assets', 'media'), { recursive: true });
   // Boutique pas encore publique : aucun moteur de recherche ne doit garder une page (en plus du noindex et de robots.txt).
   // Cloudflare Pages ne garde qu'UN bloc par adresse (un second « /* » écrase le premier : les en-têtes de sécurité
   // disparaissaient) : le noindex est donc ajouté DANS le bloc « /* » du fichier, jamais dans un second bloc.

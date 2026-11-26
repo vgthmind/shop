@@ -227,7 +227,7 @@ textarea{min-height:84px;resize:vertical}
 <body>
 <div class="wrap">
   <header class="top">
-    <a class="brand" href="/" target="_blank" rel="noopener"><img src="/assets/theme/logo.png" alt="vgthmind" width="35" height="26"><b>vgthmind</b></a>
+    <span class="brand"><img src="/assets/theme/logo.png" alt="vgthmind" width="35" height="26"><b>vgthmind</b></span>
     <div class="hr"><nav id="links"></nav><div class="lng m" role="group" aria-label="Langue / Language"><button type="button" data-lang="fr">FR</button><button type="button" data-lang="en">EN</button><a href="https://translate.google.com/translate?sl=fr&amp;tl=en" id="otherLang" target="_blank" rel="noopener" data-translate data-en="Other language">Autre langue</a></div></div>
   </header>
 
@@ -327,8 +327,8 @@ textarea{min-height:84px;resize:vertical}
   };
   function G(k) { return (lang === 'en' ? GAMMES_EN : GAMMES)[k] || {}; }
   var GORDER = ['collection', 'couture-peinture', 'couture', 'custom', 'serie'];
-  var ST_FR = { dispo: 'Disponible', demande: 'Sur demande', boutique: 'En boutique', vendu: 'Vendue' };
-  var ST_EN = { dispo: 'Available', demande: 'On request', boutique: 'In a shop', vendu: 'Sold' };
+  var ST_FR = { dispo: 'Disponible', demande: 'Sur demande', boutique: 'Déjà en boutique', vendu: 'Vendue' };
+  var ST_EN = { dispo: 'Available', demande: 'On request', boutique: 'Already in store', vendu: 'Sold' };
   var ST = ST_FR;
   var SRANK = { dispo: 0, demande: 1, boutique: 2, vendu: 3 };
   var LINKS = [['portfolio', 'Portfolio', 'Portfolio'], ['instagram', 'Instagram', 'Instagram'], ['youtube', 'YouTube', 'YouTube']];
@@ -421,7 +421,7 @@ textarea{min-height:84px;resize:vertical}
     var p = it.photos || [], on = anyFor(it.id, filt.mode), pr = parts(it), g = G(it.gamme);
     var img = function (ph, i) { return ph ? '<img src="' + esc(ph.s) + '" alt="' + (i ? '' : esc(fullName(it))) + '" loading="lazy" decoding="async"' + (isCover(ph.s) ? ' class="cover"' : '') + '>' : ''; };
     var act;
-    if (!canSel(it)) act = '<p class="hint">' + (it.statut === 'boutique' ? L('Déjà placée en boutique', 'Already placed in a shop') : L('Indisponible', 'Unavailable')) + '</p>';
+    if (!canSel(it)) act = '<p class="hint">' + (it.statut === 'boutique' ? L('Déjà en boutique', 'Already in store') : L('Indisponible', 'Unavailable')) + '</p>';
     else if (pieces(it)) act = pieceRows(it);
     else act = '<button type="button" class="add' + (on ? ' on' : '') + '" data-sel="' + esc(it.id) + '" data-p="">' + (on ? L('✓ Dans ma sélection', '✓ In my selection') : esc(addLabel(it))) + '</button>';
     return '<article class="card' + (on ? ' sel' : '') + (it.statut === 'vendu' || it.statut === 'boutique' ? ' dim' : '') + '" data-id="' + esc(it.id) + '">'
@@ -458,7 +458,7 @@ textarea{min-height:84px;resize:vertical}
         var cols = []; live.forEach(function (it) { var c = parts(it).col || 'Autres'; if (cols.indexOf(c) < 0) cols.push(c); });
         cols.forEach(function (c) { var k = COLS[c] || [c, '']; h += '<div class="sub"><b>' + esc(k[0]) + '</b><span>' + esc(k[1]) + '</span></div><div class="grid">' + live.filter(function (it) { return (parts(it).col || 'Autres') === c; }).map(card).join('') + '</div>'; });
       } else if (live.length) h += '<div class="grid">' + live.map(card).join('') + '</div>';
-      if (shop.length) h += '<div class="sub"><b>' + L('Déjà placées en boutique', 'Already placed in shops') + '</b></div><div class="grid">' + shop.map(card).join('') + '</div>';
+      if (shop.length) h += '<div class="sub"><b>' + L('Déjà en boutique', 'Already in store') + '</b></div><div class="grid">' + shop.map(card).join('') + '</div>';
       if (past.length) h += '<div class="sub"><b>' + L('Déjà vendues', 'Already sold') + '</b><span>' + L('Réédition ou pièce dans le même esprit possible sur demande.', 'A remake or a piece in the same spirit is possible on request.') + '</span></div><div class="grid">' + past.map(card).join('') + '</div>';
       h += '</section>';
     });
@@ -558,7 +558,7 @@ textarea{min-height:84px;resize:vertical}
   }
   function paintChoice() {
     var b = ov && ov.querySelector('#choice'); if (!b) return;
-    if (!canSel(cur)) { b.innerHTML = '<p class="note">' + (cur.statut === 'boutique' ? L('Pièce actuellement placée en boutique.', 'This piece is currently in a shop.') : '') + '</p>'; return; }
+    if (!canSel(cur)) { b.innerHTML = '<p class="note">' + (cur.statut === 'boutique' ? L('Pièce déjà en boutique.', 'Piece already in store.') : '') + '</p>'; return; }
     if (pieces(cur)) { b.innerHTML = '<p class="hint" style="margin-bottom:6px">' + L('Cochez la tenue complète ou seulement les pièces voulues :', 'Tick the full look or only the pieces you want:') + '</p>' + pieceRows(cur); return; }
     var on = anyFor(cur.id, filt.mode);
     b.innerHTML = '<button type="button" class="add' + (on ? ' on' : '') + '" data-sel="' + esc(cur.id) + '" data-p="">' + (on ? L('✓ Dans ma sélection', '✓ In my selection') : esc(addLabel(cur))) + '</button>';

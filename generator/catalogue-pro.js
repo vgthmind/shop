@@ -58,7 +58,7 @@ function build(root) {
       id: slug, src: 'site', nom: o.nom || p.name, type: o.type || TYPE_OF_CAT[cats[0]] || 'accessoires',
       gamme: o.gamme || (cats.includes('customsupcycling') ? 'custom' : 'couture'),
       statut: boutique ? 'boutique' : (o.statut || (p.quantity === 0 || p.in_stock === false ? 'vendu' : 'dispo')),
-      lieu: o.lieu || '', photos: sitePhotos(root, slug, p.images),
+      lieu: '', photos: sitePhotos(root, slug, p.images),
       description: o.description || lines.filter((l) => !/^taille|%/i.test(l)).join('\n'),
       tailles: o.tailles || lines.filter((l) => /^taille/i.test(l)).join(' · '),
       compo: o.compo || lines.filter((l) => /%/.test(l)).join(' · '),

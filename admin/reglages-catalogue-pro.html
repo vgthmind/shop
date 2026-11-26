@@ -127,7 +127,7 @@
         + '<select data-o="gamme" aria-label="Gamme">' + opts(GAMMES, o.gamme || ((p.categories || []).indexOf('customsupcycling') > -1 ? 'custom' : 'couture')) + '</select>'
         + '<select data-o="offre" aria-label="Vente ou location">' + opts(OFFRES, o.offre || 'vente') + '</select>'
         + '<select data-o="statut" aria-label="Statut dans le catalogue">' + opts([['auto', 'Statut du site (auto)'], ['boutique', 'En boutique'], ['masquer', 'Masquer du catalogue']], st) + '</select>'
-        + '<input class="lieu" data-o="lieu" placeholder="Boutique (ex. Bobby — Paris 2e)" value="' + esc(o.lieu || '') + '"' + (st === 'boutique' ? '' : ' hidden') + '>'
+        + '<input class="lieu" data-o="lieu" placeholder="Note interne (jamais affichée)" value="' + esc(o.lieu || '') + '"' + (st === 'boutique' ? '' : ' hidden') + '>'
         + '</div>';
     }).join('');
   }
